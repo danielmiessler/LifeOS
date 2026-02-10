@@ -274,33 +274,43 @@ function getVolumeSetting(requestVolume?: number): number {
   return 1.0; // Default to full volume
 }
 
-// Play audio using afplay (macOS)
+// Audio playback queue - prevents overlapping speech from concurrent notifications
+let audioQueue: Promise<void> = Promise.resolve();
+
+function enqueueAudio(fn: () => Promise<void>): Promise<void> {
+  audioQueue = audioQueue.then(fn, fn);
+  return audioQueue;
+}
+
+// Play audio using afplay (macOS) - queued to prevent overlap
 async function playAudio(audioBuffer: ArrayBuffer, requestVolume?: number): Promise<void> {
-  const tempFile = `/tmp/voice-${Date.now()}.mp3`;
+  return enqueueAudio(async () => {
+    const tempFile = `/tmp/voice-${Date.now()}.mp3`;
 
-  // Write audio to temp file
-  await Bun.write(tempFile, audioBuffer);
+    // Write audio to temp file
+    await Bun.write(tempFile, audioBuffer);
 
-  const volume = getVolumeSetting(requestVolume);
+    const volume = getVolumeSetting(requestVolume);
 
-  return new Promise((resolve, reject) => {
-    // afplay -v takes a value from 0.0 to 1.0
-    const proc = spawn('/usr/bin/afplay', ['-v', volume.toString(), tempFile]);
+    return new Promise((resolve, reject) => {
+      // afplay -v takes a value from 0.0 to 1.0
+      const proc = spawn('/usr/bin/afplay', ['-v', volume.toString(), tempFile]);
 
-    proc.on('error', (error) => {
-      console.error('Error playing audio:', error);
-      reject(error);
-    });
+      proc.on('error', (error) => {
+        console.error('Error playing audio:', error);
+        reject(error);
+      });
 
-    proc.on('exit', (code) => {
-      // Clean up temp file
-      spawn('/bin/rm', [tempFile]);
+      proc.on('exit', (code) => {
+        // Clean up temp file
+        spawn('/bin/rm', [tempFile]);
 
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`afplay exited with code ${code}`));
-      }
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`afplay exited with code ${code}`));
+        }
+      });
     });
   });
 }
