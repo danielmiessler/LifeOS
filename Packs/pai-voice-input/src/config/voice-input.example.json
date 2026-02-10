@@ -1,0 +1,19 @@
+{
+  "provider": "whisper",
+  "wakeWord": {
+    "enabled": true,
+    "phrase": "Hey JAM",
+    "engine": "porcupine"
+  },
+  "hotkey": {
+    "enabled": true,
+    "combo": "Fn+V"
+  },
+  "audio": {
+    "sampleRate": 16000,
+    "channels": 1,
+    "encoding": "pcm_s16le"
+  },
+  "port": 8889,
+  "autoSubmit": true
+}
