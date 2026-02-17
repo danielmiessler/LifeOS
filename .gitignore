@@ -1,68 +1,60 @@
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-Icon
-._*
-.Spotlight-V100
-.Trashes
-Library
-
-# Environment files
-.env
-.env.local
-.env.*.local
-*.env
 
 # API keys and secrets
-*.pem
-*.key
+# Build outputs
+# Cache
+# Environment files
+# IDE
+# Logs
+# Node/Bun
+# PAI Update System (sideloading)
+# Personal/Private data
+# Temporary files
+# macOS
+*.cache
+*.cer
 *.cert
+*.crt
+*.env
+*.key
+*.log
 *.p12
+*.pem
 *.pfx
+*.swo
+*.swp
+*.tmp
 *_rsa
 *_rsa.pub
-*.crt
-*.cer
-
-# Logs
-*.log
-logs/
-Library/Logs/
-
-# Node/Bun
-node_modules/
-.npm
-.yarn
-.pnp.*
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
 *~
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Build outputs
-dist/
-build/
-out/
-
-# Cache
+.AppleDouble
+.DS_Store
+.LSOverride
+.Spotlight-V100
+.Trashes
+._*
 .cache/
-*.cache
-
-# Personal/Private data
+.claude/.pai-sync-history
+.claude/pai_backups/
+.claude/pai_updates/
+.env
+.env.*.local
+.env.local
+.idea/
+.npm
+.pnp.*
+.vscode/
+.yarn
+Icon
+Library
+Library/Logs/
+Private-Packs/
+build/
+credentials/
+dist/
+logs/
+node_modules/
+out/
 private/
 secrets/
-credentials/
-
-# PAI Update System (sideloading)
-.claude/pai_updates/
-.claude/pai_backups/
-.claude/.pai-sync-history
+temp/
+tmp/
