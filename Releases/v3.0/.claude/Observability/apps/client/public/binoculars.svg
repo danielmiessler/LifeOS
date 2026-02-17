@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Left barrel -->
+  <rect x="3" y="6" width="6" height="12" rx="3" fill="#a855f7" stroke="#9333ea" stroke-width="1.5"/>
+  <!-- Right barrel -->
+  <rect x="15" y="6" width="6" height="12" rx="3" fill="#a855f7" stroke="#9333ea" stroke-width="1.5"/>
+  <!-- Bridge connecting the two barrels -->
+  <path d="M9 11h6" stroke="#9333ea" stroke-width="2"/>
+  <!-- Left eyepiece -->
+  <circle cx="6" cy="6" r="2.5" fill="#c084fc" stroke="#9333ea" stroke-width="1.5"/>
+  <!-- Right eyepiece -->
+  <circle cx="18" cy="6" r="2.5" fill="#c084fc" stroke="#9333ea" stroke-width="1.5"/>
+  <!-- Left objective lens -->
+  <circle cx="6" cy="18" r="2.5" fill="#7c3aed" stroke="#9333ea" stroke-width="1.5"/>
+  <!-- Right objective lens -->
+  <circle cx="18" cy="18" r="2.5" fill="#7c3aed" stroke="#9333ea" stroke-width="1.5"/>
+</svg>

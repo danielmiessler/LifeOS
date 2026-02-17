@@ -1,0 +1,85 @@
+@font-face {
+    font-family: 'concourse-t3';
+    src: url('./fonts/concourse_t3_regular-webfont.woff') format('woff');
+    font-style: normal;
+    font-weight: normal;
+    font-stretch: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'concourse-c3';
+    src: url('./fonts/concourse_c3_regular.woff') format('woff');
+    font-style: normal;
+    font-weight: normal;
+    font-stretch: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'equity-text-b';
+    src: url('./fonts/equity_text_b_regular-webfont.woff') format('woff');
+    font-style: normal;
+    font-weight: normal;
+    font-stretch: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'advocate';
+    font-style: normal;
+    font-weight: normal;
+    font-stretch: normal;
+    font-display: swap;
+    src: url('./fonts/advocate_14_cond_reg.woff2') format('woff2');
+}
+
+/* Valkyrie text fonts */
+@font-face {
+    font-family: 'valkyrie-text';
+    src: url('./fonts/valkyrie_a_regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'valkyrie-text';
+    src: url('./fonts/valkyrie_a_bold.woff2') format('woff2');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'valkyrie-text';
+    src: url('./fonts/valkyrie_a_italic.woff2') format('woff2');
+    font-weight: normal;
+    font-style: italic;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'valkyrie-text';
+    src: url('./fonts/valkyrie_a_bold_italic.woff2') format('woff2');
+    font-weight: bold;
+    font-style: italic;
+    font-display: swap;
+}
+
+/* Triplicate Code - monospace code font */
+@font-face {
+    font-family: 'triplicate-code';
+    src: url('./fonts/triplicate_t3_code_regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'triplicate-code';
+    src: url('./fonts/triplicate_t3_code_bold.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+    font-display: swap;
+}

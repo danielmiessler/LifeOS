@@ -1,0 +1,26 @@
+{
+  "name": "multi-agent-observability-client",
+  "private": true,
+  "version": "1.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-vue-next": "^0.548.0",
+    "vue": "^3.5.17"
+  },
+  "devDependencies": {
+    "@types/node": "^22.11.2",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "@vue/tsconfig": "^0.7.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.16",
+    "typescript": "~5.8.3",
+    "vite": "^7.0.4",
+    "vue-tsc": "^2.2.12"
+  }
+}

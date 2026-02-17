@@ -1,0 +1,32 @@
+/* Import theme system */
+@import './themes.css';
+
+/* Import compact layout system */
+@import './compact.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-concourse-t3;
+  }
+
+  code, pre {
+    @apply font-mono;
+  }
+
+  /* Prose/long-form text styling - for prompts, chat messages, entries */
+  .prose {
+    @apply font-serif;
+  }
+
+  .prose p {
+    @apply font-serif;
+  }
+}

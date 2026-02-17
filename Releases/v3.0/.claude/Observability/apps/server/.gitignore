@@ -1,0 +1,11 @@
+# Database files (too large for git)
+events.db
+events.db-shm
+events.db-wal
+
+# Logs
+*.log
+logs/
+
+# Dependencies
+node_modules/
