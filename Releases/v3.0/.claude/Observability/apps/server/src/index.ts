@@ -1,5 +1,3 @@
-import { homedir } from 'os';
-import { join } from 'path';
 import type { HookEvent } from './types';
 import {
   createTheme,
@@ -362,7 +360,7 @@ const server = Bun.serve({
         }
 
         // Use Inference tool (via CLI subprocess) instead of direct API
-        const proc = Bun.spawn(['bun', 'run', join(process.env.HOME || process.env.USERPROFILE || homedir(), '.claude', 'skills', 'PAI', 'Tools', 'Inference.ts'), '--level', 'fast', 'You are a helpful assistant. Be concise.', prompt], {
+        const proc = Bun.spawn(['bun', 'run', `${process.env.HOME}/.claude/skills/PAI/Tools/Inference.ts`, '--level', 'fast', 'You are a helpful assistant. Be concise.', prompt], {
           stdout: 'pipe',
           stderr: 'pipe',
         });
