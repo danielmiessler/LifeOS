@@ -37,3 +37,15 @@ node_modules/
 /package.json
 /package-lock.json
 /bun.lock
+
+# McCullonas three-layer architecture — personal data exclusions
+# These are managed by the marvin (config) repo and symlinked at runtime.
+settings.json
+skills/PAI/USER/
+.credentials.json
+MEMORY/LEARNING/
+MEMORY/WORK/
+MEMORY/VOICE/
+MEMORY/STATE/
+custom-agents/
+.claude.json

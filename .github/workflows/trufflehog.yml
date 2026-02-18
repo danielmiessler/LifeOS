@@ -1,0 +1,18 @@
+name: trufflehog
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+jobs:
+  trufflehog:
+    runs-on: ubuntu-latest
+    name: trufflehog
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: trufflesecurity/trufflehog@main
+        with:
+          extra_args: --only-verified
