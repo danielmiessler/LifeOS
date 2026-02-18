@@ -443,21 +443,21 @@ dir_name=$(basename "$current_dir")
 # ─────────────────────────────────────────────────────────────────────────────
 # COLOR PALETTE
 # ─────────────────────────────────────────────────────────────────────────────
-# Tailwind-inspired colors organized by usage
+# Cyan theme — Tailwind cyan scale for high visibility on dark backgrounds
 
 RESET='\033[0m'
 
-# Structural (chrome, labels, separators)
-SLATE_300='\033[38;2;203;213;225m'     # Light text/values
-SLATE_400='\033[38;2;148;163;184m'     # Labels
-SLATE_500='\033[38;2;100;116;139m'     # Muted text
-SLATE_600='\033[38;2;71;85;105m'       # Separators
+# Structural (chrome, labels, separators) — Cyan-tinted
+SLATE_300='\033[38;2;165;243;252m'     # Cyan-200: pale cyan (light text/values)
+SLATE_400='\033[38;2;103;232;249m'     # Cyan-300: light cyan (labels)
+SLATE_500='\033[38;2;34;211;238m'      # Cyan-400: medium cyan (muted text)
+SLATE_600='\033[38;2;8;145;178m'       # Cyan-600: dark cyan (separators)
 
-# Semantic colors
+# Semantic colors (unchanged — these convey meaning)
 EMERALD='\033[38;2;74;222;128m'        # Positive/success
 ROSE='\033[38;2;251;113;133m'          # Error/negative
 
-# Rating gradient (for get_rating_color)
+# Rating gradient (unchanged — functional data visualization)
 RATING_10='\033[38;2;74;222;128m'      # 9-10: Emerald
 RATING_8='\033[38;2;163;230;53m'       # 8: Lime
 RATING_7='\033[38;2;250;204;21m'       # 7: Yellow
@@ -466,73 +466,73 @@ RATING_5='\033[38;2;251;146;60m'       # 5: Orange
 RATING_4='\033[38;2;248;113;113m'      # 4: Light red
 RATING_LOW='\033[38;2;239;68;68m'      # 0-3: Red
 
-# Line 1: Greeting (violet theme)
-GREET_PRIMARY='\033[38;2;167;139;250m'
-GREET_SECONDARY='\033[38;2;139;92;246m'
-GREET_ACCENT='\033[38;2;196;181;253m'
+# Line 1: Greeting (cyan)
+GREET_PRIMARY='\033[38;2;34;211;238m'
+GREET_SECONDARY='\033[38;2;6;182;212m'
+GREET_ACCENT='\033[38;2;103;232;249m'
 
-# Line 2: Wielding (cyan/teal theme)
+# Line 2: Wielding (cyan)
 WIELD_PRIMARY='\033[38;2;34;211;238m'
-WIELD_SECONDARY='\033[38;2;45;212;191m'
+WIELD_SECONDARY='\033[38;2;6;182;212m'
 WIELD_ACCENT='\033[38;2;103;232;249m'
-WIELD_WORKFLOWS='\033[38;2;94;234;212m'
+WIELD_WORKFLOWS='\033[38;2;103;232;249m'
 WIELD_HOOKS='\033[38;2;6;182;212m'
-WIELD_LEARNINGS='\033[38;2;20;184;166m'
+WIELD_LEARNINGS='\033[38;2;34;211;238m'
 
-# Line 3: Git (sky/blue theme)
-GIT_PRIMARY='\033[38;2;56;189;248m'
-GIT_VALUE='\033[38;2;186;230;253m'
-GIT_DIR='\033[38;2;147;197;253m'
-GIT_CLEAN='\033[38;2;125;211;252m'
-GIT_MODIFIED='\033[38;2;96;165;250m'
-GIT_ADDED='\033[38;2;59;130;246m'
-GIT_STASH='\033[38;2;165;180;252m'
-GIT_AGE_FRESH='\033[38;2;125;211;252m'
-GIT_AGE_RECENT='\033[38;2;96;165;250m'
-GIT_AGE_STALE='\033[38;2;59;130;246m'
-GIT_AGE_OLD='\033[38;2;99;102;241m'
+# Line 3: Git (cyan)
+GIT_PRIMARY='\033[38;2;34;211;238m'
+GIT_VALUE='\033[38;2;165;243;252m'
+GIT_DIR='\033[38;2;103;232;249m'
+GIT_CLEAN='\033[38;2;103;232;249m'
+GIT_MODIFIED='\033[38;2;34;211;238m'
+GIT_ADDED='\033[38;2;6;182;212m'
+GIT_STASH='\033[38;2;165;243;252m'
+GIT_AGE_FRESH='\033[38;2;103;232;249m'
+GIT_AGE_RECENT='\033[38;2;34;211;238m'
+GIT_AGE_STALE='\033[38;2;6;182;212m'
+GIT_AGE_OLD='\033[38;2;8;145;178m'
 
-# Line 4: Learning (purple theme)
-LEARN_PRIMARY='\033[38;2;167;139;250m'
-LEARN_SECONDARY='\033[38;2;196;181;253m'
-LEARN_WORK='\033[38;2;192;132;252m'
-LEARN_SIGNALS='\033[38;2;139;92;246m'
-LEARN_RESEARCH='\033[38;2;129;140;248m'
-LEARN_SESSIONS='\033[38;2;99;102;241m'
+# Line 4: Learning/Memory (cyan)
+LEARN_PRIMARY='\033[38;2;34;211;238m'
+LEARN_SECONDARY='\033[38;2;103;232;249m'
+LEARN_WORK='\033[38;2;34;211;238m'
+LEARN_SIGNALS='\033[38;2;6;182;212m'
+LEARN_RESEARCH='\033[38;2;8;145;178m'
+LEARN_SESSIONS='\033[38;2;8;145;178m'
 
-# Line 5: Learning Signal (green theme for LEARNING label)
-SIGNAL_LABEL='\033[38;2;56;189;248m'
-SIGNAL_COLOR='\033[38;2;96;165;250m'
-SIGNAL_PERIOD='\033[38;2;148;163;184m'
-LEARN_LABEL='\033[38;2;21;128;61m'    # Dark green for LEARNING:
+# Line 5: Learning Signal (cyan)
+SIGNAL_LABEL='\033[38;2;34;211;238m'
+SIGNAL_COLOR='\033[38;2;34;211;238m'
+SIGNAL_PERIOD='\033[38;2;103;232;249m'
+LEARN_LABEL='\033[38;2;6;182;212m'
 
-# Line 6: Context (indigo theme)
-CTX_PRIMARY='\033[38;2;129;140;248m'
-CTX_SECONDARY='\033[38;2;165;180;252m'
-CTX_ACCENT='\033[38;2;139;92;246m'
+# Line 6: Context (cyan)
+CTX_PRIMARY='\033[38;2;34;211;238m'
+CTX_SECONDARY='\033[38;2;103;232;249m'
+CTX_ACCENT='\033[38;2;6;182;212m'
 CTX_BUCKET_EMPTY='\033[38;2;75;82;95m'
 
-# Line: Usage (amber/orange theme)
-USAGE_PRIMARY='\033[38;2;251;191;36m'     # Amber icon
-USAGE_LABEL='\033[38;2;217;163;29m'       # Amber label
-USAGE_VALUE='\033[38;2;253;224;71m'       # Yellow-gold values
-USAGE_RESET='\033[38;2;148;163;184m'      # Slate for reset time
-USAGE_EXTRA='\033[38;2;140;90;60m'         # Muted brown for EX
+# Line: Usage (cyan — usage health colors in get_usage_color stay functional)
+USAGE_PRIMARY='\033[38;2;34;211;238m'
+USAGE_LABEL='\033[38;2;6;182;212m'
+USAGE_VALUE='\033[38;2;103;232;249m'
+USAGE_RESET='\033[38;2;103;232;249m'
+USAGE_EXTRA='\033[38;2;8;145;178m'
 
-# Line 7: Quote (gold theme)
-QUOTE_PRIMARY='\033[38;2;252;211;77m'
-QUOTE_AUTHOR='\033[38;2;180;140;60m'
+# Line 7: Quote (cyan)
+QUOTE_PRIMARY='\033[38;2;34;211;238m'
+QUOTE_AUTHOR='\033[38;2;6;182;212m'
 
-# PAI Branding (matches banner colors)
-PAI_P='\033[38;2;30;58;138m'          # Navy
-PAI_A='\033[38;2;59;130;246m'         # Medium blue
-PAI_I='\033[38;2;147;197;253m'        # Light blue
-PAI_LABEL='\033[38;2;100;116;139m'    # Slate for "status line"
-PAI_CITY='\033[38;2;147;197;253m'     # Light blue for city
-PAI_STATE='\033[38;2;100;116;139m'    # Slate for state
-PAI_TIME='\033[38;2;96;165;250m'      # Medium-light blue for time
-PAI_WEATHER='\033[38;2;135;206;235m'  # Sky blue for weather
-PAI_SESSION='\033[38;2;120;135;160m'  # Muted blue-gray for session label
+# PAI Branding (cyan)
+PAI_P='\033[38;2;6;182;212m'          # Cyan-500
+PAI_A='\033[38;2;34;211;238m'         # Cyan-400
+PAI_I='\033[38;2;103;232;249m'        # Cyan-300
+PAI_LABEL='\033[38;2;34;211;238m'     # Cyan-400
+PAI_CITY='\033[38;2;103;232;249m'     # Cyan-300
+PAI_STATE='\033[38;2;34;211;238m'     # Cyan-400
+PAI_TIME='\033[38;2;103;232;249m'     # Cyan-300
+PAI_WEATHER='\033[38;2;165;243;252m'  # Cyan-200
+PAI_SESSION='\033[38;2;34;211;238m'   # Cyan-400
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPER FUNCTIONS
