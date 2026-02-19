@@ -40,12 +40,20 @@ node_modules/
 
 # McCullonas three-layer architecture — personal data exclusions
 # These are managed by the marvin (config) repo and symlinked at runtime.
+# Note: no trailing slash — git won't match symlinks with trailing-slash patterns.
 settings.json
-skills/PAI/USER/
+skills/PAI/USER
 .credentials.json
-MEMORY/LEARNING/
-MEMORY/WORK/
-MEMORY/VOICE/
-MEMORY/STATE/
+MEMORY/LEARNING
+MEMORY/WORK
+MEMORY/VOICE
+MEMORY/STATE
 custom-agents/
 .claude.json
+plans
+.claude
+
+# Runtime directories not in upstream gitignore
+backups/
+cache/
+plugins/
