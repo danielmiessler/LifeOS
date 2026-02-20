@@ -209,6 +209,18 @@ const REQUIRED_SYMLINKS = [
     description: 'Personal slash commands',
     autoRepair: false,
   },
+  {
+    path: 'mcp-servers',
+    expectedTarget: `${HOME}/github/marvin/mcp-servers`,
+    description: 'MCP server installs (cloned from individual repos)',
+    autoRepair: false, // directory — may need bun install per server
+  },
+  {
+    path: '../.mcp.json',
+    expectedTarget: `${HOME}/github/marvin/.mcp.json`,
+    description: 'Global MCP server configuration (~/.mcp.json)',
+    autoRepair: false,
+  },
 ] as const;
 
 type SymlinkStatus = 'ok' | 'missing' | 'not_symlink' | 'broken' | 'repaired';
