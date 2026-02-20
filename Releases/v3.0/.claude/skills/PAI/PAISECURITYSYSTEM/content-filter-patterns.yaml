@@ -1,0 +1,343 @@
+# PAI Security Patterns - User Customization
+# Extends the system patterns.example.yaml with content filtering
+# Used by SecurityValidator.hook.ts
+#
+# Content filter patterns adapted from:
+#   https://github.com/jcfischer/pai-content-filter (MIT)
+#   See COMMUNITY-ATTRIBUTIONS.md for full attribution
+---
+version: "1.1"
+last_updated: "2026-02-20"
+
+philosophy:
+  mode: safe_functional
+  principle: "Meaningful protection without friction that drives people to disable security"
+
+# ========================================
+# BASH COMMAND PATTERNS
+# ========================================
+bash:
+  blocked:
+    # Filesystem destruction
+    - pattern: "rm -rf /"
+      reason: "Filesystem destruction"
+    - pattern: "rm -rf ~"
+      reason: "Home directory destruction"
+    - pattern: "sudo rm -rf /"
+      reason: "Filesystem destruction with sudo"
+    - pattern: "sudo rm -rf ~"
+      reason: "Home directory destruction with sudo"
+
+    # Disk operations
+    - pattern: "diskutil eraseDisk"
+      reason: "Disk destruction"
+    - pattern: "diskutil zeroDisk"
+      reason: "Disk destruction"
+    - pattern: "diskutil partitionDisk"
+      reason: "Disk partitioning"
+    - pattern: "diskutil apfs deleteContainer"
+      reason: "APFS container deletion"
+    - pattern: "diskutil apfs eraseVolume"
+      reason: "Volume destruction"
+    - pattern: "dd if=/dev/zero"
+      reason: "Disk overwrite"
+    - pattern: "mkfs"
+      reason: "Filesystem format"
+
+    # Repository operations
+    - pattern: "gh repo delete"
+      reason: "Repository deletion"
+    - pattern: "gh repo edit --visibility public"
+      reason: "Repository exposure"
+
+  confirm:
+    # Git operations
+    - pattern: "git push --force"
+      reason: "Force push can lose commits"
+    - pattern: "git push -f"
+      reason: "Force push can lose commits"
+    - pattern: "git push origin --force"
+      reason: "Force push can lose commits"
+    - pattern: "git push origin -f"
+      reason: "Force push can lose commits"
+    - pattern: "git reset --hard"
+      reason: "Loses uncommitted changes"
+
+    # Cloud - AWS
+    - pattern: "aws s3 rm.*--recursive"
+      reason: "Bulk S3 deletion"
+    - pattern: "aws ec2 terminate"
+      reason: "EC2 instance termination"
+    - pattern: "aws rds delete"
+      reason: "RDS deletion"
+
+    # Cloud - GCP
+    - pattern: "gcloud.*delete"
+      reason: "GCP resource deletion"
+
+    # Infrastructure as Code
+    - pattern: "terraform destroy"
+      reason: "Infrastructure destruction"
+    - pattern: "terraform apply.*-auto-approve"
+      reason: "Auto-approve bypasses review"
+    - pattern: "pulumi destroy"
+      reason: "Infrastructure destruction"
+
+    # Containers
+    - pattern: "docker system prune"
+      reason: "Container/image cleanup"
+    - pattern: "docker volume rm"
+      reason: "Volume data deletion"
+    - pattern: "kubectl delete namespace"
+      reason: "Namespace deletion"
+
+    # Databases
+    - pattern: "DELETE FROM.*WHERE"
+      reason: "Database deletion (confirm scope)"
+    - pattern: "DROP DATABASE"
+      reason: "Database destruction"
+    - pattern: "DROP TABLE"
+      reason: "Table destruction"
+    - pattern: "TRUNCATE"
+      reason: "Table data destruction"
+
+  alert:
+    - pattern: "curl.*\\|.*sh"
+      reason: "Piping curl to shell"
+    - pattern: "curl.*\\|.*bash"
+      reason: "Piping curl to bash"
+    - pattern: "wget.*\\|.*sh"
+      reason: "Piping wget to shell"
+    - pattern: "wget.*\\|.*bash"
+      reason: "Piping wget to bash"
+
+# ========================================
+# PATH PROTECTION
+# ========================================
+paths:
+  zeroAccess:
+    - "~/.ssh/id_*"
+    - "~/.ssh/*.pem"
+    - "~/.aws/credentials"
+    - "~/.gnupg/private*"
+    - "**/credentials.json"
+    - "**/service-account*.json"
+
+  readOnly:
+    - "/etc/**"
+
+  confirmWrite:
+    - "**/.env"
+    - "**/.env.*"
+    - "~/.ssh/*"
+
+  noDelete:
+    - ".git/**"
+    - "LICENSE*"
+    - "README.md"
+
+# ========================================
+# SPECIAL PROJECT RULES
+# ========================================
+projects: {}
+
+# ========================================
+# CONTENT FILTER PATTERNS (v1.1 — new section)
+# ========================================
+# Patterns for scanning inbound file content (externally consumed files,
+# cloned repos, downloaded artifacts). SecurityValidator does NOT currently
+# consume this section — it requires extension to scan file content on
+# Read/Write operations. This section defines the pattern library.
+#
+# Adapted from: https://github.com/jcfischer/pai-content-filter
+# Categories: injection (PI), exfiltration (EX), tool_invocation (TI), pii (PII)
+# Severity: block (hard deny) | review (flag for human review)
+
+content_filter:
+  version: "1.0.0"
+  status: "patterns-only"  # SecurityValidator extension needed to enforce
+  source: "github.com/jcfischer/pai-content-filter"
+
+  # === PROMPT INJECTION PATTERNS (PI-xxx) ===
+  injection:
+    - id: PI-001
+      name: system_prompt_override
+      pattern: '(?:^|\s)(?:you\s+are\b|ignore\s+(?:previous|all|above|prior)\s+instructions?|new\s+instructions?|disregard\s+(?:previous|all|above|prior)|forget\s+(?:previous|all|everything))'
+      severity: block
+      description: "System prompt override attempts"
+
+    - id: PI-002
+      name: role_play_trigger
+      pattern: '(?:^|\s)(?:act\s+as\b|pretend\s+(?:you\s+are|to\s+be)|your\s+role\s+is\s+now|you\s+are\s+now\s+a|from\s+now\s+on\s+you\s+are|imagine\s+you\s+are)'
+      severity: block
+      description: "Role-play trigger attempts to change agent identity"
+
+    - id: PI-003
+      name: context_manipulation
+      pattern: '(?:\[INST\]|\<\|im_start\|>|<<SYS>>|###\s*(?:instruction|system)|<\|system\|>|<system>|<\/system>)'
+      severity: block
+      description: "LLM context/delimiter manipulation tokens"
+
+    - id: PI-004
+      name: multi_turn_injection
+      pattern: '(?:in\s+the\s+next\s+message|when\s+(?:asked|prompted)\s+about|from\s+now\s+on|for\s+(?:all|every)\s+future|always\s+respond\s+with|remember\s+to\s+always)'
+      severity: block
+      description: "Multi-turn injection attempting persistent behavior change"
+
+    - id: PI-005
+      name: delimiter_injection
+      pattern: '(?:---\s*\n\s*system|```\s*system|<\|endoftext\|>|<\|separator\|>|<\|end\|>)'
+      severity: block
+      description: "Delimiter injection via markdown or special tokens"
+
+    - id: PI-006
+      name: jailbreak_keywords
+      pattern: '(?:(?:DAN|STAN|DUDE)\s+mode|do\s+anything\s+now|developer\s+mode|unlock(?:ed)?\s+mode|no\s+(?:restrictions?|limitations?|filters?|rules?)\s+mode)'
+      severity: block
+      description: "Known jailbreak mode activation keywords"
+
+    - id: PI-007
+      name: instruction_boundary
+      pattern: '(?:end\s+of\s+(?:system|user)\s+(?:message|prompt|instructions?)|begin\s+(?:new|real)\s+(?:instructions?|prompt)|actual\s+(?:instructions?|task)\s+(?:below|follows?))'
+      severity: block
+      description: "Attempts to insert fake instruction boundaries"
+
+    - id: PI-008
+      name: output_manipulation
+      pattern: '(?:do\s+not\s+(?:mention|reveal|disclose|show)|hide\s+(?:this|the\s+fact)|keep\s+(?:this|it)\s+secret|never\s+tell\s+(?:the\s+user|anyone))'
+      severity: block
+      description: "Instructions to hide information from the user"
+
+    - id: PI-009
+      name: authority_claim
+      pattern: '(?:(?:I\s+am|this\s+is)\s+(?:your|the)\s+(?:admin|administrator|developer|creator|owner)|authorized\s+(?:override|access)|priority\s+(?:one|1)\s+(?:instruction|command|order))'
+      severity: block
+      description: "False authority claims to elevate privilege"
+
+  # === EXFILTRATION PATTERNS (EX-xxx) ===
+  exfiltration:
+    - id: EX-001
+      name: direct_exfil_command
+      pattern: '(?:send\s+(?:this|it|the\s+(?:data|content|file|info))\s+to|write\s+(?:this|it)\s+to\s+(?:\/|~|http)|copy\s+(?:this|it)\s+to\s+(?:\/|~|http)|exfiltrate|upload\s+(?:this|it)\s+to)'
+      severity: block
+      description: "Direct data exfiltration commands"
+
+    - id: EX-002
+      name: path_traversal
+      pattern: '(?:\.\.\/?(?:\.\.\/?)+|~\/\.(?:claude|env|ssh|gnupg|aws|config)|\/etc\/(?:passwd|shadow)|credentials?\.(?:json|yaml|yml|toml)|\.env(?:\.local)?(?:\s|$))'
+      severity: block
+      description: "Path traversal and sensitive file access patterns"
+
+    - id: EX-003
+      name: network_exfil
+      pattern: '(?:curl\s+(?:-[a-zA-Z]\s+)*(?:http|ftp)|wget\s+(?:http|ftp)|nc\s+-[a-z]*\s+\d|ncat\s)'
+      severity: block
+      description: "Network-based data exfiltration commands"
+
+    - id: EX-004
+      name: environment_leak
+      pattern: '(?:(?:print|echo|cat|read|show|access|get)\s+(?:the\s+)?(?:env(?:ironment)?|API\s*key|secret|token|password|credential)|process\.env\[|os\.environ)'
+      severity: block
+      description: "Environment variable and credential access attempts"
+
+    - id: EX-005
+      name: clipboard_exfil
+      pattern: '(?:pbcopy|xclip|xsel|clip\.exe|Set-Clipboard|copy\s+to\s+clipboard)'
+      severity: block
+      description: "Clipboard-based data exfiltration"
+
+  # === TOOL INVOCATION ABUSE PATTERNS (TI-xxx) ===
+  tool_invocation:
+    - id: TI-001
+      name: explicit_tool_call
+      pattern: '(?:use\s+the\s+(?:bash|write|edit|read|glob|grep)\s+tool|run\s+(?:this\s+)?(?:command|script)|execute\s+(?:this|the\s+following)\s+(?:command|code|script))'
+      severity: block
+      description: "Explicit requests to invoke Claude Code tools"
+
+    - id: TI-002
+      name: code_execution
+      pattern: '(?:\beval\s*\(|\bexec\s*\(|child_process|subprocess\.(?:run|call|Popen)|os\.system\s*\(|spawn\s*\(|execSync\s*\()'
+      severity: block
+      description: "Code execution function calls"
+
+    - id: TI-003
+      name: file_operations
+      pattern: '(?:(?:write|create|delete|remove|modify|overwrite)\s+(?:the\s+)?file|rm\s+-(?:r|f|rf)\s|chmod\s+|chown\s+)'
+      severity: block
+      description: "File system modification commands"
+
+    - id: TI-004
+      name: shell_command
+      pattern: '(?:(?:run|execute)\s+(?:in\s+)?(?:bash|sh|zsh|shell|terminal)|sh\s+-c\s+|bash\s+-c\s+|\/bin\/(?:sh|bash)\s)'
+      severity: block
+      description: "Shell command execution requests"
+
+    - id: TI-005
+      name: package_install
+      pattern: '(?:(?:npm|pip|bun|yarn|brew|apt|apt-get)\s+install\s|pip3?\s+install\s|gem\s+install\s|go\s+install\s)'
+      severity: block
+      description: "Package installation commands"
+
+  # === PII PATTERNS (PII-xxx) ===
+  pii:
+    - id: PII-001
+      name: credit_card_number
+      pattern: '\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})\b'
+      severity: block
+      description: "Credit card numbers (Visa, Mastercard, Amex, Discover)"
+
+    - id: PII-002
+      name: api_key_anthropic
+      pattern: 'sk-ant-[A-Za-z0-9\-_]{20,}'
+      severity: block
+      description: "Anthropic API key"
+
+    - id: PII-003
+      name: api_key_openai
+      pattern: 'sk-(?!ant-)[a-zA-Z0-9]{32,}'
+      severity: block
+      description: "OpenAI API key"
+
+    - id: PII-004
+      name: api_key_github_pat
+      pattern: 'gh[pousr]_[a-zA-Z0-9]{36,}'
+      severity: block
+      description: "GitHub personal access token"
+
+    - id: PII-005
+      name: api_key_aws
+      pattern: '\b(?:AKIA|ABIA|ACCA|ASIA)[0-9A-Z]{16}\b'
+      severity: block
+      description: "AWS Access Key ID"
+
+    - id: PII-006
+      name: private_key_pem
+      pattern: '-----BEGIN\s+(?:RSA\s+)?PRIVATE\s+KEY-----'
+      severity: block
+      description: "PEM-encoded private key"
+
+    - id: PII-007
+      name: email_address
+      pattern: '[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}'
+      severity: review
+      description: "Email address (review — may appear legitimately)"
+
+  # === ENCODING EVASION PATTERNS (EN-xxx) ===
+  encoding:
+    - id: EN-001
+      name: base64_block
+      pattern: '(?:[A-Za-z0-9+\/]{21,}={0,2})'
+      severity: review
+      description: "Base64-encoded strings longer than 20 characters"
+
+    - id: EN-002
+      name: unicode_escape
+      pattern: '(?:\\u[0-9a-fA-F]{4}|\\x[0-9a-fA-F]{2}){3,}'
+      severity: review
+      description: "Unicode or hex escape sequences (3+ consecutive)"
+
+    - id: EN-003
+      name: multi_file_split
+      pattern: '(?:(?:continued|part\s+\d+)\s+(?:in|from|see)\s+(?:file|document)|assemble\s+(?:from|with)\s+(?:other\s+)?(?:files?|parts?)|split\s+across\s+(?:files?|documents?))'
+      severity: review
+      description: "Multi-file split patterns referencing content assembly"
