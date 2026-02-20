@@ -7,8 +7,8 @@
 # 2. Customize patterns for your environment
 # 3. The hook will load USER patterns first, falling back to this example
 ---
-version: "1.0"
-last_updated: "2026-01-14"
+version: "1.1"
+last_updated: "2026-02-20"
 
 # Philosophy: Safe but functional by default
 # Block catastrophic operations, confirm dangerous ones, allow everything else
@@ -107,6 +107,18 @@ bash:
       reason: "Table destruction"
     - pattern: "TRUNCATE"
       reason: "Table data destruction"
+
+    # Sandbox enforcer — Untrusted external content (Sprint 7)
+    # git clone from non-mccullonas sources should be confirmed
+    # Trusted: github.com/mccullonas/* and github.com/McCullonas/*
+    - pattern: "git clone (?!.*github\\.com/[Mm]c[Cc]ullonas/).*"
+      reason: "Cloning from untrusted source — consider using ~/.claude/sandbox/ as destination"
+    # curl downloading files from external sources
+    - pattern: "curl.*-[oO]\\s"
+      reason: "Downloading file with curl — confirm source is trusted"
+    # wget downloading files
+    - pattern: "wget (?!.*github\\.com/[Mm]c[Cc]ullonas/).*"
+      reason: "Downloading from untrusted source with wget — consider sandbox destination"
 
   # ALERT - Suspicious but allowed (log only, no block)
   # These are logged for security review but not blocked
