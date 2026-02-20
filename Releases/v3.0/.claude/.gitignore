@@ -60,6 +60,10 @@ backups/
 cache/
 plugins/
 
+# MCP servers and config — symlinked from marvin (config repo)
+# Note: .mcp.json lives at ~/.mcp.json (home root), not inside ~/.claude
+mcp-servers
+
 # Personal skills symlinked from marvin (config repo)
 skills/Analyse
 skills/EngineerAgent
