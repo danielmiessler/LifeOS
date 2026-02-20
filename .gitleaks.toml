@@ -1,0 +1,135 @@
+# PAI-Specific Gitleaks Secret Detection Patterns
+#
+# Adapted from: https://github.com/jcfischer/pai-secret-scanning
+# Author: jcfischer (KAI improvement roadmap F-086)
+# License: MIT
+#
+# These rules extend gitleaks' built-in ~150 patterns with PAI-specific
+# detection for AI provider keys, personal filesystem paths, and
+# messaging tokens commonly found in PAI operator environments.
+#
+# Usage:
+#   gitleaks detect --config .gitleaks.toml
+#   gitleaks protect --staged --config .gitleaks.toml
+
+title = "PAI Secret Detection Rules"
+
+# ============================================================
+# PAI-Specific Rules
+# ============================================================
+
+[[rules]]
+id = "anthropic-api-key"
+description = "Anthropic API Key (sk-ant-*)"
+regex = '''sk-ant-[a-zA-Z0-9_-]{20,}'''
+tags = ["api-key", "anthropic", "ai"]
+
+[[rules]]
+id = "openai-api-key"
+description = "OpenAI API Key (sk-proj-* or sk-*)"
+regex = '''sk-proj-[a-zA-Z0-9]{20,}'''
+tags = ["api-key", "openai", "ai"]
+
+[[rules]]
+id = "openai-api-key-legacy"
+description = "OpenAI API Key (legacy sk-* format)"
+regex = '''sk-[a-zA-Z0-9]{40,}'''
+tags = ["api-key", "openai", "ai"]
+
+[[rules]]
+id = "elevenlabs-api-key"
+description = "ElevenLabs API Key"
+regex = '''(?i)(elevenlabs|eleven_labs|xi)[_-]?(api)?[_-]?(key|token)\s*[=:]\s*["\']?[0-9a-f]{32}["\']?'''
+tags = ["api-key", "elevenlabs", "voice"]
+
+[[rules]]
+id = "replicate-api-token"
+description = "Replicate API Token (r8_*)"
+regex = '''r8_[a-zA-Z0-9]{36,}'''
+tags = ["api-key", "replicate", "ai"]
+
+[[rules]]
+id = "huggingface-api-token"
+description = "HuggingFace API Token (hf_*)"
+regex = '''hf_[a-zA-Z0-9]{30,}'''
+tags = ["api-key", "huggingface", "ai"]
+
+[[rules]]
+id = "groq-api-key"
+description = "Groq API Key (gsk_*)"
+regex = '''gsk_[a-zA-Z0-9]{40,}'''
+tags = ["api-key", "groq", "ai"]
+
+[[rules]]
+id = "telegram-bot-token"
+description = "Telegram Bot Token"
+regex = '''\d{8,10}:[A-Za-z0-9_-]{35}'''
+tags = ["token", "telegram", "messaging"]
+
+[[rules]]
+id = "telegram-chat-id"
+description = "Telegram Chat ID in config"
+regex = '''(?i)(telegram|tg)[_-]?chat[_-]?id\s*[=:]\s*-?\d{6,}'''
+tags = ["config", "telegram", "messaging"]
+
+[[rules]]
+id = "personal-macos-path"
+description = "Personal macOS filesystem path (/Users/username/)"
+regex = '''/Users/[a-zA-Z][a-zA-Z0-9._-]+/'''
+tags = ["path", "personal", "macos"]
+
+  [rules.allowlist]
+  paths = [
+    '''\.md$''',
+    '''\.lock$''',
+    '''\.lockb$''',
+    '''package-lock\.json$''',
+    '''ATTRIBUTIONS''',
+    '''README''',
+    '''CHANGELOG''',
+    '''LICENSE''',
+  ]
+
+[[rules]]
+id = "personal-linux-path"
+description = "Personal Linux filesystem path (/home/username/)"
+regex = '''/home/[a-zA-Z][a-zA-Z0-9._-]+/'''
+tags = ["path", "personal", "linux"]
+
+  [rules.allowlist]
+  paths = [
+    '''\.md$''',
+    '''\.lock$''',
+    '''\.lockb$''',
+    '''package-lock\.json$''',
+    '''ATTRIBUTIONS''',
+    '''README''',
+    '''CHANGELOG''',
+    '''LICENSE''',
+  ]
+
+[[rules]]
+id = "home-assistant-token"
+description = "Home Assistant Long-Lived Access Token"
+regex = '''(?i)(ha|home.?assistant)[_-]?(api)?[_-]?(key|token)\s*[=:]\s*["\']?eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+'''
+tags = ["token", "home-assistant", "iot"]
+
+[[rules]]
+id = "ntfy-topic"
+description = "ntfy notification topic (potential information disclosure)"
+regex = '''(?i)ntfy[_-]?topic\s*[=:]\s*["\']?[a-zA-Z0-9_-]{8,}["\']?'''
+tags = ["config", "ntfy", "notification"]
+
+# ============================================================
+# Global Allowlist
+# ============================================================
+
+[allowlist]
+description = "Global allowlist for files that commonly contain example/documentation patterns"
+paths = [
+  '''\.gitleaks\.toml$''',
+  '''tests/fixtures/''',
+  '''test-detection\.sh$''',
+  '''\.env\.example$''',
+  '''\.env\.template$''',
+]
