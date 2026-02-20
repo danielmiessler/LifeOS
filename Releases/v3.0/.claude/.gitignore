@@ -48,6 +48,8 @@ MEMORY/LEARNING
 MEMORY/WORK
 MEMORY/VOICE
 MEMORY/STATE
+MEMORY/RELATIONSHIP
+MEMORY/SECURITY
 custom-agents/
 .claude.json
 plans
@@ -57,3 +59,18 @@ plans
 backups/
 cache/
 plugins/
+
+# Personal skills symlinked from marvin (config repo)
+skills/Analyse
+skills/EngineerAgent
+skills/IdeasCapture
+skills/OperationsAdvisor
+skills/PAIMigrate
+skills/ProductManager
+skills/RailAdvisor
+skills/SecurityAdvisor
+skills/SolutionShaper
+skills/StoryCrafter
+skills/TechnicalDesigner
+skills/VoiceServer
+commands
