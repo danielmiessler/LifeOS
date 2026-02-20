@@ -1,0 +1,23 @@
+{
+  "name": "hafas-european",
+  "version": "1.0.0",
+  "description": "MCP server for European rail queries via hafas-client",
+  "module": "src/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "bun build src/index.ts --outdir dist --target node",
+    "start": "bun dist/index.js",
+    "dev": "bun src/index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "hafas-client": "^6.3.6"
+  }
+}

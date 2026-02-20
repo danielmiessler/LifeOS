@@ -1,0 +1,11 @@
+[project]
+name = "foursquaremcp"
+version = "0.1.0"
+description = "MCP Foursquare API server"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.2.0",
+    "geocoder>=1.38.1",
+]

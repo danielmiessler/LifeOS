@@ -1,0 +1,16 @@
+{
+  "name": "sbb-transport",
+  "module": "src/index.ts",
+  "main": "dist/index.js",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0"
+  }
+}

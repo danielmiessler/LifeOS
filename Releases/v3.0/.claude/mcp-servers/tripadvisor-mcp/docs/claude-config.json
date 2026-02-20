@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "tripadvisor": {
+      "command": "python",
+      "args": [
+        "-m",
+        "src.tripadvisor_mcp.main"
+      ],
+      "cwd": "/Users/Pavel.Shklovsky/github/tripadvisor-mcp",
+      "env": {
+        "TRIPADVISOR_API_KEY": "your_api_key_here",
+        "PYTHONPATH": "/Users/Pavel.Shklovsky/github/tripadvisor-mcp"
+      }
+    }
+  }
+}

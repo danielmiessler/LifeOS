@@ -1,0 +1,8 @@
+# Python virtual environments
+*-venv/
+venv/
+__pycache__/
+
+# Lock files (can be regenerated)
+bun.lockb
+package-lock.json
