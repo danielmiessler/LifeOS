@@ -120,7 +120,7 @@ function getStats(): SystemStats {
   try {
     const settings = JSON.parse(readFileSync(join(CLAUDE_DIR, "settings.json"), "utf-8"));
     name = settings.daidentity?.displayName || settings.daidentity?.name || "PAI";
-    paiVersion = settings.pai?.version || "2.0";
+    paiVersion = settings.pai?.version || "3.0";
     catchphrase = settings.daidentity?.startupCatchphrase || catchphrase;
     repoUrl = settings.pai?.repoUrl || repoUrl;
   } catch {}
@@ -142,21 +142,26 @@ function getStats(): SystemStats {
 
   try {
     const settings = JSON.parse(readFileSync(join(CLAUDE_DIR, "settings.json"), "utf-8"));
-    if (settings.counts) {
+    if (settings.counts && settings.counts.skills > 0) {
       skills = settings.counts.skills || 0;
       workflows = settings.counts.workflows || 0;
       hooks = settings.counts.hooks || 0;
       learnings = settings.counts.signals || 0;
       userFiles = settings.counts.files || 0;
+    } else {
+      // counts missing or empty — run quick filesystem count
+      try {
+        const skillDir = join(CLAUDE_DIR, "skills");
+        if (existsSync(skillDir)) {
+          skills = readdirSync(skillDir).filter(d => !d.startsWith(".")).length;
+        }
+        const hooksDir = join(CLAUDE_DIR, "hooks");
+        if (existsSync(hooksDir)) {
+          hooks = readdirSync(hooksDir).filter(f => f.endsWith(".hook.ts")).length;
+        }
+      } catch {}
     }
-  } catch {
-    // Fallback to reasonable defaults if settings.json is missing or malformed
-    skills = 65;
-    workflows = 339;
-    hooks = 18;
-    learnings = 3000;
-    userFiles = 172;
-  }
+  } catch {}
 
   try {
     const historyFile = join(CLAUDE_DIR, "history.jsonl");

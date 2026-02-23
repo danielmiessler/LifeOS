@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "_doc": "PAI settings overlay. Loaded via: claude --settings pai-settings.json. Merges ON TOP of the local settings.json. Only contains PAI-specific additions (hooks, statusLine). Machine-specific config (PAI_DIR, principal, identity) stays in local settings.json.",
   "hooks": {
     "PreToolUse": [
