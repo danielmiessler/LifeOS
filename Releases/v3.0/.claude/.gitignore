@@ -33,6 +33,13 @@ node_modules/
 *.cache
 *.log
 
+# Private data safety net (pai-sync excludes these, gitignore is defense-in-depth)
+COLLECTIVE/
+MEMORY/LEARNING/
+MEMORY/STATE/
+MEMORY/VOICE/
+MEMORY/WORK/
+
 # Accidental npm/bun debris
 /package.json
 /package-lock.json
