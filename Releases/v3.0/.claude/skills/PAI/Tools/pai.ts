@@ -31,7 +31,6 @@ import { join, basename } from "path";
 const CLAUDE_DIR = join(homedir(), ".claude");
 const MCP_DIR = join(CLAUDE_DIR, "MCPs");
 const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
-const PAI_SETTINGS = join(CLAUDE_DIR, "pai-settings.json");
 const BANNER_SCRIPT = join(CLAUDE_DIR, "skills", "PAI", "Tools", "Banner.ts");
 const VOICE_SERVER = "http://localhost:8888/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
@@ -394,12 +393,6 @@ function cmdWallpaper(args: string[]) {
 async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean }) {
   displayBanner();
   const args = ["claude"];
-  if (existsSync(PAI_SETTINGS)) {
-    args.push("--settings", PAI_SETTINGS);
-  } else {
-    console.error(`  ⚠ ${PAI_SETTINGS} not found — running without PAI hooks overlay`);
-    console.error(`  Run 'pai-sync sync' to deploy it.`);
-  }
 
   // Handle MCP configuration
   if (options.mcp) {
@@ -552,10 +545,8 @@ function cmdMcpList() {
 }
 
 async function cmdPrompt(prompt: string) {
-  // One-shot prompt execution with PAI settings overlay
-  const args = existsSync(PAI_SETTINGS)
-    ? ["claude", "--settings", PAI_SETTINGS, "-p", prompt]
-    : ["claude", "-p", prompt];
+  // One-shot prompt execution
+  const args = ["claude", "-p", prompt];
 
   process.chdir(CLAUDE_DIR);
 
