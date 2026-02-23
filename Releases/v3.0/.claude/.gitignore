@@ -40,7 +40,6 @@ MEMORY/STATE/
 MEMORY/VOICE/
 MEMORY/WORK/
 
-# Accidental npm/bun debris
-/package.json
+# Accidental npm/bun debris (keep package.json — hooks need dependencies)
 /package-lock.json
 /bun.lock
