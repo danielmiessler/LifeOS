@@ -393,7 +393,13 @@ function cmdWallpaper(args: string[]) {
 
 async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean }) {
   displayBanner();
-  const args = ["claude", "--settings", PAI_SETTINGS];
+  const args = ["claude"];
+  if (existsSync(PAI_SETTINGS)) {
+    args.push("--settings", PAI_SETTINGS);
+  } else {
+    console.error(`  ⚠ ${PAI_SETTINGS} not found — running without PAI hooks overlay`);
+    console.error(`  Run 'pai-sync sync' to deploy it.`);
+  }
 
   // Handle MCP configuration
   if (options.mcp) {
@@ -547,7 +553,9 @@ function cmdMcpList() {
 
 async function cmdPrompt(prompt: string) {
   // One-shot prompt execution with PAI settings overlay
-  const args = ["claude", "--settings", PAI_SETTINGS, "-p", prompt];
+  const args = existsSync(PAI_SETTINGS)
+    ? ["claude", "--settings", PAI_SETTINGS, "-p", prompt]
+    : ["claude", "-p", prompt];
 
   process.chdir(CLAUDE_DIR);
 
