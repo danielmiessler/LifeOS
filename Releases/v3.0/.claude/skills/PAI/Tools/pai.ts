@@ -565,7 +565,7 @@ async function cmdPrompt(prompt: string) {
 
 function cmdHelp() {
   console.log(`
-pai - Personal AI CLI Tool (v2.0.0)
+pai - Personal AI CLI Tool (v3.0)
 
 USAGE:
   k                        Launch Claude (no MCPs, max performance)
