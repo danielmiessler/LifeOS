@@ -111,7 +111,7 @@ async function generateDescription(taskId: string, content: string): Promise<str
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-latest',
+        model: 'claude-haiku-4-5',
         max_tokens: 50,
         messages: [{
           role: 'user',

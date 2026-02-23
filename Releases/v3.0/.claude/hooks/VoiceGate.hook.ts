@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * VoiceGate.hook.ts - Block Voice Curls from Subagents (PreToolUse)
  *

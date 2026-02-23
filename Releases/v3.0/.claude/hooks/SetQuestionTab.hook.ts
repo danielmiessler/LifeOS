@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * SetQuestionTab.hook.ts - Tab Color for User Input (PreToolUse)
  *

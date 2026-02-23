@@ -18,6 +18,9 @@
 
 set -o pipefail
 
+# Exit silently if PAI is not active (bare claude invocation)
+[ "$PAI_ACTIVE" != "1" ] && exit 0
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────

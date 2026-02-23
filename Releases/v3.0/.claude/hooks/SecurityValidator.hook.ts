@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * SecurityValidator.hook.ts - Security Validation for Tool Calls (PreToolUse)
  *

@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * UpdateTabTitle.hook.ts - Tab Title on Prompt Receipt (UserPromptSubmit)
  *

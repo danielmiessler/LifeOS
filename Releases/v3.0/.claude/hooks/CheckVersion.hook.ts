@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * CheckVersion.hook.ts - Check for Claude Code Updates (SessionStart)
  *

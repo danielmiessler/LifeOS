@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * RelationshipMemory.hook.ts - Extract relationship notes from sessions
  *

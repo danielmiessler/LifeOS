@@ -37,8 +37,8 @@ Ensure models are listed in `config.yaml`:
 
 ```yaml
 models:
-  - claude-3-5-sonnet-20241022
-  - claude-3-5-haiku-20241022
+  - claude-sonnet-4-6
+  - claude-haiku-4-5
   - gpt-4o
   - gpt-4o-mini
   - gemini-1.5-pro
@@ -58,7 +58,7 @@ model_comparison:
   prompt: "prompts/v1.0.0.md"  # Same prompt for all models
 
   models:
-    - id: "claude-3-5-sonnet-20241022"
+    - id: "claude-sonnet-4-6"
       name: "Claude 3.5 Sonnet"
       provider: "anthropic"
 
@@ -76,7 +76,7 @@ model_comparison:
   # Evaluation settings
   judges:
     - name: "Primary Judge"
-      model: "claude-3-5-sonnet-20241022"  # Consider using different judge
+      model: "claude-sonnet-4-6"  # Consider using different judge
       criteria:
         - accuracy
         - style
@@ -99,7 +99,7 @@ model_comparison:
 ```bash
 bun run ~/.claude/skills/Evals/EvalServer/cli-run.ts \
   --use-case <name> \
-  --models claude-3-5-sonnet-20241022,gpt-4o,gemini-1.5-pro
+  --models claude-sonnet-4-6,gpt-4o,gemini-1.5-pro
 ```
 
 **Option B: CLI (Parallel)**
@@ -108,7 +108,7 @@ bun run ~/.claude/skills/Evals/EvalServer/cli-run.ts \
 # Run each model in parallel for speed
 bun run ~/.claude/skills/Evals/EvalServer/cli-run.ts \
   --use-case <name> \
-  --model claude-3-5-sonnet-20241022 &
+  --model claude-sonnet-4-6 &
 
 bun run ~/.claude/skills/Evals/EvalServer/cli-run.ts \
   --use-case <name> \

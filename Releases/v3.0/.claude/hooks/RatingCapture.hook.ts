@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * RatingCapture.hook.ts - Unified Rating & Sentiment Capture (UserPromptSubmit)
  *

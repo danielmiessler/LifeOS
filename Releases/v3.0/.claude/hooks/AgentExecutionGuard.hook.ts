@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * AgentExecutionGuard.hook.ts - Enforce Background Agent Execution (PreToolUse)
  *

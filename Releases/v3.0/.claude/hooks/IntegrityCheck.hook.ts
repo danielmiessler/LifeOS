@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * IntegrityCheck.hook.ts - PAI Integrity Check (SessionEnd)
  *

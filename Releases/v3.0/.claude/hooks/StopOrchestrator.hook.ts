@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * StopOrchestrator.hook.ts - Single Entry Point for Stop Hooks
  *
@@ -21,7 +22,7 @@
  * - Non-blocking, typical execution: <100ms
  */
 
-import { parseTranscript } from '../skills/PAI/Tools/TranscriptParser';
+import { parseTranscript, createParsedFromMessage } from '../skills/PAI/Tools/TranscriptParser';
 import { handleVoice } from './handlers/VoiceNotification';
 import { handleTabState } from './handlers/TabState';
 import { handleRebuildSkill } from './handlers/RebuildSkill';
@@ -35,6 +36,7 @@ interface HookInput {
   session_id: string;
   transcript_path: string;
   hook_event_name: string;
+  last_assistant_message?: string;
 }
 
 /**
@@ -86,11 +88,17 @@ async function main() {
     process.exit(0);
   }
 
-  // Wait for transcript to be fully written to disk
-  await new Promise(resolve => setTimeout(resolve, 150));
-
-  // SINGLE READ, SINGLE PARSE
-  const parsed = parseTranscript(hookInput.transcript_path);
+  // Use last_assistant_message directly if available (Claude Code v2.1.47+),
+  // otherwise fall back to transcript parsing
+  let parsed;
+  if (hookInput.last_assistant_message) {
+    // Fast path: use the pre-extracted message from hook input
+    parsed = createParsedFromMessage(hookInput.last_assistant_message);
+  } else {
+    // Legacy path: parse transcript file
+    await new Promise(resolve => setTimeout(resolve, 150));
+    parsed = parseTranscript(hookInput.transcript_path);
+  }
 
   // Voice gate: only main terminal sessions get voice
   const voiceEnabled = isMainSession(hookInput.session_id);

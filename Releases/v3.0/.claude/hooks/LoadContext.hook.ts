@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * LoadContext.hook.ts - Inject PAI context into Claude's Context (SessionStart)
  *

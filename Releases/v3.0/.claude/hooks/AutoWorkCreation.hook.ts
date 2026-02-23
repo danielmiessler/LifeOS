@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * AutoWorkCreation.hook.ts - Session/Task Management (UserPromptSubmit)
  *

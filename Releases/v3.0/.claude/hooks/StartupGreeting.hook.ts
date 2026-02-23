@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * StartupGreeting.hook.ts - Display PAI Banner at Session Start (SessionStart)
  *

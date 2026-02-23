@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * QuestionAnswered.hook.ts - Reset Tab After Question Answered (PostToolUse)
  *

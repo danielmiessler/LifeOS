@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * UpdateCounts.hook.ts - System Counts Update (SessionEnd)
  *

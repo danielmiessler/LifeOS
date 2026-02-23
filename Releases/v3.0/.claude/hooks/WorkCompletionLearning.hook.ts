@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * WorkCompletionLearning.hook.ts - Extract Learnings from Completed Work (SessionEnd)
  *

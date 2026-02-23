@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * SkillGuard.hook.ts - Block False-Positive Skill Invocations (PreToolUse)
  *

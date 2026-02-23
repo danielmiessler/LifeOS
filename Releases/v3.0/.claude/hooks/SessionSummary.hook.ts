@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * SessionSummary.hook.ts - Mark Work Complete and Clear State (SessionEnd)
  *

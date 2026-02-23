@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * SessionAutoName.hook.ts - Auto-generate concise session names
  *

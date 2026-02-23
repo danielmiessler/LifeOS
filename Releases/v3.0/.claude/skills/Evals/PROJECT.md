@@ -145,7 +145,7 @@ evals use-case show --name newsletter-summary
 # Description: Evaluate newsletter summaries
 # Test Cases: 5
 # Prompts: 3 versions (v1.0.0, v1.1.0, v2.0.0)
-# Models: 2 (claude-3-5-sonnet, gpt-4o)
+# Models: 2 (claude-sonnet-4-6, gpt-4o)
 # Criteria: 7 scorers (3 deterministic, 4 AI-based)
 # Last Run: 2025-11-15 14:30 (passed 4/5 tests, score: 0.85)
 ```
@@ -457,7 +457,7 @@ evals run \
 evals run --use-case newsletter-summary
 
 # Run with specific model and prompt
-evals run --use-case newsletter-summary --model claude-3-5-sonnet --prompt v1.0.0
+evals run --use-case newsletter-summary --model claude-sonnet-4-6 --prompt v1.0.0
 
 # Run specific test case only
 evals run --use-case newsletter-summary --test-case 001
@@ -475,7 +475,7 @@ evals run --use-case newsletter-summary --dry-run
 **Output**:
 ```
 Running evaluation: newsletter-summary
-Model: claude-3-5-sonnet-20241022
+Model: claude-sonnet-4-6
 Prompt: v1.0.0
 Test Cases: 5
 
@@ -490,9 +490,9 @@ Results:
   Passed: 4 (80%)
   Failed: 1 (20%)
   Avg Score: 0.84
-  Run ID: 2025-11-15_143022_claude-3-5-sonnet_v1.0.0
+  Run ID: 2025-11-15_143022_claude-sonnet-4-6_v1.0.0
 
-Saved to: results/newsletter-summary/2025-11-15_143022_claude-3-5-sonnet_v1.0.0/
+Saved to: results/newsletter-summary/2025-11-15_143022_claude-sonnet-4-6_v1.0.0/
 ```
 
 ---
@@ -525,7 +525,7 @@ evals query runs --use-case newsletter-summary --limit 10
 evals query runs --score-min 0.8
 
 # Runs for specific model
-evals query runs --model claude-3-5-sonnet
+evals query runs --model claude-sonnet-4-6
 
 # Runs in date range
 evals query runs --since 2025-11-01 --until 2025-11-15
@@ -541,9 +541,9 @@ evals query runs --use-case newsletter-summary --model gpt-4o --score-min 0.75 -
 ```
 Found 3 runs:
 
-2025-11-15 14:30  newsletter-summary  claude-3-5-sonnet  v1.0.0  0.85  4/5 passed
+2025-11-15 14:30  newsletter-summary  claude-sonnet-4-6  v1.0.0  0.85  4/5 passed
 2025-11-15 12:15  newsletter-summary  gpt-4o             v1.0.0  0.82  4/5 passed
-2025-11-14 16:45  newsletter-summary  claude-3-5-sonnet  v1.1.0  0.88  5/5 passed
+2025-11-14 16:45  newsletter-summary  claude-sonnet-4-6  v1.1.0  0.88  5/5 passed
 ```
 
 #### `evals query results`
@@ -559,16 +559,16 @@ evals query results \
 
 # Examples:
 # All results for a run
-evals query results --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0
+evals query results --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0
 
 # Only failed tests
-evals query results --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 --failed
+evals query results --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 --failed
 
 # Specific test case
-evals query results --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 --test-case 001
+evals query results --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 --test-case 001
 
 # Results for specific scorer
-evals query results --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 --scorer llm-judge
+evals query results --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 --scorer llm-judge
 ```
 
 ---
@@ -583,12 +583,12 @@ evals compare runs --run-a <run-id> --run-b <run-id> [--json]
 
 # Example:
 evals compare runs \
-  --run-a 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 \
+  --run-a 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 \
   --run-b 2025-11-15_153045_gpt-4o_v1.0.0
 
 # Output:
 # Comparing Runs:
-#   Run A: claude-3-5-sonnet v1.0.0 (score: 0.85, 4/5 passed)
+#   Run A: claude-sonnet-4-6 v1.0.0 (score: 0.85, 4/5 passed)
 #   Run B: gpt-4o v1.0.0 (score: 0.82, 4/5 passed)
 #
 # Test-by-Test Comparison:
@@ -621,11 +621,11 @@ evals compare models --use-case newsletter-summary --prompt v1.0.0
 # Output:
 # Comparing Models on newsletter-summary (prompt v1.0.0):
 #
-#   claude-3-5-sonnet:  0.85  4/5 passed  (2025-11-15 14:30)
+#   claude-sonnet-4-6:  0.85  4/5 passed  (2025-11-15 14:30)
 #   gpt-4o:             0.82  4/5 passed  (2025-11-15 15:30)
 #   o1-preview:         0.79  3/5 passed  (2025-11-15 16:30)
 #
-# Winner: claude-3-5-sonnet (Δ +0.03 vs 2nd place)
+# Winner: claude-sonnet-4-6 (Δ +0.03 vs 2nd place)
 ```
 
 #### `evals compare prompts`
@@ -639,10 +639,10 @@ evals compare prompts \
   [--json]
 
 # Example:
-evals compare prompts --use-case newsletter-summary --model claude-3-5-sonnet
+evals compare prompts --use-case newsletter-summary --model claude-sonnet-4-6
 
 # Output:
-# Comparing Prompts on newsletter-summary (model claude-3-5-sonnet):
+# Comparing Prompts on newsletter-summary (model claude-sonnet-4-6):
 #
 #   v1.0.0:  0.82  3/5 passed  (2025-11-01)
 #   v1.1.0:  0.85  4/5 passed  (2025-11-08)
@@ -684,9 +684,9 @@ evals export \
   --output <file>
 
 # Examples:
-evals export --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 --format json --output results.json
-evals export --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 --format csv --output results.csv
-evals export --run-id 2025-11-15_143022_claude-3-5-sonnet_v1.0.0 --format md --output results.md
+evals export --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 --format json --output results.json
+evals export --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 --format csv --output results.csv
+evals export --run-id 2025-11-15_143022_claude-sonnet-4-6_v1.0.0 --format md --output results.md
 ```
 
 #### `evals clean`
@@ -786,7 +786,7 @@ evals backup --output evals-backup-2025-11-15.tar.gz
 │
 ├── results/                      # Evaluation results (Git-ignored)
 │   └── newsletter-summary/
-│       └── 2025-11-15_143022_claude-3-5-sonnet_v1.0.0/
+│       └── 2025-11-15_143022_claude-sonnet-4-6_v1.0.0/
 │           ├── run.json
 │           ├── summary.json
 │           └── tests/

@@ -75,13 +75,13 @@ criteria:
     - scorer: "llm-judge-accuracy"
       weight: 0.35
       params:
-        judge_model: "claude-3-5-sonnet-20241022"
+        judge_model: "claude-sonnet-4-6"
         reasoning_first: true
         scale: "1-5"
     - scorer: "llm-judge-style"
       weight: 0.35
       params:
-        judge_model: "claude-3-5-sonnet-20241022"
+        judge_model: "claude-sonnet-4-6"
         reasoning_first: true
         scale: "1-5"
 
@@ -90,8 +90,8 @@ pass_threshold: 0.75
 
 # Models to evaluate against
 models:
-  - claude-3-5-sonnet-20241022
-  - claude-3-5-haiku-20241022
+  - claude-sonnet-4-6
+  - claude-haiku-4-5
   - gpt-4o
 ```
 

@@ -380,6 +380,22 @@ export function parseTranscript(transcriptPath: string): ParsedTranscript {
   }
 }
 
+/**
+ * Create a ParsedTranscript from a raw message string (no file needed).
+ * Used when last_assistant_message is available directly from hook input.
+ */
+export function createParsedFromMessage(message: string): ParsedTranscript {
+  return {
+    raw: message,
+    lastMessage: message,
+    currentResponseText: message,
+    voiceCompletion: extractVoiceCompletion(message),
+    plainCompletion: extractCompletionPlain(message),
+    structured: extractStructuredSections(message),
+    responseState: detectResponseState(message, message),
+  };
+}
+
 // ============================================================================
 // CLI
 // ============================================================================

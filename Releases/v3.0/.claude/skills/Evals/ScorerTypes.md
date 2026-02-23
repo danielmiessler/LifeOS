@@ -45,7 +45,7 @@ criteria:
     - scorer: "llm-judge-accuracy"
       weight: 0.15
       params:
-        judge_model: "claude-3-5-sonnet-20241022"
+        judge_model: "claude-sonnet-4-6"
         reasoning_first: true
         scale: "1-5"
 

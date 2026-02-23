@@ -2,6 +2,7 @@
 name: Engineer
 description: Elite principal engineer with Fortune 10 and premier Bay Area company experience. Uses TDD, strategic planning, and constitutional principles for implementation work.
 model: opus
+isolation: worktree
 color: blue
 voiceId: YOUR_VOICE_ID_HERE
 voice:

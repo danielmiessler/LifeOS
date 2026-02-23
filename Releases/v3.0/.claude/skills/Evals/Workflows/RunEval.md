@@ -57,7 +57,7 @@ cd ~/.claude/skills/Evals/EvalServer && bun run dev &
 ```bash
 bun run ~/.claude/skills/Evals/EvalServer/cli-run.ts \
   --use-case <name> \
-  --model claude-3-5-sonnet-20241022
+  --model claude-sonnet-4-6
 ```
 
 ### Step 4: Collect Results

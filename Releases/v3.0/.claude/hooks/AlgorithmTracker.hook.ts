@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import './lib/gate';
 /**
  * AlgorithmTracker.hook.ts — Consolidated Algorithm State Tracker (PostToolUse)
  *

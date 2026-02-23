@@ -201,7 +201,7 @@ Use structured response format:
 
 ```bash
 # Specific model
---model claude-3-5-sonnet-20241022
+--model claude-sonnet-4-6
 
 # Compare models
 --compare-models
@@ -225,7 +225,7 @@ Use structured response format:
 ┌──────────┬────────────────────────────┬───────────┬────────────┐
 │ Run ID   │ Model                      │ Pass Rate │ Mean Score │
 ├──────────┼────────────────────────────┼───────────┼────────────┤
-│ abc123   │ claude-3-5-sonnet-20241022 │ 92%       │ 4.3        │
+│ abc123   │ claude-sonnet-4-6 │ 92%       │ 4.3        │
 │ def456   │ gpt-4o                     │ 88%       │ 4.1        │
 └──────────┴────────────────────────────┴───────────┴────────────┘
 ```
@@ -240,7 +240,7 @@ Use structured response format:
 {
   "run_id": "abc123",
   "use_case": "newsletter_summaries",
-  "model": "claude-3-5-sonnet-20241022",
+  "model": "claude-sonnet-4-6",
   "summary": {
     "total_cases": 12,
     "passed": 11,
