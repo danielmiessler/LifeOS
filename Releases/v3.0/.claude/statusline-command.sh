@@ -526,16 +526,16 @@ USAGE_EXTRA='\033[38;2;140;90;60m'         # Muted brown for EX
 QUOTE_PRIMARY='\033[38;2;252;211;77m'
 QUOTE_AUTHOR='\033[38;2;180;140;60m'
 
-# PAI Branding header (cyan — high visibility on dark backgrounds)
-PAI_P='\033[38;2;6;182;212m'          # Cyan-500
-PAI_A='\033[38;2;34;211;238m'         # Cyan-400
-PAI_I='\033[38;2;103;232;249m'        # Cyan-300
-PAI_LABEL='\033[38;2;34;211;238m'     # Cyan-400
-PAI_CITY='\033[38;2;103;232;249m'     # Cyan-300
-PAI_STATE='\033[38;2;34;211;238m'     # Cyan-400
-PAI_TIME='\033[38;2;103;232;249m'     # Cyan-300
-PAI_WEATHER='\033[38;2;165;243;252m'  # Cyan-200
-PAI_SESSION='\033[38;2;34;211;238m'   # Cyan-400
+# PAI Branding (matches banner colors)
+PAI_P='\033[38;2;6;182;212m'           # Dark cyan
+PAI_A='\033[38;2;34;211;238m'         # Medium cyan
+PAI_I='\033[38;2;103;232;249m'        # Light cyan
+PAI_LABEL='\033[38;2;100;116;139m'    # Slate for "status line"
+PAI_CITY='\033[38;2;147;197;253m'     # Light blue for city
+PAI_STATE='\033[38;2;100;116;139m'    # Slate for state
+PAI_TIME='\033[38;2;96;165;250m'      # Medium-light blue for time
+PAI_WEATHER='\033[38;2;135;206;235m'  # Sky blue for weather
+PAI_SESSION='\033[38;2;120;135;160m'  # Muted blue-gray for session label
 
 # ─────────────────────────────────────────────────────────────────────────────
 # HELPER FUNCTIONS

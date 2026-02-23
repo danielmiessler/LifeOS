@@ -31,7 +31,6 @@ import { join, basename } from "path";
 const CLAUDE_DIR = join(homedir(), ".claude");
 const MCP_DIR = join(CLAUDE_DIR, "MCPs");
 const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
-const PAI_SETTINGS = join(CLAUDE_DIR, "pai-settings.json");
 const BANNER_SCRIPT = join(CLAUDE_DIR, "skills", "PAI", "Tools", "Banner.ts");
 const VOICE_SERVER = "http://localhost:8888/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
@@ -393,7 +392,7 @@ function cmdWallpaper(args: string[]) {
 
 async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean }) {
   displayBanner();
-  const args = ["claude", "--settings", PAI_SETTINGS];
+  const args = ["claude"];
 
   // Handle MCP configuration
   if (options.mcp) {
@@ -402,6 +401,9 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   }
 
   // Add flags
+  // NOTE: We no longer use --dangerously-skip-permissions by default.
+  // The settings.json permission system (allow/deny/ask) provides proper security.
+  // Use --dangerous flag explicitly if you really need to skip all permission checks.
   if (options.resume) {
     args.push("--resume");
   }
@@ -546,8 +548,9 @@ function cmdMcpList() {
 }
 
 async function cmdPrompt(prompt: string) {
-  // One-shot prompt execution with PAI settings overlay
-  const args = ["claude", "--settings", PAI_SETTINGS, "-p", prompt];
+  // One-shot prompt execution
+  // NOTE: No --dangerously-skip-permissions - rely on settings.json permissions
+  const args = ["claude", "-p", prompt];
 
   process.chdir(CLAUDE_DIR);
 
