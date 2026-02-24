@@ -96,12 +96,15 @@ kanban_json=$(api GET "/projects/$project_id/views/$view_id/tasks")
 
 # Parse: emit backlog tasks with unblock status, write bucket IDs to temp file
 tmp_cfg=$(mktemp)
-trap 'rm -f "$tmp_cfg"' EXIT
+tmp_json=$(mktemp)
+trap 'rm -f "$tmp_cfg" "$tmp_json"' EXIT
+echo "$kanban_json" > "$tmp_json"
 
-task_lines=$(echo "$kanban_json" | python3 - "$tmp_cfg" << 'PYEOF'
+task_lines=$(python3 - "$tmp_cfg" "$tmp_json" << 'PYEOF'
 import json, sys
 
-kanban = json.load(sys.stdin)
+with open(sys.argv[2]) as _f:
+    kanban = json.load(_f)
 cfg_path = sys.argv[1]
 
 # Build task_id -> bucket_id map from kanban state
