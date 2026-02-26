@@ -11,7 +11,9 @@ repos:
           (?x)^(
             Releases/v3\.0/\.claude/MEMORY/WORK/.*|
             Releases/v3\.0/\.claude/skills/Fabric/Patterns/.*|
-            Releases/v3\.0/\.claude/skills/PAI/Components/Algorithm/v0\..*
+            Releases/v3\.0/\.claude/skills/PAI/Components/Algorithm/v0\..*|
+            Releases/v3\.0/\.claude/skills/PAI/SKILL\.md|
+            Releases/v3\.0/\.claude/skills/PAI/THEHOOKSYSTEM\.md
           )$
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
