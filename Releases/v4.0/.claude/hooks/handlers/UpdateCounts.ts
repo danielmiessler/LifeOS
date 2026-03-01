@@ -145,6 +145,19 @@ function countSubdirs(dir: string): number {
 }
 
 /**
+ * Extract the current Algorithm version from CLAUDE.md
+ * CLAUDE.md is the canonical source — it references PAI/Algorithm/vX.Y.Z.md
+ */
+function getAlgorithmVersion(paiDir: string): string {
+  try {
+    const claudeMd = readFileSync(join(paiDir, 'CLAUDE.md'), 'utf-8');
+    const match = claudeMd.match(/Algorithm\/v([\d.]+)\.md/);
+    if (match) return match[1];
+  } catch {}
+  return '—';
+}
+
+/**
  * Get all counts
  */
 function getCounts(paiDir: string): Counts {
@@ -262,9 +275,16 @@ export async function handleUpdateCounts(): Promise<void> {
     // Update counts section
     settings.counts = counts;
 
+    // Update algorithm version from CLAUDE.md (canonical source)
+    const algoVersion = getAlgorithmVersion(paiDir);
+    if (algoVersion !== '—') {
+      settings.pai = settings.pai || {};
+      settings.pai.algorithmVersion = algoVersion;
+    }
+
     // Write back
     writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
-    console.error(`[UpdateCounts] Updated: SK:${counts.skills} WF:${counts.workflows} HK:${counts.hooks} SIG:${counts.signals} F:${counts.files} W:${counts.work} SESS:${counts.sessions} RES:${counts.research} RAT:${counts.ratings}`);
+    console.error(`[UpdateCounts] Updated: SK:${counts.skills} WF:${counts.workflows} HK:${counts.hooks} SIG:${counts.signals} F:${counts.files} W:${counts.work} SESS:${counts.sessions} RES:${counts.research} RAT:${counts.ratings} ALG:${algoVersion}`);
   } catch (error) {
     console.error('[UpdateCounts] Failed to update counts:', error);
     // Non-fatal - don't throw, let other handlers continue
