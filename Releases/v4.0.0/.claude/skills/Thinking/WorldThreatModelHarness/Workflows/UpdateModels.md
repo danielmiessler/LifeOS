@@ -16,7 +16,7 @@ Refresh or create world model documents using deep research and user-provided an
 
 ## Prerequisites
 
-- Model template at `~/.claude/skills/WorldThreatModelHarness/ModelTemplate.md`
+- Model template at `$PAI_DIR/skills/WorldThreatModelHarness/ModelTemplate.md`
 - Research skill available for web research
 
 ## Workflow Steps
@@ -24,7 +24,7 @@ Refresh or create world model documents using deep research and user-provided an
 ### Step 0: Check Existing State
 
 ```
-Read ~/.claude/MEMORY/RESEARCH/WorldModels/INDEX.md (if exists)
+Read $PAI_DIR/MEMORY/RESEARCH/WorldModels/INDEX.md (if exists)
 Inventory which models exist and their last_updated dates
 Determine: full creation vs. targeted update
 ```
@@ -79,11 +79,11 @@ For each model, following `ModelTemplate.md`:
 4. Include specific data points, named entities, cited reasoning
 5. Write Wildcards section with probability estimates
 
-Save to: `~/.claude/MEMORY/RESEARCH/WorldModels/{horizon}.md`
+Save to: `$PAI_DIR/MEMORY/RESEARCH/WorldModels/{horizon}.md`
 
 ### Step 5: Update INDEX
 
-Write/update `~/.claude/MEMORY/RESEARCH/WorldModels/INDEX.md`:
+Write/update `$PAI_DIR/MEMORY/RESEARCH/WorldModels/INDEX.md`:
 
 ```markdown
 # World Threat Models — Index

@@ -32,7 +32,7 @@ All workflows support three execution tiers:
 
 ## World Model Storage
 
-Models are stored at: `~/.claude/MEMORY/RESEARCH/WorldModels/`
+Models are stored at: `$PAI_DIR/MEMORY/RESEARCH/WorldModels/`
 
 | File | Horizon |
 |------|---------|
@@ -77,4 +77,4 @@ curl -s -X POST http://localhost:8888/notify \
 ## Customization Check
 
 Before execution, check for user customizations at:
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/WorldThreatModelHarness/`
+`$PAI_DIR/PAI/USER/SKILLCUSTOMIZATIONS/WorldThreatModelHarness/`

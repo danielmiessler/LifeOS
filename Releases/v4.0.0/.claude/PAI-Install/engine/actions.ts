@@ -5,7 +5,7 @@
  */
 
 import { execSync, spawn } from "child_process";
-import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, symlinkSync, unlinkSync, chmodSync, lstatSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, symlinkSync, unlinkSync, chmodSync, lstatSync, cpSync, rmSync } from "fs";
 import { homedir } from "os";
 import { join, basename } from "path";
 import type { InstallState, EngineEventHandler, DetectionResult } from "./types";
@@ -106,6 +106,92 @@ function tryExec(cmd: string, timeout = 30000): string | null {
     return execSync(cmd, { timeout, stdio: ["pipe", "pipe", "pipe"] }).toString().trim();
   } catch {
     return null;
+  }
+}
+
+// ─── User Context Migration ─────────────────────────────────────
+// PR #846: During the v2.5 → v4.0 transition, user context files
+// lived at skills/PAI/USER/ (or skills/CORE/USER/ in v2.4).
+// In v4.0, user context moved to PAI/USER/ and CONTEXT_ROUTING.md
+// points there. But the installer never migrated existing files,
+// leaving user data stranded at the old path while the new path
+// stayed empty. This function copies user files to the canonical
+// location and replaces the legacy directory with a symlink so
+// both routing systems resolve to the same place.
+
+/**
+ * Recursively copy files from src to dst, skipping files that
+ * already exist at the destination. Only copies regular files.
+ */
+function copyMissing(src: string, dst: string): number {
+  let copied = 0;
+  if (!existsSync(src)) return copied;
+
+  for (const entry of readdirSync(src, { withFileTypes: true })) {
+    const srcPath = join(src, entry.name);
+    const dstPath = join(dst, entry.name);
+
+    if (entry.isDirectory()) {
+      if (!existsSync(dstPath)) mkdirSync(dstPath, { recursive: true });
+      copied += copyMissing(srcPath, dstPath);
+    } else if (entry.isFile()) {
+      if (!existsSync(dstPath)) {
+        try {
+          cpSync(srcPath, dstPath);
+          copied++;
+        } catch {
+          // Skip files that can't be copied (permission errors)
+        }
+      }
+    }
+  }
+  return copied;
+}
+
+/**
+ * Migrate user context from legacy skills/PAI/USER or skills/CORE/USER
+ * to the canonical PAI/USER location. Replaces the legacy directory
+ * with a symlink so the skill's relative USER/ paths still resolve.
+ */
+async function migrateUserContext(
+  paiDir: string,
+  emit: EngineEventHandler
+): Promise<void> {
+  const newUserDir = join(paiDir, "PAI", "USER");
+  if (!existsSync(newUserDir)) return; // PAI/USER/ not set up yet
+
+  const legacyPaths = [
+    join(paiDir, "skills", "PAI", "USER"),   // v2.5–v3.0
+    join(paiDir, "skills", "CORE", "USER"),  // v2.4 and earlier
+  ];
+
+  for (const legacyDir of legacyPaths) {
+    if (!existsSync(legacyDir)) continue;
+
+    // Skip if already a symlink (migration already ran)
+    try {
+      if (lstatSync(legacyDir).isSymbolicLink()) continue;
+    } catch {
+      continue;
+    }
+
+    const label = legacyDir.includes("CORE") ? "skills/CORE/USER" : "skills/PAI/USER";
+    await emit({ event: "progress", step: "repository", percent: 70, detail: `Migrating user context from ${label}...` });
+
+    const copied = copyMissing(legacyDir, newUserDir);
+    if (copied > 0) {
+      await emit({ event: "message", content: `Migrated ${copied} user context files from ${label} to PAI/USER.` });
+    }
+
+    // Replace legacy dir with symlink so skill-relative paths still work
+    try {
+      rmSync(legacyDir, { recursive: true });
+      // Symlink target is relative: from skills/PAI/ or skills/CORE/ → ../../PAI/USER
+      symlinkSync(join("..", "..", "PAI", "USER"), legacyDir);
+      await emit({ event: "message", content: `Replaced ${label} with symlink to PAI/USER.` });
+    } catch {
+      await emit({ event: "message", content: `Could not replace ${label} with symlink. User files were copied but old directory remains.` });
+    }
   }
 }
 
@@ -399,6 +485,11 @@ export async function runRepository(
     if (!existsSync(fullPath)) {
       mkdirSync(fullPath, { recursive: true });
     }
+  }
+
+  // Migrate user context from v2.5/v3.0 location to v4.x canonical location
+  if (state.installType === "upgrade") {
+    await migrateUserContext(paiDir, emit);
   }
 
   await emit({ event: "progress", step: "repository", percent: 100, detail: "Repository ready" });
