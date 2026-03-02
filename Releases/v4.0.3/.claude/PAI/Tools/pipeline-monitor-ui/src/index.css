@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  /* Tokyo Night Day - Light Theme */
+  --color-background: #ffffff;
+  --color-background-secondary: #f7f8fa;
+  --color-background-tertiary: #f0f2f5;
+
+  --color-foreground: #1a1b26;
+  --color-foreground-secondary: #3b4261;
+  --color-foreground-muted: #6b7089;
+
+  --color-primary: #2e7de9;
+  --color-primary-light: #93c5fd;
+  --color-accent: #9854f1;
+  --color-success: #587539;
+  --color-warning: #8f5e15;
+  --color-destructive: #d1374a;
+
+  --color-border: #d5d8de;
+  --color-border-focus: #2e7de9;
+
+  /* Status colors */
+  --color-status-pending: #94a3b8;
+  --color-status-running: #2e7de9;
+  --color-status-completed: #22c55e;
+  --color-status-failed: #ef4444;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    margin: 0;
+    min-height: 100vh;
+  }
+}
+
+/* Custom animations */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(46, 125, 233, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(46, 125, 233, 0); }
+}
+
+@keyframes slide-in {
+  from { transform: translateX(-10px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}

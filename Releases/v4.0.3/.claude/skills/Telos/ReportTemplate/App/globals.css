@@ -1,0 +1,558 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Fonts - Matthew Butterick's Practical Typography */
+@font-face {
+  font-family: 'Concourse';
+  src: url('/fonts/concourse_3_regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Concourse';
+  src: url('/fonts/concourse_3_bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Concourse Medium';
+  src: url('/fonts/concourse_4_regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Concourse Medium';
+  src: url('/fonts/concourse_4_bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Valkyrie';
+  src: url('/fonts/valkyrie_a_regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Valkyrie';
+  src: url('/fonts/valkyrie_a_bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Valkyrie';
+  src: url('/fonts/valkyrie_a_italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Advocate';
+  src: url('/fonts/advocate_34_narr_reg.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Advocate Wide';
+  src: url('/fonts/advocate_54_wide_reg.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Heliotrope';
+  src: url('/fonts/heliotrope_3_regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Heliotrope Caps';
+  src: url('/fonts/heliotrope_3_caps_regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* Dark Theme - Super Dark Blue Background */
+  --background: #0B0D14;
+  --background-secondary: #12141D;
+  --background-tertiary: #191C26;
+  --background-elevated: #20232E;
+
+  /* Text - Light on Dark */
+  --foreground: #F5F5F7;
+  --muted: #A1A1A6;
+  --muted-dark: #6B6B70;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-emphasis: rgba(255, 255, 255, 0.2);
+
+  /* Accents - Brightened for dark mode */
+  --primary: #4A9EF7;         /* Brighter blue */
+  --primary-glow: rgba(74, 158, 247, 0.3);
+  --accent: #B47AFF;          /* Brighter purple */
+  --accent-glow: rgba(180, 122, 255, 0.3);
+  --success: #4ADE80;         /* Brighter green */
+  --warning: #FBBF24;         /* Brighter amber */
+  --destructive: #F87171;     /* Brighter red */
+
+  /* Section backgrounds */
+  --section-bg: #12141D;
+  --callout-bg: rgba(74, 158, 247, 0.1);
+
+  /* Font families */
+  --font-display: 'Advocate Wide', 'Advocate', sans-serif;
+  --font-heading: 'Concourse Medium', 'Concourse', sans-serif;
+  --font-body: 'Valkyrie', Georgia, serif;
+  --font-accent: 'Heliotrope Caps', 'Heliotrope', sans-serif;
+  --font-sans: 'Concourse', system-ui, sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--background);
+  color: var(--foreground);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography utilities */
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-accent {
+  font-family: var(--font-accent);
+}
+
+/* McKinsey-style report layout */
+.report-container {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Section styling */
+.report-section {
+  margin-bottom: 3rem;
+  page-break-inside: avoid;
+}
+
+.report-section h2 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--primary);
+}
+
+.report-section h3 {
+  font-family: var(--font-heading);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 1rem;
+}
+
+/* Exhibit styling */
+.exhibit {
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.exhibit-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.exhibit-number {
+  font-family: var(--font-accent);
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.exhibit-title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.exhibit-source {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+/* Key takeaway callout */
+.callout {
+  background: var(--callout-bg);
+  border-left: 4px solid var(--primary);
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+  border-radius: 0 0.5rem 0.5rem 0;
+}
+
+.callout-label {
+  font-family: var(--font-accent);
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 0.5rem;
+}
+
+.callout-content {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--foreground);
+}
+
+/* Quote block for interview evidence */
+.quote-block {
+  position: relative;
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 0;
+  background: linear-gradient(135deg, var(--background-secondary) 0%, var(--background-tertiary) 100%);
+  border-radius: 0.5rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.quote-block::before {
+  content: '"';
+  position: absolute;
+  top: 0.5rem;
+  left: 0.75rem;
+  font-size: 3rem;
+  color: var(--primary);
+  opacity: 0.5;
+  font-family: Georgia, serif;
+  line-height: 1;
+}
+
+.quote-text {
+  font-style: italic;
+  color: var(--foreground);
+  font-size: 1.0625rem;
+  line-height: 1.7;
+}
+
+.quote-attribution {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+/* Severity badges */
+.severity-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.severity-critical {
+  background: rgba(248, 113, 113, 0.15);
+  color: var(--destructive);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.severity-high {
+  background: rgba(251, 146, 60, 0.15);
+  color: #FB923C;
+  border: 1px solid rgba(251, 146, 60, 0.3);
+}
+
+.severity-medium {
+  background: rgba(251, 191, 36, 0.15);
+  color: var(--warning);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.severity-low {
+  background: rgba(74, 222, 128, 0.15);
+  color: var(--success);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+/* Finding card */
+.finding-card {
+  background: var(--background-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.finding-card:hover {
+  border-color: var(--border-emphasis);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.finding-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.finding-title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--foreground);
+  font-size: 1.0625rem;
+}
+
+.finding-evidence {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  margin-top: 0.5rem;
+}
+
+/* Timeline/Roadmap */
+.timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(180deg, var(--primary) 0%, var(--accent) 100%);
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.5rem;
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.625rem;
+  top: 0.25rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid var(--background);
+  box-shadow: 0 0 0 2px var(--primary), 0 0 12px var(--primary-glow);
+}
+
+.timeline-phase {
+  font-family: var(--font-accent);
+  font-weight: 600;
+  color: var(--primary);
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.timeline-title {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  color: var(--foreground);
+  margin-top: 0.25rem;
+}
+
+.timeline-description {
+  color: var(--muted);
+  font-size: 0.9375rem;
+  margin-top: 0.25rem;
+}
+
+/* Cover page */
+.cover-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 4rem;
+  page-break-after: always;
+  background: linear-gradient(180deg, var(--background) 0%, var(--background-secondary) 100%);
+}
+
+.cover-classification {
+  font-family: var(--font-accent);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--destructive);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  margin-bottom: 4rem;
+}
+
+.cover-title {
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-weight: 400;
+  color: var(--foreground);
+  line-height: 1.2;
+  margin-bottom: 1rem;
+}
+
+.cover-subtitle {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  color: var(--muted);
+  margin-bottom: 4rem;
+}
+
+.cover-meta {
+  margin-top: auto;
+  padding-top: 4rem;
+  border-top: 1px solid var(--border);
+}
+
+.cover-date {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+/* Glow effects for emphasis */
+.glow-primary {
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+/* Print styles - switch to light for printing */
+@media print {
+  :root {
+    --background: #ffffff;
+    --background-secondary: #f8fafc;
+    --background-tertiary: #f1f5f9;
+    --background-elevated: #e2e8f0;
+    --foreground: #1a1b26;
+    --muted: #565a6e;
+    --muted-dark: #94a3b8;
+    --border: #e5e7eb;
+    --border-subtle: #f1f5f9;
+    --border-emphasis: #cbd5e1;
+    --primary: #2563eb;
+    --accent: #7c3aed;
+    --success: #16a34a;
+    --warning: #d97706;
+    --destructive: #dc2626;
+    --section-bg: #f8fafc;
+    --callout-bg: #eff6ff;
+  }
+
+  body {
+    font-size: 11pt;
+    background: white;
+    color: black;
+  }
+
+  .report-container {
+    max-width: none;
+    padding: 0;
+  }
+
+  .report-section {
+    page-break-inside: avoid;
+  }
+
+  .cover-page {
+    page-break-after: always;
+    background: white;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .callout,
+  .exhibit,
+  .finding-card,
+  .quote-block {
+    break-inside: avoid;
+  }
+
+  a {
+    text-decoration: none;
+    color: var(--foreground);
+  }
+
+  .severity-critical,
+  .severity-high,
+  .severity-medium,
+  .severity-low {
+    background: transparent;
+    border-color: currentColor;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .report-container {
+    padding: 1rem;
+  }
+
+  .cover-page {
+    padding: 2rem;
+  }
+
+  .cover-title {
+    font-size: 2rem;
+  }
+
+  .cover-subtitle {
+    font-size: 1.25rem;
+  }
+}

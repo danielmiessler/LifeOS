@@ -1,0 +1,23 @@
+{
+  "last_check_timestamp": "2026-02-13T07:42:00Z",
+  "channels": {
+    "Indy Dev Dan": {
+      "last_video_id": "RpUTF_U4kiw",
+      "last_video_title": "Claude Code Multi-Agent Orchestration with Opus 4.6, Tmux and Agent Sandboxes",
+      "last_checked": "2026-02-13T07:42:00Z",
+      "seen_videos": ["RpUTF_U4kiw", "4_2j5wgt_ds", "3_mwKbYvbUg", "u5GkG71PkR0", "-WBHNFAB0OE", "VqDs46A8pqE", "fop_yxV-mPo", "u-SQ0Jsv4mI"]
+    },
+    "AI Jason": {
+      "last_video_id": "S2WTTMXYcYY",
+      "last_video_title": "Agent teams VS sub agents",
+      "last_checked": "2026-02-13T07:42:00Z",
+      "seen_videos": ["S2WTTMXYcYY", "fG95XsBO5U4", "oL6bLQOXwAY", "RYnxU_MTVvU", "UuyaeSLRTkE"]
+    },
+    "R Amjad": {
+      "last_video_id": "DWiYdXrxSwg",
+      "last_video_title": "Anthropic Just Dropped Agent Swarms",
+      "last_checked": "2026-02-13T07:42:00Z",
+      "seen_videos": ["DWiYdXrxSwg", "6omInQipcag", "aF4QAHbNDrA", "NmKdYlODC24", "sy65ARFI9Bg"]
+    }
+  }
+}

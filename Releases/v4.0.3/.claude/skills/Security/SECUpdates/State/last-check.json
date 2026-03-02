@@ -1,0 +1,35 @@
+{
+  "last_check_timestamp": "2026-01-23T21:45:00.000Z",
+  "sources": {
+    "tldrsec": {
+      "last_hash": "312-2026-01-23-update",
+      "last_checked": "2026-01-23T21:45:00.000Z",
+      "last_title": "tl;dr sec #312 - AI Exploit Generation"
+    },
+    "nosecurity": {
+      "last_hash": "nosec-2026-01-23-update",
+      "last_checked": "2026-01-23T21:45:00.000Z",
+      "last_title": "Under Armour 72M Breach"
+    },
+    "krebsonsecurity": {
+      "last_hash": "krebs-2026-01-23-update",
+      "last_checked": "2026-01-23T21:45:00.000Z",
+      "last_title": "Kimwolf Botnet"
+    },
+    "thehackernews": {
+      "last_hash": "thn-2026-01-23-update",
+      "last_checked": "2026-01-23T21:45:00.000Z",
+      "last_title": "Fortinet SSO Bypass Active"
+    },
+    "schneier": {
+      "last_hash": "schneier-2026-01-23-update",
+      "last_checked": "2026-01-23T21:45:00.000Z",
+      "last_title": "AIs Exploiting Vulnerabilities"
+    },
+    "riskybusiness": {
+      "last_hash": "risky-2026-01-23-update",
+      "last_checked": "2026-01-23T21:45:00.000Z",
+      "last_title": "Fortinet Exploitation Continues"
+    }
+  }
+}

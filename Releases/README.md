@@ -20,7 +20,20 @@ This is the fastest way to get PAI running. Copy the directory, run the wizard, 
 
 ## Available Releases
 
-### v4.0.2 — Bug Fix Patch (Current)
+### v4.0.3 — Community PR Patch (Current)
+
+4 community-contributed fixes from open PRs.
+
+- Inference: JSON parsing now handles arrays `[]` alongside objects `{}`
+- Documentation: removed 29 dead references from CONTEXT_ROUTING.md
+- Portability: WorldThreatModelHarness uses `$PAI_DIR` instead of hardcoded path
+- Installer: migrates user context from v2.5/v3.0 paths on upgrade
+
+**[Get v4.0.3 →](v4.0.3/)**
+
+---
+
+### v4.0.2 — Bug Fix Patch
 
 13 surgical fixes — no new features, no breaking changes.
 
@@ -121,7 +134,7 @@ The release that introduced persistent learning and sentiment capture.
 ```bash
 # 1. Clone the repo
 git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
-cd Personal_AI_Infrastructure/Releases/v4.0.2
+cd Personal_AI_Infrastructure/Releases/v4.0.3
 
 # 2. Copy the release and run the installer
 cp -r .claude ~/ && cd ~/.claude && bash install.sh

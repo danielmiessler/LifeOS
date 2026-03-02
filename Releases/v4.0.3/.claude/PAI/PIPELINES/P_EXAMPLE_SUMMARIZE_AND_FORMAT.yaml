@@ -1,0 +1,9 @@
+name: P_EXAMPLE_SUMMARIZE_AND_FORMAT
+description: >
+  Example pipeline that summarizes text content and formats it as structured markdown.
+  Demonstrates the pipe model: A_EXAMPLE_SUMMARIZE produces a summary,
+  which flows into A_EXAMPLE_FORMAT for structured formatting.
+
+actions:
+  - A_EXAMPLE_SUMMARIZE
+  - A_EXAMPLE_FORMAT
