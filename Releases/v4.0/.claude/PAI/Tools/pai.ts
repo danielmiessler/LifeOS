@@ -423,7 +423,7 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   // Launch Claude
   const proc = spawn(args, {
     stdio: ["inherit", "inherit", "inherit"],
-    env: { ...process.env },
+    env: { ...process.env, PAI_ACTIVE: "1" },
   });
 
   // Wait for Claude to exit

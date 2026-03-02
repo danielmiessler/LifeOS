@@ -67,8 +67,13 @@ DA_NAME="${DA_NAME:-Assistant}"
 PAI_VERSION=$(jq -r '.pai.version // "—"' "$SETTINGS_FILE" 2>/dev/null)
 PAI_VERSION="${PAI_VERSION:-—}"
 
-# Get Algorithm version from settings.json (single source of truth)
-ALGO_VERSION=$(jq -r '.pai.algorithmVersion // "—"' "$SETTINGS_FILE" 2>/dev/null)
+# Get Algorithm version from LATEST file (single source of truth)
+ALGO_LATEST_FILE="$PAI_DIR/PAI/Algorithm/LATEST"
+if [ -f "$ALGO_LATEST_FILE" ]; then
+    ALGO_VERSION=$(cat "$ALGO_LATEST_FILE" 2>/dev/null | tr -d '[:space:]' | sed 's/^v//i')
+else
+    ALGO_VERSION=$(jq -r '.pai.algorithmVersion // "—"' "$SETTINGS_FILE" 2>/dev/null)
+fi
 ALGO_VERSION="${ALGO_VERSION:-—}"
 
 # Extract all data from JSON in single jq call

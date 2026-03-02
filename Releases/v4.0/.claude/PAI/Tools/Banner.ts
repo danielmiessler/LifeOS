@@ -126,6 +126,14 @@ function getStats(): SystemStats {
     repoUrl = settings.pai?.repoUrl || repoUrl;
   } catch {}
 
+  // Read algorithm version from LATEST file (authoritative source)
+  try {
+    const latestFile = join(CLAUDE_DIR, "PAI", "Algorithm", "LATEST");
+    if (existsSync(latestFile)) {
+      algorithmVersion = readFileSync(latestFile, "utf-8").trim().replace(/^v/i, '');
+    }
+  } catch {}
+
   // Replace {name} placeholder in catchphrase
   catchphrase = catchphrase.replace(/\{name\}/gi, name);
 
@@ -142,13 +150,24 @@ function getStats(): SystemStats {
       learnings = settings.counts.signals || 0;
       userFiles = settings.counts.files || 0;
     }
-  } catch {
-    // Fallback to reasonable defaults if settings.json is missing or malformed
-    skills = 65;
-    workflows = 339;
-    hooks = 18;
-    learnings = 3000;
-    userFiles = 172;
+  } catch {}
+
+  // If counts are empty (no StopOrchestrator run yet), use GetCounts for live data
+  if (skills === 0 && workflows === 0) {
+    try {
+      const countsScript = join(CLAUDE_DIR, "PAI", "Tools", "GetCounts.ts");
+      if (existsSync(countsScript)) {
+        const result = spawnSync("bun", [countsScript], { encoding: "utf-8" });
+        if (result.stdout) {
+          const counts = JSON.parse(result.stdout.trim());
+          skills = counts.skills || 0;
+          workflows = counts.workflows || 0;
+          hooks = counts.hooks || 0;
+          learnings = counts.signals || 0;
+          userFiles = counts.files || 0;
+        }
+      }
+    } catch {}
   }
 
   try {
