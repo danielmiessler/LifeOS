@@ -34,10 +34,8 @@
 
 <!-- Content -->
 [![Get Started](https://img.shields.io/badge/🚀_Get_Started-Install-22C55E?style=flat)](#-installation)
-[![Release v2.5](https://img.shields.io/badge/📦_Release-v2.5-8B5CF6?style=flat)](Releases/v2.5/)
-[![Packs](https://img.shields.io/badge/📦_Packs-23-8B5CF6?style=flat)](Packs/)
-[![Bundles](https://img.shields.io/badge/🎁_Bundles-1-F97316?style=flat)](Bundles/)
-[![Contributors](https://img.shields.io/github/contributors/danielmiessler/PAI?style=flat&logo=githubsponsors&logoColor=white&label=Contributors&color=EC4899)](https://github.com/danielmiessler/PAI/graphs/contributors)
+[![Release v4.0.1](https://img.shields.io/badge/📦_Release-v4.0.1-8B5CF6?style=flat)](Releases/v4.0.1/)
+[![Contributors](https://img.shields.io/github/contributors/danielmiessler/Personal_AI_Infrastructure?style=flat&logo=githubsponsors&logoColor=white&label=Contributors&color=EC4899)](https://github.com/danielmiessler/Personal_AI_Infrastructure/graphs/contributors)
 
 <!-- Tech Stack -->
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude-D4A574?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
@@ -64,9 +62,9 @@
 </div>
 
 > [!IMPORTANT]
-> **PAI v2.5.0 Released** — Think Deeper, Execute Faster: Two-Pass Capability Selection, Thinking Tools with Justify-Exclusion, and Parallel-by-Default Execution.
+> **PAI v4.0.1 Released** — Upgrade path documentation, configurable temperature units, FAQ fixes. Built on v4.0.0 Lean and Mean.
 >
-> **[Release notes →](Releases/v2.5/README.md)** | **[GitHub Release →](https://github.com/danielmiessler/PAI/releases/tag/v2.5.0)**
+> **[Release notes →](Releases/v4.0.1/README.md)** | **[v4.0.0 notes →](Releases/v4.0.0/README.md)**
 
 <div align="center">
 
@@ -338,7 +336,12 @@ Rich tab titles and pane management. Dynamic status lines show learning signals,
 > [!CAUTION]
 > **Project in Active Development** — PAI is evolving rapidly. Expect breaking changes, restructuring, and frequent updates. We are working on stable and development branches, but currently it's all combined.
 
-### Which Install Path Should I Use?
+### Fresh Install
+
+```bash
+# Clone the repo
+git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
+cd Personal_AI_Infrastructure/Releases/v4.0.1
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -357,7 +360,12 @@ Rich tab titles and pane management. Dynamic status lines show learning signals,
 └─────────────────────────────────────────────────────────────────┘
 ```
 
----
+**The installer will:**
+- Detect your system and install prerequisites (Bun, Git, Claude Code)
+- Ask for your name, AI assistant name, timezone, and temperature unit preference
+- Clone/configure the PAI repository into `~/.claude/`
+- Set up voice features with ElevenLabs (optional)
+- Configure your shell alias and verify the installation
 
 ### Option 1: Full Release Install (Recommended)
 
@@ -548,6 +556,33 @@ cd PAI/Bundles/Official && bun run install.ts
 
 [**Learn more about bundles →**](Bundles/)
 
+### Upgrading from a Previous Version
+
+```bash
+# 1. Back up your current installation
+cp -r ~/.claude ~/.claude-backup-$(date +%Y%m%d)
+
+# 2. Clone and copy the new release over your installation
+git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
+cd Personal_AI_Infrastructure/Releases/v4.0.1
+cp -r .claude ~/
+
+# 3. Run the installer (detects existing installation, preserves your data)
+cd ~/.claude && bash install.sh
+
+# 4. Rebuild your CLAUDE.md
+bun ~/.claude/PAI/Tools/BuildCLAUDE.ts
+```
+
+> [!TIP]
+> The installer **auto-detects** existing installations. It preserves your `USER/` files, merges `settings.json` (only updating installer-managed fields like identity and version), and never overwrites your hooks, statusline, or custom configuration.
+
+**Post-upgrade checklist:**
+- [ ] Verify your identity in `settings.json` (name, AI name, timezone)
+- [ ] Confirm the statusline displays correctly
+- [ ] Test voice notifications (if enabled)
+- [ ] Run a simple prompt to confirm PAI responds correctly
+
 ---
 
 ## ❓ FAQ
@@ -589,7 +624,9 @@ The plugin system offers building blocks. PAI offers a complete system.
 
 ### Is PAI only for Claude Code?
 
-No. PAI packs are designed to be platform-agnostic. While the examples use Claude Code, the packs work with OpenCode, Cursor, Windsurf, and custom systems. The code is TypeScript, Python, and Bash—the concepts are universal.
+PAI is Claude Code native. We believe Claude Code's hook system, context management, and agentic capabilities make it the best platform for personal AI infrastructure, and PAI is designed to take full advantage of those features.
+
+That said, PAI's concepts (skills, memory, algorithms) are universal, and the code is TypeScript and Bash — so community members are welcome to adapt it for other platforms.
 
 ### How is this different from fabric?
 
@@ -601,10 +638,13 @@ PAI is infrastructure for *how your DA operates*—memory, skills, routing, cont
 
 The modular design makes recovery easy:
 
-- **Packs are isolated** — Breaking one doesn't affect others
-- **History is preserved** — Your DA's memory survives mistakes
+- **Back up first** — Before any upgrade: `cp -r ~/.claude ~/.claude-backup-$(date +%Y%m%d)`
+- **USER/ is safe** — Your customizations in `USER/` are never touched by the installer or upgrades
+- **Settings merge, not overwrite** — The installer only updates identity and version fields; your hooks, statusline, and custom config are preserved
 - **Git-backed** — Version control everything, roll back when needed
+- **History is preserved** — Your DA's memory survives mistakes
 - **DA can fix it** — Your DA helped build it, it can help repair it
+- **Re-install** — Run the installer again; it detects existing installations and merges intelligently
 
 ---
 
@@ -701,6 +741,30 @@ MIT License - see [LICENSE](LICENSE) for details.
 <summary><strong>📜 Update History</strong></summary>
 
 <br/>
+
+**v4.0.1 (2026-02-28) — Upgrade Path & Preferences**
+- Upgrade documentation with backup, merge, and post-upgrade checklist
+- Configurable temperature unit (Fahrenheit/Celsius) in statusline and installer
+- FAQ fixes: removed stale Python reference, improved recovery guidance
+- [Release Notes](Releases/v4.0.1/README.md)
+
+**v4.0.0 (2026-02-27) — Lean and Mean**
+- 38 flat skill directories → 12 hierarchical categories (-68% top-level dirs)
+- Dead systems removed: Components/, DocRebuild, RebuildSkill
+- CLAUDE.md template system with BuildCLAUDE.ts + SessionStart hook
+- Algorithm v3.5.0 (up from v1.4.0)
+- Comprehensive security sanitization (33+ files cleaned)
+- All version refs updated, Electron crash fix
+- 63 skills, 21 hooks, 180 workflows, 14 agents
+- [Release Notes](Releases/v4.0.0/README.md)
+
+**v3.0.0 (2026-02-15) — The Algorithm Matures**
+- Algorithm v1.4.0 with constraint extraction and build drift prevention
+- Persistent PRDs and parallel loop execution
+- Full installer with GUI wizard
+- 10 new skills, agent teams/swarm, voice personality system
+- 38 skills, 20 hooks, 162 workflows
+- [Release Notes](Releases/v3.0/README.md)
 
 **v2.5.0 (2026-01-30) — Think Deeper, Execute Faster**
 - Two-Pass Capability Selection: Hook hints validated against ISC in THINK phase

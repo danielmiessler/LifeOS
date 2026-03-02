@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Parser</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>Content Parser</h1>
+            <p class="subtitle">Extract structured data from URLs for newsletter database</p>
+        </header>
+
+        <!-- Input Section -->
+        <section class="input-section card">
+            <h2>Parse Content</h2>
+            <div class="form-group">
+                <label for="url-input">Enter URLs (one per line)</label>
+                <textarea
+                    id="url-input"
+                    class="url-input"
+                    placeholder="https://example.com/article&#10;https://youtube.com/watch?v=abc123&#10;https://twitter.com/user/status/123"
+                    rows="6"
+                ></textarea>
+            </div>
+            <div class="button-group">
+                <button id="parse-btn" class="btn-primary">
+                    <span class="btn-icon">⚡</span>
+                    Parse URLs
+                </button>
+                <button id="load-btn" class="btn-secondary">
+                    <span class="btn-icon">📂</span>
+                    Load Existing Results
+                </button>
+            </div>
+        </section>
+
+        <!-- Progress Section -->
+        <section id="progress-section" class="progress-section card" style="display: none;">
+            <h2>Parsing Progress</h2>
+            <div id="progress-container" class="progress-container">
+                <!-- Progress items will be dynamically added here -->
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section id="results-section" class="results-section card" style="display: none;">
+            <div class="results-header">
+                <h2>Results</h2>
+                <div class="results-stats">
+                    <span id="success-count" class="stat success">✓ 0 successful</span>
+                    <span id="failed-count" class="stat failed">✗ 0 failed</span>
+                </div>
+            </div>
+            <div id="results-container" class="results-container">
+                <!-- Result items will be dynamically added here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="parser.js"></script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <title>PAI Installer v4.0</title>
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="icon" href="/assets/pai-icon.png" type="image/png">
+</head>
+<body>
+
+  <!-- Welcome Overlay -->
+  <div id="welcome-overlay" class="welcome-overlay">
+    <img src="/assets/pai-logo.png" alt="PAI" class="welcome-logo">
+    <div class="welcome-title">PAI Installer</div>
+    <div class="welcome-subtitle">Personal AI Infrastructure v4.0</div>
+    <button class="welcome-start" onclick="startInstall()">Begin Installation</button>
+  </div>
+
+  <!-- App Shell -->
+  <div id="app">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-brand">
+        <img src="/assets/pai-icon.png" alt="PAI" class="header-logo">
+        <span class="header-title">PAI Installer</span>
+        <span class="header-version">v4.0</span>
+      </div>
+      <div class="header-progress">
+        <span id="progress-text">Step 0/8</span>
+        <div class="progress-bar-container">
+          <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <div class="sidebar-label">Install Steps</div>
+      <ul class="step-list" id="step-list"></ul>
+      <div class="sidebar-footer">
+        <div class="sidebar-progress-text" id="sidebar-progress-text">Progress: 0%</div>
+        <div class="sidebar-progress-bar">
+          <div class="sidebar-progress-fill" id="sidebar-progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+      <!-- Chat Messages -->
+      <div class="chat-container" id="chat-messages"></div>
+
+    </main>
+
+  </div>
+
+  <audio id="welcome-audio" src="/assets/welcome.wav" autoplay preload="auto"></audio>
+  <script src="/app.js"></script>
+</body>
+</html>

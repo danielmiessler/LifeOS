@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Test</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #1a1b26;
+            color: #c0caf5;
+        }
+        .result-item {
+            background: #24283b;
+            border: 1px solid #414868;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #9d7cd8;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Simple Load Test</h1>
+    <button id="loadBtn">Load JSON Files</button>
+    <div id="results"></div>
+
+    <script>
+        document.getElementById('loadBtn').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Loading...</p>';
+
+            try {
+                const indexResp = await fetch('output/index.json');
+                const files = await indexResp.json();
+
+                resultsDiv.innerHTML = '<p>Found ' + files.length + ' files</p>';
+
+                for (const file of files) {
+                    const resp = await fetch('output/' + file);
+                    const data = await resp.json();
+
+                    const item = document.createElement('div');
+                    item.className = 'result-item';
+                    item.innerHTML = '<h3>' + data.content.title + '</h3><p>Type: ' + data.content.type + '</p>';
+                    resultsDiv.appendChild(item);
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>

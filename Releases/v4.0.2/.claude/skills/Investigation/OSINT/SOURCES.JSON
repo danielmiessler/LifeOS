@@ -1,0 +1,2567 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-02-23",
+  "description": "Comprehensive OSINT source collection for the PAI OSINT skill, synthesized from 6 parallel research agents",
+  "total_sources": 279,
+  "categories": {
+    "github_repos": {
+      "description": "Major GitHub repositories for OSINT tools, frameworks, and curated lists",
+      "count": 43,
+      "sources": [
+        {
+          "name": "jivoi/awesome-osint",
+          "url": "https://github.com/jivoi/awesome-osint",
+          "type": "github",
+          "cost": "free",
+          "description": "Definitive curated list of OSINT tools and resources with 24.9K stars. The most widely referenced OSINT meta-list on GitHub.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "lockfale/OSINT-Framework",
+          "url": "https://github.com/lockfale/OSINT-Framework",
+          "type": "github",
+          "cost": "free",
+          "description": "Interactive tree-based OSINT tool directory with 10.8K stars. Powers the osintframework.com website with D3.js visualization.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "hslatman/awesome-threat-intelligence",
+          "url": "https://github.com/hslatman/awesome-threat-intelligence",
+          "type": "github",
+          "cost": "free",
+          "description": "Curated collection of threat intelligence resources, tools, and feeds with 9.8K stars.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "cipher387/osint_stuff_tool_collection",
+          "url": "https://github.com/cipher387/osint_stuff_tool_collection",
+          "type": "github",
+          "cost": "free",
+          "description": "Massive collection of 1000+ online OSINT tools organized by category with 7.5K stars.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "sherlock-project/sherlock",
+          "url": "https://github.com/sherlock-project/sherlock",
+          "type": "github",
+          "cost": "free",
+          "description": "Username search across 400+ social networks with 73K stars. The most popular OSINT tool on GitHub.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "soxoj/maigret",
+          "url": "https://github.com/soxoj/maigret",
+          "type": "github",
+          "cost": "free",
+          "description": "Builds dossiers from usernames across 3000+ sites with 19K stars. Extends Sherlock's approach significantly.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "mxrch/GHunt",
+          "url": "https://github.com/mxrch/GHunt",
+          "type": "github",
+          "cost": "free",
+          "description": "Offensive Google framework for investigating Google accounts with 18.4K stars. Extracts data from Google services.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "megadose/holehe",
+          "url": "https://github.com/megadose/holehe",
+          "type": "github",
+          "cost": "free",
+          "description": "Maps email addresses to registered platforms via password reset flows with 10.2K stars.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "smicallef/spiderfoot",
+          "url": "https://github.com/smicallef/spiderfoot",
+          "type": "github",
+          "cost": "free",
+          "description": "OSINT automation platform with 200+ data collection modules and 16.7K stars. Web UI for investigations.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "sundowndev/phoneinfoga",
+          "url": "https://github.com/sundowndev/phoneinfoga",
+          "type": "github",
+          "cost": "free",
+          "description": "Phone number intelligence gathering framework with 15.9K stars. Validates, formats, and gathers info on phone numbers.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "laramies/theHarvester",
+          "url": "https://github.com/laramies/theHarvester",
+          "type": "github",
+          "cost": "free",
+          "description": "Gathers emails, subdomains, hosts, and URLs from public sources with 15.7K stars. Staple recon tool.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "owasp-amass/amass",
+          "url": "https://github.com/owasp-amass/amass",
+          "type": "github",
+          "cost": "free",
+          "description": "Attack surface mapping and asset discovery using 50+ data sources with 14.2K stars. OWASP flagship project.",
+          "osint_domains": ["company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "projectdiscovery/subfinder",
+          "url": "https://github.com/projectdiscovery/subfinder",
+          "type": "github",
+          "cost": "free",
+          "description": "Fast passive subdomain enumeration tool with 13.1K stars. Uses multiple sources for comprehensive results.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "projectdiscovery/nuclei",
+          "url": "https://github.com/projectdiscovery/nuclei",
+          "type": "github",
+          "cost": "free",
+          "description": "Template-based vulnerability scanner with 27.2K stars. Community-driven templates for rapid security checks.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "s0md3v/Photon",
+          "url": "https://github.com/s0md3v/Photon",
+          "type": "github",
+          "cost": "free",
+          "description": "Incredibly fast OSINT web crawler that extracts URLs, emails, files, and more with 12.7K stars.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OpenCTI-Platform/opencti",
+          "url": "https://github.com/OpenCTI-Platform/opencti",
+          "type": "github",
+          "cost": "free",
+          "description": "Open cyber threat intelligence platform for organizing and visualizing threat data with 8.9K stars.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "MISP/MISP",
+          "url": "https://github.com/MISP/MISP",
+          "type": "github",
+          "cost": "free",
+          "description": "Threat intelligence sharing platform for structured threat information with 6.1K stars. Used by CERTs worldwide.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "lanmaster53/recon-ng",
+          "url": "https://github.com/lanmaster53/recon-ng",
+          "type": "github",
+          "cost": "free",
+          "description": "Modular web reconnaissance framework with 5.4K stars. Metasploit-like interface for OSINT gathering.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "p1ngul1n0/blackbird",
+          "url": "https://github.com/p1ngul1n0/blackbird",
+          "type": "github",
+          "cost": "free",
+          "description": "Account search by username and email across 600+ platforms with 5.7K stars.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "six2dez/reconftw",
+          "url": "https://github.com/six2dez/reconftw",
+          "type": "github",
+          "cost": "free",
+          "description": "Automated reconnaissance tool chain that orchestrates multiple tools with 7.2K stars.",
+          "osint_domains": ["company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "khast3x/h8mail",
+          "url": "https://github.com/khast3x/h8mail",
+          "type": "github",
+          "cost": "free",
+          "description": "Email OSINT and breach hunting tool with 4.9K stars. Searches multiple breach databases.",
+          "osint_domains": ["people", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "DedSecInside/TorBot",
+          "url": "https://github.com/DedSecInside/TorBot",
+          "type": "github",
+          "cost": "free",
+          "description": "Dark web crawling and OSINT tool for Tor hidden services with 3.8K stars.",
+          "osint_domains": ["threat", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Ph055a/OSINT_Collection",
+          "url": "https://github.com/Ph055a/OSINT_Collection",
+          "type": "github",
+          "cost": "free",
+          "description": "Curated collection focused exclusively on free OSINT resources with 2.3K stars.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "ARPSyndicate/awesome-intelligence",
+          "url": "https://github.com/ARPSyndicate/awesome-intelligence",
+          "type": "github",
+          "cost": "free",
+          "description": "Collaboratively curated list of OSINT and intelligence resources with 2.3K stars.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Astrosp/Awesome-OSINT-For-Everything",
+          "url": "https://github.com/Astrosp/Awesome-OSINT-For-Everything",
+          "type": "github",
+          "cost": "free",
+          "description": "One-stop OSINT resource covering all major investigation domains with 2.2K stars.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "OffcierCia/On-Chain-Investigations-Tools-List",
+          "url": "https://github.com/OffcierCia/On-Chain-Investigations-Tools-List",
+          "type": "github",
+          "cost": "free",
+          "description": "Comprehensive list of tools for cryptocurrency and blockchain investigations with 1.9K stars.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Jieyab89/OSINT-Cheat-sheet",
+          "url": "https://github.com/Jieyab89/OSINT-Cheat-sheet",
+          "type": "github",
+          "cost": "free",
+          "description": "OSINT cheat sheet with tools, tips, and quick-reference commands with 1.8K stars.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "osintambition/Social-Media-OSINT-Tools-Collection",
+          "url": "https://github.com/osintambition/Social-Media-OSINT-Tools-Collection",
+          "type": "github",
+          "cost": "free",
+          "description": "Social media intelligence (SOCINT) tools collection with 1.7K stars.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "apurvsinghgautam/dark-web-osint-tools",
+          "url": "https://github.com/apurvsinghgautam/dark-web-osint-tools",
+          "type": "github",
+          "cost": "free",
+          "description": "Collection of OSINT tools specifically for dark web investigations with 1.6K stars.",
+          "osint_domains": ["threat", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "wddadk/Offensive-OSINT-Tools",
+          "url": "https://github.com/wddadk/Offensive-OSINT-Tools",
+          "type": "github",
+          "cost": "free",
+          "description": "Penetration testing-focused OSINT tools for offensive security with 1.1K stars.",
+          "osint_domains": ["threat", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "wddadk/OSINT-for-countries",
+          "url": "https://github.com/wddadk/OSINT-for-countries",
+          "type": "github",
+          "cost": "free",
+          "description": "Country-specific OSINT resources organized by nation with 784 stars.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "bellingcat/toolkit",
+          "url": "https://github.com/bellingcat/toolkit",
+          "type": "github",
+          "cost": "free",
+          "description": "Bellingcat's official investigation toolkit with curated OSINT tools with 474 stars.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "The-Osint-Toolbox/Image-Research-OSINT",
+          "url": "https://github.com/The-Osint-Toolbox/Image-Research-OSINT",
+          "type": "github",
+          "cost": "free",
+          "description": "Image research and reverse image search tools for OSINT with 419 stars.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "aaarghhh/awesome_osint_blockchain_analysis",
+          "url": "https://github.com/aaarghhh/awesome_osint_blockchain_analysis",
+          "type": "github",
+          "cost": "free",
+          "description": "Blockchain analysis and cryptocurrency OSINT tools with 345 stars.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "The-Osint-Toolbox/Geolocation-OSINT",
+          "url": "https://github.com/The-Osint-Toolbox/Geolocation-OSINT",
+          "type": "github",
+          "cost": "free",
+          "description": "Geolocation resources and tools for OSINT investigations with 291 stars.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "tracelabs/awesome-osint",
+          "url": "https://github.com/tracelabs/awesome-osint",
+          "type": "github",
+          "cost": "free",
+          "description": "TraceLabs endorsed OSINT list focused on missing persons investigations with 285 stars.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "The-Osint-Toolbox/Social-Media-OSINT",
+          "url": "https://github.com/The-Osint-Toolbox/Social-Media-OSINT",
+          "type": "github",
+          "cost": "free",
+          "description": "Social media OSINT tools and techniques collection with 758 stars.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "frangelbarrera/OSINT-BIBLE",
+          "url": "https://github.com/frangelbarrera/OSINT-BIBLE",
+          "type": "github",
+          "cost": "free",
+          "description": "Comprehensive 2026 OSINT guide covering tools, techniques, and methodologies with 289 stars.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "danieldurnea/FBI-tools",
+          "url": "https://github.com/danieldurnea/FBI-tools",
+          "type": "github",
+          "cost": "free",
+          "description": "OSINT tools commonly used in law enforcement investigations with 2.4K stars.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "mitre/cti",
+          "url": "https://github.com/mitre/cti",
+          "type": "github",
+          "cost": "free",
+          "description": "MITRE ATT&CK and CAPEC data in STIX 2.0 format for programmatic threat intelligence.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "intelowlproject/IntelOwl",
+          "url": "https://github.com/intelowlproject/IntelOwl",
+          "type": "github",
+          "cost": "free",
+          "description": "Query 100+ external threat intelligence analyzers via a single API with enrichment pipeline.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "certtools/intelmq",
+          "url": "https://github.com/certtools/intelmq",
+          "type": "github",
+          "cost": "free",
+          "description": "CERT feed processing framework for collecting and processing security feeds at scale.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "ytisf/theZoo",
+          "url": "https://github.com/ytisf/theZoo",
+          "type": "github",
+          "cost": "free",
+          "description": "Live malware samples repository for research and analysis purposes.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        }
+      ]
+    },
+    "osint_directories": {
+      "description": "Web-based OSINT resource directories, portals, and curated collections",
+      "count": 19,
+      "sources": [
+        {
+          "name": "OSINT Framework",
+          "url": "https://osintframework.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Interactive D3.js-powered OSINT tool directory organized as a tree. The most well-known OSINT portal.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "IntelTechniques",
+          "url": "https://inteltechniques.com",
+          "type": "website",
+          "cost": "freemium",
+          "description": "Michael Bazzell's OSINT training platform with tools, techniques, and the OSINT Techniques book resources.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Bellingcat Toolkit",
+          "url": "https://bellingcat.gitbook.io/toolkit",
+          "type": "website",
+          "cost": "free",
+          "description": "Bellingcat's curated investigation toolkit with tools organized by investigation type.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Dojo",
+          "url": "https://osintdojo.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Free OSINT learning platform with structured challenges and a ranked progression system.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Hatless1der Ultimate OSINT Collection",
+          "url": "https://start.me/p/DPYPMz/the-ultimate-osint-collection",
+          "type": "website",
+          "cost": "free",
+          "description": "The most comprehensive start.me OSINT page maintained by Griffin Glynn with hundreds of categorized tools.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Nixintel OSINT Resource List",
+          "url": "https://start.me/p/rx6Qj8/nixintel-s-osint-resource-list",
+          "type": "website",
+          "cost": "free",
+          "description": "Curated OSINT resource list maintained by Steven Harris (Nixintel), SANS instructor.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Combine Tools",
+          "url": "https://osintcombine.com/tools",
+          "type": "website",
+          "cost": "free",
+          "description": "Bookmark stacks organized by investigation type from the OSINT Combine team.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OH SHINT",
+          "url": "https://ohshint.gitbook.io",
+          "type": "website",
+          "cost": "free",
+          "description": "Comprehensive OSINT web resources guide covering tools, techniques, and methodologies.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Central",
+          "url": "https://osint-central.com/resources",
+          "type": "website",
+          "cost": "free",
+          "description": "OSINT aggregation hub bringing together tools and resources from multiple contributors.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "i-intelligence OSINT Handbook",
+          "url": "https://osinthandbook.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Comprehensive OSINT handbook updated to 2025 edition with structured methodology and tools.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "UK-OSINT",
+          "url": "https://uk-osint.net",
+          "type": "website",
+          "cost": "free",
+          "description": "UK-focused OSINT resources including UK-specific databases, registries, and community hub.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT.link",
+          "url": "https://osint.link",
+          "type": "website",
+          "cost": "free",
+          "description": "Portal site aggregating OSINT search tools and resources in a clean interface.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "GIJN Online Research Tools",
+          "url": "https://gijn.org/resource/online-research-tools/",
+          "type": "website",
+          "cost": "free",
+          "description": "Global Investigative Journalism Network's curated collection of online research and investigation tools.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "cipher387 OSINT Github Profiles",
+          "url": "https://github.com/cipher387",
+          "type": "website",
+          "cost": "free",
+          "description": "Meta-directory of OSINT tool creators and their GitHub profiles for discovering new tools.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "FreeOSINT",
+          "url": "https://freeosint.github.io",
+          "type": "website",
+          "cost": "free",
+          "description": "Directory focused exclusively on free OSINT tools and guides.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Hatless1der Resources",
+          "url": "https://hatless1der.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Griffin Glynn's personal site with OSINT tools, resources, and training materials.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Team",
+          "url": "https://osintteam.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Guides and resources on OSINT, privacy, and cybersecurity topics.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Learn All The Things OSINT Resources",
+          "url": "https://learnallthethings.net/osint-resources",
+          "type": "website",
+          "cost": "free",
+          "description": "Curated OSINT resources organized for structured learning paths.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Lorand Bodo OSINT Collection",
+          "url": "https://start.me/p/b5Aow7/asint_collection",
+          "type": "website",
+          "cost": "free",
+          "description": "Curated start.me page with OSINT tools organized by investigation category.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        }
+      ]
+    },
+    "people_osint": {
+      "description": "People-focused investigation sources including search engines, username lookup, email, phone, image, social media, academic, genealogy, and location tracking tools",
+      "count": 46,
+      "sources": [
+        {
+          "name": "Pipl",
+          "url": "https://pipl.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "AI-driven identity verification and people search platform used by enterprises and investigators.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Spokeo",
+          "url": "https://spokeo.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Aggregates public records and social media profiles for US-focused people search.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "BeenVerified",
+          "url": "https://beenverified.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Background check platform with AI validation covering criminal records, addresses, and associates.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "TruePeopleSearch",
+          "url": "https://truepeoplesearch.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Clean, free US people lookup with name, phone, and address search capabilities.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "WhitePages",
+          "url": "https://whitepages.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Phone number, address, and background check lookup for US individuals.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "FastPeopleSearch",
+          "url": "https://fastpeoplesearch.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Free US public records search with name, phone, and address lookups.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Radaris",
+          "url": "https://radaris.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "People search covering employment history, criminal records, and public records.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Intelius",
+          "url": "https://intelius.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Comprehensive background check service with criminal, property, and personal data.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "PeekYou",
+          "url": "https://peekyou.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Builds unified digital profiles by aggregating a person's presence across the web.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Industries",
+          "url": "https://osint.industries",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Professional OSINT platform searching 1500+ sources for comprehensive people lookup.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "That's Them",
+          "url": "https://thatsthem.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Free people lookup by name, address, phone, email, or IP address.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Namechk",
+          "url": "https://namechk.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Checks username availability across 100+ social networks and domain registrars.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "KnowEm",
+          "url": "https://knowem.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Username search across 500+ social networks, domains, and trademarks.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "WhatsMyName",
+          "url": "https://whatsmyname.app",
+          "type": "website",
+          "cost": "free",
+          "description": "Open source username enumeration across 1500+ platforms with JSON-based detection.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Hunter.io",
+          "url": "https://hunter.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Professional email discovery and verification platform for finding business email addresses.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "EmailRep",
+          "url": "https://emailrep.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Email reputation scoring API that assesses risk and provides email intelligence.",
+          "osint_domains": ["people", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Epieos",
+          "url": "https://epieos.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Reverse email and phone lookups across 140+ services to identify associated accounts.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Truecaller",
+          "url": "https://truecaller.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Global caller ID and spam identification service with 400M+ user-contributed entries.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "NumVerify",
+          "url": "https://numverify.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Phone number validation and lookup API providing carrier, line type, and location data.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Sync.me",
+          "url": "https://sync.me",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Social phone book that identifies callers by cross-referencing social media profiles.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "PimEyes",
+          "url": "https://pimeyes.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Face recognition search engine that finds photos of a person across the public web.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "TinEye",
+          "url": "https://tineye.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Reverse image search engine indexing 70B+ images for finding image origins and copies.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Yandex Images",
+          "url": "https://yandex.com/images",
+          "type": "website",
+          "cost": "free",
+          "description": "Russian search engine's image search, widely regarded as best-in-class for facial recognition queries.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "FaceCheck.ID",
+          "url": "https://facecheck.id",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Social media face matching engine that searches faces across social platforms and mugshot databases.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Lenso.ai",
+          "url": "https://lenso.ai",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "AI-powered reverse image search with face recognition and visual similarity detection.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Osintgram",
+          "url": "https://github.com/Datalux/Osintgram",
+          "type": "tool",
+          "cost": "free",
+          "description": "Instagram OSINT tool for collecting data from public and private Instagram accounts.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Social Searcher",
+          "url": "https://social-searcher.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Free social media search engine for monitoring public posts across major platforms.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "Snapchat Map",
+          "url": "https://map.snapchat.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Geolocated user snaps displayed on an interactive map for location-based social intelligence.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Google Scholar",
+          "url": "https://scholar.google.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Academic publication search engine for finding scholarly articles, theses, and citations.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "ResearchGate",
+          "url": "https://researchgate.net",
+          "type": "platform",
+          "cost": "free",
+          "description": "Academic social network where researchers share publications and collaborate.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "ORCID",
+          "url": "https://orcid.org",
+          "type": "platform",
+          "cost": "free",
+          "description": "Persistent digital researcher identifiers linking individuals to their scholarly contributions.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Ancestry",
+          "url": "https://ancestry.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Largest commercial genealogy database with billions of historical records and DNA matching.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "FamilySearch",
+          "url": "https://familysearch.org",
+          "type": "platform",
+          "cost": "free",
+          "description": "Largest free genealogy resource with billions of records, operated by LDS Church.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "MyHeritage",
+          "url": "https://myheritage.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "International genealogy platform with strong European and Middle Eastern record collections.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Find A Grave",
+          "url": "https://findagrave.com",
+          "type": "database",
+          "cost": "free",
+          "description": "Database of 230M+ cemetery records with burial locations, dates, and family connections.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "FlightRadar24",
+          "url": "https://flightradar24.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Real-time global flight tracking with ADS-B data for monitoring aircraft movements.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "FlightAware",
+          "url": "https://flightaware.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Flight tracking and aviation data platform with historical flight records and alerts.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "MarineTraffic",
+          "url": "https://marinetraffic.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Global ship tracking using AIS data with vessel details, port calls, and voyage history.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "VesselFinder",
+          "url": "https://vesselfinder.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "AIS-based vessel tracking with real-time positions, routes, and port information.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Have I Been Pwned",
+          "url": "https://haveibeenpwned.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Troy Hunt's breach notification service checking if email/phone appears in known data breaches.",
+          "osint_domains": ["people", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "DeHashed",
+          "url": "https://dehashed.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Breach data search engine with 19B+ records searchable by email, username, IP, name, or phone.",
+          "osint_domains": ["people", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Intelligence X",
+          "url": "https://intelx.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Search engine and archive spanning surface web, dark web, leaks, and public data sources.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Maltego",
+          "url": "https://maltego.com",
+          "type": "tool",
+          "cost": "freemium",
+          "description": "Visual link analysis platform for investigating relationships between entities with transform-based data gathering.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "SpiderFoot",
+          "url": "https://spiderfoot.net",
+          "type": "tool",
+          "cost": "free",
+          "description": "OSINT automation tool with 200+ modules for reconnaissance across IP, domain, email, and more.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "CIA World Factbook",
+          "url": "https://cia.gov/the-world-factbook/",
+          "type": "government",
+          "cost": "free",
+          "description": "Comprehensive reference with 267 country profiles covering demographics, economy, military, and infrastructure.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "FBI IC3",
+          "url": "https://ic3.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "FBI Internet Crime Complaint Center with annual crime reports and victim statistics.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        }
+      ]
+    },
+    "business_osint": {
+      "description": "Business and corporate investigation sources including registries, financial data, legal records, patents, technology profiling, and competitive intelligence",
+      "count": 45,
+      "sources": [
+        {
+          "name": "OpenCorporates",
+          "url": "https://opencorporates.com",
+          "type": "database",
+          "cost": "freemium",
+          "description": "Largest open database of companies with 220M+ entities across 170+ jurisdictions worldwide.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "SEC EDGAR",
+          "url": "https://sec.gov/cgi-bin/browse-edgar",
+          "type": "government",
+          "cost": "free",
+          "description": "US Securities and Exchange Commission's filing system for all public company disclosures.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Companies House UK",
+          "url": "https://find-and-update.company-information.service.gov.uk",
+          "type": "government",
+          "cost": "free",
+          "description": "UK company registry with free access to filings, officers, and ownership data.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "SAM.gov",
+          "url": "https://sam.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "US government System for Award Management with vendor registrations and contract opportunities.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Crunchbase",
+          "url": "https://crunchbase.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Leading platform for startup and venture capital funding data with company profiles and investor details.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "PitchBook",
+          "url": "https://pitchbook.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Comprehensive VC, PE, and M&A intelligence platform with detailed deal and company data.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "CB Insights",
+          "url": "https://cbinsights.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Tech market intelligence platform with AI-powered company analysis and industry research.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Dun & Bradstreet",
+          "url": "https://dnb.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Global business data provider with 500M+ entity profiles, D-U-N-S numbering, and risk analytics.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "AlphaSense",
+          "url": "https://alpha-sense.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "AI-powered enterprise intelligence platform searching earnings calls, filings, and research reports.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "LinkedIn",
+          "url": "https://linkedin.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Professional networking platform with 1B+ profiles useful for employee and organizational research.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "ZoomInfo",
+          "url": "https://zoominfo.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "B2B intelligence platform with 600M+ professional profiles and company data for sales and research.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "Apollo.io",
+          "url": "https://apollo.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Sales intelligence platform with contact data, email discovery, and company enrichment.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "RocketReach",
+          "url": "https://rocketreach.co",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Contact lookup platform with 700M+ profiles for finding professional email and phone data.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "Lusha",
+          "url": "https://lusha.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Verified B2B contact data platform for finding direct dials and email addresses.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "PACER",
+          "url": "https://pacer.uscourts.gov",
+          "type": "government",
+          "cost": "freemium",
+          "description": "Public Access to Court Electronic Records for US federal court filings and case documents.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "CourtListener",
+          "url": "https://courtlistener.com",
+          "type": "database",
+          "cost": "free",
+          "description": "Free multi-jurisdiction court opinion search with RECAP archive of PACER documents.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "UniCourt",
+          "url": "https://unicourt.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Court records aggregator covering 10,000+ courts with case tracking and analytics.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "USPTO Patent Search",
+          "url": "https://ppubs.uspto.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "US Patent and Trademark Office search covering all US patents from 1790 to present.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Google Patents",
+          "url": "https://patents.google.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Search 87M+ patents worldwide with full text, images, and citation analysis.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Espacenet (EPO)",
+          "url": "https://worldwide.espacenet.com",
+          "type": "government",
+          "cost": "free",
+          "description": "European Patent Office's free patent search covering worldwide patent documents.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "WIPO PATENTSCOPE",
+          "url": "https://patentscope.wipo.int",
+          "type": "government",
+          "cost": "free",
+          "description": "World Intellectual Property Organization's international patent search and PCT applications.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Lens.org",
+          "url": "https://lens.org",
+          "type": "platform",
+          "cost": "free",
+          "description": "Open patent and scholarly linking platform connecting patents to academic research.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "BuiltWith",
+          "url": "https://builtwith.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Technology profiler tracking 109K+ web technologies across millions of websites.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Wappalyzer",
+          "url": "https://wappalyzer.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Real-time technology detection for websites revealing frameworks, CMS, and infrastructure.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Netcraft",
+          "url": "https://netcraft.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Website security profiling with hosting history, technology stack, and risk assessment.",
+          "osint_domains": ["company", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "SimilarWeb",
+          "url": "https://similarweb.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Web traffic analysis platform for estimating site visitors, sources, and competitive benchmarking.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "SEMrush",
+          "url": "https://semrush.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "SEO and competitive intelligence platform with keyword analysis, backlinks, and ad intelligence.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Ahrefs",
+          "url": "https://ahrefs.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Backlink analysis and content research platform for competitive intelligence and SEO.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "GDELT Project",
+          "url": "https://gdeltproject.org",
+          "type": "database",
+          "cost": "free",
+          "description": "Global events database monitoring world broadcast, print, and web news in 100+ languages in real time.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "MediaCloud",
+          "url": "https://mediacloud.org",
+          "type": "platform",
+          "cost": "free",
+          "description": "Open media ecosystem analysis platform for tracking narratives and media coverage patterns.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "USAspending",
+          "url": "https://usaspending.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "Official US federal spending data including contracts, grants, and agency expenditures.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "ImportGenius",
+          "url": "https://importgenius.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "International shipment intelligence with customs data for supply chain and trade analysis.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Trade Map (ITC)",
+          "url": "https://trademap.org",
+          "type": "database",
+          "cost": "free",
+          "description": "International Trade Centre's platform showing trade flows for 220+ countries and territories.",
+          "osint_domains": ["company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OFAC Sanctions Search",
+          "url": "https://sanctionssearch.ofac.treas.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "US Treasury Office of Foreign Assets Control sanctions list search for SDN and blocked persons.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "EU Sanctions Map",
+          "url": "https://sanctionsmap.eu",
+          "type": "government",
+          "cost": "free",
+          "description": "European Union restrictive measures and sanctions visualization with searchable entity lists.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "UN Security Council Consolidated List",
+          "url": "https://scsanctions.un.org/consolidated/",
+          "type": "government",
+          "cost": "free",
+          "description": "United Nations sanctions list of individuals and entities subject to Security Council measures.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OpenSanctions",
+          "url": "https://opensanctions.org",
+          "type": "database",
+          "cost": "free",
+          "description": "Aggregates 325+ sanctions, PEP, and enforcement sources into a unified searchable database.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OpenOwnership",
+          "url": "https://openownership.org",
+          "type": "database",
+          "cost": "free",
+          "description": "Global beneficial ownership data with 27M+ records for identifying who controls companies.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "GLEIF LEI Search",
+          "url": "https://search.gleif.org",
+          "type": "database",
+          "cost": "free",
+          "description": "Global Legal Entity Identifier Foundation search for legal entity identifiers and ownership chains.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Dealroom",
+          "url": "https://dealroom.co",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Startup and VC intelligence platform with 3M+ company profiles and funding data.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Tracxn",
+          "url": "https://tracxn.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Startup intelligence platform tracking 4.9M+ companies with funding, technology, and team data.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Owler",
+          "url": "https://owler.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Community-driven competitive intelligence with 20M company profiles and news alerts.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Wellfound",
+          "url": "https://wellfound.com",
+          "type": "platform",
+          "cost": "free",
+          "description": "Startup job board and data platform (formerly AngelList Talent) with company profiles and team data.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Brandwatch",
+          "url": "https://brandwatch.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Enterprise social listening and consumer intelligence platform for monitoring brand mentions.",
+          "osint_domains": ["company"],
+          "status": "active"
+        },
+        {
+          "name": "Brand24",
+          "url": "https://brand24.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Social media and web monitoring tool tracking mentions across 25M+ sources.",
+          "osint_domains": ["company"],
+          "status": "active"
+        }
+      ]
+    },
+    "threat_intel": {
+      "description": "Threat intelligence and cybersecurity sources including malware analysis, vulnerability databases, IP/domain reputation, dark web, and frameworks",
+      "count": 57,
+      "sources": [
+        {
+          "name": "VirusTotal",
+          "url": "https://virustotal.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Multi-engine file, URL, domain, and IP scanning platform by Google, the gold standard for malware checking.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Hybrid Analysis",
+          "url": "https://hybrid-analysis.com",
+          "type": "platform",
+          "cost": "free",
+          "description": "CrowdStrike's free malware sandbox providing detailed behavioral analysis of suspicious files.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "ANY.RUN",
+          "url": "https://any.run",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Interactive cloud malware sandbox allowing analysts to observe malware behavior in real time.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Joe Sandbox",
+          "url": "https://joesandbox.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Deep malware analysis sandbox with detailed behavioral reports across multiple OS platforms.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "MalwareBazaar",
+          "url": "https://bazaar.abuse.ch",
+          "type": "database",
+          "cost": "free",
+          "description": "Community malware sample exchange operated by abuse.ch for sharing and downloading malware samples.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "URLhaus",
+          "url": "https://urlhaus.abuse.ch",
+          "type": "database",
+          "cost": "free",
+          "description": "Community-driven malicious URL sharing platform by abuse.ch for tracking malware distribution sites.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "URLScan.io",
+          "url": "https://urlscan.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "URL scanning and analysis service that renders pages and captures screenshots, DOM, and network requests.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "ThreatFox",
+          "url": "https://threatfox.abuse.ch",
+          "type": "database",
+          "cost": "free",
+          "description": "Indicator of Compromise (IOC) database with malware attribution, operated by abuse.ch.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "PhishTank",
+          "url": "https://phishtank.org",
+          "type": "database",
+          "cost": "free",
+          "description": "Crowd-sourced phishing URL verification and archive with community voting on submissions.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Malware Traffic Analysis",
+          "url": "https://malware-traffic-analysis.net",
+          "type": "website",
+          "cost": "free",
+          "description": "PCAP files and blog posts for network traffic analysis training with real malware samples.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Objective-See macOS Malware",
+          "url": "https://objective-see.org/malware.html",
+          "type": "website",
+          "cost": "free",
+          "description": "Comprehensive collection of known macOS malware with analysis and detection tools by Patrick Wardle.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "NVD (National Vulnerability Database)",
+          "url": "https://nvd.nist.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "NIST's comprehensive vulnerability database with CVSS scoring and CPE matching for all CVEs.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "CVE Program",
+          "url": "https://cve.mitre.org",
+          "type": "database",
+          "cost": "free",
+          "description": "MITRE's Common Vulnerabilities and Exposures identifier system, the global standard for vuln tracking.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Exploit-DB",
+          "url": "https://exploit-db.com",
+          "type": "database",
+          "cost": "free",
+          "description": "Public archive of exploits and vulnerable software maintained by OffSec for penetration testers.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Snyk Vulnerability Database",
+          "url": "https://security.snyk.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Developer-focused vulnerability database with fix guidance for open source dependencies.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "OSV (Open Source Vulnerabilities)",
+          "url": "https://osv.dev",
+          "type": "database",
+          "cost": "free",
+          "description": "Google-backed open source vulnerability database with precise package version tracking.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "CISA Known Exploited Vulnerabilities",
+          "url": "https://cisa.gov/known-exploited-vulnerabilities-catalog",
+          "type": "government",
+          "cost": "free",
+          "description": "CISA's catalog of CVEs known to be actively exploited in the wild, with remediation deadlines.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "AbuseIPDB",
+          "url": "https://abuseipdb.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Crowd-sourced IP address reputation database with abuse reports and confidence scoring.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "GreyNoise",
+          "url": "https://greynoise.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Distinguishes internet background noise from targeted attacks by classifying IP scanner behavior.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Shodan",
+          "url": "https://shodan.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Search engine for internet-connected devices revealing open ports, services, and vulnerabilities.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Censys",
+          "url": "https://search.censys.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Internet-wide scanning platform for discovering and monitoring exposed hosts and services.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "BinaryEdge",
+          "url": "https://binaryedge.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Scanner network providing internet asset discovery with real-time threat intelligence feeds.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "ZoomEye",
+          "url": "https://zoomeye.ai",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Chinese internet asset search engine similar to Shodan with strong coverage of Asian infrastructure.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "FOFA",
+          "url": "https://en.fofa.info",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Chinese cyberspace search engine for internet asset mapping with advanced query syntax.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Netlas",
+          "url": "https://netlas.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "IP and domain scanning platform with certificate, DNS, and WHOIS data for attack surface monitoring.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Criminal IP",
+          "url": "https://criminalip.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Cyber threat intelligence search engine scanning IP addresses, domains, and URLs for risk assessment.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "IPinfo",
+          "url": "https://ipinfo.io",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "IP geolocation, ASN, and company data API used by major platforms for IP intelligence.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "crt.sh",
+          "url": "https://crt.sh",
+          "type": "database",
+          "cost": "free",
+          "description": "Certificate Transparency log search for discovering subdomains and tracking SSL/TLS certificates.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "CertStream",
+          "url": "https://certstream.calidog.io",
+          "type": "feed",
+          "cost": "free",
+          "description": "Real-time Certificate Transparency log feed for monitoring newly issued SSL certificates.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "SecurityTrails",
+          "url": "https://securitytrails.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "DNS history, subdomain enumeration, and WHOIS data with extensive historical records.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "DomainTools",
+          "url": "https://domaintools.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Historical WHOIS and DNS data going back decades for domain intelligence and attribution.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "PassiveTotal (RiskIQ)",
+          "url": "https://community.riskiq.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Passive DNS, WHOIS, and web component data for threat infrastructure analysis by Microsoft.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "DNSDumpster",
+          "url": "https://dnsdumpster.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Free domain research tool for discovering hosts, DNS records, and network topology.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "ViewDNS",
+          "url": "https://viewdns.info",
+          "type": "website",
+          "cost": "free",
+          "description": "Swiss army knife of DNS tools including reverse IP, port scanner, and Chinese firewall test.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Robtex",
+          "url": "https://robtex.com",
+          "type": "website",
+          "cost": "free",
+          "description": "DNS, IP, and domain research platform with visual network graphs and relationship mapping.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Ahmia",
+          "url": "https://ahmia.fi",
+          "type": "website",
+          "cost": "free",
+          "description": "Search engine for Tor hidden services (.onion) that filters out abusive content.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "DarkSearch",
+          "url": "https://darksearch.io",
+          "type": "website",
+          "cost": "free",
+          "description": "Dark web search engine with API access for automated monitoring of .onion sites.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Tor Metrics",
+          "url": "https://metrics.torproject.org",
+          "type": "website",
+          "cost": "free",
+          "description": "Tor network statistics including relay counts, bandwidth, and usage patterns by country.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Pulsedive",
+          "url": "https://pulsedive.com",
+          "type": "platform",
+          "cost": "free",
+          "description": "Community threat intelligence platform for searching, scanning, and enriching IOCs.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "IBM X-Force Exchange",
+          "url": "https://exchange.xforce.ibmcloud.com",
+          "type": "platform",
+          "cost": "free",
+          "description": "IBM's threat intelligence sharing platform with IP reputation, malware, and vulnerability data.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Cisco Talos Intelligence",
+          "url": "https://talosintelligence.com",
+          "type": "platform",
+          "cost": "free",
+          "description": "Cisco's threat intelligence service providing IP/domain reputation and email spam analysis.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Recorded Future",
+          "url": "https://recordedfuture.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "AI-powered threat intelligence platform aggregating data from open, dark, and technical sources.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Mandiant (Google)",
+          "url": "https://mandiant.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Leading APT tracking and incident response firm, now part of Google Cloud, with extensive threat reports.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "MITRE ATT&CK",
+          "url": "https://attack.mitre.org",
+          "type": "framework",
+          "cost": "free",
+          "description": "Globally recognized knowledge base of adversary tactics, techniques, and procedures (TTPs).",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "MITRE D3FEND",
+          "url": "https://d3fend.mitre.org",
+          "type": "framework",
+          "cost": "free",
+          "description": "Knowledge graph of defensive cybersecurity countermeasures mapped to ATT&CK techniques.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "MITRE ATLAS",
+          "url": "https://atlas.mitre.org",
+          "type": "framework",
+          "cost": "free",
+          "description": "Adversarial Threat Landscape for AI Systems framework covering attacks against ML/AI systems.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "STIX/TAXII Standards",
+          "url": "https://oasis-open.github.io/cti-documentation/",
+          "type": "framework",
+          "cost": "free",
+          "description": "OASIS standards for structured threat intelligence sharing (STIX) and transport (TAXII).",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Feodo Tracker",
+          "url": "https://feodotracker.abuse.ch",
+          "type": "database",
+          "cost": "free",
+          "description": "Tracks botnet command and control servers associated with Dridex, Emotet, TrickBot, and QakBot.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "SSL Blacklist",
+          "url": "https://sslbl.abuse.ch",
+          "type": "database",
+          "cost": "free",
+          "description": "Identifies and blacklists malicious SSL certificates used by botnet C2 infrastructure.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "CISA",
+          "url": "https://cisa.gov",
+          "type": "government",
+          "cost": "free",
+          "description": "US Cybersecurity and Infrastructure Security Agency providing advisories, alerts, and vulnerability data.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "UK NCSC",
+          "url": "https://ncsc.gov.uk",
+          "type": "government",
+          "cost": "free",
+          "description": "UK National Cyber Security Centre providing guidance, threat reports, and incident response.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "ENISA",
+          "url": "https://enisa.europa.eu",
+          "type": "government",
+          "cost": "free",
+          "description": "European Union Agency for Cybersecurity with threat landscape reports and policy guidance.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "NSA Cybersecurity",
+          "url": "https://nsa.gov/cybersecurity/",
+          "type": "government",
+          "cost": "free",
+          "description": "NSA technical cybersecurity advisories and mitigation guidance for critical infrastructure.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "CISA AIS (Automated Indicator Sharing)",
+          "url": "https://cisa.gov/ais",
+          "type": "government",
+          "cost": "free",
+          "description": "Free STIX/TAXII indicator feed from CISA for automated sharing of cyber threat indicators.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "FS-ISAC",
+          "url": "https://fsisac.com",
+          "type": "community",
+          "cost": "paid",
+          "description": "Financial Services Information Sharing and Analysis Center for sector-specific threat intelligence.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "H-ISAC",
+          "url": "https://h-isac.org",
+          "type": "community",
+          "cost": "paid",
+          "description": "Health Information Sharing and Analysis Center for healthcare sector cyber threat sharing.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "MS-ISAC",
+          "url": "https://cisecurity.org/ms-isac",
+          "type": "community",
+          "cost": "free",
+          "description": "Multi-State ISAC providing free cyber threat monitoring for US state, local, and tribal governments.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        }
+      ]
+    },
+    "training_education": {
+      "description": "OSINT training courses, certifications, CTFs, conferences, and educational books",
+      "count": 25,
+      "sources": [
+        {
+          "name": "SANS SEC497 - Practical OSINT",
+          "url": "https://sans.org/cyber-security-courses/practical-open-source-intelligence/",
+          "type": "platform",
+          "cost": "paid",
+          "description": "SANS Institute's foundational OSINT course authored by Matt Edmondson, covering practical investigation techniques.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "SANS SEC587 - Advanced OSINT",
+          "url": "https://sans.org/cyber-security-courses/advanced-open-source-intelligence-gathering/",
+          "type": "platform",
+          "cost": "paid",
+          "description": "SANS advanced OSINT course covering dark web investigation, advanced people search, and automation.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "GIAC GOSI Certification",
+          "url": "https://giac.org/certifications/open-source-intelligence-gosi/",
+          "type": "platform",
+          "cost": "paid",
+          "description": "GIAC's OSINT certification validating competency in open source intelligence collection and analysis.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "TCM Security OSINT Course",
+          "url": "https://tcm-sec.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Affordable OSINT fundamentals course covering people search, geolocation, and investigative techniques.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Aware Online Academy",
+          "url": "https://awareonline.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Dutch OSINT training academy offering courses in social media investigation and digital research.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Combine Academy",
+          "url": "https://academy.osintcombine.com",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Self-paced virtual OSINT courses covering tools, techniques, and investigation methodologies.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "MyOSINT.Training",
+          "url": "https://myosint.training",
+          "type": "platform",
+          "cost": "paid",
+          "description": "Micah Hoffman's OSINT training platform with browser-based tools and hands-on exercises.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "TryHackMe OSINT Rooms",
+          "url": "https://tryhackme.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Browser-based cybersecurity training platform with dedicated OSINT rooms and challenges.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Trace Labs Search Party CTF",
+          "url": "https://tracelabs.org",
+          "type": "community",
+          "cost": "free",
+          "description": "Crowdsourced OSINT CTF focused on locating real missing persons using open source intelligence.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Sofia Santos Geolocation Exercises",
+          "url": "https://gralhix.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Geolocation challenges and exercises created by Sofia Santos for practicing OSINT geolocation skills.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "GeoGuessr",
+          "url": "https://geoguessr.com",
+          "type": "platform",
+          "cost": "freemium",
+          "description": "Street View-based geolocation game that develops spatial awareness and geographic reasoning skills.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Sourcing Games",
+          "url": "https://sourcing.games",
+          "type": "website",
+          "cost": "free",
+          "description": "Research skill challenges designed to improve web-based investigation and sourcing abilities.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Quiztime",
+          "url": "https://twitter.com/quabornconsult",
+          "type": "community",
+          "cost": "free",
+          "description": "Daily geolocation and OSINT quizzes posted on social media to sharpen investigation skills.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "CyberDefenders",
+          "url": "https://cyberdefenders.org",
+          "type": "platform",
+          "cost": "free",
+          "description": "Blue team training platform with OSINT-focused labs and challenges for defenders.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Dojo Challenges",
+          "url": "https://osintdojo.com/challenges",
+          "type": "website",
+          "cost": "free",
+          "description": "25 structured challenges across 5 difficulty ranks for progressive OSINT skill development.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "SANS OSINT Summit",
+          "url": "https://sans.org/cyber-security-summit/osint-summit/",
+          "type": "community",
+          "cost": "paid",
+          "description": "Annual SANS gathering of OSINT practitioners with talks, workshops, and networking.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "DEFCON Recon Village",
+          "url": "https://reconvillage.org",
+          "type": "community",
+          "cost": "free",
+          "description": "DEFCON village dedicated to reconnaissance and OSINT with talks, workshops, and CTFs.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "OSMOSIS",
+          "url": "https://osmosiscon.com",
+          "type": "community",
+          "cost": "paid",
+          "description": "OSINT education organization hosting conferences and workshops for the OSINT community.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Tulane OSINT Graduate Certificate",
+          "url": "https://tulane.edu",
+          "type": "academic",
+          "cost": "paid",
+          "description": "Graduate certificate program in Open Source Intelligence from Tulane University.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "American Public University OSINT NanoCert",
+          "url": "https://apu.edu",
+          "type": "academic",
+          "cost": "paid",
+          "description": "NanoCert program in OSINT from American Public University for professional development.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Class Central OSINT Course Index",
+          "url": "https://classcentral.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Aggregator indexing 100+ OSINT courses from various providers with reviews and ratings.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Techniques (Book, Bazzell, 11th Ed.)",
+          "url": "https://inteltechniques.com/book1.html",
+          "type": "website",
+          "cost": "paid",
+          "description": "Michael Bazzell's definitive OSINT reference book, now in its 11th edition, covering all major investigation types.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Extreme Privacy (Book, Bazzell)",
+          "url": "https://inteltechniques.com/book7.html",
+          "type": "website",
+          "cost": "paid",
+          "description": "Bazzell's companion book on privacy hardening and disappearing from public data sources.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Deep Dive (Book, Baker & Hoffman)",
+          "url": "https://nostarch.com/deep-dive",
+          "type": "website",
+          "cost": "paid",
+          "description": "Practical guide to OSINT by Rae Baker and Micah Hoffman demonstrating real-world investigative value.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Practical Social Engineering (Book, Gray)",
+          "url": "https://nostarch.com/practical-social-engineering",
+          "type": "website",
+          "cost": "paid",
+          "description": "Joe Gray's No Starch Press book on social engineering techniques with OSINT integration.",
+          "osint_domains": ["people"],
+          "status": "active"
+        }
+      ]
+    },
+    "community_media": {
+      "description": "OSINT podcasts, newsletters, blogs, and online communities",
+      "count": 19,
+      "sources": [
+        {
+          "name": "The Privacy, Security, & OSINT Show",
+          "url": "https://inteltechniques.com/podcast.html",
+          "type": "feed",
+          "cost": "free",
+          "description": "Michael Bazzell's long-running podcast with 312 archived episodes covering OSINT, privacy, and security.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "The OSINTion Podcast",
+          "url": "https://theosintionpodcast.com",
+          "type": "feed",
+          "cost": "free",
+          "description": "Joe Gray's podcast covering OSINT techniques, tools, and social engineering topics.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Curious Webcasts",
+          "url": "https://osintcurio.us",
+          "type": "feed",
+          "cost": "free",
+          "description": "Archived webcasts and content from the OSINT Curious project founded by Micah Hoffman.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Hacking Humans",
+          "url": "https://thecyberwire.com/podcasts/hacking-humans",
+          "type": "feed",
+          "cost": "free",
+          "description": "CyberWire podcast focused on social engineering, phishing, and human-targeted attacks.",
+          "osint_domains": ["people", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "OSINT Cocktail Podcast",
+          "url": "https://osintcocktail.com",
+          "type": "feed",
+          "cost": "free",
+          "description": "Podcast hosted by Kirby Plessas covering corporate OSINT investigations and tradecraft.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "NeedleStack Podcast",
+          "url": "https://authentic8.com/podcasts",
+          "type": "feed",
+          "cost": "free",
+          "description": "Authentic8's podcast on OSINT techniques for analysts, investigators, and security professionals.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "ShadowDragon Podcast",
+          "url": "https://shadowdragon.io/podcast",
+          "type": "feed",
+          "cost": "free",
+          "description": "Nico Dekens' podcast on digital investigations and OSINT from the ShadowDragon platform.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Week in OSINT (Sector035)",
+          "url": "https://sector035.nl",
+          "type": "feed",
+          "cost": "free",
+          "description": "Weekly newsletter and blog by Sector035 curating the best OSINT content since 2018.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "The OSINT Newsletter",
+          "url": "https://substack.com/@jakecreps",
+          "type": "feed",
+          "cost": "free",
+          "description": "Jake Creps' twice-weekly Substack newsletter covering OSINT tools, techniques, and news.",
+          "osint_domains": ["people", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "tl;dr sec",
+          "url": "https://tldrsec.com",
+          "type": "feed",
+          "cost": "free",
+          "description": "Weekly security newsletter by Clint Gibler covering security research, tools, and OSINT content.",
+          "osint_domains": ["threat"],
+          "status": "active"
+        },
+        {
+          "name": "Digital Digging (Henk van Ess)",
+          "url": "https://henk.substack.com",
+          "type": "feed",
+          "cost": "free",
+          "description": "Henk van Ess' newsletter with 8000+ subscribers covering Google dorking and search techniques.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Nixintel Blog",
+          "url": "https://nixintel.info",
+          "type": "website",
+          "cost": "free",
+          "description": "Steven Harris' OSINT techniques blog with detailed walkthroughs and investigation methodologies.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Bellingcat Resources",
+          "url": "https://bellingcat.com/category/resources/",
+          "type": "website",
+          "cost": "free",
+          "description": "Bellingcat's resource section with case studies, how-to guides, and investigation methodology articles.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Dutch OSINT Guy Blog",
+          "url": "https://dutchosintguy.com",
+          "type": "website",
+          "cost": "free",
+          "description": "Nico Dekens' blog covering OSINT techniques from his law enforcement and private sector experience.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "r/OSINT Subreddit",
+          "url": "https://reddit.com/r/OSINT",
+          "type": "community",
+          "cost": "free",
+          "description": "Reddit's OSINT community with 200K+ members sharing tools, techniques, and investigation help.",
+          "osint_domains": ["people", "company", "entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Bellingcat Discord",
+          "url": "https://discord.gg/bellingcat",
+          "type": "community",
+          "cost": "free",
+          "description": "Bellingcat's Discord server for collaborative investigation discussions and OSINT community networking.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "The OSINTion Discord",
+          "url": "https://discord.gg/osintionsociety",
+          "type": "community",
+          "cost": "free",
+          "description": "Joe Gray's OSINTion community Discord for OSINT practitioners and social engineering enthusiasts.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Openosint Slack",
+          "url": "https://openosint.slack.com",
+          "type": "community",
+          "cost": "free",
+          "description": "Open OSINT Slack workspace for real-time collaboration among OSINT practitioners.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Trace Labs Community",
+          "url": "https://tracelabs.org/community",
+          "type": "community",
+          "cost": "free",
+          "description": "Trace Labs community focused on using OSINT to locate missing persons through crowdsourced efforts.",
+          "osint_domains": ["people"],
+          "status": "active"
+        }
+      ]
+    },
+    "practitioners": {
+      "description": "Key people in the OSINT community including researchers, instructors, journalists, and tool creators",
+      "count": 25,
+      "sources": [
+        {
+          "name": "Michael Bazzell",
+          "url": "https://inteltechniques.com/team/",
+          "type": "community",
+          "cost": "free",
+          "description": "Former FBI agent, author of OSINT Techniques (11th Ed.) and Extreme Privacy. The most recognized name in OSINT.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Eliot Higgins",
+          "url": "https://bellingcat.com/author/eliothiggins/",
+          "type": "community",
+          "cost": "free",
+          "description": "Founded Bellingcat, pioneered open source investigation of conflicts. MacArthur Fellow and author of We Are Bellingcat.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Nico Dekens (@Dutch_OsintGuy)",
+          "url": "https://twitter.com/dutch_osintguy",
+          "type": "community",
+          "cost": "free",
+          "description": "SANS instructor and former Dutch law enforcement veteran specializing in social media OSINT and digital investigations.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Micah Hoffman (@webbreacher)",
+          "url": "https://twitter.com/webbreacher",
+          "type": "community",
+          "cost": "free",
+          "description": "Founded OSINT Curious, created MyOSINT Training, SANS author. Leading OSINT educator and tool creator.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Matt Edmondson",
+          "url": "https://argeliuslabs.com",
+          "type": "community",
+          "cost": "free",
+          "description": "Author of SANS SEC497 and SEC587 OSINT courses. Founder of Argelius Labs.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Joe Gray (@C_3PJoe)",
+          "url": "https://twitter.com/C_3PJoe",
+          "type": "community",
+          "cost": "free",
+          "description": "The OSINTion founder, social engineering expert, author of Practical Social Engineering (No Starch Press).",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Sector035",
+          "url": "https://twitter.com/sector035",
+          "type": "community",
+          "cost": "free",
+          "description": "Pseudonymous curator of the Week in OSINT newsletter since 2018, the OSINT community's essential weekly digest.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Jake Creps",
+          "url": "https://twitter.com/jaborosi",
+          "type": "community",
+          "cost": "free",
+          "description": "OSINT Newsletter author and podcast host covering tools, techniques, and industry news.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Steven Harris (Nixintel)",
+          "url": "https://twitter.com/nixintel",
+          "type": "community",
+          "cost": "free",
+          "description": "SANS instructor and start.me curator known for detailed OSINT technique blog posts and training.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Griffin Glynn (Hatless1der)",
+          "url": "https://twitter.com/hataborjk",
+          "type": "community",
+          "cost": "free",
+          "description": "Curator of the Ultimate OSINT Collection, one of the most comprehensive OSINT resource pages.",
+          "osint_domains": ["people", "company", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Rae Baker",
+          "url": "https://twitter.com/wondersmith_rae",
+          "type": "community",
+          "cost": "free",
+          "description": "Co-author of Deep Dive, maritime intelligence specialist with expertise in vessel tracking and investigation.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Henk van Ess",
+          "url": "https://twitter.com/haboresconsult",
+          "type": "community",
+          "cost": "free",
+          "description": "Google dorking expert and Digital Digging newsletter author with 8000+ subscribers.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Craig Silverman",
+          "url": "https://propublica.org/people/craig-silverman",
+          "type": "community",
+          "cost": "free",
+          "description": "Editor of the Verification Handbook, ProPublica reporter specializing in online misinformation investigation.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Christina Lekati",
+          "url": "https://christinalekati.com",
+          "type": "community",
+          "cost": "free",
+          "description": "Social engineering and OSINT specialist, BlackHat trainer combining psychology with technical investigation.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Kirby Plessas",
+          "url": "https://twitter.com/kirbstr",
+          "type": "community",
+          "cost": "free",
+          "description": "Corporate investigations specialist and host of the OSINT Cocktail podcast.",
+          "osint_domains": ["people", "company"],
+          "status": "active"
+        },
+        {
+          "name": "Aric Toler",
+          "url": "https://twitter.com/aaborictoler",
+          "type": "community",
+          "cost": "free",
+          "description": "Former Bellingcat trainer, now New York Times visual investigations journalist using OSINT for reporting.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Giancarlo Fiorella",
+          "url": "https://twitter.com/giaborancarlofio",
+          "type": "community",
+          "cost": "free",
+          "description": "Bellingcat Education Lead responsible for training journalists and researchers in OSINT methodology.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Benjamin Strick",
+          "url": "https://info-res.org",
+          "type": "community",
+          "cost": "free",
+          "description": "Centre for Information Resilience investigator specializing in open source conflict and human rights analysis.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Sofia Santos",
+          "url": "https://twitter.com/intaborelpattern",
+          "type": "community",
+          "cost": "free",
+          "description": "Creator of popular geolocation exercises used worldwide for OSINT training and skill development.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Robert Sell",
+          "url": "https://twitter.com/tracelabs",
+          "type": "community",
+          "cost": "free",
+          "description": "Founder of Trace Labs, pioneering the use of crowdsourced OSINT CTFs to find missing persons.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Chris Poulter",
+          "url": "https://osintcombine.com/about",
+          "type": "community",
+          "cost": "free",
+          "description": "Founder of OSINT Combine, building tools and training for the OSINT practitioner community.",
+          "osint_domains": ["people", "entity"],
+          "status": "active"
+        },
+        {
+          "name": "Lisette Abercrombie (Technisette)",
+          "url": "https://twitter.com/technisette",
+          "type": "community",
+          "cost": "free",
+          "description": "Dutch police OSINT specialist known for social media investigation techniques and training.",
+          "osint_domains": ["people"],
+          "status": "active"
+        },
+        {
+          "name": "Ryan Benson",
+          "url": "https://dfir.blog",
+          "type": "community",
+          "cost": "free",
+          "description": "Google DFIR analyst, creator of Hindsight (Chrome forensics) and Unfurl (URL investigation) tools.",
+          "osint_domains": ["entity", "threat"],
+          "status": "active"
+        },
+        {
+          "name": "Julia Bayer",
+          "url": "https://twitter.com/juliaborabayer",
+          "type": "community",
+          "cost": "free",
+          "description": "Founder of Quiztime daily geolocation challenges, DW journalist specializing in verification.",
+          "osint_domains": ["entity"],
+          "status": "active"
+        },
+        {
+          "name": "Nathaniel Fried",
+          "url": "https://osint.industries/about",
+          "type": "community",
+          "cost": "free",
+          "description": "CEO of OSINT Industries, UK OSINT community contributor building commercial OSINT tools.",
+          "osint_domains": ["people"],
+          "status": "active"
+        }
+      ]
+    }
+  }
+}

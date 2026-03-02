@@ -1,0 +1,179 @@
+# Voice Configuration Presets
+# Used by: VOICE template for personality calibration
+# Consumer: VoiceServer/server.ts
+
+version: 1.0.0
+last_updated: 2025-12-09
+
+# Default ElevenLabs settings
+defaults:
+  model: eleven_turbo_v2_5
+  default_rate_wpm: 175
+  volume: 0.80
+  output_format: mp3_44100_128
+
+# Stability philosophy
+stability:
+  description: |
+    Controls voice consistency vs expressiveness.
+    Lower = more chaotic/expressive, Higher = more measured/consistent.
+  ranges:
+    chaotic:
+      min: 0.18
+      max: 0.30
+      description: Maximum creative energy, unpredictable variation
+      use_cases:
+        - Hackers discovering vulnerabilities
+        - Artists following creative tangents
+        - Enthusiastic interns
+    expressive:
+      min: 0.38
+      max: 0.52
+      description: Warm engagement with natural variation
+      use_cases:
+        - Supportive assistants
+        - Storytellers
+        - Design critics
+    measured:
+      min: 0.55
+      max: 0.64
+      description: Confident authority with controlled variation
+      use_cases:
+        - Research analysts
+        - Strategic advisors
+    stable:
+      min: 0.72
+      max: 0.75
+      description: Maximum wisdom and gravitas
+      use_cases:
+        - Senior leaders
+        - Academic visionaries
+
+# Similarity boost philosophy
+similarity:
+  description: |
+    Controls voice consistency to reference.
+    Lower = more creative interpretation, Higher = more authoritative consistency.
+  ranges:
+    creative:
+      min: 0.52
+      max: 0.70
+      description: Maximum creative freedom in delivery
+      use_cases:
+        - Artists
+        - Enthusiastic helpers
+    balanced:
+      min: 0.78
+      max: 0.85
+      description: Professional reliability with personality
+      use_cases:
+        - Writers
+        - Engineers
+        - Pentesters
+    authoritative:
+      min: 0.88
+      max: 0.92
+      description: Maximum earned confidence
+      use_cases:
+        - Researchers
+        - Architects
+        - Senior leaders
+
+# Speaking rate philosophy
+rate:
+  description: |
+    Words per minute - reflects thinking speed and delivery style.
+  ranges:
+    deliberate:
+      min: 205
+      max: 215
+      description: Thoughtful, considering long-term implications
+      use_cases:
+        - Architects
+        - Artists (when distracted by beauty)
+    measured:
+      min: 220
+      max: 230
+      description: Professional steady pace
+      use_cases:
+        - Engineers
+        - Writers
+        - Strategists
+    efficient:
+      min: 235
+      max: 245
+      description: Confident presentation, engaged
+      use_cases:
+        - Researchers
+        - Primary assistants
+    rapid:
+      min: 260
+      max: 270
+      description: Ideas faster than words, maximum energy
+      use_cases:
+        - Hackers
+        - Interns
+
+# Preset combinations for common use cases
+presets:
+  celebration:
+    description: Animated wins and positive feedback
+    stability: 0.35
+    similarity_boost: 0.70
+    rate_modifier: 1.1
+
+  crisis:
+    description: Calm steady support during problems
+    stability: 0.55
+    similarity_boost: 0.85
+    rate_modifier: 0.95
+
+  discovery:
+    description: Excited finding something new
+    stability: 0.25
+    similarity_boost: 0.75
+    rate_modifier: 1.15
+
+  explanation:
+    description: Clear technical teaching
+    stability: 0.60
+    similarity_boost: 0.88
+    rate_modifier: 0.90
+
+  critique:
+    description: Precise professional feedback
+    stability: 0.52
+    similarity_boost: 0.84
+    rate_modifier: 1.0
+
+  storytelling:
+    description: Engaging narrative delivery
+    stability: 0.45
+    similarity_boost: 0.78
+    rate_modifier: 1.05
+
+# Notification types with preset mapping
+notification_types:
+  task_complete:
+    preset: celebration
+    default_voice: kai
+
+  error_found:
+    preset: crisis
+    default_voice: kai
+
+  security_alert:
+    preset: discovery
+    default_voice: pentester
+
+  research_complete:
+    preset: explanation
+    default_voice: ClaudeResearcher
+
+  design_feedback:
+    preset: critique
+    default_voice: designer
+
+  status_update:
+    preset: explanation
+    default_voice: kai

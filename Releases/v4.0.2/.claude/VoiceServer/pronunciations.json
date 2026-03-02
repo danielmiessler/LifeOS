@@ -1,0 +1,7 @@
+{
+  "_comment": "TTS pronunciation overrides. Each entry maps a display term to its phonetic TTS spelling. Uses word-boundary matching to avoid mid-word replacements. Source of truth: skills/PAI/USER/PRONUNCIATIONS.md",
+  "replacements": [
+    { "term": "PAI", "phonetic": "pie", "note": "Personal AI Infrastructure - rhymes with sky" },
+    { "term": "ISC", "phonetic": "I S C", "note": "Ideal State Criteria - spell out" }
+  ]
+}

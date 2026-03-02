@@ -1,0 +1,518 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "{YOUR_BUSINESS_NAME} Content Schema",
+  "description": "Deterministic schema for all parsed content types (YouTube, articles, PDFs, newsletters, Twitter threads)",
+  "version": "1.0.0",
+  "type": "object",
+  "required": [
+    "content",
+    "people",
+    "companies",
+    "topics",
+    "links",
+    "sources",
+    "newsletter_metadata",
+    "analysis",
+    "extraction_metadata"
+  ],
+  "properties": {
+    "content": {
+      "type": "object",
+      "description": "Core content information",
+      "required": ["id", "type", "title", "summary", "content", "metadata"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "UUID v4 unique identifier for this content",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["article", "video", "pdf", "newsletter", "podcast", "tweet_thread", "generic"],
+          "description": "Content type classification"
+        },
+        "title": {
+          "type": "string",
+          "description": "Primary title or headline"
+        },
+        "summary": {
+          "type": "object",
+          "description": "Multi-level summaries for different use cases",
+          "required": ["short", "medium", "long"],
+          "properties": {
+            "short": {
+              "type": "string",
+              "description": "1-2 sentence summary (Twitter-length)"
+            },
+            "medium": {
+              "type": "string",
+              "description": "Single paragraph summary (newsletter preview)"
+            },
+            "long": {
+              "type": "string",
+              "description": "Multiple paragraph comprehensive summary"
+            }
+          }
+        },
+        "content": {
+          "type": "object",
+          "description": "Full content in various formats",
+          "required": ["full_text", "transcript", "excerpts"],
+          "properties": {
+            "full_text": {
+              "type": ["string", "null"],
+              "description": "Complete text content (null if not applicable)"
+            },
+            "transcript": {
+              "type": ["string", "null"],
+              "description": "Video/audio transcript (null if not video/audio)"
+            },
+            "excerpts": {
+              "type": "array",
+              "description": "Key quotes or notable excerpts",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Content metadata and publication info",
+          "required": [
+            "source_url",
+            "canonical_url",
+            "published_date",
+            "accessed_date",
+            "language",
+            "word_count",
+            "read_time_minutes",
+            "author_platform"
+          ],
+          "properties": {
+            "source_url": {
+              "type": "string",
+              "description": "Original URL provided for parsing"
+            },
+            "canonical_url": {
+              "type": ["string", "null"],
+              "description": "Canonical URL if different from source"
+            },
+            "published_date": {
+              "type": ["string", "null"],
+              "format": "date-time",
+              "description": "Publication date in ISO 8601 format"
+            },
+            "accessed_date": {
+              "type": "string",
+              "format": "date-time",
+              "description": "Date content was accessed/parsed in ISO 8601 format"
+            },
+            "language": {
+              "type": "string",
+              "description": "Content language code (e.g., 'en', 'es')"
+            },
+            "word_count": {
+              "type": ["integer", "null"],
+              "description": "Total word count (null if not applicable)"
+            },
+            "read_time_minutes": {
+              "type": ["integer", "null"],
+              "description": "Estimated reading time in minutes"
+            },
+            "author_platform": {
+              "type": "string",
+              "enum": ["youtube", "substack", "blog", "news_site", "twitter", "arxiv", "medium", "linkedin", "other"],
+              "description": "Platform where content was published"
+            }
+          }
+        }
+      }
+    },
+    "people": {
+      "type": "array",
+      "description": "People mentioned in content",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "role", "title", "company", "social", "context", "importance"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "UUID v4 unique identifier for this person entity",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Full name of person"
+          },
+          "role": {
+            "type": "string",
+            "enum": ["author", "subject", "mentioned", "quoted", "expert", "interviewer", "interviewee"],
+            "description": "Role in this content"
+          },
+          "title": {
+            "type": ["string", "null"],
+            "description": "Job title or role description"
+          },
+          "company": {
+            "type": ["string", "null"],
+            "description": "Current company affiliation"
+          },
+          "social": {
+            "type": "object",
+            "description": "Social media handles and contact info",
+            "required": ["twitter", "linkedin", "email", "website"],
+            "properties": {
+              "twitter": {
+                "type": ["string", "null"],
+                "description": "Twitter/X handle (with @)"
+              },
+              "linkedin": {
+                "type": ["string", "null"],
+                "description": "LinkedIn profile URL"
+              },
+              "email": {
+                "type": ["string", "null"],
+                "description": "Email address if mentioned"
+              },
+              "website": {
+                "type": ["string", "null"],
+                "description": "Personal website or blog URL"
+              }
+            }
+          },
+          "context": {
+            "type": "string",
+            "description": "Why this person is mentioned in content"
+          },
+          "importance": {
+            "type": "string",
+            "enum": ["primary", "secondary", "minor"],
+            "description": "Importance level in this content"
+          }
+        }
+      }
+    },
+    "companies": {
+      "type": "array",
+      "description": "Companies and organizations mentioned",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "domain", "industry", "context", "mentioned_as", "sentiment"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "UUID v4 unique identifier for this company entity",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "name": {
+            "type": "string",
+            "description": "Company or organization name"
+          },
+          "domain": {
+            "type": ["string", "null"],
+            "description": "Primary domain name (e.g., 'anthropic.com')"
+          },
+          "industry": {
+            "type": ["string", "null"],
+            "description": "Industry classification (e.g., 'AI', 'security', 'fintech')"
+          },
+          "context": {
+            "type": "string",
+            "description": "Relevance and context within content"
+          },
+          "mentioned_as": {
+            "type": "string",
+            "enum": ["subject", "source", "example", "competitor", "partner", "acquisition", "product", "other"],
+            "description": "How company is referenced"
+          },
+          "sentiment": {
+            "type": "string",
+            "enum": ["positive", "neutral", "negative", "mixed"],
+            "description": "Sentiment in which company is discussed"
+          }
+        }
+      }
+    },
+    "topics": {
+      "type": "object",
+      "description": "Topic classification and categorization",
+      "required": [
+        "primary_category",
+        "secondary_categories",
+        "tags",
+        "keywords",
+        "themes",
+        "newsletter_sections"
+      ],
+      "properties": {
+        "primary_category": {
+          "type": "string",
+          "description": "Main category (e.g., 'AI', 'security', 'tech', 'business', 'science')"
+        },
+        "secondary_categories": {
+          "type": "array",
+          "description": "Related categories",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "description": "Specific tags for filtering and search",
+          "items": {
+            "type": "string"
+          }
+        },
+        "keywords": {
+          "type": "array",
+          "description": "Important keywords and terms",
+          "items": {
+            "type": "string"
+          }
+        },
+        "themes": {
+          "type": "array",
+          "description": "Broader conceptual themes",
+          "items": {
+            "type": "string"
+          }
+        },
+        "newsletter_sections": {
+          "type": "array",
+          "description": "Which newsletter sections this fits (e.g., 'Headlines', 'Analysis', 'Tools', 'AI', 'Security')",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "links": {
+      "type": "array",
+      "description": "All links found in content",
+      "items": {
+        "type": "object",
+        "required": ["id", "url", "domain", "title", "description", "link_type", "context", "position"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "UUID v4 unique identifier for this link entity",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "url": {
+            "type": "string",
+            "description": "Full URL"
+          },
+          "domain": {
+            "type": "string",
+            "description": "Domain name extracted from URL"
+          },
+          "title": {
+            "type": ["string", "null"],
+            "description": "Link anchor text or title"
+          },
+          "description": {
+            "type": ["string", "null"],
+            "description": "What this link points to"
+          },
+          "link_type": {
+            "type": "string",
+            "enum": ["reference", "source", "related", "tool", "research", "product", "social", "other"],
+            "description": "Type of link"
+          },
+          "context": {
+            "type": "string",
+            "description": "Why this link is included in content"
+          },
+          "position": {
+            "type": "string",
+            "enum": ["beginning", "middle", "end", "sidebar", "footer"],
+            "description": "Where in content this link appears"
+          }
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "description": "Original sources and citations",
+      "items": {
+        "type": "object",
+        "required": ["id", "publication", "author", "url", "published_date", "source_type"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "UUID v4 unique identifier for this source entity",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+          },
+          "publication": {
+            "type": ["string", "null"],
+            "description": "Publication or outlet name"
+          },
+          "author": {
+            "type": ["string", "null"],
+            "description": "Original author if cited"
+          },
+          "url": {
+            "type": ["string", "null"],
+            "description": "URL to source material"
+          },
+          "published_date": {
+            "type": ["string", "null"],
+            "format": "date-time",
+            "description": "Source publication date in ISO 8601"
+          },
+          "source_type": {
+            "type": "string",
+            "enum": ["research_paper", "news_article", "blog_post", "twitter_thread", "podcast", "video", "book", "other"],
+            "description": "Type of source material"
+          }
+        }
+      }
+    },
+    "newsletter_metadata": {
+      "type": "object",
+      "description": "{YOUR_BUSINESS_NAME} specific metadata",
+      "required": [
+        "issue_number",
+        "section",
+        "position_in_section",
+        "editorial_note",
+        "include_in_newsletter",
+        "scheduled_date"
+      ],
+      "properties": {
+        "issue_number": {
+          "type": ["integer", "null"],
+          "description": "Newsletter issue number if already published"
+        },
+        "section": {
+          "type": ["string", "null"],
+          "description": "Newsletter section (e.g., 'Headlines', 'Analysis', 'Tools')"
+        },
+        "position_in_section": {
+          "type": ["integer", "null"],
+          "description": "Order within section (1-based)"
+        },
+        "editorial_note": {
+          "type": ["string", "null"],
+          "description": "{PRINCIPAL.NAME}'s commentary or take on this content"
+        },
+        "include_in_newsletter": {
+          "type": "boolean",
+          "description": "Whether to include in upcoming newsletter"
+        },
+        "scheduled_date": {
+          "type": ["string", "null"],
+          "format": "date-time",
+          "description": "When scheduled to appear in newsletter (ISO 8601)"
+        }
+      }
+    },
+    "analysis": {
+      "type": "object",
+      "description": "Automated analysis and scoring",
+      "required": [
+        "sentiment",
+        "importance_score",
+        "novelty_score",
+        "controversy_score",
+        "relevance_to_audience",
+        "key_insights",
+        "related_content_ids",
+        "trending_potential"
+      ],
+      "properties": {
+        "sentiment": {
+          "type": "string",
+          "enum": ["positive", "neutral", "negative", "mixed"],
+          "description": "Overall sentiment of content"
+        },
+        "importance_score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "Importance/impact score (1-10)"
+        },
+        "novelty_score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "How novel/unique this content is (1-10)"
+        },
+        "controversy_score": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10,
+          "description": "How controversial/polarizing (1-10)"
+        },
+        "relevance_to_audience": {
+          "type": "array",
+          "description": "Which audience segments this is relevant to",
+          "items": {
+            "type": "string",
+            "enum": ["security_professionals", "ai_researchers", "technologists", "executives", "entrepreneurs", "general_tech", "other"]
+          }
+        },
+        "key_insights": {
+          "type": "array",
+          "description": "Main takeaways and insights",
+          "items": {
+            "type": "string"
+          }
+        },
+        "related_content_ids": {
+          "type": "array",
+          "description": "UUIDs of related content items",
+          "items": {
+            "type": "string"
+          }
+        },
+        "trending_potential": {
+          "type": "string",
+          "enum": ["low", "medium", "high"],
+          "description": "Likelihood to go viral or trend"
+        }
+      }
+    },
+    "extraction_metadata": {
+      "type": "object",
+      "description": "Metadata about the extraction process itself",
+      "required": [
+        "processed_date",
+        "processing_method",
+        "confidence_score",
+        "warnings",
+        "version"
+      ],
+      "properties": {
+        "processed_date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When this content was parsed (ISO 8601)"
+        },
+        "processing_method": {
+          "type": "string",
+          "enum": ["gemini", "fabric", "hybrid", "manual"],
+          "description": "Primary method used for extraction"
+        },
+        "confidence_score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "description": "Overall confidence in extraction quality (0-1)"
+        },
+        "warnings": {
+          "type": "array",
+          "description": "Any issues or warnings during extraction",
+          "items": {
+            "type": "string"
+          }
+        },
+        "version": {
+          "type": "string",
+          "description": "Schema version used (e.g., '1.0.0')"
+        }
+      }
+    }
+  }
+}
