@@ -445,6 +445,13 @@ async function main() {
       process.exit(0);
     }
 
+    // Only inject PAI context when launched via `pai` (sets PAI_ACTIVE=1)
+    // Vanilla `claude` gets CLAUDE.md only — no steering rules, identity, or dynamic context
+    if (!process.env.PAI_ACTIVE) {
+      console.error('⏭️ PAI_ACTIVE not set — skipping PAI context (vanilla claude session)');
+      process.exit(0);
+    }
+
     const paiDir = getPaiDir();
 
     // Tab reset is handled by KittyEnvPersist.hook.ts (runs before this hook)
