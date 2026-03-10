@@ -9,6 +9,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync, symlin
 import { homedir } from "os";
 import { join, basename } from "path";
 import type { InstallState, EngineEventHandler, DetectionResult } from "./types";
+import { PAI_VERSION, ALGORITHM_VERSION } from "./types";
 import { detectSystem, validateElevenLabsKey } from "./detect";
 import { generateSettingsJson } from "./config-gen";
 
@@ -547,6 +548,10 @@ export async function runConfiguration(
       existing.principal = { ...existing.principal, ...config.principal };
       existing.daidentity = { ...existing.daidentity, ...config.daidentity };
       existing.pai = { ...existing.pai, ...config.pai };
+      // Force-overwrite version fields — these must ALWAYS match the release,
+      // never be preserved from the user's existing config
+      existing.pai.version = PAI_VERSION;
+      existing.pai.algorithmVersion = ALGORITHM_VERSION;
       existing.preferences = { ...existing.preferences, ...config.preferences };
       // Only set permissions/contextFiles/plansDirectory if not already present
       if (!existing.permissions) existing.permissions = config.permissions;
@@ -564,10 +569,10 @@ export async function runConfiguration(
   await emit({ event: "message", content: "settings.json generated." });
 
   // Update Algorithm LATEST version file (public repo may be behind)
-  const latestPath = join(paiDir, "skills", "PAI", "Components", "Algorithm", "LATEST");
-  const latestDir = join(paiDir, "skills", "PAI", "Components", "Algorithm");
+  const latestPath = join(paiDir, "PAI", "Algorithm", "LATEST");
+  const latestDir = join(paiDir, "PAI", "Algorithm");
   if (existsSync(latestDir)) {
-    try { writeFileSync(latestPath, "v3.5.0\n"); } catch {}
+    try { writeFileSync(latestPath, `v${ALGORITHM_VERSION}\n`); } catch {}
   }
 
   // Calculate and write initial counts so banner shows real numbers on first launch

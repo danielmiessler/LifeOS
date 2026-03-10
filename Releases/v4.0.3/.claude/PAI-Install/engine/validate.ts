@@ -6,6 +6,7 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import type { InstallState, ValidationCheck, InstallSummary } from "./types";
+import { PAI_VERSION } from "./types";
 import { homedir } from "os";
 
 /**
@@ -191,7 +192,7 @@ export async function runValidation(state: InstallState): Promise<ValidationChec
  */
 export function generateSummary(state: InstallState): InstallSummary {
   return {
-    paiVersion: "4.0.0",
+    paiVersion: PAI_VERSION,
     principalName: state.collected.principalName || "User",
     aiName: state.collected.aiName || "PAI",
     timezone: state.collected.timezone || "UTC",

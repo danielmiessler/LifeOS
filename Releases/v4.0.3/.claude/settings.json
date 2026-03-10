@@ -805,7 +805,7 @@
       "Phase discipline: 7 separate phases. BUILD is not EXECUTE. Never merge or skip.",
       "spinnerVerbs in settings.json customizes the animated verb shown while working.",
       "The meaning of PAI: magnifying human capabilities through general problem-solving.",
-      "PAI v4.0.1 with Algorithm v3.6.0 — the latest system architecture.",
+      "PAI v4.0.3 with Algorithm v3.7.0 — the latest system architecture.",
       "The counts section in settings.json tracks skills, signals, files, and sessions.",
       "v4.0: contextFiles is empty. Core context in CLAUDE.md (native). Dynamic context via LoadContext.hook.ts.",
       "The Splitting Test checks every ISC: and/with test, independent failure, scope words, domain boundaries.",
@@ -966,8 +966,8 @@
   },
   "pai": {
     "repoUrl": "github.com/danielmiessler/PAI",
-    "version": "4.0.1",
-    "algorithmVersion": "3.6.0"
+    "version": "4.0.3",
+    "algorithmVersion": "3.7.0"
   },
   "preferences": {
     "temperatureUnit": "fahrenheit"

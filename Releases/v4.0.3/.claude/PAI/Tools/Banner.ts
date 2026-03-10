@@ -113,8 +113,8 @@ interface SystemStats {
 
 function getStats(): SystemStats {
   let name = "PAI";
-  let paiVersion = "4.0.0";
-  let algorithmVersion = "0.2";
+  let paiVersion = "4.0.3";
+  let algorithmVersion = "3.7.0";
   let catchphrase = "{name} here, ready to go";
   let repoUrl = "github.com/danielmiessler/PAI";
   try {

@@ -75,8 +75,8 @@ export function printBanner(): void {
   print("");
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.gray}"${c.reset}${c.lightBlue}{DAIDENTITY.NAME} here, ready to go${c.reset}${c.gray}..."${c.reset}`);
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${bar}`);
-  print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⬢${c.reset}  ${c.gray}PAI v4.0${c.reset}`);
-  print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⚙${c.reset}  ${c.gray}Algo${c.reset}      ${c.silver}v3.5.0${c.reset}`);
+  print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⬢${c.reset}  ${c.gray}PAI v4.0.3${c.reset}`);
+  print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⚙${c.reset}  ${c.gray}Algo${c.reset}      ${c.silver}v3.7.0${c.reset}`);
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.lightBlue}✦${c.reset}  ${c.gray}Installer${c.reset} ${c.silver}v4.0${c.reset}`);
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${bar}`);
   print(`           ${c.navy}████${c.reset}        ${c.blue}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}`);

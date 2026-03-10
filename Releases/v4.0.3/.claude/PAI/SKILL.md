@@ -32,7 +32,7 @@ The CapabilityRecommender hook uses AI inference to classify depth. Its classifi
 
 **Default:** FULL. MINIMAL is rare — only pure social interaction with zero task content. Short prompts can demand FULL depth. The word "just" does not reduce depth.
 
-# The Algorithm (v3.5.0 | github.com/danielmiessler/TheAlgorithm)
+# The Algorithm (v3.7.0 | github.com/danielmiessler/TheAlgorithm)
 
 ## Core Philosophy
 
@@ -234,7 +234,7 @@ More ISC = finer verification = better hill-climbing. When in doubt, more criter
 ## The Seven Mandatory Phases of Algorithm Execution
 
 ```
-♻︎ Entering the PAI ALGORITHM… (v3.5.0 | github.com/danielmiessler/TheAlgorithm) ═════════════
+♻︎ Entering the PAI ALGORITHM… (v3.7.0 | github.com/danielmiessler/TheAlgorithm) ═════════════
 
 🗒️ TASK: [8 word description]
 
@@ -369,7 +369,7 @@ CRITICAL: ALWAYS use this format, even for short interactions.
 
 **Minimal** (greetings, ratings, acknowledgments):
 ```
-🤖 PAI ALGORITHM (v3.5.0) ═════════════
+🤖 PAI ALGORITHM (v3.7.0) ═════════════
    Task: [6 words]
    Effort: [INSTANT|FAST|STANDARD|EXTENDED|ADVANCED|DEEP|COMPREHENSIVE]
 📋 SUMMARY: [bullets]

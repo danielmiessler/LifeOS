@@ -192,7 +192,7 @@ function mergeSettings(
     }
 
     // Ensure version is set
-    finalSettings.paiVersion = finalSettings.paiVersion || '4.0.0';
+    finalSettings.paiVersion = finalSettings.paiVersion || '4.0.3';
 
     writeFileSync(targetPath, JSON.stringify(finalSettings, null, 2));
     return { merged: true };

@@ -34,7 +34,7 @@
 
 <!-- Content -->
 [![Get Started](https://img.shields.io/badge/🚀_Get_Started-Install-22C55E?style=flat)](#-installation)
-[![Release v4.0.1](https://img.shields.io/badge/📦_Release-v4.0.1-8B5CF6?style=flat)](Releases/v4.0.1/)
+[![Release v4.0.3](https://img.shields.io/badge/📦_Release-v4.0.3-8B5CF6?style=flat)](Releases/v4.0.3/)
 [![Contributors](https://img.shields.io/github/contributors/danielmiessler/Personal_AI_Infrastructure?style=flat&logo=githubsponsors&logoColor=white&label=Contributors&color=EC4899)](https://github.com/danielmiessler/Personal_AI_Infrastructure/graphs/contributors)
 
 <!-- Tech Stack -->
@@ -62,9 +62,9 @@
 </div>
 
 > [!IMPORTANT]
-> **PAI v4.0.1 Released** — Upgrade path documentation, configurable temperature units, FAQ fixes. Built on v4.0.0 Lean and Mean.
+> **PAI v4.0.3 Released** — 3 patch updates since v4.0.0 with 30+ community-contributed fixes: Linux compatibility, JSON parsing, installer improvements, portability, and upgrade migration.
 >
-> **[Release notes →](Releases/v4.0.1/README.md)** | **[v4.0.0 notes →](Releases/v4.0.0/README.md)**
+> **[Release notes →](Releases/v4.0.3/README.md)** | **[All releases →](Releases/)**
 
 <div align="center">
 
@@ -341,7 +341,7 @@ Rich tab titles and pane management. Dynamic status lines show learning signals,
 ```bash
 # Clone the repo
 git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
-cd Personal_AI_Infrastructure/Releases/v4.0.1
+cd Personal_AI_Infrastructure/Releases/v4.0.3
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -564,7 +564,7 @@ cp -r ~/.claude ~/.claude-backup-$(date +%Y%m%d)
 
 # 2. Clone and copy the new release over your installation
 git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
-cd Personal_AI_Infrastructure/Releases/v4.0.1
+cd Personal_AI_Infrastructure/Releases/v4.0.3
 cp -r .claude ~/
 
 # 3. Run the installer (detects existing installation, preserves your data)
@@ -741,6 +741,19 @@ MIT License - see [LICENSE](LICENSE) for details.
 <summary><strong>📜 Update History</strong></summary>
 
 <br/>
+
+**v4.0.3 (2026-03-01) — Community PR Patch**
+- JSON array parsing fix in Inference.ts
+- 29 dead references removed from CONTEXT_ROUTING.md
+- WorldThreatModelHarness PAI_DIR portability
+- User context migration for v2.5/v3.0 upgraders
+- [Release Notes](Releases/v4.0.3/README.md)
+
+**v4.0.2 (2026-03-01) — Bug Fix Patch**
+- 13 surgical fixes: Linux compatibility, installer, statusline, hooks
+- Cross-platform OAuth token extraction, GNU coreutils tr fix
+- Inference guard (~15s savings), lineage tracking, dead code removal
+- [Release Notes](Releases/v4.0.2/README.md)
 
 **v4.0.1 (2026-02-28) — Upgrade Path & Preferences**
 - Upgrade documentation with backup, merge, and post-upgrade checklist
