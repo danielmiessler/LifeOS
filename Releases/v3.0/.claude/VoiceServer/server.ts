@@ -32,12 +32,48 @@ if (existsSync(envPath)) {
   });
 }
 
+// If ELEVENLABS_API_KEY not in env, fetch from 1Password Connect
+// Credentials loaded from ~/.config/pai/.env (bootstrap credentials)
+if (!process.env.ELEVENLABS_API_KEY) {
+  try {
+    const paiEnvPath = join(homedir(), '.config', 'pai', '.env');
+    const paiEnv: Record<string, string> = {};
+    if (existsSync(paiEnvPath)) {
+      const paiEnvContent = await Bun.file(paiEnvPath).text();
+      paiEnvContent.split('\n').forEach(line => {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+          const idx = trimmed.indexOf('=');
+          paiEnv[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+        }
+      });
+    }
+    const connectHost = paiEnv.OP_CONNECT_HOST || 'http://192.168.3.151:8080';
+    const connectToken = paiEnv.OP_CONNECT_TOKEN;
+    if (connectToken) {
+      // ElevenLabs item ID in HomeLab External vault  # gitleaks:allow — 1Password item ID, not a secret
+      const resp = await fetch(
+        `${connectHost}/v1/vaults/jisdqyo7kdrz5s3nnnqmbvkjl4/items/fciqv3rrny5io523u7ez7ea24u`,
+        { headers: { Authorization: `Bearer ${connectToken}` } }
+      );
+      if (resp.ok) {
+        const item = await resp.json() as { fields?: Array<{ label: string; value: string }> };
+        const field = item.fields?.find(f => f.label === 'api_key');
+        if (field?.value) {
+          process.env.ELEVENLABS_API_KEY = field.value;
+        }
+      }
+    }
+  } catch {
+    // Will log warning below if still not found
+  }
+}
+
 const PORT = parseInt(process.env.PORT || "8888");
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 if (!ELEVENLABS_API_KEY) {
-  console.error('⚠️  ELEVENLABS_API_KEY not found in ~/.env');
-  console.error('Add: ELEVENLABS_API_KEY=your_key_here');
+  console.error('⚠️  ELEVENLABS_API_KEY not found — check 1Password Connect is reachable');
 }
 
 // ==========================================================================
