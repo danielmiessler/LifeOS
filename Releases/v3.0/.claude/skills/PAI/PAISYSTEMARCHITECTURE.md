@@ -206,7 +206,46 @@ Skills are more than documentation - they are active orchestrators:
 
 **Key Takeaway:** Skills are how PAI scales - each new domain gets its own skill.
 
-### 13. Custom Memory System
+### 13. Three-Layer Deployment Model
+
+**Separate public system code from private personal data from local secrets.**
+
+PAI is designed to be deployed across three distinct layers so that upstream improvements
+can be adopted without touching personal data, and personal data is never accidentally
+committed to a public repository.
+
+```
+Layer 1 — System     Public fork of the upstream PAI repository
+                     Contains: system code, public skills, hooks, agents, lib
+                     Versioned: in a public (or shared) git repository
+                     Shareable: yes — this layer has no personal content
+
+Layer 2 — Personal   Private repository containing personal configuration
+                     Contains: identity, memory, personal skills, settings
+                     Versioned: in a private git repository
+                     Symlinked: into Layer 1 at runtime
+                     Rule: NEVER commit Layer 2 content to Layer 1
+
+Layer 3 — Secrets    Local secrets and runtime state — never versioned anywhere
+                     Contains: API keys, OAuth credentials, runtime state cache
+                     Lives on disk only — backed up encrypted, never in git
+```
+
+All three layers are wired together by symlinks. A `SymlinkIntegrity` hook verifies the
+wiring at session start. If a symlink is missing, the hook reports the exact command to
+fix it — no tribal knowledge required.
+
+**The separation rule:** If content could appear in a public git log → it belongs in
+Layer 1. If it is personal but not secret → Layer 2. If it is a credential or secret → Layer 3.
+
+**Why it matters:** Upstream PAI improvements can be merged into Layer 1 without touching
+personal data. The private layer can be updated without touching system code. Secrets
+never enter git history. A full rebuild from scratch requires only: clone Layer 1, clone
+Layer 2, restore Layer 3 from encrypted backup.
+
+**Full documentation:** `USER/ARCHITECTURE.md` in any PAI installation.
+
+### 14. Custom Memory System
 
 **Automatic capture and preservation of valuable work.**
 
@@ -218,7 +257,7 @@ Every session, every insight, every decision—captured automatically:
 
 **Key Takeaway:** Memory makes intelligence compound. Without memory, every session starts from zero.
 
-### 14. Custom Agent Personalities / Voices
+### 15. Custom Agent Personalities / Voices
 
 **Specialized agents with distinct personalities for different tasks.**
 
@@ -229,7 +268,7 @@ Every session, every insight, every decision—captured automatically:
 
 **Key Takeaway:** Personality isn't decoration—it's functional.
 
-### 15. Science as Cognitive Loop
+### 16. Science as Cognitive Loop
 
 **The scientific method is the universal cognitive pattern for systematic problem-solving.**
 
@@ -244,7 +283,7 @@ Goal → Observe → Hypothesize → Experiment → Measure → Analyze → Iter
 
 **Key Takeaway:** Science isn't a separate skill—it's the pattern that underlies all systematic problem-solving.
 
-### 16. Permission to Fail
+### 17. Permission to Fail
 
 **Explicit permission to say "I don't know" prevents hallucinations.**
 

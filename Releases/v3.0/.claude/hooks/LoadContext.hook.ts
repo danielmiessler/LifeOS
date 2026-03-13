@@ -38,10 +38,10 @@
  * - Skipped for subagents: Yes (they get context differently)
  */
 
-import { readFileSync, existsSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
 import { execSync } from 'child_process';
-import { getPaiDir } from './lib/paths';
+import { getPaiDir, paiPath } from './lib/paths';
 import { recordSessionStart } from './lib/notifications';
 import { setTabState, readTabState } from './lib/tab-setter';
 import { getDAName } from './lib/identity';
@@ -448,6 +448,133 @@ async function checkActiveProgress(paiDir: string): Promise<string | null> {
   return summary;
 }
 
+// ========================================
+// Advisor Session Support
+// ========================================
+
+interface HookInput {
+  session_id?: string;
+  [key: string]: unknown;
+}
+
+interface LatestParkedPointer {
+  session_id: string;
+  advisor: string;
+  resume_skill: string;
+  topic: string;
+  conversation_file: string;
+  parked_at: string;
+}
+
+/**
+ * Read hook input from stdin with a short timeout.
+ * Returns parsed input or an empty object if unavailable.
+ */
+async function readHookInput(): Promise<HookInput> {
+  try {
+    const reader = Bun.stdin.stream().getReader();
+    let raw = '';
+    const readLoop = (async () => {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        raw += new TextDecoder().decode(value, { stream: true });
+      }
+    })();
+    await Promise.race([readLoop, new Promise<void>(r => setTimeout(r, 150))]);
+    if (raw.trim()) {
+      return JSON.parse(raw) as HookInput;
+    }
+  } catch { /* silent */ }
+  return {};
+}
+
+/**
+ * Write the current session_id to a well-known fixed path so LLM StartSession
+ * workflows can read it and know their own session_id.
+ * Also creates a template advisor session JSON (status: no_advisor) that
+ * StartSession workflows fill in when an advisor becomes active.
+ */
+function writeSessionArtifacts(sessionId: string): void {
+  try {
+    // Write .current-session-id
+    const idPath = paiPath('MEMORY', 'STATE', '.current-session-id');
+    const idDir = dirname(idPath);
+    if (!existsSync(idDir)) mkdirSync(idDir, { recursive: true });
+    writeFileSync(idPath, sessionId, 'utf-8');
+
+    // Write template advisor session JSON (only if it doesn't already exist)
+    const sessionDir = paiPath('MEMORY', 'STATE', 'advisor-sessions');
+    if (!existsSync(sessionDir)) mkdirSync(sessionDir, { recursive: true });
+
+    const sessionPath = join(sessionDir, `${sessionId}.json`);
+    if (!existsSync(sessionPath)) {
+      const template = {
+        session_id: sessionId,
+        advisor: null,
+        resume_skill: null,
+        status: 'no_advisor',
+        started_at: new Date().toISOString(),
+        topic: null,
+        conversation_file: null,
+        session_index_file: null,
+        parked_at: null,
+        parked_reason: null,
+      };
+      writeFileSync(sessionPath, JSON.stringify(template, null, 2), 'utf-8');
+    }
+  } catch (err) {
+    console.error(`⚠️ Failed to write session artifacts: ${err}`);
+  }
+}
+
+/**
+ * Check for a parked advisor session (from compaction).
+ * Returns a recovery warning string if a recent parked session exists,
+ * or null if no action is needed.
+ * Also updates parked_reason → "notified" so the message doesn't repeat.
+ */
+function checkParkedAdvisorSession(): string | null {
+  try {
+    const pointerPath = paiPath('MEMORY', 'STATE', 'latest-parked-session.json');
+    if (!existsSync(pointerPath)) return null;
+
+    const pointer = JSON.parse(readFileSync(pointerPath, 'utf-8')) as LatestParkedPointer;
+    if (!pointer.parked_at) return null;
+
+    // Reject if older than 7 days (stale)
+    const parkedMs = Date.now() - new Date(pointer.parked_at).getTime();
+    const sevenDays = 7 * 24 * 60 * 60 * 1000;
+    if (parkedMs > sevenDays) return null;
+
+    // Read the actual session file to check status and parked_reason
+    const sessionPath = paiPath('MEMORY', 'STATE', 'advisor-sessions', `${pointer.session_id}.json`);
+    if (!existsSync(sessionPath)) return null;
+
+    const session = JSON.parse(readFileSync(sessionPath, 'utf-8'));
+    if (session.status !== 'parked') return null;
+    if (session.parked_reason === 'notified') return null;
+    if (session.parked_reason !== 'compaction') return null;
+
+    // Mark as notified so the message doesn't repeat
+    session.parked_reason = 'notified';
+    writeFileSync(sessionPath, JSON.stringify(session, null, 2), 'utf-8');
+
+    return [
+      `⚠️ ${pointer.advisor?.toUpperCase() ?? 'ADVISOR'} SESSION PARKED BY COMPACTION`,
+      ``,
+      `A ${pointer.advisor ?? 'advisor'} conversation was interrupted. State is fully preserved.`,
+      `Topic: ${pointer.topic ?? '(unknown)'}`,
+      ``,
+      `Type /clear then /${pointer.resume_skill ?? 'the skill'} to resume cleanly.`,
+      `Do not respond to anything else until Andy has done this.`,
+    ].join('\n');
+  } catch (err) {
+    console.error(`⚠️ Failed to check parked advisor session: ${err}`);
+    return null;
+  }
+}
+
 async function main() {
   try {
     // Check if this is a subagent session - if so, exit silently
@@ -461,7 +588,20 @@ async function main() {
       process.exit(0);
     }
 
+    // Read hook input (session_id comes via stdin)
+    const hookInput = await readHookInput();
+    const sessionId = hookInput.session_id as string | undefined;
+
     const paiDir = getPaiDir();
+
+    // Write session artifacts (.current-session-id + template advisor session JSON)
+    if (sessionId) {
+      writeSessionArtifacts(sessionId);
+      console.error(`🗝️ Session artifacts written for ${sessionId}`);
+    }
+
+    // Check for parked advisor session (compaction recovery)
+    const parkedWarning = checkParkedAdvisorSession();
 
     // CRITICAL: Reset tab title IMMEDIATELY at session start
     // This prevents stale titles from previous sessions bleeding through
@@ -595,6 +735,12 @@ ${relationshipContext ? '\n---\n' + relationshipContext : ''}
 
 This context is now active. Additional context loads dynamically as needed.
 </system-reminder>`;
+
+    // Output parked advisor warning FIRST (before PAI context) if present
+    if (parkedWarning) {
+      console.log(`<system-reminder>\n${parkedWarning}\n</system-reminder>`);
+      console.error('⚠️ Parked advisor session detected — injecting recovery message');
+    }
 
     // Write to stdout (will be captured by Claude Code)
     console.log(message);

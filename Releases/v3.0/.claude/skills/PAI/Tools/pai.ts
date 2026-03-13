@@ -390,7 +390,7 @@ function cmdWallpaper(args: string[]) {
 // Commands
 // ============================================================================
 
-async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean }) {
+async function cmdLaunch(options: { mcp?: string; resume?: boolean; resumeId?: string; skipPerms?: boolean; local?: boolean }) {
   displayBanner();
   const args = ["claude"];
 
@@ -404,9 +404,14 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   // NOTE: We no longer use --dangerously-skip-permissions by default.
   // The settings.json permission system (allow/deny/ask) provides proper security.
   // Use --dangerous flag explicitly if you really need to skip all permission checks.
-  if (options.resume) {
+  if (options.resumeId) {
+    args.push("--resume", options.resumeId);
+  } else if (options.resume) {
     args.push("--resume");
   }
+
+  // Disable Ctrl+Z suspend so it doesn't silently kill Claude sessions
+  spawnSync(["stty", "susp", "undef"], { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
 
   // Change to PAI directory unless --local flag is set
   if (!options.local) {
@@ -572,6 +577,7 @@ USAGE:
   k -m <mcp>               Launch with specific MCP(s)
   k -m bd,ap               Launch with multiple MCPs
   k -r, --resume           Resume last session
+  k -r <id>               Resume specific session by ID
   k -l, --local            Stay in current directory (don't cd to ~/.claude)
 
 COMMANDS:
@@ -601,6 +607,7 @@ EXAMPLES:
   k -m bd                  Start with Bright Data
   k -m bd,ap,chrome        Start with multiple MCPs
   k -r                     Resume last session
+  k -r 1e036961-...        Resume specific session by ID
   k mcp set research       Switch to research profile
   k update                 Update Claude Code
   k prompt "What time is it?"   One-shot prompt
@@ -625,6 +632,7 @@ async function main() {
   // Parse arguments
   let mcp: string | undefined;
   let resume = false;
+  let resumeId: string | undefined;
   let skipPerms = true;
   let local = false;
   let command: string | undefined;
@@ -651,6 +659,10 @@ async function main() {
       case "-r":
       case "--resume":
         resume = true;
+        // Optional: pai -r <session-id>
+        if (args[i + 1] && !args[i + 1].startsWith("-")) {
+          resumeId = args[++i];
+        }
         break;
       case "--safe":
         skipPerms = false;
@@ -734,7 +746,7 @@ async function main() {
       break;
     default:
       // Launch with options
-      await cmdLaunch({ mcp, resume, skipPerms, local });
+      await cmdLaunch({ mcp, resume, resumeId, skipPerms, local });
   }
 }
 
