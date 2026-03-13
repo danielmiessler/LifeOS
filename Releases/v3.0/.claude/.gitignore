@@ -78,3 +78,20 @@ skills/StoryCrafter
 skills/TechnicalDesigner
 skills/VoiceServer
 commands
+
+# Claude Code IDE/remote session files (machine-specific)
+ide/
+remote/
+
+# Claude Code task tracking (session-local)
+tasks/
+
+# Telemetry and history logs (auto-generated)
+telemetry/
+history/
+
+# Backup files
+*.bak
+
+# Personal skills symlinked from marvin
+skills/QualityAdvisor
