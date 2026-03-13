@@ -1,18 +1,29 @@
-name: trufflehog
+name: security
+
 on:
   pull_request:
-    branches: [master, main]
   push:
-    branches: [master, main]
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   trufflehog:
     runs-on: ubuntu-latest
-    name: trufflehog
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: trufflesecurity/trufflehog@main
+      - name: TruffleHog
+        uses: trufflesecurity/trufflehog@v3.92.5
         with:
+          path: .
+          base: ${{ github.event.pull_request.base.sha || github.sha }}
+          head: ${{ github.event.pull_request.head.sha || github.sha }}
           extra_args: --only-verified
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

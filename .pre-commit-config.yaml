@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.0
+    hooks:
+      - id: gitleaks
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        exclude: >-
+          (?x)^(
+            Releases/v3\.0/\.claude/MEMORY/WORK/.*|
+            Releases/v3\.0/\.claude/skills/Fabric/Patterns/.*|
+            Releases/v3\.0/\.claude/skills/PAI/Components/Algorithm/v0\..*|
+            Releases/v3\.0/\.claude/skills/PAI/SKILL\.md|
+            Releases/v3\.0/\.claude/skills/PAI/THEHOOKSYSTEM\.md|
+            Releases/v3\.0/\.claude/skills/PAI/PAISYSTEMARCHITECTURE\.md
+          )$
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+        args: ["-d", "{extends: relaxed, rules: {line-length: {max: 120}}}"]
+        exclude: >-
+          (?x)^(
+            Releases/v3\.0/\.claude/MEMORY/WORK/.*
+          )$

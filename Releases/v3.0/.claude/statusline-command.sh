@@ -328,9 +328,14 @@ COUNTSEOF
     [ -f "$USAGE_CACHE" ] && cache_age=$(($(date +%s) - $(get_mtime "$USAGE_CACHE")))
 
     if [ "$cache_age" -gt "$USAGE_CACHE_TTL" ]; then
-        # Extract OAuth token from macOS Keychain
+        # Extract OAuth token — macOS Keychain first, then Linux credentials file
         keychain_data=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
         token=$(echo "$keychain_data" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('claudeAiOauth',{}).get('accessToken',''))" 2>/dev/null)
+        # Linux fallback: read directly from credentials JSON file
+        if [ -z "$token" ]; then
+            _creds="${PAI_DIR}/.credentials.json"
+            [ -f "$_creds" ] && token=$(jq -r '.claudeAiOauth.accessToken // empty' "$_creds" 2>/dev/null)
+        fi
 
         if [ -n "$token" ]; then
             usage_json=$(curl -s --max-time 3 \
@@ -737,164 +742,91 @@ calc_bar_width() {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# LINE 0: PAI BRANDING (location, time, weather)
+# OUTPUT: 4 lines — Location | Environment | Context | Quota
 # ═══════════════════════════════════════════════════════════════════════════════
-# NOTE: location_city, location_state, weather_str are populated by PARALLEL PREFETCH
 
 current_time=$(date +"%H:%M")
 
-# Session label: uppercase 2-word label
-session_display=""
-if [ -n "$SESSION_LABEL" ]; then
-    session_display=$(echo "$SESSION_LABEL" | tr '[:lower:]' '[:upper:]')
-fi
-
-# Output PAI branding line
+# ─── LINE 1: LOCATION ────────────────────────────────────────────────────────
+printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
 case "$MODE" in
     nano)
-        printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${SLATE_600}│ ────────────${RESET}\n"
         printf "${PAI_TIME}${current_time}${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+        ;;
+    micro)
+        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+        ;;
+    mini|normal)
+        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+        ;;
+esac
+
+# ─── LINE 2: ENVIRONMENT ─────────────────────────────────────────────────────
+printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+case "$MODE" in
+    nano)
         printf "${SLATE_400}ENV:${RESET} ${SLATE_500}v${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}v${ALGO_VERSION}${RESET} ${SLATE_400}S:${SLATE_300}${skills_count}${RESET}\n"
         ;;
     micro)
-        if [ -n "$session_display" ]; then
-            local_left="── │ PAI STATUSLINE │"
-            local_right="${session_display}"
-            local_left_len=${#local_left}
-            local_right_len=${#session_display}
-            local_fill=$((72 - local_left_len - local_right_len))
-            [ "$local_fill" -lt 2 ] && local_fill=2
-            local_dashes=$(printf '%*s' "$local_fill" '' | tr ' ' '─')
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
-        else
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ──────────────────${RESET}\n"
-        fi
-        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
         printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}v${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}v${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${SLATE_400}S:${SLATE_300}${skills_count}${RESET} ${SLATE_400}W:${SLATE_300}${workflows_count}${RESET} ${SLATE_400}H:${SLATE_300}${hooks_count}${RESET}\n"
         ;;
     mini)
-        if [ -n "$session_display" ]; then
-            local_left="── │ PAI STATUSLINE │"
-            local_right="${session_display}"
-            local_left_len=${#local_left}
-            local_right_len=${#session_display}
-            local_fill=$((72 - local_left_len - local_right_len))
-            [ "$local_fill" -lt 2 ] && local_fill=2
-            local_dashes=$(printf '%*s' "$local_fill" '' | tr ' ' '─')
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
-        else
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ────────────────────────────────────────${RESET}\n"
-        fi
-        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
         printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}v${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}v${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET}${SLATE_300}${skills_count}${RESET} ${WIELD_WORKFLOWS}WF:${RESET}${SLATE_300}${workflows_count}${RESET} ${WIELD_HOOKS}Hooks:${RESET}${SLATE_300}${hooks_count}${RESET}\n"
         ;;
     normal)
-        if [ -n "$session_display" ]; then
-            local_left="── │ PAI STATUSLINE │"
-            local_right="${session_display}"
-            local_left_len=${#local_left}
-            local_right_len=${#session_display}
-            local_fill=$((72 - local_left_len - local_right_len))
-            [ "$local_fill" -lt 2 ] && local_fill=2
-            local_dashes=$(printf '%*s' "$local_fill" '' | tr ' ' '─')
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
-        else
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ──────────────────────────────────────────────────${RESET}\n"
-        fi
-        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
         printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}v${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}v${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET} ${SLATE_300}${skills_count}${RESET} ${SLATE_600}│${RESET} ${WIELD_WORKFLOWS}WF:${RESET} ${SLATE_300}${workflows_count}${RESET} ${SLATE_600}│${RESET} ${WIELD_HOOKS}Hooks:${RESET} ${SLATE_300}${hooks_count}${RESET}\n"
         ;;
 esac
+
+# ─── LINE 3: CONTEXT BAR ─────────────────────────────────────────────────────
 printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE 1: CONTEXT
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Format duration
-duration_sec=$((duration_ms / 1000))
-if   [ "$duration_sec" -ge 3600 ]; then time_display="$((duration_sec / 3600))h$((duration_sec % 3600 / 60))m"
-elif [ "$duration_sec" -ge 60 ];   then time_display="$((duration_sec / 60))m$((duration_sec % 60))s"
-else time_display="${duration_sec}s"
-fi
-
-# Context display - scale to compaction threshold if configured
 context_max="${context_max:-200000}"
-max_k=$((context_max / 1000))
 
-# Read compaction threshold from settings (default 100 = no scaling)
 COMPACTION_THRESHOLD=$(jq -r '.contextDisplay.compactionThreshold // 100' "$SETTINGS_FILE" 2>/dev/null)
 COMPACTION_THRESHOLD="${COMPACTION_THRESHOLD:-100}"
 
-# Get raw percentage from Claude Code
-raw_pct="${context_pct%%.*}"  # Remove decimals
+raw_pct="${context_pct%%.*}"
 [ -z "$raw_pct" ] && raw_pct=0
 
-# Scale percentage: if threshold is 62, then 62% raw = 100% displayed
-# Formula: display_pct = (raw_pct * 100) / threshold
 if [ "$COMPACTION_THRESHOLD" -lt 100 ] && [ "$COMPACTION_THRESHOLD" -gt 0 ]; then
     display_pct=$((raw_pct * 100 / COMPACTION_THRESHOLD))
-    # Cap at 100% (could exceed if past compaction point)
     [ "$display_pct" -gt 100 ] && display_pct=100
 else
     display_pct="$raw_pct"
 fi
 
-# Color based on scaled percentage (same thresholds work for scaled 0-100%)
-if [ "$display_pct" -ge 80 ]; then
-    pct_color="$ROSE"                  # Red: 80%+ - getting full
-elif [ "$display_pct" -ge 60 ]; then
-    pct_color='\033[38;2;251;146;60m'  # Orange: 60-80%
-elif [ "$display_pct" -ge 40 ]; then
-    pct_color='\033[38;2;251;191;36m'  # Yellow: 40-60%
-else
-    pct_color="$EMERALD"               # Green: <40%
+if   [ "$display_pct" -ge 80 ]; then pct_color="$ROSE"
+elif [ "$display_pct" -ge 60 ]; then pct_color='\033[38;2;251;146;60m'
+elif [ "$display_pct" -ge 40 ]; then pct_color='\033[38;2;251;191;36m'
+else                                  pct_color="$EMERALD"
 fi
 
-# Calculate bar width to match statusline content width (72 chars)
 bar_width=$(calc_bar_width "$MODE")
+bar=$(render_context_bar "$bar_width" "$display_pct")
 
 case "$MODE" in
-    nano)
-        bar=$(render_context_bar $bar_width $display_pct)
+    nano|micro)
         printf "${CTX_PRIMARY}◉${RESET} ${bar} ${pct_color}${display_pct}%%${RESET}\n"
         ;;
-    micro)
-        bar=$(render_context_bar $bar_width $display_pct)
-        printf "${CTX_PRIMARY}◉${RESET} ${bar} ${pct_color}${display_pct}%%${RESET}\n"
-        ;;
-    mini)
-        bar=$(render_context_bar $bar_width $display_pct)
-        printf "${CTX_PRIMARY}◉${RESET} ${CTX_SECONDARY}CONTEXT:${RESET} ${bar} ${pct_color}${display_pct}%%${RESET}\n"
-        ;;
-    normal)
-        bar=$(render_context_bar $bar_width $display_pct)
+    mini|normal)
         printf "${CTX_PRIMARY}◉${RESET} ${CTX_SECONDARY}CONTEXT:${RESET} ${bar} ${pct_color}${display_pct}%%${RESET}\n"
         ;;
 esac
+
+# ─── LINE 4: QUOTA / ACCOUNT USAGE ───────────────────────────────────────────
 printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE: ACCOUNT USAGE (Claude API limits)
-# ═══════════════════════════════════════════════════════════════════════════════
-# NOTE: usage_5h, usage_7d, usage_5h_reset, usage_7d_reset populated by PARALLEL PREFETCH
-
 usage_5h_int=${usage_5h%%.*}
 usage_7d_int=${usage_7d%%.*}
 [ -z "$usage_5h_int" ] && usage_5h_int=0
 [ -z "$usage_7d_int" ] && usage_7d_int=0
 
-# Only show usage line if we have data (token was valid)
-if [ "$usage_5h_int" -gt 0 ] || [ "$usage_7d_int" -gt 0 ] || [ -f "$USAGE_CACHE" ]; then
-    usage_5h_color=$(get_usage_color "$usage_5h_int")
-    usage_7d_color=$(get_usage_color "$usage_7d_int")
+usage_5h_color=$(get_usage_color "$usage_5h_int")
+usage_7d_color=$(get_usage_color "$usage_7d_int")
 
-    # Batch all 4 python3 calls into one process (saves ~150ms)
+if [ "$usage_5h_int" -gt 0 ] || [ "$usage_7d_int" -gt 0 ]; then
     eval "$(python3 -c "
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-import sys
-
 def parse_ts(ts):
     if not ts: return None
     try:
@@ -905,477 +837,30 @@ def parse_ts(ts):
         else:
             return datetime.fromisoformat(ts + '+00:00')
     except: return None
-
-def time_until(ts):
-    dt = parse_ts(ts)
-    if not dt: return '—'
-    diff = int((dt - datetime.now(timezone.utc)).total_seconds())
-    if diff <= 0: return 'now'
-    h, m = diff // 3600, (diff % 3600) // 60
-    if h >= 24:
-        d, rh = h // 24, h % 24
-        return f'{d}d{rh}h' if rh > 0 else f'{d}d'
-    return f'{h}h{m}m' if h > 0 else f'{m}m'
-
 def clock_time(ts, fmt):
     dt = parse_ts(ts)
     if not dt: return ''
-    local_dt = dt.astimezone(ZoneInfo('America/Los_Angeles'))
-    if fmt == 'weekly':
-        return local_dt.strftime('%a %H:%M')
-    return local_dt.strftime('%H:%M')
-
+    local_dt = dt.astimezone(ZoneInfo('Europe/London'))
+    return local_dt.strftime('%a %H:%M') if fmt == 'weekly' else local_dt.strftime('%H:%M')
 r5h = '$usage_5h_reset'
 r7d = '$usage_7d_reset'
-print(f\"reset_5h='{time_until(r5h)}'\")
-print(f\"reset_7d='{time_until(r7d)}'\")
-print(f\"clock_5h='{clock_time(r5h, \"hourly\")}'\")
-print(f\"clock_7d='{clock_time(r7d, \"weekly\")}'\")
+print(f\"clock_5h='{clock_time(r5h, 'hourly')}'\")
+print(f\"clock_7d='{clock_time(r7d, 'weekly')}'\")
 " 2>/dev/null)"
-    reset_5h="${reset_5h:-—}"
-    reset_7d="${reset_7d:-—}"
-
-    # Extra usage display: Max plan overage credits (both monthly_limit and used_credits are in cents)
-    extra_display=""
-    if [ "$usage_extra_enabled" = "true" ]; then
-        extra_limit_dollars=$((${usage_extra_limit:-0} / 100))
-        extra_used_dollars=$((${usage_extra_used%%.*} / 100))
-        extra_used_int=${extra_used_dollars:-0}
-        [ -z "$extra_used_int" ] && extra_used_int=0
-        # Format limit nicely
-        if [ "$extra_limit_dollars" -ge 1000 ]; then
-            extra_limit_fmt="\$$(( extra_limit_dollars / 1000 ))K"
-        else
-            extra_limit_fmt="\$${extra_limit_dollars}"
-        fi
-        extra_display="\$${extra_used_int}/${extra_limit_fmt}"
-    fi
-
-    # API workspace cost display (available when ANTHROPIC_ADMIN_API_KEY is configured)
-    ws_display=""
-    ws_cost_cents_int=${usage_ws_cost_cents%%.*}
-    [ -z "$ws_cost_cents_int" ] && ws_cost_cents_int=0
-    if [ "$ws_cost_cents_int" -gt 0 ] 2>/dev/null; then
-        ws_cost_dollars=$((ws_cost_cents_int / 100))
-        ws_display="API:\$${ws_cost_dollars}"
-    fi
-
-    # Reset times: just use clock time directly (no countdown, no parens)
-    reset_5h_time="${clock_5h:-${reset_5h}}"
-    reset_7d_time="${clock_7d:-${reset_7d}}"
+    reset_5h_time="${clock_5h:-—}"
+    reset_7d_time="${clock_7d:-—}"
 
     case "$MODE" in
         nano)
-            printf "${USAGE_PRIMARY}▰${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET}${USAGE_RESET}↻${reset_5h_time}${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET}${USAGE_RESET}/wk${RESET}\n"
+            printf "${USAGE_PRIMARY}▰${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET} ${USAGE_RESET}↻ ${reset_5h_time}${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET} ${USAGE_RESET}/wk${RESET}\n"
             ;;
         micro)
-            printf "${USAGE_PRIMARY}▰${RESET} ${USAGE_RESET}5H:${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET} ${USAGE_RESET}↻${reset_5h_time}${RESET} ${SLATE_600}│${RESET} ${USAGE_RESET}WK:${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET} ${USAGE_RESET}↻${reset_7d_time}${RESET}\n"
+            printf "${USAGE_PRIMARY}▰${RESET} ${USAGE_RESET}5H:${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET} ${USAGE_RESET}↻ ${reset_5h_time}${RESET} ${SLATE_600}│${RESET} ${USAGE_RESET}WK:${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET} ${USAGE_RESET}↻ ${reset_7d_time}${RESET}\n"
             ;;
-        mini)
-            printf "${USAGE_PRIMARY}▰${RESET} ${USAGE_LABEL}USAGE:${RESET} ${USAGE_RESET}5H:${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET} ${USAGE_RESET}↻${SLATE_500}${reset_5h_time}${RESET} ${SLATE_600}│${RESET} ${USAGE_RESET}WK:${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET} ${USAGE_RESET}↻${SLATE_500}${reset_7d_time}${RESET}"
-            [ -n "$extra_display" ] && printf " ${SLATE_600}│${RESET} ${USAGE_EXTRA}${extra_display}${RESET}"
-            [ -n "$ws_display" ] && printf " ${SLATE_600}│${RESET} ${USAGE_EXTRA}${ws_display}${RESET}"
-            printf "\n"
-            ;;
-        normal)
-            printf "${USAGE_PRIMARY}▰${RESET} ${USAGE_LABEL}USAGE:${RESET} ${USAGE_RESET}5H:${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET} ${USAGE_RESET}↻${SLATE_500}${reset_5h_time}${RESET} ${SLATE_600}│${RESET} ${USAGE_RESET}WK:${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET} ${USAGE_RESET}↻${SLATE_500}${reset_7d_time}${RESET}"
-            [ -n "$extra_display" ] && printf " ${SLATE_600}│${RESET} ${USAGE_EXTRA}${extra_display}${RESET}"
-            [ -n "$ws_display" ] && printf " ${SLATE_600}│${RESET} ${USAGE_EXTRA}${ws_display}${RESET}"
-            printf "\n"
+        mini|normal)
+            printf "${USAGE_PRIMARY}▰${RESET} ${USAGE_LABEL}USAGE:${RESET} ${USAGE_RESET}5H:${RESET} ${usage_5h_color}${usage_5h_int}%%${RESET} ${USAGE_RESET}↻ ${SLATE_500}${reset_5h_time}${RESET} ${SLATE_600}│${RESET} ${USAGE_RESET}WK:${RESET} ${usage_7d_color}${usage_7d_int}%%${RESET} ${USAGE_RESET}↻ ${SLATE_500}${reset_7d_time}${RESET}\n"
             ;;
     esac
-    printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-fi
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE 4: PWD & GIT STATUS
-# ═══════════════════════════════════════════════════════════════════════════════
-# NOTE: is_git_repo, branch, stash_count, modified, staged, untracked, total_changed,
-#       ahead, behind, last_commit_epoch are populated by PARALLEL PREFETCH
-
-# Calculate age display from prefetched last_commit_epoch
-if [ "$is_git_repo" = "true" ] && [ -n "$last_commit_epoch" ]; then
-    now_epoch=$(date +%s)
-    age_seconds=$((now_epoch - last_commit_epoch))
-    age_minutes=$((age_seconds / 60))
-    age_hours=$((age_seconds / 3600))
-    age_days=$((age_seconds / 86400))
-
-    if   [ "$age_minutes" -lt 1 ];  then age_display="now";         age_color="$GIT_AGE_FRESH"
-    elif [ "$age_hours" -lt 1 ];    then age_display="${age_minutes}m"; age_color="$GIT_AGE_FRESH"
-    elif [ "$age_hours" -lt 24 ];   then age_display="${age_hours}h";   age_color="$GIT_AGE_RECENT"
-    elif [ "$age_days" -lt 7 ];     then age_display="${age_days}d";    age_color="$GIT_AGE_STALE"
-    else age_display="${age_days}d"; age_color="$GIT_AGE_OLD"
-    fi
-
-    # Status indicator
-    [ "$total_changed" -gt 0 ] || [ "$untracked" -gt 0 ] && git_status_icon="*" || git_status_icon="✓"
-fi
-
-# Always output PWD line, with git info if available
-case "$MODE" in
-    nano)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        [ "$is_git_repo" = true ] && printf " ${GIT_VALUE}${branch}${RESET} " && {
-            [ "$git_status_icon" = "✓" ] && printf "${GIT_CLEAN}✓${RESET}" || printf "${GIT_MODIFIED}*${total_changed}${RESET}"
-        }
-        printf "\n"
-        ;;
-    micro)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        if [ "$is_git_repo" = true ]; then
-            printf " ${GIT_VALUE}${branch}${RESET}"
-            [ -n "$age_display" ] && printf " ${age_color}${age_display}${RESET}"
-            printf " "
-            [ "$git_status_icon" = "✓" ] && printf "${GIT_CLEAN}${git_status_icon}${RESET}" || printf "${GIT_MODIFIED}${git_status_icon}${total_changed}${RESET}"
-        fi
-        printf "\n"
-        ;;
-    mini)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        if [ "$is_git_repo" = true ]; then
-            printf " ${SLATE_600}│${RESET} ${GIT_VALUE}${branch}${RESET}"
-            [ -n "$age_display" ] && printf " ${SLATE_600}│${RESET} ${age_color}${age_display}${RESET}"
-            printf " ${SLATE_600}│${RESET} "
-            if [ "$git_status_icon" = "✓" ]; then
-                printf "${GIT_CLEAN}${git_status_icon}${RESET}"
-            else
-                printf "${GIT_MODIFIED}${git_status_icon}${total_changed}${RESET}"
-                [ "$untracked" -gt 0 ] && printf " ${GIT_ADDED}+${untracked}${RESET}"
-            fi
-        fi
-        printf "\n"
-        ;;
-    normal)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_PRIMARY}PWD:${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        if [ "$is_git_repo" = true ]; then
-            printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Branch:${RESET} ${GIT_VALUE}${branch}${RESET}"
-            [ -n "$age_display" ] && printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Age:${RESET} ${age_color}${age_display}${RESET}"
-            [ "$stash_count" -gt 0 ] && printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Stash:${RESET} ${GIT_STASH}${stash_count}${RESET}"
-            if [ "$total_changed" -gt 0 ] || [ "$untracked" -gt 0 ]; then
-                printf " ${SLATE_600}│${RESET} "
-                [ "$total_changed" -gt 0 ] && printf "${GIT_PRIMARY}Mod:${RESET} ${GIT_MODIFIED}${total_changed}${RESET}"
-                [ "$untracked" -gt 0 ] && { [ "$total_changed" -gt 0 ] && printf " "; printf "${GIT_PRIMARY}New:${RESET} ${GIT_ADDED}${untracked}${RESET}"; }
-            else
-                printf " ${SLATE_600}│${RESET} ${GIT_CLEAN}✓ clean${RESET}"
-            fi
-            if [ "$ahead" -gt 0 ] || [ "$behind" -gt 0 ]; then
-                printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Sync:${RESET} "
-                [ "$ahead" -gt 0 ] && printf "${GIT_CLEAN}↑${ahead}${RESET}"
-                [ "$behind" -gt 0 ] && printf "${GIT_STASH}↓${behind}${RESET}"
-            fi
-        fi
-        printf "\n"
-        ;;
-esac
-printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE 5: MEMORY
-# ═══════════════════════════════════════════════════════════════════════════════
-
-case "$MODE" in
-    nano)
-        printf "${LEARN_PRIMARY}◎${RESET} ${LEARN_WORK}📁${RESET}${SLATE_300}${work_count}${RESET} ${LEARN_SIGNALS}✦${RESET}${SLATE_300}${ratings_count}${RESET} ${LEARN_SESSIONS}⊕${RESET}${SLATE_300}${sessions_count}${RESET} ${LEARN_RESEARCH}◇${RESET}${SLATE_300}${research_count}${RESET}\n"
-        ;;
-    micro)
-        printf "${LEARN_PRIMARY}◎${RESET} ${LEARN_WORK}📁${RESET}${SLATE_300}${work_count}${RESET} ${LEARN_SIGNALS}✦${RESET}${SLATE_300}${ratings_count}${RESET} ${LEARN_SESSIONS}⊕${RESET}${SLATE_300}${sessions_count}${RESET} ${LEARN_RESEARCH}◇${RESET}${SLATE_300}${research_count}${RESET}\n"
-        ;;
-    mini)
-        printf "${LEARN_PRIMARY}◎${RESET} ${LEARN_SECONDARY}MEMORY:${RESET} "
-        printf "${LEARN_WORK}📁${RESET}${SLATE_300}${work_count}${RESET} "
-        printf "${SLATE_600}│${RESET} ${LEARN_SIGNALS}✦${RESET}${SLATE_300}${ratings_count}${RESET} "
-        printf "${SLATE_600}│${RESET} ${LEARN_SESSIONS}⊕${RESET}${SLATE_300}${sessions_count}${RESET} "
-        printf "${SLATE_600}│${RESET} ${LEARN_RESEARCH}◇${RESET}${SLATE_300}${research_count}${RESET}\n"
-        ;;
-    normal)
-        printf "${LEARN_PRIMARY}◎${RESET} ${LEARN_SECONDARY}MEMORY:${RESET} "
-        printf "${LEARN_WORK}📁${RESET}${SLATE_300}${work_count}${RESET} ${LEARN_WORK}Work${RESET} "
-        printf "${SLATE_600}│${RESET} ${LEARN_SIGNALS}✦${RESET}${SLATE_300}${ratings_count}${RESET} ${LEARN_SIGNALS}Ratings${RESET} "
-        printf "${SLATE_600}│${RESET} ${LEARN_SESSIONS}⊕${RESET}${SLATE_300}${sessions_count}${RESET} ${LEARN_SESSIONS}Sessions${RESET} "
-        printf "${SLATE_600}│${RESET} ${LEARN_RESEARCH}◇${RESET}${SLATE_300}${research_count}${RESET} ${LEARN_RESEARCH}Research${RESET}\n"
-        ;;
-esac
-printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE 6: LEARNING (with sparklines in normal mode)
-# ═══════════════════════════════════════════════════════════════════════════════
-
-LEARNING_CACHE="$PAI_DIR/MEMORY/STATE/learning-cache.sh"
-LEARNING_CACHE_TTL=30  # seconds
-
-if [ -f "$RATINGS_FILE" ] && [ -s "$RATINGS_FILE" ]; then
-    now=$(date +%s)
-
-    # Check cache validity (by mtime and ratings file mtime)
-    cache_valid=false
-    if [ -f "$LEARNING_CACHE" ]; then
-        cache_mtime=$(get_mtime "$LEARNING_CACHE")
-        ratings_mtime=$(get_mtime "$RATINGS_FILE")
-        cache_age=$((now - cache_mtime))
-        # Cache valid if: cache newer than ratings AND cache age < TTL
-        if [ "$cache_mtime" -gt "$ratings_mtime" ] && [ "$cache_age" -lt "$LEARNING_CACHE_TTL" ]; then
-            cache_valid=true
-        fi
-    fi
-
-    if [ "$cache_valid" = true ]; then
-        # Use cached values
-        source "$LEARNING_CACHE"
-    else
-        # Compute fresh and cache
-        eval "$(grep '^{' "$RATINGS_FILE" | jq -rs --argjson now "$now" '
-      # Parse ISO timestamp to epoch (handles timezone offsets)
-      def to_epoch:
-        (capture("(?<sign>[-+])(?<h>[0-9]{2}):(?<m>[0-9]{2})$") // {sign: "+", h: "00", m: "00"}) as $tz |
-        gsub("[-+][0-9]{2}:[0-9]{2}$"; "Z") | gsub("\\.[0-9]+"; "") | fromdateiso8601 |
-        . + (if $tz.sign == "-" then 1 else -1 end) * (($tz.h | tonumber) * 3600 + ($tz.m | tonumber) * 60);
-
-      # Filter valid ratings and add epoch
-      [.[] | select(.rating != null) | . + {epoch: (.timestamp | to_epoch)}] |
-
-      # Time boundaries
-      ($now - 900) as $q15_start | ($now - 3600) as $hour_start | ($now - 86400) as $today_start |
-      ($now - 604800) as $week_start | ($now - 2592000) as $month_start |
-
-      # Calculate averages
-      (map(select(.epoch >= $q15_start) | .rating) | if length > 0 then (add / length | . * 10 | floor / 10 | tostring) else "—" end) as $q15_avg |
-      (map(select(.epoch >= $hour_start) | .rating) | if length > 0 then (add / length | . * 10 | floor / 10 | tostring) else "—" end) as $hour_avg |
-      (map(select(.epoch >= $today_start) | .rating) | if length > 0 then (add / length | . * 10 | floor / 10 | tostring) else "—" end) as $today_avg |
-      (map(select(.epoch >= $week_start) | .rating) | if length > 0 then (add / length | . * 10 | floor / 10 | tostring) else "—" end) as $week_avg |
-      (map(select(.epoch >= $month_start) | .rating) | if length > 0 then (add / length | . * 10 | floor / 10 | tostring) else "—" end) as $month_avg |
-      (map(.rating) | if length > 0 then (add / length | . * 10 | floor / 10 | tostring) else "—" end) as $all_avg |
-
-      # Sparkline: diverging from 5, symmetric heights, color = direction
-      def to_bar:
-        floor |
-        if . >= 10 then "\u001b[38;2;34;197;94m▅\u001b[0m"      # brightest green
-        elif . >= 9 then "\u001b[38;2;74;222;128m▅\u001b[0m"    # green
-        elif . >= 8 then "\u001b[38;2;134;239;172m▄\u001b[0m"   # light green
-        elif . >= 7 then "\u001b[38;2;59;130;246m▃\u001b[0m"    # dark blue
-        elif . >= 6 then "\u001b[38;2;96;165;250m▂\u001b[0m"    # blue
-        elif . >= 5 then "\u001b[38;2;253;224;71m▁\u001b[0m"    # yellow baseline
-        elif . >= 4 then "\u001b[38;2;253;186;116m▂\u001b[0m"   # light orange
-        elif . >= 3 then "\u001b[38;2;251;146;60m▃\u001b[0m"    # orange
-        elif . >= 2 then "\u001b[38;2;248;113;113m▄\u001b[0m"   # light red
-        else "\u001b[38;2;239;68;68m▅\u001b[0m" end;            # red
-
-      def make_sparkline($period_start):
-        . as $all | ($now - $period_start) as $dur | ($dur / 58) as $sz |
-        [range(58) | . as $i | ($period_start + ($i * $sz)) as $s | ($s + $sz) as $e |
-          [$all[] | select(.epoch >= $s and .epoch < $e) | .rating] |
-          if length == 0 then "\u001b[38;2;45;50;60m \u001b[0m" else (add / length) | to_bar end
-        ] | join("");
-
-      (make_sparkline($q15_start)) as $q15_sparkline |
-      (make_sparkline($hour_start)) as $hour_sparkline |
-      (make_sparkline($today_start)) as $day_sparkline |
-      (make_sparkline($week_start)) as $week_sparkline |
-      (make_sparkline($month_start)) as $month_sparkline |
-
-      # Trend calculation helper
-      def calc_trend($data):
-        if ($data | length) >= 2 then
-          (($data | length) / 2 | floor) as $half |
-          ($data[-$half:] | add / length) as $recent |
-          ($data[:$half] | add / length) as $older |
-          ($recent - $older) | if . > 0.5 then "up" elif . < -0.5 then "down" else "stable" end
-        else "stable" end;
-
-      # Friendly summary helper (8 words max)
-      def friendly_summary($avg; $trend; $period):
-        if $avg == "—" then "No data yet for \($period)"
-        elif ($avg | tonumber) >= 8 then
-          if $trend == "up" then "Excellent and improving" elif $trend == "down" then "Great but cooling slightly" else "Smooth sailing, all good" end
-        elif ($avg | tonumber) >= 6 then
-          if $trend == "up" then "Good and getting better" elif $trend == "down" then "Okay but trending down" else "Solid, steady performance" end
-        elif ($avg | tonumber) >= 4 then
-          if $trend == "up" then "Recovering, headed right direction" elif $trend == "down" then "Needs attention, declining" else "Mixed results, room to improve" end
-        else
-          if $trend == "up" then "Rough but improving now" elif $trend == "down" then "Struggling, needs focus" else "Challenging period, stay sharp" end
-        end;
-
-      # Hour and day trends
-      ([.[] | select(.epoch >= $hour_start) | .rating]) as $hour_data |
-      ([.[] | select(.epoch >= $today_start) | .rating]) as $day_data |
-      (calc_trend($hour_data)) as $hour_trend |
-      (calc_trend($day_data)) as $day_trend |
-
-      # Generate friendly summaries
-      (friendly_summary($hour_avg; $hour_trend; "hour")) as $hour_summary |
-      (friendly_summary($today_avg; $day_trend; "day")) as $day_summary |
-
-      # Overall trend
-      length as $total |
-      (if $total >= 4 then
-        (($total / 2) | floor) as $half |
-        (.[- $half:] | map(.rating) | add / length) as $recent |
-        (.[:$half] | map(.rating) | add / length) as $older |
-        ($recent - $older) | if . > 0.3 then "up" elif . < -0.3 then "down" else "stable" end
-      else "stable" end) as $trend |
-
-      (last | .rating | tostring) as $latest |
-      (last | .source // "explicit") as $latest_source |
-
-      "latest=\($latest | @sh)\nlatest_source=\($latest_source | @sh)\n" +
-      "q15_avg=\($q15_avg | @sh)\nhour_avg=\($hour_avg | @sh)\ntoday_avg=\($today_avg | @sh)\n" +
-      "week_avg=\($week_avg | @sh)\nmonth_avg=\($month_avg | @sh)\nall_avg=\($all_avg | @sh)\n" +
-      "q15_sparkline=\($q15_sparkline | @sh)\nhour_sparkline=\($hour_sparkline | @sh)\nday_sparkline=\($day_sparkline | @sh)\n" +
-      "week_sparkline=\($week_sparkline | @sh)\nmonth_sparkline=\($month_sparkline | @sh)\n" +
-      "hour_trend=\($hour_trend | @sh)\nday_trend=\($day_trend | @sh)\n" +
-      "hour_summary=\($hour_summary | @sh)\nday_summary=\($day_summary | @sh)\n" +
-      "trend=\($trend | @sh)\ntotal_count=\($total)"
-    ' 2>/dev/null)"
-
-        # Save to cache for next time
-        cat > "$LEARNING_CACHE" << CACHE_EOF
-latest='$latest'
-latest_source='$latest_source'
-q15_avg='$q15_avg'
-hour_avg='$hour_avg'
-today_avg='$today_avg'
-week_avg='$week_avg'
-month_avg='$month_avg'
-all_avg='$all_avg'
-q15_sparkline='$q15_sparkline'
-hour_sparkline='$hour_sparkline'
-day_sparkline='$day_sparkline'
-week_sparkline='$week_sparkline'
-month_sparkline='$month_sparkline'
-hour_trend='$hour_trend'
-day_trend='$day_trend'
-hour_summary='$hour_summary'
-day_summary='$day_summary'
-trend='$trend'
-total_count=$total_count
-CACHE_EOF
-    fi  # end cache computation
-
-    if [ "$total_count" -gt 0 ] 2>/dev/null; then
-        # Trend icon/color
-        case "$trend" in
-            up)   trend_icon="↗"; trend_color="$EMERALD" ;;
-            down) trend_icon="↘"; trend_color="$ROSE" ;;
-            *)    trend_icon="→"; trend_color="$SLATE_400" ;;
-        esac
-
-        # Get colors
-        [ "$q15_avg" != "—" ] && pulse_base="$q15_avg" || { [ "$hour_avg" != "—" ] && pulse_base="$hour_avg" || { [ "$today_avg" != "—" ] && pulse_base="$today_avg" || pulse_base="$all_avg"; }; }
-        PULSE_COLOR=$(get_rating_color "$pulse_base")
-        LATEST_COLOR=$(get_rating_color "${latest:-5}")
-        Q15_COLOR=$(get_rating_color "${q15_avg:-5}")
-        HOUR_COLOR=$(get_rating_color "${hour_avg:-5}")
-        TODAY_COLOR=$(get_rating_color "${today_avg:-5}")
-        WEEK_COLOR=$(get_rating_color "${week_avg:-5}")
-        MONTH_COLOR=$(get_rating_color "${month_avg:-5}")
-        ALL_COLOR=$(get_rating_color "$all_avg")
-
-        [ "$latest_source" = "explicit" ] && src_label="EXP" || src_label="IMP"
-
-        case "$MODE" in
-            nano)
-                printf "${LEARN_LABEL}✿${RESET} ${LATEST_COLOR}${latest}${RESET} ${SIGNAL_PERIOD}1d:${RESET} ${TODAY_COLOR}${today_avg}${RESET}\n"
-                ;;
-            micro)
-                printf "${LEARN_LABEL}✿${RESET} ${LATEST_COLOR}${latest}${RESET} ${SIGNAL_PERIOD}1h:${RESET} ${HOUR_COLOR}${hour_avg}${RESET} ${SIGNAL_PERIOD}1d:${RESET} ${TODAY_COLOR}${today_avg}${RESET} ${SIGNAL_PERIOD}1w:${RESET} ${WEEK_COLOR}${week_avg}${RESET}\n"
-                ;;
-            mini)
-                printf "${LEARN_LABEL}✿${RESET} ${LEARN_LABEL}LEARNING:${RESET} ${SLATE_600}│${RESET} "
-                printf "${LATEST_COLOR}${latest}${RESET} "
-                printf "${SIGNAL_PERIOD}1h:${RESET} ${HOUR_COLOR}${hour_avg}${RESET} "
-                printf "${SIGNAL_PERIOD}1d:${RESET} ${TODAY_COLOR}${today_avg}${RESET} "
-                printf "${SIGNAL_PERIOD}1w:${RESET} ${WEEK_COLOR}${week_avg}${RESET}\n"
-                ;;
-            normal)
-                printf "${LEARN_LABEL}✿${RESET} ${LEARN_LABEL}LEARNING:${RESET} ${SLATE_600}│${RESET} "
-                printf "${LATEST_COLOR}${latest}${RESET}${SLATE_500}${src_label}${RESET} ${SLATE_600}│${RESET} "
-                printf "${SIGNAL_PERIOD}15m:${RESET} ${Q15_COLOR}${q15_avg}${RESET} "
-                printf "${SIGNAL_PERIOD}60m:${RESET} ${HOUR_COLOR}${hour_avg}${RESET} "
-                printf "${SIGNAL_PERIOD}1d:${RESET} ${TODAY_COLOR}${today_avg}${RESET} "
-                printf "${SIGNAL_PERIOD}1w:${RESET} ${WEEK_COLOR}${week_avg}${RESET} "
-                printf "${SIGNAL_PERIOD}1mo:${RESET} ${MONTH_COLOR}${month_avg}${RESET}\n"
-
-                # Sparklines (condensed, no blank lines)
-                printf "   ${SLATE_600}├─${RESET} ${SIGNAL_PERIOD}%-5s${RESET} %s\n" "15m:" "$q15_sparkline"
-                printf "   ${SLATE_600}├─${RESET} ${SIGNAL_PERIOD}%-5s${RESET} %s\n" "60m:" "$hour_sparkline"
-                printf "   ${SLATE_600}├─${RESET} ${SIGNAL_PERIOD}%-5s${RESET} %s\n" "1d:" "$day_sparkline"
-                printf "   ${SLATE_600}├─${RESET} ${SIGNAL_PERIOD}%-5s${RESET} %s\n" "1w:" "$week_sparkline"
-                printf "   ${SLATE_600}└─${RESET} ${SIGNAL_PERIOD}%-5s${RESET} %s\n" "1mo:" "$month_sparkline"
-                ;;
-        esac
-    else
-        printf "${LEARN_LABEL}✿${RESET} ${LEARN_LABEL}LEARNING:${RESET}\n"
-        printf "  ${SLATE_500}No ratings yet${RESET}\n"
-    fi
 else
-    printf "${LEARN_LABEL}✿${RESET} ${LEARN_LABEL}LEARNING:${RESET}\n"
-    printf "  ${SLATE_500}No ratings yet${RESET}\n"
-fi
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE 7: QUOTE (normal mode only)
-# ═══════════════════════════════════════════════════════════════════════════════
-
-if [ "$MODE" = "normal" ]; then
-    printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-    # Quote was prefetched in parallel block — just read the cache
-    if [ -f "$QUOTE_CACHE" ]; then
-        IFS='|' read -r quote_text quote_author < "$QUOTE_CACHE"
-        author_suffix="\" —${quote_author}"
-        author_len=${#author_suffix}
-        quote_len=${#quote_text}
-        max_line=72
-
-        # Full display: ✦ "quote text" —Author
-        full_len=$((quote_len + author_len + 4))  # 4 for ✦ "
-
-        if [ "$full_len" -le "$max_line" ]; then
-            # Fits on one line
-            printf "${QUOTE_PRIMARY}✦${RESET} ${SLATE_400}\"${quote_text}\"${RESET} ${QUOTE_AUTHOR}—${quote_author}${RESET}\n"
-        else
-            # Need to wrap - target ~10 words (55-60 chars) on first line
-            # Line 1 gets: "✦ \"" (4) + text
-            line1_text_max=60  # ~10 words worth
-
-            # Only wrap if there's substantial content left for line 2
-            min_line2=12
-
-            # Target: put ~60 chars on line 1
-            target_line1=$line1_text_max
-            [ "$target_line1" -gt "$quote_len" ] && target_line1=$((quote_len - min_line2))
-
-            # Find word boundary near target
-            first_part="${quote_text:0:$target_line1}"
-            remaining="${quote_text:$target_line1}"
-
-            # If we're not at a space, find the last space in first_part
-            if [ -n "$remaining" ] && [ "${remaining:0:1}" != " " ]; then
-                # Find last space position
-                temp="$first_part"
-                last_space_pos=0
-                pos=0
-                while [ $pos -lt ${#temp} ]; do
-                    [ "${temp:$pos:1}" = " " ] && last_space_pos=$pos
-                    pos=$((pos + 1))
-                done
-                if [ $last_space_pos -gt 10 ]; then
-                    first_part="${quote_text:0:$last_space_pos}"
-                fi
-            fi
-
-            second_part="${quote_text:${#first_part}}"
-            second_part="${second_part# }"  # trim leading space
-
-            # Only wrap if second part is substantial (more than just a few words)
-            if [ ${#second_part} -lt 10 ]; then
-                # Too little for line 2, just print on one line (may overflow slightly)
-                printf "${QUOTE_PRIMARY}✦${RESET} ${SLATE_400}\"${quote_text}\"${RESET} ${QUOTE_AUTHOR}—${quote_author}${RESET}\n"
-            else
-                printf "${QUOTE_PRIMARY}✦${RESET} ${SLATE_400}\"${first_part}${RESET}\n"
-                printf "  ${SLATE_400}${second_part}\"${RESET} ${QUOTE_AUTHOR}—${quote_author}${RESET}\n"
-            fi
-        fi
-    fi
+    printf "${USAGE_PRIMARY}▰${RESET} ${USAGE_LABEL}USAGE:${RESET} ${SLATE_500}add ANTHROPIC_API_KEY to ~/.config/pai/.env${RESET}\n"
 fi
