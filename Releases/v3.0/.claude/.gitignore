@@ -95,3 +95,10 @@ history/
 
 # Personal skills symlinked from marvin
 skills/QualityAdvisor
+
+# Advisor hooks symlinked from marvin (config repo)
+hooks/AdvisorConversationFileGuard.hook.ts
+hooks/AdvisorIdentityLock.hook.ts
+hooks/AdvisorStatePreserver.hook.ts
+hooks/FluxBashGuard.hook.ts
+hooks/PipelineGateGuard.hook.ts
