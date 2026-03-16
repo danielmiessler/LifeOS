@@ -51,6 +51,7 @@
 
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { spawn as nodeSpawn } from 'child_process';
 import { getISOTimestamp, getPSTDate } from './lib/time';
 import { getLearningCategory } from './lib/learning-utils';
 
@@ -362,11 +363,73 @@ async function main() {
       console.error('[WorkCompletionLearning] Trivial work session, skipping learning capture');
     }
 
+    // Check synthesis staleness (ratings accumulate independently of work significance)
+    checkAndTriggerSynthesis();
+
     process.exit(0);
   } catch (error) {
     // Silent failure - don't disrupt workflow
     console.error(`[WorkCompletionLearning] Error: ${error}`);
     process.exit(0);
+  }
+}
+
+/**
+ * Check if learning synthesis is stale and trigger a background run if needed.
+ * Stale = no synthesis in 7 days OR >50 new ratings since last synthesis.
+ * Uses detached spawn to avoid blocking session end.
+ */
+function checkAndTriggerSynthesis(): void {
+  const synthesisStateFile = join(STATE_DIR, 'last-synthesis.json');
+  const ratingsFile = join(LEARNING_DIR, 'SIGNALS', 'ratings.jsonl');
+
+  let lastRunTimestamp = 0;
+  let lastRunRatingCount = 0;
+
+  if (existsSync(synthesisStateFile)) {
+    try {
+      const state = JSON.parse(readFileSync(synthesisStateFile, 'utf-8'));
+      lastRunTimestamp = new Date(state.lastRun).getTime();
+      lastRunRatingCount = state.ratingCount || 0;
+    } catch { /* treat as never run */ }
+  }
+
+  const sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+  const isTimeStale = lastRunTimestamp < sevenDaysAgo;
+
+  let currentRatingCount = 0;
+  if (existsSync(ratingsFile)) {
+    try {
+      const content = readFileSync(ratingsFile, 'utf-8');
+      currentRatingCount = content.split('\n').filter(l => l.trim()).length;
+    } catch { /* ignore */ }
+  }
+  const isCountStale = (currentRatingCount - lastRunRatingCount) > 50;
+
+  if (!isTimeStale && !isCountStale) return;
+
+  console.error(`[WorkCompletionLearning] Synthesis stale (time: ${isTimeStale}, count: ${isCountStale}), spawning background synthesis`);
+
+  try {
+    writeFileSync(synthesisStateFile, JSON.stringify({
+      lastRun: new Date().toISOString(),
+      ratingCount: currentRatingCount,
+      trigger: isTimeStale ? 'time' : 'count',
+    }));
+  } catch (err) {
+    console.error(`[WorkCompletionLearning] Failed to write synthesis state: ${err}`);
+  }
+
+  try {
+    const synthPath = join(BASE_DIR, 'PAI', 'Tools', 'LearningPatternSynthesis.ts');
+    const child = nodeSpawn('bun', ['run', synthPath, '--week'], {
+      detached: true,
+      stdio: 'ignore',
+    });
+    child.unref();
+    console.error('[WorkCompletionLearning] Spawned background synthesis');
+  } catch (err) {
+    console.error(`[WorkCompletionLearning] Failed to spawn synthesis: ${err}`);
   }
 }
 
