@@ -6,7 +6,7 @@
 
 **Location:** `~/.claude/hooks/`
 **Configuration:** `~/.claude/settings.json`
-**Status:** Active - 20 hooks running in production
+**Status:** Active - 19 hooks running in production
 
 ---
 
@@ -187,8 +187,7 @@ Claude Code supports the following hook events:
         { "type": "command", "command": "${PAI_DIR}/hooks/LastResponseCache.hook.ts" },
         { "type": "command", "command": "${PAI_DIR}/hooks/ResponseTabReset.hook.ts" },
         { "type": "command", "command": "${PAI_DIR}/hooks/VoiceCompletion.hook.ts" },
-        { "type": "command", "command": "${PAI_DIR}/hooks/DocIntegrity.hook.ts" },
-        { "type": "command", "command": "${PAI_DIR}/hooks/AlgorithmTab.hook.ts" }
+        { "type": "command", "command": "${PAI_DIR}/hooks/DocIntegrity.hook.ts" }
       ]
     }
   ]
@@ -211,9 +210,6 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 - Calls `handlers/VoiceNotification.ts` for voice delivery
 - Voice gate: only main sessions (checks `kitty-sessions/{sessionId}.json`)
 - Subagents have no kitty-sessions file → voice blocked
-
-**`AlgorithmTab.hook.ts`** — Show Algorithm phase + progress in Kitty tab title
-- Reads `work.json`, finds most recently updated active session, sets tab title
 
 **`DocIntegrity.hook.ts`** — Cross-reference + semantic drift checks
 - Calls `handlers/DocCrossRefIntegrity.ts` — deterministic + inference-powered doc updates
@@ -1085,7 +1081,7 @@ HOOK LIFECYCLE:
 6. Hook exits 0 (always succeeds)
 7. Claude Code continues
 
-HOOKS BY EVENT (22 hooks total):
+HOOKS BY EVENT (21 hooks total):
 
 SESSION START (2 hooks):
   KittyEnvPersist.hook.ts        Persist Kitty env vars + tab reset
@@ -1103,12 +1099,11 @@ USER PROMPT SUBMIT (3 hooks):
   UpdateTabTitle.hook.ts         Tab title + working state (orange)
   SessionAutoName.hook.ts        Auto-name session from first prompt
 
-STOP (5 hooks):
+STOP (4 hooks):
   LastResponseCache.hook.ts      Cache response for RatingCapture bridge
   ResponseTabReset.hook.ts       Tab title/color reset after response
   VoiceCompletion.hook.ts        Voice TTS (main sessions only)
   DocIntegrity.hook.ts           Cross-ref + semantic drift checks
-  AlgorithmTab.hook.ts           Algorithm phase + progress in tab
 
 PRE TOOL USE (4 hooks):
   SecurityValidator.hook.ts      Security validation [Bash, Edit, Write, Read]
