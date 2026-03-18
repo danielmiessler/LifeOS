@@ -1,11 +1,11 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "PAI_DIR": "${HOME}/.claude",
-    "PROJECTS_DIR": "${HOME}/Projects",
+    "PAI_DIR": "${USERPROFILE}\\.claude",
+    "PROJECTS_DIR": "${USERPROFILE}\\Projects",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "80000",
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
-    "PAI_CONFIG_DIR": "${HOME}/.config/PAI",
+    "PAI_CONFIG_DIR": "${USERPROFILE}\\.config\\PAI",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "permissions": {
@@ -246,7 +246,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "$PAI_DIR/statusline-command.sh"
+    "command": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File \"$PAI_DIR/statusline-command.ps1\""
   },
   "spinnerVerbs": {
     "mode": "replace",
@@ -997,8 +997,8 @@
     },
     "_migration": "Identity configuration moved from DAIDENTITY.md to settings.json. The daidentity and principal sections replace the old env.DA and env.PRINCIPAL patterns. All hooks now read from settings.json via the centralized identity module (hooks/lib/identity.ts).",
     "_env": {
-      "PAI_DIR": "Root directory for your PAI installation (~/.claude). Skills, hooks, memory live here.",
-      "PROJECTS_DIR": "Base directory for projects. Use ${PROJECTS_DIR}/PAI for PAI repo, ${PROJECTS_DIR}/fabric for fabric, etc.",
+      "PAI_DIR": "Root directory for your PAI installation (%USERPROFILE%\\.claude). Skills, hooks, memory live here.",
+      "PROJECTS_DIR": "Base directory for projects. Use ${PROJECTS_DIR}\\PAI for PAI repo, ${PROJECTS_DIR}\\fabric for fabric, etc.",
       "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "Maximum tokens for Claude responses. Higher values allow longer outputs but cost more.",
       "BASH_DEFAULT_TIMEOUT_MS": "Default timeout for bash commands in milliseconds."
     }

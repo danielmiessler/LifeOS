@@ -167,22 +167,46 @@ export async function runValidation(state: InstallState): Promise<ValidationChec
     critical: false,
   });
 
-  // 8. Zsh alias configured
-  const zshrcPath = join(homedir(), ".zshrc");
+  // 8. Shell alias configured (cross-platform)
+  const isWindows = process.platform === "win32";
   let aliasConfigured = false;
-  if (existsSync(zshrcPath)) {
-    try {
-      const zshContent = readFileSync(zshrcPath, "utf-8");
-      aliasConfigured = zshContent.includes("# PAI alias") && zshContent.includes("alias pai=");
-    } catch {}
-  }
 
-  checks.push({
-    name: "Shell alias (pai)",
-    passed: aliasConfigured,
-    detail: aliasConfigured ? "Configured in .zshrc" : "Not found — run: source ~/.zshrc",
-    critical: true,
-  });
+  if (isWindows) {
+    // Check PowerShell profile for PAI function/alias
+    const psProfilePaths = [
+      join(homedir(), "Documents", "PowerShell", "Microsoft.PowerShell_profile.ps1"),
+      join(homedir(), "Documents", "WindowsPowerShell", "Microsoft.PowerShell_profile.ps1"),
+    ];
+    for (const profilePath of psProfilePaths) {
+      if (existsSync(profilePath)) {
+        try {
+          const profileContent = readFileSync(profilePath, "utf-8");
+          aliasConfigured = profileContent.includes("# PAI alias") || profileContent.includes("function pai");
+          if (aliasConfigured) break;
+        } catch {}
+      }
+    }
+    checks.push({
+      name: "Shell alias (pai)",
+      passed: aliasConfigured,
+      detail: aliasConfigured ? "Configured in PowerShell profile" : "Not found — add 'function pai' to your PowerShell $PROFILE",
+      critical: true,
+    });
+  } else {
+    const zshrcPath = join(homedir(), ".zshrc");
+    if (existsSync(zshrcPath)) {
+      try {
+        const zshContent = readFileSync(zshrcPath, "utf-8");
+        aliasConfigured = zshContent.includes("# PAI alias") && zshContent.includes("alias pai=");
+      } catch {}
+    }
+    checks.push({
+      name: "Shell alias (pai)",
+      passed: aliasConfigured,
+      detail: aliasConfigured ? "Configured in .zshrc" : "Not found — run: source ~/.zshrc",
+      critical: true,
+    });
+  }
 
   return checks;
 }

@@ -21,13 +21,17 @@ function tryExec(cmd: string): string | null {
 }
 
 function detectOS(): DetectionResult["os"] {
-  const platform = process.platform === "darwin" ? "darwin" : "linux";
+  const platform = process.platform === "win32" ? "win32" : process.platform === "darwin" ? "darwin" : "linux";
   const arch = process.arch;
 
   let version = "";
   let name = "";
 
-  if (platform === "darwin") {
+  if (platform === "win32") {
+    const ver = tryExec("ver");
+    version = ver || "";
+    name = `Windows ${version}`;
+  } else if (platform === "darwin") {
     const swVers = tryExec("sw_vers -productVersion");
     version = swVers || "";
     name = `macOS ${version}`;
@@ -41,9 +45,16 @@ function detectOS(): DetectionResult["os"] {
 }
 
 function detectShell(): DetectionResult["shell"] {
-  const shellPath = process.env.SHELL || "/bin/sh";
-  const shellName = shellPath.split("/").pop() || "sh";
-  const version = tryExec(`${shellPath} --version 2>&1 | head -1`) || "";
+  const isWindows = process.platform === "win32";
+  const shellPath = isWindows
+    ? (process.env.PSModulePath ? "powershell" : process.env.ComSpec || "cmd.exe")
+    : (process.env.SHELL || "/bin/sh");
+  const shellName = isWindows
+    ? (shellPath.includes("powershell") ? "powershell" : "cmd")
+    : (shellPath.split("/").pop() || "sh");
+  const version = isWindows
+    ? (tryExec('powershell.exe -NoProfile -Command "$PSVersionTable.PSVersion.ToString()"') || "")
+    : (tryExec(`${shellPath} --version 2>&1 | head -1`) || "");
 
   return { name: shellName, version, path: shellPath };
 }
@@ -52,7 +63,10 @@ function detectTool(
   name: string,
   versionCmd: string
 ): { installed: boolean; version?: string; path?: string } {
-  const path = tryExec(`which ${name}`);
+  const isWindows = process.platform === "win32";
+  const path = isWindows
+    ? tryExec(`powershell.exe -NoProfile -Command "(Get-Command ${name} -ErrorAction SilentlyContinue).Source"`)
+    : tryExec(`which ${name}`);
   if (!path) return { installed: false };
 
   const versionOutput = tryExec(versionCmd);
