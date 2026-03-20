@@ -6,12 +6,13 @@
  *   backup [--name <label>]                          - Full backup of ~/.claude
  *   diff --release <path>                            - Compare local install against a release
  *   backup --user-only --release <path>              - Back up only user data (not in release)
+ *     [--exclude 'path']                             - Exclude specific files from backup
  *   list                                             - List all backups (full and user-only)
  *   restore <backup-name>                            - Restore from a full backup
  *   migrate <backup>                                 - Analyze backup for migration candidates
- *   migrate --auto --release <path> [--backup <p>]   - Auto-restore user data after upgrade
+ *   migrate --auto [--backup <path>]                  - Auto-restore user data after release update
  *
- * Upgrade Flow:
+ * Migration Flow:
  *   1. bun BackupRestore.ts backup --name "pre-v4.1"
  *   2. bun BackupRestore.ts diff --release ./Releases/v4.1.0/.claude
  *   3. bun BackupRestore.ts backup --user-only --release ./Releases/v4.1.0/.claude
@@ -22,13 +23,13 @@
  *
  * Examples:
  *   bun BackupRestore.ts backup
- *   bun BackupRestore.ts backup --name "before-upgrade"
+ *   bun BackupRestore.ts backup --name "before-update"
  *   bun BackupRestore.ts backup --user-only --release ./Releases/v4.1.0/.claude
  *   bun BackupRestore.ts list
  *   bun BackupRestore.ts diff --release ./Releases/v4.1.0/.claude
  *   bun BackupRestore.ts restore claude-backup-20260114-153000
  *   bun BackupRestore.ts migrate claude-backup-20260114-153000
- *   bun BackupRestore.ts migrate --auto --release ./Releases/v4.1.0/.claude
+ *   bun BackupRestore.ts migrate --auto
  */
 
 import { existsSync, readdirSync, statSync, readFileSync, cpSync, rmSync, mkdirSync, writeFileSync } from "fs";
@@ -44,9 +45,6 @@ const USER_BACKUP_PREFIX = "claude-user-backup-";
 
 // Files not restored during migrate --auto (regenerated automatically)
 const MIGRATE_SKIP_RESTORE = new Set(["CLAUDE.md"]);
-
-// Directories excluded from user-only backup (currently none — all user data is preserved)
-const BACKUP_EXCLUDE_DIRS = new Set<string>();
 
 // Files ignored during diff (OS metadata, not meaningful)
 const DIFF_IGNORE = new Set([".DS_Store", "Thumbs.db"]);
@@ -341,7 +339,7 @@ function cmdDiff(releaseDir: string): DiffResult {
 
   console.log();
   console.log("══════════════════════════════════════════════════════");
-  console.log(" PAI UPGRADE · Diff");
+  console.log(" PAI · Release Diff");
   console.log("══════════════════════════════════════════════════════");
   console.log();
   console.log(`  Release: ${releaseDir}`);
@@ -366,11 +364,11 @@ function cmdDiff(releaseDir: string): DiffResult {
       for (const file of userConflicts) console.log(`    ~ ${file}`);
       console.log();
       console.log("  These files exist locally with different content.");
-      console.log("  Use backup --user-only to save them before upgrading.");
+      console.log("  Use backup --user-only to save them before migration.");
     }
   } else {
     console.log();
-    console.log("  No conflicts. Upgrade is safe to proceed.");
+    console.log("  No conflicts. Migration is safe to proceed.");
   }
 
   console.log();
@@ -384,28 +382,28 @@ function createUserOnlyBackup(releaseDir: string, customName?: string, excludeFi
   if (!existsSync(releaseDir)) { console.error(`Error: Release directory not found: ${releaseDir}`); return null; }
 
   const result = diffRelease(releaseDir);
+  const fileSet = new Set(result.conflicts);
 
   // Always include settings.json and CLAUDE.md
-  if (existsSync(join(CLAUDE_DIR, "settings.json")) && !result.conflicts.includes("settings.json")) result.conflicts.push("settings.json");
-  if (existsSync(join(CLAUDE_DIR, "CLAUDE.md")) && !result.conflicts.includes("CLAUDE.md")) result.conflicts.push("CLAUDE.md");
+  if (existsSync(join(CLAUDE_DIR, "settings.json")) && !fileSet.has("settings.json")) { result.conflicts.push("settings.json"); fileSet.add("settings.json"); }
+  if (existsSync(join(CLAUDE_DIR, "CLAUDE.md")) && !fileSet.has("CLAUDE.md")) { result.conflicts.push("CLAUDE.md"); fileSet.add("CLAUDE.md"); }
 
   // Always include PAI/USER/ and MEMORY/ (entire directories)
   for (const dir of [join(CLAUDE_DIR, "PAI", "USER"), join(CLAUDE_DIR, "MEMORY")]) {
     if (!existsSync(dir)) continue;
     for (const f of listFiles(dir, CLAUDE_DIR)) {
-      if (!result.conflicts.includes(f) && !DIFF_IGNORE.has(basename(f))) result.conflicts.push(f);
+      if (!fileSet.has(f) && !DIFF_IGNORE.has(basename(f))) { result.conflicts.push(f); fileSet.add(f); }
     }
   }
 
   // Include all local files not in the release (user-generated data)
   const releaseFileSet = new Set(listFiles(releaseDir));
   for (const f of listFiles(CLAUDE_DIR)) {
-    if (result.conflicts.includes(f)) continue;
+    if (fileSet.has(f)) continue;
     if (DIFF_IGNORE.has(basename(f))) continue;
     if (f.startsWith("PAI/USER/") || f.startsWith("PAI-Install/")) continue;
-    if (BACKUP_EXCLUDE_DIRS.has(f.split("/")[0])) continue;
     if (releaseFileSet.has(f)) continue;
-    result.conflicts.push(f);
+    result.conflicts.push(f); fileSet.add(f);
   }
 
   // Apply user-specified excludes
@@ -452,7 +450,7 @@ function createUserOnlyBackup(releaseDir: string, customName?: string, excludeFi
   console.log(`  Location:        ~/${backupName}`);
   console.log();
   console.log("  Review the backup directory and remove any files you");
-  console.log("  don't want restored after upgrade.");
+  console.log("  don't want restored after migration.");
   console.log();
   console.log("══════════════════════════════════════════════════════");
   console.log();
@@ -461,11 +459,11 @@ function createUserOnlyBackup(releaseDir: string, customName?: string, excludeFi
 
 /**
  * migrate --auto --release <path> --backup <path>
- * Auto-restore user data from a user-only backup after cp -r upgrade.
+ * Auto-restore user data from a user-only backup after applying a new release.
  * Restores all files from the backup except CLAUDE.md (regenerated by BuildCLAUDE.ts).
  * Then runs BuildCLAUDE.ts.
  */
-function cmdMigrateAuto(releaseDir: string, backupPath: string): void {
+function cmdMigrateAuto(backupPath: string): void {
   if (!existsSync(backupPath)) { console.error(`Error: Backup not found: ${backupPath}`); process.exit(1); }
   if (!existsSync(CLAUDE_DIR)) { console.error("Error: ~/.claude directory does not exist. Run cp -r first."); process.exit(1); }
 
@@ -483,7 +481,7 @@ function cmdMigrateAuto(releaseDir: string, backupPath: string): void {
   let filesToRestore: string[];
   if (existsSync(manifestPath)) {
     const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
-    filesToRestore = manifest.files || manifest.conflicts || [];
+    filesToRestore = manifest.files || [];
   } else {
     filesToRestore = listFiles(backupPath).filter((f) => f !== "backup-manifest.json");
   }
@@ -552,22 +550,24 @@ Commands:
   backup [--name <label>]                          Full backup of ~/.claude
   diff --release <path>                            Compare local install against a release
   backup --user-only --release <path>              Back up only user data (not in release)
+    [--exclude 'path'] [--exclude 'path']            Exclude specific files from user-only backup
   list                                             List all backups (full and user-only)
   restore <backup-name>                            Restore from a full backup
   migrate <backup>                                 Analyze backup for migration candidates
-  migrate --auto --release <path> [--backup <p>]   Auto-restore user data after upgrade
+  migrate --auto [--backup <path>]                  Auto-restore user data after release update
 
 Examples:
   bun BackupRestore.ts backup
-  bun BackupRestore.ts backup --name "before-upgrade"
+  bun BackupRestore.ts backup --name "before-update"
   bun BackupRestore.ts diff --release ./Releases/v4.1.0/.claude
   bun BackupRestore.ts backup --user-only --release ./Releases/v4.1.0/.claude
+  bun BackupRestore.ts backup --user-only --release ./Releases/v4.1.0/.claude --exclude 'PAI/SKILL.md'
   bun BackupRestore.ts list
   bun BackupRestore.ts restore claude-backup-20260114-153000
   bun BackupRestore.ts migrate claude-backup-20260114-153000
-  bun BackupRestore.ts migrate --auto --release ./Releases/v4.1.0/.claude
+  bun BackupRestore.ts migrate --auto
 
-Upgrade Flow:
+Migration Flow:
   1. bun BackupRestore.ts backup --name "pre-v4.1"
   2. bun BackupRestore.ts diff --release ./Releases/v4.1.0/.claude
   3. bun BackupRestore.ts backup --user-only --release ./Releases/v4.1.0/.claude
@@ -656,7 +656,6 @@ switch (command) {
 
   case "migrate": {
     if (args.includes("--auto")) {
-      const releaseDir = getArgValue("--release");
       // --backup is optional; if not provided, find the latest user-only backup
       const backupIdx = args.indexOf("--backup");
       let backupPath: string;
@@ -671,7 +670,7 @@ switch (command) {
         backupPath = latest.path;
         console.log(`Using latest user-only backup: ${latest.name}\n`);
       }
-      cmdMigrateAuto(releaseDir, backupPath);
+      cmdMigrateAuto(backupPath);
     } else {
       const backupName = args[1];
       if (!backupName) {
