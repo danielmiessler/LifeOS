@@ -475,24 +475,29 @@ async function cmdMigrateAuto(backupPath: string): Promise<void> {
   console.log(`  Target:  ${CLAUDE_DIR}`);
   console.log();
 
-  // Copy all user data back in one shot (same approach as restoreBackup)
-  console.log("  Copying user data from backup...");
-  cpSync(backupPath, CLAUDE_DIR, { recursive: true });
+  // Copy user data back file by file (skipping auto-regenerated files and handling permission errors)
+  const backupFiles = listFiles(backupPath).filter((f) => f !== "backup-manifest.json");
+  let restored = 0;
+  let skipped = 0;
 
-  // Remove the backup manifest (not part of the installation)
-  const manifestDst = join(CLAUDE_DIR, "backup-manifest.json");
-  if (existsSync(manifestDst)) rmSync(manifestDst);
-
-  // Remove files that are regenerated automatically
-  for (const skipFile of MIGRATE_SKIP_RESTORE) {
-    const skipPath = join(CLAUDE_DIR, skipFile);
-    if (existsSync(skipPath)) {
-      rmSync(skipPath);
-      console.log(`  ⊘ ${skipFile} (will be regenerated)`);
+  for (const relPath of backupFiles) {
+    if (MIGRATE_SKIP_RESTORE.has(relPath)) {
+      console.log(`  ⊘ ${relPath} (will be regenerated)`);
+      skipped++;
+      continue;
+    }
+    const srcPath = join(backupPath, relPath);
+    const dstPath = join(CLAUDE_DIR, relPath);
+    try {
+      mkdirSync(dirname(dstPath), { recursive: true });
+      cpSync(srcPath, dstPath);
+      restored++;
+    } catch {
+      // Skip files that can't be copied (permission issues, etc.)
     }
   }
 
-  console.log("  ✓ User data restored.");
+  console.log(`  ✓ Restored ${restored} file(s), skipped ${skipped}.`);
 
   // Run BuildCLAUDE.ts
   console.log();
