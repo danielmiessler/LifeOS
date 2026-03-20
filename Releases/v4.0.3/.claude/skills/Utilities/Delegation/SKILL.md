@@ -1,5 +1,5 @@
 ---
-name: Delegation
+name: delegation
 description: Parallelize work via background/foreground agents, built-in types, custom agents, or agent teams/swarms. USE WHEN 3+ independent workstreams, parallel execution, agent specialization, Extended+ effort, agent team, swarm, create an agent team.
 ---
 
@@ -138,46 +138,19 @@ For N identical operations (e.g., updating 10 files with the same pattern):
 | Deep | Full team orchestration, parallel workers |
 | Comprehensive | Unbounded — teams + parallel + background |
 
-## Two-Tier Delegation (Lightweight vs Full)
+## Two-Tier Delegation
 
-Not all delegation needs a full agent. Match delegation weight to task complexity:
-
-### Lightweight Delegation
-**For:** One-shot extraction, classification, summarization, simple Q&A against provided content.
-
+**Lightweight** — one-shot extraction/classification, no tool use needed:
 ```
 Task(subagent_type="general-purpose", model="haiku", max_turns=3, prompt="...")
 ```
 
-- Use `model="haiku"` for cost/speed efficiency
-- Set `max_turns=3` — if it can't finish in 3 turns, it needs full delegation
-- Provide all input inline in the prompt (no tool use expected)
-- Examples: "Classify this text as X/Y/Z", "Extract the 5 key points from this", "Summarize this in 2 sentences"
-
-### Full Delegation
-**For:** Multi-step reasoning, tasks requiring tool use (file reads, searches, web), tasks that need their own iteration loop.
-
+**Full** — multi-step reasoning, tool use, iteration:
 ```
-Task(subagent_type="general-purpose", prompt="...")  # or specialized agent type
+Task(subagent_type="general-purpose", prompt="...")
 ```
 
-- Default model (sonnet/opus inherited from parent)
-- No max_turns restriction — agent iterates until done
-- Agent uses tools autonomously (Read, Grep, Bash, etc.)
-- Examples: "Research X and produce a report", "Refactor these 5 files", "Debug why test Y fails"
-
-### Decision Rule
-**Ask:** "Can this be answered in one LLM call with no tool use?" → Lightweight. Otherwise → Full.
-
-| Signal | Tier |
-|--------|------|
-| Input fits in prompt, output is extraction/classification | Lightweight |
-| Needs to read files, search, or browse | Full |
-| Needs iteration or self-correction | Full |
-| Simple transform of provided content | Lightweight |
-| Requires domain expertise + research | Full |
-
-**Why this matters:** Spawning a full agent for a one-shot extraction wastes ~10-30s of startup overhead and unnecessary context. Lightweight delegation returns in 2-5s. Over an Extended+ Algorithm run with 10+ delegations, this saves minutes. Inspired by RLM's `llm_query()` vs `rlm_query()` two-tier pattern (Zhang/Kraska/Khattab 2025).
+**Decision rule:** "Can this be answered in one LLM call with no tool use?" → Lightweight. Otherwise → Full.
 
 ## Anti-Patterns (Don't Do These)
 

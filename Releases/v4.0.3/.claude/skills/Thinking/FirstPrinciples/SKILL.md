@@ -1,50 +1,21 @@
 ---
-name: FirstPrinciples
+name: first-principles
 description: Decompose to axioms, challenge inherited assumptions, reconstruct from verified truths. USE WHEN first principles, fundamental, root cause, decompose, challenge assumptions, rebuild from scratch.
 ---
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/FirstPrinciples/`
+Check for user customizations at `~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/FirstPrinciples/` — if present, load and apply overrides before proceeding.
 
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+## Notification
 
-
-## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
-
-**You MUST send this notification BEFORE doing anything else when this skill is invoked.**
-
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:8888/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the FirstPrinciples skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **FirstPrinciples** skill to ACTION...
-   ```
-
-**This is not optional. Execute this curl command immediately upon skill invocation.**
+```bash
+curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Running the WORKFLOWNAME workflow in the FirstPrinciples skill to ACTION"}' > /dev/null 2>&1 &
+```
 
 # FirstPrinciples Skill
 
-Foundational reasoning methodology based on Elon Musk's physics-based thinking framework. Deconstructs problems to fundamental truths rather than reasoning by analogy.
-
-## Core Concept
-
-**Reasoning by Analogy** (default, often wrong):
-- "How did we solve something similar?"
-- "What do others do?"
-- Copies existing solutions with slight variations
-
-**Reasoning from First Principles** (this skill):
-- "What are the fundamental truths here?"
-- "What is this actually made of?"
-- Rebuilds solutions from irreducible facts
+Deconstruct problems to fundamental truths rather than reasoning by analogy. Rebuild solutions from irreducible facts.
 
 ## When to Use
 
@@ -208,6 +179,3 @@ When using FirstPrinciples, output should include:
 - **Soft Constraint Worship**: Treating policies as physics
 - **Premature Optimization**: Optimizing before understanding fundamentals
 
----
-
-**Attribution**: Framework derived from Elon Musk's first principles methodology as documented by James Clear, Mayo Oshin, and public interviews.

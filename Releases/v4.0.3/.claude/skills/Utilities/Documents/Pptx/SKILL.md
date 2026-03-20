@@ -1,5 +1,5 @@
 ---
-name: Pptx
+name: pptx
 description: Create, edit, and analyze PowerPoint presentations — slide layouts, speaker notes, design elements, and format conversion. USE WHEN pptx, PowerPoint, slides, presentation, create slides, speaker notes.
 ---
 

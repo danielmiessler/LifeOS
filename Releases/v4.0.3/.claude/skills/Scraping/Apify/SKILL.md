@@ -1,48 +1,21 @@
 ---
-name: Apify
+name: apify
 description: Social media scraping, business data, e-commerce via Apify actors — with auto-update workflow for actor catalog. USE WHEN Twitter, Instagram, LinkedIn, TikTok, YouTube, Facebook, Google Maps, Amazon scraping, Apify, update Apify actors, social media scraping, lead generation, web scraper.
 ---
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Apify/`
+Check for user customizations at `~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Apify/` — if present, load and apply overrides before proceeding.
 
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+## Notification
 
-
-## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
-
-**You MUST send this notification BEFORE doing anything else when this skill is invoked.**
-
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:8888/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the Apify skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **Apify** skill to ACTION...
-   ```
-
-**This is not optional. Execute this curl command immediately upon skill invocation.**
+```bash
+curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Running the WORKFLOWNAME workflow in the Apify skill to ACTION"}' > /dev/null 2>&1 &
+```
 
 # Apify - Social Media & Web Scraping
 
-Direct TypeScript access to 9 popular Apify actors with 99% token savings.
-
-## 🔌 File-Based MCP
-
-This skill is a **file-based MCP** - a code-first API wrapper that replaces token-heavy MCP protocol calls.
-
-**Why file-based?** Filter data in code BEFORE returning to model context = 97.5% token savings.
-
-## 🎯 Overview
-
-Direct TypeScript access to the 9 most popular Apify actors without MCP overhead. Filter and transform data in code BEFORE it reaches the model context.
+File-based MCP wrapper for 9 popular Apify actors. Filter data in TypeScript BEFORE returning to model context for ~99% token savings.
 
 ## 📊 Available Actors
 
@@ -358,35 +331,6 @@ async function analyzeCompetitor(username: string) {
 }
 ```
 
-## 💰 Token Savings Calculator
-
-**Example: Instagram profile with 100 posts**
-
-**MCP Approach:**
-```
-1. search-actors → 1,000 tokens
-2. call-actor → 1,000 tokens
-3. get-actor-output → 50,000 tokens (100 unfiltered posts)
-TOTAL: ~52,000 tokens
-```
-
-**File-Based Approach:**
-```typescript
-const profile = await scrapeInstagramProfile({
-  username: 'user',
-  maxPosts: 100
-})
-
-// Filter in code - only top 10 posts
-const top = profile.latestPosts
-  ?.sort((a, b) => b.likesCount - a.likesCount)
-  .slice(0, 10)
-
-// TOTAL: ~500 tokens (only 10 filtered posts reach model)
-```
-
-**Savings: 99% reduction (52,000 → 500 tokens)**
-
 ## 🔧 Actor Reference
 
 ### Social Media
@@ -453,26 +397,8 @@ APIFY_TOKEN=apify_api_xxxxx...
 }
 ```
 
-## 🎯 When to Use This vs MCP
-
-**Use File-Based (this skill):**
-- ✅ Need to filter large datasets (>100 results)
-- ✅ Want to transform/aggregate data in code
-- ✅ Multiple sequential operations
-- ✅ Control flow (loops, conditionals)
-- ✅ Maximum token efficiency
-
-**Use MCP:**
-- ❌ Simple single operations with small results (<10 items)
-- ❌ One-off exploratory queries
-- ❌ Don't want to write code
-
 ## 🔗 Links
 
 - Apify Platform: https://apify.com
 - Actor Store: https://apify.com/store
 - API Docs: https://docs.apify.com/api/v2
-
----
-
-**Remember: Filter data in code BEFORE returning to model context. This is where the 99% token savings happen!**

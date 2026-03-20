@@ -1,53 +1,21 @@
 ---
-name: Evals
+name: evals
 description: Objective eval metrics via code/model/human graders with pass@k/pass^k scoring. USE WHEN eval, evaluate, test agent, benchmark, verify behavior, regression test, capability test, run eval, compare models, compare prompts, create judge, create use case, view results, failure to task, suite manager, transcript capture, trial runner.
 ---
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Evals/`
+Check for user customizations at `~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Evals/` — if present, load and apply overrides before proceeding.
 
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+## Notification
 
-
-## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
-
-**You MUST send this notification BEFORE doing anything else when this skill is invoked.**
-
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:8888/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the Evals skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **Evals** skill to ACTION...
-   ```
-
-**This is not optional. Execute this curl command immediately upon skill invocation.**
+```bash
+curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Running the WORKFLOWNAME workflow in the Evals skill to ACTION"}' > /dev/null 2>&1 &
+```
 
 # Evals - AI Agent Evaluation Framework
 
-Comprehensive agent evaluation system based on Anthropic's "Demystifying Evals for AI Agents" (Jan 2026).
-
-**Key differentiator:** Evaluates agent *workflows* (transcripts, tool calls, multi-turn conversations), not just single outputs.
-
----
-
-## When to Activate
-
-- "run evals", "test this agent", "evaluate", "check quality", "benchmark"
-- "regression test", "capability test"
-- Compare agent behaviors across changes
-- Validate agent workflows before deployment
-- Verify ALGORITHM ISC rows
-- Create new evaluation tasks from failures
-
----
+Evaluates agent *workflows* (transcripts, tool calls, multi-turn conversations) using code/model/human graders with pass@k/pass^k scoring. Based on Anthropic's "Demystifying Evals for AI Agents" (Jan 2026).
 
 ## Core Concepts
 
@@ -218,23 +186,18 @@ task:
 | `Tools/AlgorithmBridge.ts` | ALGORITHM integration |
 | `Data/DomainPatterns.yaml` | Domain-specific grader configs |
 
----
+## Validation Checkpoints
 
-## Key Principles (from Anthropic)
+1. **Before running**: Verify suite exists and tasks have unambiguous pass criteria
+2. **During execution**: Check grader outputs for consistency across trials
+3. **After completion**: Verify pass@k and pass^k metrics are within expected ranges; flag anomalies
+4. **Saturation check**: Graduate capability evals to regression when hitting 95%+
 
-1. **Start with 20-50 real failures** - Don't overthink, capture what actually broke
-2. **Unambiguous tasks** - Two experts should reach identical verdicts
-3. **Balanced problem sets** - Test both "should do" AND "should NOT do"
-4. **Grade outputs, not paths** - Don't penalize valid creative solutions
-5. **Calibrate LLM judges** - Against human expert judgment
-6. **Check transcripts regularly** - Verify graders work correctly
-7. **Monitor saturation** - Graduate to regression when hitting 95%+
-8. **Build infrastructure early** - Evals shape how quickly you can adopt new models
+## Key Principles
 
----
-
-## Related
-
-- **ALGORITHM**: Evals is a verification method
-- **Science**: Evals implements scientific method
-- **Browser**: For visual verification graders
+1. Start with 20-50 real failures — capture what actually broke
+2. Unambiguous tasks — two experts should reach identical verdicts
+3. Balanced problem sets — test both "should do" AND "should NOT do"
+4. Grade outputs, not paths — don't penalize valid creative solutions
+5. Calibrate LLM judges against human expert judgment
+6. Monitor saturation — graduate to regression at 95%+

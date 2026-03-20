@@ -1,25 +1,15 @@
 ---
-name: IterativeDepth
+name: iterative-depth
 description: 2-8 scientific lens passes to surface hidden requirements single-pass analysis misses. USE WHEN iterative depth, deep exploration, multi-angle analysis, multiple perspectives, examine from angles, surface hidden requirements.
 ---
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/IterativeDepth/`
-
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
-
+Check for user customizations at `~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/IterativeDepth/` — if present, load and apply overrides before proceeding.
 
 # IterativeDepth
 
-**Structured multi-angle exploration of the same problem to extract deeper understanding and richer ISC criteria.**
-
-Grounded in 20 established scientific techniques across cognitive science (Hermeneutic Circle, Triangulation), AI/ML (Self-Consistency, Ensemble Methods), requirements engineering (Viewpoint-Oriented RE), and design thinking (Six Thinking Hats, Causal Layered Analysis).
-
-## Core Concept
-
-Instead of analyzing a problem once, run 2-8 structured passes through the same problem, each from a systematically different **lens**. Each pass surfaces requirements, edge cases, and criteria invisible from other angles. The combination yields ISC criteria that no single-pass analysis could produce.
+Run 2-8 structured passes through the same problem, each from a systematically different **lens** (Hermeneutic Circle, Triangulation, Six Thinking Hats, Causal Layered Analysis, etc.). Each pass surfaces requirements, edge cases, and ISC criteria invisible from other angles.
 
 ## Workflow Routing
 
@@ -30,11 +20,13 @@ Instead of analyzing a problem once, run 2-8 structured passes through the same 
 
 ## Quick Reference
 
-- **8 Lenses** available, scaled by SLA (2-8)
-- **Each lens** is a structurally different exploration angle
-- **Output** is new/refined ISC criteria per pass
-- **Integration** point: Deeper understanding through structured multi-angle analysis
-
-**Full Documentation:**
+- **8 Lenses** available, scaled by SLA (2-8) — definitions in `TheLenses.md`
+- **Output**: New/refined ISC criteria per pass
 - Scientific grounding: `ScientificFoundation.md`
-- Lens definitions: `TheLenses.md`
+
+## Validation
+
+After completing all passes, verify:
+1. Each lens produced at least one unique ISC criterion not found by other lenses
+2. No duplicate criteria across passes
+3. Edge cases from each lens are captured in final output

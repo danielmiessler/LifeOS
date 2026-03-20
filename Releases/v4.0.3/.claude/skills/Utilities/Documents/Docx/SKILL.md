@@ -1,5 +1,5 @@
 ---
-name: Docx
+name: docx
 description: Create, edit, and analyze Word documents — tracked changes, tables, images, complex formatting, and format conversion. USE WHEN docx, Word document, create document, tracked changes, redlining.
 ---
 

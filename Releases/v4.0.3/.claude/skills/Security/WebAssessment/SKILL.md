@@ -1,5 +1,5 @@
 ---
-name: WebAssessment
+name: web-assessment
 description: Full web app security assessment — app understanding, threat modeling, OWASP testing, ffuf fuzzing, Playwright automation, AI-assisted vuln analysis. Coordinates with Recon and PromptInjection skills. USE WHEN web assessment, pentest, security testing, vulnerability scan, threat model app, understand application, create threat model, vulnerability analysis, Gemini analysis, ffuf, fuzzing, bug bounty, OSINT, browser automation, Playwright.
 ---
 

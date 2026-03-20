@@ -1,67 +1,32 @@
 ---
-name: Science
-description: Hypothesis-test-analyze cycles for systematic problem-solving — the meta-skill governing all others. Includes define goal, generate hypotheses, design experiment, measure results, analyze results, iterate, full cycle, quick diagnosis, and structured investigation. USE WHEN think about, figure out, try approaches, experiment with, iterate on, improve, optimize, define goal, generate hypotheses, design experiment, measure results, analyze results, full cycle, quick diagnosis, structured investigation, science, hypothesis.
+name: science
+description: "Hypothesis-test-analyze cycles for systematic problem-solving — the meta-skill governing all others. Define goal, generate hypotheses, design experiment, measure results, analyze, iterate. USE WHEN think about, figure out, try approaches, experiment with, iterate on, improve, optimize, define goal, generate hypotheses, design experiment, measure results, analyze results, full cycle, quick diagnosis, structured investigation, science, hypothesis."
 ---
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Science/`
+Check for user customizations at `~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Science/` — load and apply if present, otherwise use defaults.
 
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+## Notification
 
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the WORKFLOWNAME workflow in the Science skill to ACTION"}' \
+  > /dev/null 2>&1 &
+```
 
-## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
-
-**You MUST send this notification BEFORE doing anything else when this skill is invoked.**
-
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:8888/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the Science skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **Science** skill to ACTION...
-   ```
-
-**This is not optional. Execute this curl command immediately upon skill invocation.**
+Output: `Running the **WorkflowName** workflow in the **Science** skill to ACTION...`
 
 # Science - The Universal Algorithm
 
-**The scientific method applied to everything. The meta-skill that governs all other skills.**
-
-## The Universal Cycle
-
-```
-GOAL -----> What does success look like?
-   |
-OBSERVE --> What is the current state?
-   |
-HYPOTHESIZE -> What might work? (Generate MULTIPLE)
-   |
-EXPERIMENT -> Design and run the test
-   |
-MEASURE --> What happened? (Data collection)
-   |
-ANALYZE --> How does it compare to the goal?
-   |
-ITERATE --> Adjust hypothesis and repeat
-   |
-   +------> Back to HYPOTHESIZE
-```
+The scientific method applied to everything. GOAL → OBSERVE → HYPOTHESIZE (multiple) → EXPERIMENT → MEASURE → ANALYZE → ITERATE.
 
 **The goal is CRITICAL.** Without clear success criteria, you cannot judge results.
 
 ---
 
-
 ## Workflow Routing
-
-**Output when executing:** `Running the **WorkflowName** workflow in the **Science** skill to ACTION...`
 
 ### Core Workflows
 
@@ -74,17 +39,14 @@ ITERATE --> Adjust hypothesis and repeat
 | "analyze", "compare to goal" | `Workflows/AnalyzeResults.md` |
 | "iterate", "try again", "next cycle" | `Workflows/Iterate.md` |
 | Full structured cycle | `Workflows/FullCycle.md` |
-
-### Diagnostic Workflows
-
-| Trigger | Workflow |
-|---------|----------|
 | Quick debugging (15-min rule) | `Workflows/QuickDiagnosis.md` |
 | Complex investigation | `Workflows/StructuredInvestigation.md` |
 
+**Validation checkpoint:** Each phase must produce a measurable artifact before proceeding to the next.
+
 ---
 
-## Resource Index
+## Resources
 
 | Resource | Description |
 |----------|-------------|
@@ -92,30 +54,6 @@ ITERATE --> Adjust hypothesis and repeat
 | `Protocol.md` | How skills implement Science |
 | `Templates.md` | Goal, Hypothesis, Experiment, Results templates |
 | `Examples.md` | Worked examples across scales |
-
----
-
-## Domain Applications
-
-| Domain | Manifestation | Related Skill |
-|--------|---------------|---------------|
-| **Coding** | TDD (Red-Green-Refactor) | Development |
-| **Products** | MVP -> Measure -> Iterate | Development |
-| **Research** | Question -> Study -> Analyze | Research |
-| **Prompts** | Prompt -> Eval -> Iterate | Evals |
-| **Decisions** | Options -> Council -> Choose | Council |
-
----
-
-## Scale of Application
-
-| Level | Cycle Time | Example |
-|-------|-----------|---------|
-| **Micro** | Minutes | TDD: test, code, refactor |
-| **Meso** | Hours-Days | Feature: spec, implement, validate |
-| **Macro** | Weeks-Months | Product: MVP, launch, measure PMF |
-
----
 
 ## Integration Points
 
@@ -128,40 +66,22 @@ ITERATE --> Adjust hypothesis and repeat
 | **Measure** | Evals for structured measurement |
 | **Analyze** | Council for multi-perspective analysis |
 
----
+## Key Principles
 
-## Key Principles (Quick Reference)
+1. **Goal-First** — Define success before starting
+2. **Hypothesis Plurality** — Minimum 3 ideas, never just one
+3. **Minimum Viable Experiments** — Smallest test that teaches
+4. **Falsifiability** — Experiments must be able to fail
+5. **Measure What Matters** — Only goal-relevant data
+6. **Honest Analysis** — Compare to goal, not expectations
+7. **Rapid Iteration** — Cycle speed > perfect experiments
 
-1. **Goal-First** - Define success before starting
-2. **Hypothesis Plurality** - NEVER just one idea (minimum 3)
-3. **Minimum Viable Experiments** - Smallest test that teaches
-4. **Falsifiability** - Experiments must be able to fail
-5. **Measure What Matters** - Only goal-relevant data
-6. **Honest Analysis** - Compare to goal, not expectations
-7. **Rapid Iteration** - Cycle speed > perfect experiments
+## Scale
 
----
-
-## Anti-Patterns
-
-| Bad | Good |
-|-----|------|
-| "Make it better" | "Reduce load time from 3s to 1s" |
-| "I think X will work" | "Here are 3 approaches: X, Y, Z" |
-| "Prove I'm right" | "Design test that could disprove" |
-| "Pretend failure didn't happen" | "What did we learn?" |
-| "Keep experimenting forever" | "Ship and learn from production" |
+| Level | Cycle Time | Example |
+|-------|-----------|---------|
+| **Micro** | Minutes | TDD: test, code, refactor |
+| **Meso** | Hours-Days | Feature: spec, implement, validate |
+| **Macro** | Weeks-Months | Product: MVP, launch, measure PMF |
 
 ---
-
-## Quick Start
-
-1. **Goal** - What does success look like?
-2. **Observe** - What do we know?
-3. **Hypothesize** - At least 3 ideas
-4. **Experiment** - Minimum viable tests
-5. **Measure** - Collect goal-relevant data
-6. **Analyze** - Compare to success criteria
-7. **Iterate** - Adjust and repeat
-
-**The answer emerges from the cycle, not from guessing.**

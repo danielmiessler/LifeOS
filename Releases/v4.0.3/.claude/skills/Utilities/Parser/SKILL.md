@@ -1,49 +1,30 @@
 ---
-name: Parser
-description: Extract structured JSON from URLs, files, videos, PDFs with entity extraction and batch support. USE WHEN parse, extract, URL, transcript, entities, JSON, batch, content, YouTube, PDF, article, newsletter, Twitter, browser extension, collision detection, detect content type, extract article, extract newsletter, extract YouTube, extract PDF, parse content.
+name: parser
+description: "Extract structured JSON from URLs, files, videos, PDFs with entity extraction, collision detection, and batch support. USE WHEN parse, extract, URL, transcript, entities, JSON, batch, content, YouTube, PDF, article, newsletter, Twitter, browser extension, collision detection, detect content type."
 ---
 
 ## Customization
 
-**Before executing, check for user customizations at:**
-`~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Parser/`
+Check for user customizations at `~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Parser/` — load and apply if present, otherwise use defaults.
 
-If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
+## Notification
 
+```bash
+curl -s -X POST http://localhost:8888/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the WORKFLOWNAME workflow in the Parser skill to ACTION"}' \
+  > /dev/null 2>&1 &
+```
 
-## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
-
-**You MUST send this notification BEFORE doing anything else when this skill is invoked.**
-
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:8888/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the Parser skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **Parser** skill to ACTION...
-   ```
-
-**This is not optional. Execute this curl command immediately upon skill invocation.**
+Output: `Running the **WorkflowName** workflow in the **Parser** skill to ACTION...`
 
 # Parser
 
 Parse any content into structured JSON with entity extraction and collision detection.
 
----
-
-
 ## Workflow Routing
 
-**When executing a workflow, output this notification:**
-
-```
-Running the **WorkflowName** workflow in the **Parser** skill to ACTION...
-```
+### Core Workflows
 
 | Workflow | Trigger | File |
 |----------|---------|------|
@@ -61,64 +42,39 @@ Running the **WorkflowName** workflow in the **Parser** skill to ACTION...
 | **ExtractArticle** | "parse article", "web page" | `Workflows/ExtractArticle.md` |
 | **ExtractYoutube** | "parse YouTube", "video transcript" | `Workflows/ExtractYoutube.md` |
 | **ExtractPdf** | "parse PDF", "document" | `Workflows/ExtractPdf.md` |
-
-### Security Workflows
-
-| Workflow | Trigger | File |
-|----------|---------|------|
 | **ExtractBrowserExtension** | "analyze extension", "browser extension security" | `Workflows/ExtractBrowserExtension.md` |
 
----
-
-## Context Files
-
-- **EntitySystem.md** - Entity extraction, GUIDs, collision detection reference
-
----
+**Validation checkpoint:** Run CollisionDetection before parsing to avoid duplicate work.
 
 ## Core Paths
 
 - **Schema:** `Schema/content-schema.json`
 - **Entity Index:** `entity-index.json`
 - **Output:** `Output/`
-
----
+- **Reference:** `EntitySystem.md` — entity extraction, GUIDs, collision detection
 
 ## Examples
 
-**Example 1: Parse YouTube video**
+**Parse YouTube video:**
 ```
 User: "parse this YouTube video for the newsletter"
---> Invokes Youtube workflow
---> Extracts transcript via YouTube API
---> Identifies people, companies, topics mentioned
---> Returns structured JSON with entities and key insights
+→ ExtractYoutube → transcript via YouTube API → entity extraction (people, companies, topics) → structured JSON
 ```
 
-**Example 2: Batch parse article URLs**
+**Batch parse URLs:**
 ```
 User: "parse these 5 URLs into JSON for the database"
---> Invokes ParseContent workflow for each
---> Detects content type for each URL
---> Extracts entities with collision detection
---> Assigns GUIDs, checks for duplicates
---> Returns validated JSON per schema
+→ ParseContent per URL → auto-detect content type → extract entities with collision detection → validated JSON per schema
 ```
 
-**Example 3: Check for duplicate content**
+**Check duplicates:**
 ```
 User: "have I already parsed this article?"
---> Invokes CollisionDetection workflow
---> Checks URL against entity index
---> Returns existing content ID if found
---> Skips re-parsing, saves time
+→ CollisionDetection → check URL against entity-index.json → return existing ID or proceed with parsing
 ```
-
----
 
 ## Quick Reference
 
-- **Schema Version:** 1.0.0
 - **Output Format:** JSON validated against `Schema/content-schema.json`
 - **Entity Types:** people, companies, links, sources, topics
-- **Deduplication:** Via entity-index.json with UUID v4 GUIDs
+- **Deduplication:** Via `entity-index.json` with UUID v4 GUIDs

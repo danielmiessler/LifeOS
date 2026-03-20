@@ -1,134 +1,25 @@
 ---
-name: Pdf
-description: Create, merge, split, extract text/tables from PDFs, fill forms, add watermarks, and convert to/from other formats. USE WHEN pdf, PDF file, merge PDF, extract tables, fill form, split PDF.
+name: pdf
+description: "Create, merge, split, extract text/tables from PDFs, fill forms, add watermarks, OCR scanned documents, and convert formats using pypdf, pdfplumber, reportlab, and CLI tools. USE WHEN pdf, PDF file, merge PDF, extract tables, fill form, split PDF, OCR, watermark, encrypt PDF."
 ---
 
-# PDF Processing Guide
+# PDF Processing
 
-## 🎯 Load Full PAI Context
+Load PAI context first: `read ~/.claude/PAI/SKILL.md`
 
-**Before starting any task with this skill, load complete PAI context:**
+## Workflow Routing
 
-`read ~/.claude/PAI/SKILL.md`
+| Trigger | Tools | Workflow |
+|---------|-------|---------|
+| "create PDF", "generate PDF" | reportlab | Creation |
+| "merge PDFs", "combine", "split PDF" | pypdf, qpdf | Merge/Split |
+| "extract text", "PDF to text" | pdfplumber, pdftotext | Text Extraction |
+| "extract tables", "PDF tables" | pdfplumber + pandas | Table Extraction |
+| "fill PDF form" | pdf-lib (JS) or pypdf | Form Filling (see `forms.md`) |
+| "OCR", "scanned PDF" | pytesseract + pdf2image | OCR |
+| "watermark", "encrypt", "rotate", "extract images" | pypdf, pdfimages | Manipulation |
 
-This provides access to:
-- Complete contact list (Angela, Bunny, Saša, Greg, team members)
-- Stack preferences (TypeScript>Python, bun>npm, uv>pip)
-- Security rules and repository safety protocols
-- Response format requirements (structured emoji format)
-- Voice IDs for agent routing (ElevenLabs)
-- Personal preferences and operating instructions
-
-## When to Activate This Skill
-
-### Direct PDF Task Triggers
-- User wants to **create** a new PDF document
-- User wants to **merge**, **combine**, or **concatenate** multiple PDFs
-- User wants to **split** or **separate** a PDF into individual pages/sections
-- User mentions "**extract text from PDF**", "**PDF text extraction**"
-- User mentions "**extract tables from PDF**", "**PDF tables**"
-- User wants to "**fill PDF form**", "**PDF form filling**"
-- User mentions "**OCR**", "**scanned PDF**", or "**scan to text**"
-- User wants to add **watermarks**, **password protection**, or **encryption**
-- User wants to **extract images** from a PDF
-- User wants to **rotate pages** or manipulate PDF structure
-
-### Contextual Triggers
-- User provides a **.pdf file path** for processing
-- User mentions form filling automation or batch PDF processing
-- User needs to process PDFs programmatically at scale
-
-## 🔀 PDF Workflow Routing
-
-This skill supports multiple PDF processing workflows:
-
-### Creation Workflow
-**Trigger:** "create PDF", "generate PDF", "make PDF", "PDF from data"
-
-**Tools:** reportlab (Python)
-**Documentation:** Lines 136-181 (SKILL.md)
-
-**Use Cases:**
-- Creating new PDFs from scratch
-- Generating reports programmatically
-- Multi-page documents with text and graphics
-- PDF generation from templates or data
-
-### Merge/Split Workflow
-**Trigger:** "merge PDFs", "combine PDFs", "split PDF", "separate pages"
-
-**Tools:** pypdf (Python), qpdf (CLI)
-**Documentation:** Lines 46-68 (SKILL.md), Lines 199-211 (qpdf)
-
-**Use Cases:**
-- Combining multiple PDFs into one document
-- Splitting PDFs into individual pages or ranges
-- Reorganizing PDF page order
-- Extracting specific page ranges
-
-### Text Extraction Workflow
-**Trigger:** "extract text", "PDF to text", "read PDF content"
-
-**Tools:** pdfplumber (Python), pdftotext (CLI)
-**Documentation:** Lines 95-103 (pdfplumber), Lines 186-196 (pdftotext)
-
-**Use Cases:**
-- Extracting text while preserving layout
-- Converting PDFs to plain text
-- Batch text extraction from multiple PDFs
-- Metadata extraction
-
-### Table Extraction Workflow
-**Trigger:** "extract tables", "PDF tables", "table data from PDF"
-
-**Tools:** pdfplumber + pandas (Python)
-**Documentation:** Lines 106-133 (SKILL.md)
-
-**Use Cases:**
-- Extracting structured table data to Excel/CSV
-- Financial data extraction from PDF reports
-- Converting PDF tables to dataframes
-- Multi-table extraction and combination
-
-### Form Filling Workflow
-**Trigger:** "fill PDF form", "PDF form filling", "complete PDF form"
-
-**Tools:** pdf-lib (JavaScript) or pypdf (Python)
-**Documentation:** forms.md (complete guide)
-
-**Use Cases:**
-- Programmatic form completion
-- Batch form processing
-- Template-based PDF generation
-- Form field population from data sources
-
-### OCR Workflow
-**Trigger:** "OCR", "scanned PDF", "extract text from scan", "image to text"
-
-**Tools:** pytesseract + pdf2image (Python)
-**Documentation:** Lines 227-244 (SKILL.md)
-
-**Use Cases:**
-- Extracting text from scanned documents
-- Processing image-based PDFs
-- Converting scanned forms to editable text
-- Legacy document digitization
-
-### Manipulation Workflow
-**Trigger:** "watermark", "password protect", "encrypt PDF", "rotate pages", "extract images"
-
-**Tools:** pypdf (Python), pdfimages (CLI)
-**Documentation:** Lines 246-288 (SKILL.md)
-
-**Use Cases:**
-- Adding watermarks to PDFs
-- Password protection and encryption
-- Page rotation and transformation
-- Image extraction from PDFs
-
-## Overview
-
-This guide covers essential PDF processing operations using Python libraries and command-line tools. For advanced features, JavaScript libraries, and detailed examples, see reference.md. If you need to fill out a PDF form, read forms.md and follow its instructions.
+**Validation checkpoint:** Verify input PDF exists and is readable before processing. For form filling, read `forms.md` first. For advanced features, see `reference.md`.
 
 ## Quick Start
 
