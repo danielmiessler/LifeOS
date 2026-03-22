@@ -1,0 +1,83 @@
+{
+  "_schema": {
+    "name": "string — concept name",
+    "first_seen": "string — ISO date of first emergence",
+    "definition": "string — 1-2 sentence definition",
+    "supporting_quotes": ["array of exact quotes"],
+    "linked_patterns": ["array of pattern names from patterns.md"],
+    "linked_timeline_events": ["array of Sacred Timeline or memoir references"],
+    "status": "tentative | accepted | retired"
+  },
+  "concepts": [
+    {
+      "name": "Thinking Brain",
+      "first_seen": "2026-03-15",
+      "definition": "AI tuned to your values that extends your thinking loop — not a static knowledge vault, but a living cognitive partner that adapts, learns, and compensates for how your brain works differently.",
+      "supporting_quotes": [
+        "The thinking brain that doesn't get high.",
+        "The Thinking Brain You Don't Know You're Missing"
+      ],
+      "linked_patterns": ["systems-thinking-applied-to-self"],
+      "linked_timeline_events": ["2026-03-15 public narrative plan"],
+      "status": "accepted"
+    },
+    {
+      "name": "Guided Reflective Recall",
+      "first_seen": "2026-03-15",
+      "definition": "A practice where the user enters a low-guard state and surfaces material while a guide holds structure, memory, and timestamps. The guide reflects without interpreting. Discovery, not documentation.",
+      "supporting_quotes": [
+        "You supply the memory and emotional access. The guide supplies structure and mirroring."
+      ],
+      "linked_patterns": ["long-duration-coherent-state", "cannabis-assisted-flow"],
+      "linked_timeline_events": ["2026-03-15 Mirror + Archie session"],
+      "status": "accepted"
+    },
+    {
+      "name": "Externalized Metacognition",
+      "first_seen": "2026-03-15",
+      "definition": "Moving part of your thinking loop outside your skull so it can operate continuously and without emotional interference. The formal mechanism behind the 'thinking brain' thesis.",
+      "supporting_quotes": [],
+      "linked_patterns": ["systems-thinking-applied-to-self"],
+      "linked_timeline_events": [],
+      "status": "accepted"
+    },
+    {
+      "name": "The Mirror Practice",
+      "first_seen": "2026-03-15",
+      "definition": "The process of entering a lowered-defense state, speaking honestly without editing, having the system reflect the pattern back, and letting meaning emerge from the reflection. The mirror reveals the shape already there.",
+      "supporting_quotes": [],
+      "linked_patterns": [],
+      "linked_timeline_events": [],
+      "status": "accepted"
+    },
+    {
+      "name": "Dottie's Final Gift",
+      "first_seen": "2026-03-15",
+      "definition": "The recognition that Dottie's death, held within the safety Kirsi provided, allowed a full grief collapse that completed the stress cycle — enabling the reconstruction that followed. The gift is what the love made possible afterward.",
+      "supporting_quotes": [
+        "Kirsi made me feel safe enough to fully allow myself to become destroyed by the death of Dottie. I didn't cling and fight and get left in a half state of repair."
+      ],
+      "linked_patterns": ["grief-completion", "safety-enables-collapse"],
+      "linked_timeline_events": ["Dottie's death", "Kirsi relationship"],
+      "status": "accepted"
+    },
+    {
+      "name": "The Mirror Method",
+      "first_seen": "2026-03-15",
+      "definition": "Six-step teachable framework for guided metacognitive reflection: Signal, Reflection, Clarification, Expansion, Naming, Integration.",
+      "supporting_quotes": [],
+      "linked_patterns": [],
+      "linked_timeline_events": ["2026-03-15 Mirror codified the method"],
+      "status": "accepted"
+    },
+    {
+      "name": "Cognitive Overproduction",
+      "first_seen": "2026-03-15",
+      "definition": "The neurodivergent experience of generating more ideas, patterns, and associations than working memory can organize — leading to overthinking, rumination, and unfinished insights without external structure.",
+      "supporting_quotes": [],
+      "linked_patterns": ["ADHD", "neurodivergent-cognition"],
+      "linked_timeline_events": [],
+      "status": "accepted"
+    }
+  ]
+}
