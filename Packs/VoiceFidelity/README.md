@@ -1,0 +1,262 @@
+---
+name: VoiceFidelity
+pack-id: northwoodssentinel-voicefidelity-v1.0.0
+version: 1.0.0
+author: NorthwoodsSentinel
+description: Voice fidelity scoring for AI-assisted writing — extract personal voice profiles, score documents against them, detect indexical grounding failures. Does your AI sound like you?
+type: skill
+purpose-type: [voice-fidelity, writing-quality, identity, detection]
+platform: claude-code
+dependencies: []
+keywords: [voice, fidelity, stylometry, indexical-grounding, prufrock, voice-profile, ai-detection, writing, identity, consultants, forensic-linguistics]
+---
+
+# VoiceFidelity
+
+> Does your AI output sound like you? Extract your voice profile from your writing corpus, score any document against it, and detect where AI strips your identity from your text.
+
+---
+
+## The Problem
+
+AI detection tools ask the wrong question. "Was this written by AI?" gets less useful every month as models improve. The real question is: does this sound like the person who claims to have written it?
+
+Your clients know your voice. Your partners know how you write. When AI writes your deliverable, it thinks like the average of everyone's writing. It produces correct, professional, empty text. The people who know you can feel the difference even if they can't name it.
+
+That feeling is what this pack measures.
+
+Every person has a linguistic fingerprint — sentence patterns, vocabulary, paragraph architecture, regional markers, professional tribe language. Forensic linguists call it idiolect. AI can't have one because it's trained on the aggregate. It has everyone's patterns. Which means it has no one's.
+
+The text is fluent but ungrounded. It sounds like nowhere.
+
+---
+
+## The Solution
+
+VoiceFidelity provides three tools that work together:
+
+**voice-extract** — Ingests your writing corpus (emails, docs, transcripts, blog posts) and extracts a JSON voice profile. Sentence length distribution, burstiness, fragment rate, vocabulary fingerprint, AI filler word absence, paragraph architecture, structural habits, scoring thresholds derived from your actual patterns.
+
+**voice-score** — Scores any document against your profile. Nine weighted checks: banned words, filler openers, sentence length conformance, paragraph structure, hedge clusters, passive voice, AI triple detection, bullet wall detection, and voice conformance (em dash rate, contraction rate, list-to-prose ratio, single-sentence paragraph rate, average sentence length). Pass/fail at 70/100.
+
+**prufrock** — Indexical grounding audit. Ten detection layers across five automated checks and five manual review questions. Catches what voice-score doesn't: mangled idioms (140 idiom corpus + 25 known mangles), missing regional markers, register collisions, embodied detail cliches (45 generic placeholders), temporal vagueness, community-of-practice mismatches, provenance safety violations, cross-layer inconsistency, narrative pressure overriding truth, and stance laundering.
+
+Together they answer three questions:
+1. Does this match how I write? (voice-score)
+2. Does this sound like it came from somewhere real? (prufrock)
+3. Does a statistical detector flag it? (pair with external AI detection)
+
+---
+
+## Installation
+
+This pack is designed for AI-assisted installation. Give this directory to your AI and ask it to install using `INSTALL.md`.
+
+**What is PAI?** See the [PAI Project Overview](https://github.com/danielmiessler/Personal_AI_Infrastructure#what-is-pai).
+
+---
+
+## What's Included
+
+| Component | Path | Purpose |
+|-----------|------|---------|
+| Skill definition | `src/SKILL.md` | Skill routing and trigger words |
+| Framework reference | `src/IndexicalGroundingFramework.md` | The 10-layer detection model with academic backing |
+| Voice card template | `src/VoiceCardTemplate.md` | Portable voice rules format for AI fleet use |
+| voice-extract | `src/Tools/voice-extract.ts` | Corpus → JSON voice profile |
+| voice-score | `src/Tools/voice-score.ts` | Document scoring against a profile |
+| prufrock | `src/Tools/prufrock.ts` | Indexical grounding audit |
+| Extract workflow | `src/Workflows/Extract.md` | Guide for running voice extraction |
+| Score workflow | `src/Workflows/Score.md` | Guide for scoring documents |
+| Audit workflow | `src/Workflows/Audit.md` | Guide for full Prufrock audit |
+
+**Summary:**
+- **Tools:** 3 TypeScript/bun CLI tools
+- **Workflows:** 3 (extract, score, audit)
+- **Framework:** 10-layer indexical grounding detection model
+- **Corpora:** 140 frozen expressions, 25 known idiom mangles, 45 embodied cliches, 14 regional marker categories
+- **Dependencies:** bun runtime (no external APIs required for core tools)
+
+---
+
+## What Makes This Different
+
+This sounds similar to AI detection tools like ZeroGPT or GPTZero. What makes this different?
+
+AI detection tools measure statistical properties of token distributions — perplexity, burstiness at the token level, distribution patterns. They answer "was this generated by a machine?" They get worse as models improve.
+
+VoiceFidelity measures something fundamentally different: whether text carries the indexical signals of a specific person's lived experience. Regional vocabulary. Professional tribe language. Era-specific references. Paragraph architecture. The words you never use. The way you don't always lead with the topic sentence. These are identity signals, not statistical properties. They get better as you feed the system more of your writing.
+
+AI detection is generic. VoiceFidelity is personal. Your corpus is your moat.
+
+The academic foundation comes from sociolinguistics (indexicality, enregisterment), forensic linguistics (idiolect, authorship analysis), psycholinguistics (formulaic sequences), and computational linguistics (sociopragmatic competence). The practical foundation comes from 20 years of offensive security pattern recognition applied to a new target.
+
+---
+
+## Invocation Scenarios
+
+| Trigger | What Happens |
+|---------|--------------|
+| "extract my voice profile" | Runs voice-extract against specified corpus |
+| "score this document" | Runs voice-score against default or specified profile |
+| "audit this for grounding" | Runs full Prufrock indexical grounding audit |
+| "does this sound like me" | Runs voice-score + prufrock, reports both |
+| "check voice fidelity" | Runs voice-score, reports pass/fail with flags |
+| "run prufrock on this" | Runs prufrock audit with automated + manual checklist |
+
+---
+
+## Example Usage
+
+### Voice Extraction
+
+```
+User: "extract my voice profile from ~/writing/"
+
+AI:
+1. Collects all .md/.txt files from the directory
+2. Strips markdown, analyzes sentences, paragraphs, vocabulary, structure
+3. Generates scoring thresholds from your actual patterns
+4. Outputs JSON profile
+
+Output:
+  Sources:           14 files
+  Total words:       11761
+  Avg sentence:      9.8 words (target: 5-18)
+  Burstiness:        23%
+  Fragment rate:     43%
+  AI words never used: 28/33
+  Profile saved:     voice-profile.json
+```
+
+### Voice Scoring
+
+```
+User: "score this blog post against my voice profile"
+
+AI:
+  VOICE SCORE: PASS (92/100)
+  ✓ Banned words           100/100  (20% weight)
+  ✓ Filler openers         100/100  (10% weight)
+  ✓ Sentence length         80/100  (20% weight)
+  ✓ Paragraph structure     85/100  (15% weight)
+  ✓ Hedge clusters         100/100  (10% weight)
+  ✓ Passive voice          100/100  (5% weight)
+  ✓ AI triple              100/100  (10% weight)
+  ✓ Bullet walls           100/100  (10% weight)
+  ✓ Voice conformance       83/100  (15% weight)
+```
+
+### Prufrock Audit
+
+```
+User: "run prufrock on this deliverable"
+
+AI:
+  PRUFROCK - Indexical Grounding Audit
+  "Do I dare to eat a peach?"
+
+  [+] AUTOMATED SCORE: 85/100 (PASS)
+
+  --- Automated Layers ---
+  [+] L1 Formulaic Integrity   100/100  [HIGH]
+  [~] L2 Regional Grounding     50/100  [HIGH]
+        NO REGION: Text has no regional markers.
+  [+] L4 Register Fit          100/100  [MEDIUM-HIGH]
+  [+] L5 Embodied Detail       100/100  [MEDIUM]
+  [+] L6 Temporal Integrity    100/100  [MEDIUM]
+
+  --- Manual Review Required ---
+  [?] L3  Community-of-Practice
+  [?] L7  Provenance Safety
+  [?] L8  Cross-Layer Consistency
+  [?] L9  Narrative vs Truth
+  [?] L10 Stance Authenticity
+```
+
+---
+
+## Configuration
+
+### No API Keys Required
+
+All three core tools run locally with zero external dependencies. They analyze text using pattern matching, statistical analysis, and corpus comparison. No cloud calls.
+
+### Optional: External AI Detection
+
+For a complete two-gate verification pipeline, pair VoiceFidelity with an external AI detection tool (ZeroGPT, GPTZero, or similar). VoiceFidelity handles Gate 1 (local voice checks). External detection handles Gate 2 (statistical AI detection). Neither gate alone is sufficient.
+
+### Voice Profile Location
+
+Default profile path: `~/.claude/tools/voice-profile.json`
+
+Override with `--profile path/to/profile.json` on any voice-score command.
+
+---
+
+## Customization
+
+### Building Your Profile
+
+The quality of voice-score depends entirely on the quality of your corpus. Best results come from:
+- 15-20 documents minimum
+- Mix of formats: emails, docs, blog posts, transcripts
+- Writing you did WITHOUT AI assistance
+- Recent writing (voice evolves over time)
+
+### Voice Card
+
+The VoiceCardTemplate provides a portable format for sharing voice rules across AI systems. Extract your voice card from your profile and paste it into any AI's system prompt to improve voice conformance at generation time.
+
+### Regional Markers
+
+Prufrock ships with Wisconsin/Midwest markers as defaults. Customize `REGIONAL_MARKERS` in prufrock.ts for your own region, profession, and era. The detection logic is region-agnostic — only the marker corpus is specific.
+
+---
+
+## Origin
+
+Built March 20, 2026 by Rob Chuvala at NorthWoods Sentinel. Started when an AI wrote "don't rock the ship" instead of "don't rock the boat." Two review systems missed it. A human caught it because something felt wrong. That six-word error opened a door into forensic linguistics and produced a 10-layer detection framework, three CLI tools, and the term "indexical grounding" applied to AI output for the first time.
+
+Every product follows the same pattern: personal friction first, solution second, then look up and realize other people have the same friction and there's a name for it you didn't know.
+
+The name for this one is indexical grounding. The tool is called Prufrock. If you know the poem, you know why.
+
+---
+
+## Academic Backing
+
+- **Indexicality and enregisterment** — sociolinguistics (Silverstein, Agha)
+- **Idiolect and authorship analysis** — forensic linguistics (Coulthard, Grant)
+- **Formulaic sequences** — psycholinguistics (Wray, Schmitt)
+- **Source monitoring** — cognitive psychology (Johnson, Hashtroudi, Lindsay)
+- **Sociopragmatic competence** — computational linguistics
+- **LLM confabulation and narrative coherence** — ACL 2024, Nature 2024
+
+---
+
+## Related Work
+
+- **PAI Research Pack** — For researching linguistic concepts and academic sources
+- **PAI Thinking Pack** — For first-principles analysis of voice patterns
+
+---
+
+## Works Well With
+
+- **External AI detection tools** — ZeroGPT, GPTZero for Gate 2 statistical detection
+- **Any AI writing system** — Voice profiles can be fed to ChatGPT, Claude, Gemini as system prompt instructions
+- **PAI fleet systems** — Voice cards propagate voice rules across multiple AI agents
+
+---
+
+## Changelog
+
+### 1.0.0 - 2026-03-22
+- Initial release
+- voice-extract: corpus → JSON voice profile
+- voice-score: 9-check weighted scoring against profile
+- prufrock: 10-layer indexical grounding audit
+- 140 frozen expression corpus, 25 known mangles, 45 embodied cliches
+- Indexical Grounding Framework v0.1
+- Voice Card portable format
