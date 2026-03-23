@@ -666,7 +666,7 @@ async function runParallelIteration(
   const processes = assignments.map(assignment => {
     const criterion = assignment.criteriaDetails[0]; // One criterion per agent
     const prompt = buildWorkerPrompt(prdPath, assignment.agentId, criterion, iteration);
-    const proc = Bun.spawn(["claude", "-p", prompt,
+    const proc = Bun.spawn(["claude", "-p", "--bare", prompt,
       "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,NotebookEdit",
     ], {
       cwd: dirname(prdPath),
@@ -1112,7 +1112,7 @@ async function runLoop(prdPath: string, maxOverride?: number, agentCount: number
     const prompt = buildIterationPrompt(absPath, newIteration, max);
 
     const result = spawnSync("claude", [
-      "-p", prompt,
+      "-p", "--bare", prompt,
       "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
     ], {
       stdio: ["pipe", "pipe", "pipe"],
