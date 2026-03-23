@@ -390,7 +390,7 @@ function cmdWallpaper(args: string[]) {
 // Commands
 // ============================================================================
 
-async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean }) {
+async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean; passthrough?: string[] }) {
   // CLAUDE.md is now static — no build step needed.
   // Algorithm spec is loaded on-demand when Algorithm mode triggers.
   // (InstantiatePAI.ts is retired — kept for reference only)
@@ -410,6 +410,11 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   // Use --dangerous flag explicitly if you really need to skip all permission checks.
   if (options.resume) {
     args.push("--resume");
+  }
+
+  // Pass through any unrecognized flags to claude
+  if (options.passthrough?.length) {
+    args.push(...options.passthrough);
   }
 
   // Change to PAI directory unless --local flag is set
@@ -636,6 +641,7 @@ async function main() {
   let subArg: string | undefined;
   let promptText: string | undefined;
   let wallpaperArgs: string[] = [];
+  let passthrough: string[] = [];
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -697,8 +703,14 @@ async function main() {
         i = args.length; // Exit loop
         break;
       default:
-        if (!arg.startsWith("-")) {
-          // Might be an unknown command
+        if (arg.startsWith("-")) {
+          // Pass through unknown flags to claude (e.g., --plugin-dir, --mcp-config)
+          passthrough.push(arg);
+          // If the next arg doesn't start with -, it's the flag's value
+          if (i + 1 < args.length && !args[i + 1].startsWith("-")) {
+            passthrough.push(args[++i]);
+          }
+        } else {
           error(`Unknown command: ${arg}. Use 'k help' for usage.`);
         }
     }
@@ -738,7 +750,7 @@ async function main() {
       break;
     default:
       // Launch with options
-      await cmdLaunch({ mcp, resume, skipPerms, local });
+      await cmdLaunch({ mcp, resume, skipPerms, local, passthrough });
   }
 }
 
