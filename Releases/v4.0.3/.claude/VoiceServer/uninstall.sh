@@ -58,6 +58,12 @@ if lsof -i :8888 > /dev/null 2>&1; then
     echo -e "${GREEN}OK Port 8888 cleared${NC}"
 fi
 
+# Remove voice CLI symlink
+if [ -L /usr/local/bin/voice ]; then
+    rm /usr/local/bin/voice 2>/dev/null || sudo rm /usr/local/bin/voice 2>/dev/null
+    echo -e "${GREEN}OK Removed voice CLI from /usr/local/bin${NC}"
+fi
+
 # Ask about logs
 echo
 read -p "Do you want to remove log files? (y/n): " -n 1 -r

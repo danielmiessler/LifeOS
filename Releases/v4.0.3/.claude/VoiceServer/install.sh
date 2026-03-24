@@ -189,6 +189,21 @@ echo "    -d '{\"message\": \"Hello from PAI\"}'"
 echo
 echo -e "${GREEN}The voice server will now start automatically when you log in.${NC}"
 
+# Install voice CLI to /usr/local/bin
+VOICE_CLI="$SCRIPT_DIR/voice"
+if [ -f "$VOICE_CLI" ]; then
+    chmod +x "$VOICE_CLI"
+    echo -e "${YELLOW}> Installing 'voice' CLI...${NC}"
+    if ln -sf "$VOICE_CLI" /usr/local/bin/voice 2>/dev/null; then
+        echo -e "${GREEN}OK Installed 'voice' CLI to /usr/local/bin/voice${NC}"
+        echo "  Usage: voice say | voice 11labs | voice status | voice test"
+    else
+        echo -e "${YELLOW}! Could not symlink to /usr/local/bin (permission denied)${NC}"
+        echo "  To install manually:"
+        echo "    sudo ln -sf $VOICE_CLI /usr/local/bin/voice"
+    fi
+fi
+
 # Ask about menu bar indicator
 echo
 read -p "Would you like to install a menu bar indicator? (y/n): " -n 1 -r
