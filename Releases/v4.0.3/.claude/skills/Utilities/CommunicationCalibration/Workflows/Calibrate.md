@@ -68,7 +68,7 @@ Show the user a brief intro:
 
 Using `CulturalScales.md`, ask the 5 questions one at a time. For each:
 1. Present the question and three options (a/b/c) clearly
-   *(Vary the order options appear across questions — don't always anchor with (a) as the low/explicit end. This reduces anchoring bias.)*
+   *(Always present options in (a)/(b)/(c) order. Vary anchoring bias through question wording — e.g., occasionally frame the question from the high end — rather than shuffling letter labels, which confuses users who expect (a) = first option consistently.)*
 2. Wait for the answer
 3. Look up the trait deltas from the table in `CulturalScales.md`
 4. Apply deltas: `newValue = clamp(baselineValue + delta, 0, 100)` where `baselineValue` comes from `baselineTraits`

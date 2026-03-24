@@ -11,7 +11,7 @@ for each trait (after cultural and cognitive adjustments) and let them fine-tune
 > - **(c)** [High-end behavior, ~75]
 > - **(d)** Keep current value ([computed_value])
 
-*(Note: vary the order of (a)/(b)/(c) options across different traits — don't always anchor the low-end as (a). This reduces anchoring bias where first-presented options are overselected.)*
+*(Always present options in (a)/(b)/(c) order. Users expect (a) = first/low consistently — shuffling letter labels causes confusion. Address anchoring bias through question wording variation instead.)*
 
 Values: (a) → 25, (b) → 50, (c) → 75, (d) → keep computed value from L1+L2.
 Users can also type a number directly (0-100) if none of the options fit.
