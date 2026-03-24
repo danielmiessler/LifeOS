@@ -484,6 +484,12 @@ function spawnSafe(command: string, args: string[]): Promise<void> {
 }
 
 // ==========================================================================
+// Mute state — toggled via /mute and /unmute endpoints, no restart needed
+// ==========================================================================
+
+let voiceMuted = false;
+
+// ==========================================================================
 // Core: Send notification with 3-tier voice settings resolution
 // ==========================================================================
 
@@ -527,7 +533,9 @@ async function sendNotification(
   let voicePlayed = false;
   let voiceError: string | undefined;
 
-  if (voiceEnabled) {
+  if (voiceMuted) {
+    console.log(`🔇 Voice muted — skipping TTS`);
+  } else if (voiceEnabled) {
     try {
       if (TTS_ENGINE === "macos-say") {
         // macOS say — no API key needed
@@ -763,11 +771,30 @@ const server = serve({
       }
     }
 
+    if (url.pathname === "/mute" && req.method === "POST") {
+      voiceMuted = true;
+      console.log(`🔇 Voice muted`);
+      return new Response(
+        JSON.stringify({ status: "success", muted: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
+    if (url.pathname === "/unmute" && req.method === "POST") {
+      voiceMuted = false;
+      console.log(`🔊 Voice unmuted`);
+      return new Response(
+        JSON.stringify({ status: "success", muted: false }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+      );
+    }
+
     if (url.pathname === "/health") {
       return new Response(
         JSON.stringify({
           status: "healthy",
           port: PORT,
+          muted: voiceMuted,
           tts_engine: TTS_ENGINE,
           voice_system: TTS_ENGINE === "macos-say" ? "macOS say" : "ElevenLabs",
           ...(TTS_ENGINE === "macos-say"

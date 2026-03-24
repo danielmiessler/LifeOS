@@ -154,6 +154,11 @@ cmd_status() {
   health=$(health_check)
   if [ -n "$health" ]; then
     echo -e "  Server: ${GREEN}running${NC}"
+    local muted
+    muted=$(echo "$health" | jq -r '.muted // false' 2>/dev/null)
+    if [ "$muted" = "true" ]; then
+      echo -e "  Muted:  ${YELLOW}yes${NC}"
+    fi
     echo "$health" | jq . 2>/dev/null || echo "  $health"
   else
     echo -e "  Server: ${RED}not responding${NC}"
@@ -189,6 +194,26 @@ cmd_test() {
   fi
 }
 
+cmd_mute() {
+  local result
+  result=$(curl -s -X POST http://localhost:8888/mute 2>&1)
+  if echo "$result" | jq -e '.muted == true' &>/dev/null; then
+    echo -e "${YELLOW}🔇 Voice muted${NC}"
+  else
+    echo -e "${RED}Failed to mute:${NC} $result"
+  fi
+}
+
+cmd_unmute() {
+  local result
+  result=$(curl -s -X POST http://localhost:8888/unmute 2>&1)
+  if echo "$result" | jq -e '.muted == false' &>/dev/null; then
+    echo -e "${GREEN}🔊 Voice unmuted${NC}"
+  else
+    echo -e "${RED}Failed to unmute:${NC} $result"
+  fi
+}
+
 cmd_restart() {
   restart_server
 }
@@ -207,6 +232,8 @@ cmd_help() {
   echo "Usage:"
   echo "  voice say [voice] [rate]   Switch to macOS say (default: Samantha, 200 wpm)"
   echo "  voice 11labs               Switch to ElevenLabs"
+  echo "  voice mute                 Mute voice (server stays running)"
+  echo "  voice unmute               Unmute voice"
   echo "  voice status               Show current engine and server health"
   echo "  voice voices               List available macOS say voices"
   echo "  voice restart              Restart the voice server"
@@ -218,6 +245,7 @@ cmd_help() {
   echo "  voice say Ava              Use macOS say with Ava voice"
   echo "  voice say Daniel 180       Use Daniel voice at 180 wpm"
   echo "  voice 11labs               Switch back to ElevenLabs"
+  echo "  voice mute                 Silence without stopping server"
 }
 
 # ── Main ─────────────────────────────────────────────────────────
@@ -225,6 +253,8 @@ cmd_help() {
 case "${1:-help}" in
   say)       shift; cmd_say "$@" ;;
   11labs|elevenlabs) cmd_11labs ;;
+  mute)      cmd_mute ;;
+  unmute)    cmd_unmute ;;
   status)    cmd_status ;;
   voices)    cmd_voices ;;
   restart)   cmd_restart ;;
