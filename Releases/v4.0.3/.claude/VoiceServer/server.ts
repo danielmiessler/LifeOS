@@ -35,9 +35,25 @@ if (existsSync(envPath)) {
 const PORT = parseInt(process.env.PORT || "8888");
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
-if (!ELEVENLABS_API_KEY) {
-  console.error('⚠️  ELEVENLABS_API_KEY not found in ~/.env');
-  console.error('Add: ELEVENLABS_API_KEY=your_key_here');
+// TTS engine selection: "elevenlabs" or "macos-say"
+// Set via TTS_ENGINE env var, or settings.json voice.tts_engine
+type TtsEngine = "elevenlabs" | "macos-say";
+let TTS_ENGINE: TtsEngine = (process.env.TTS_ENGINE as TtsEngine) || "elevenlabs";
+
+// macOS say defaults
+interface MacOsSayConfig {
+  voice: string;   // macOS voice name (e.g., "Samantha", "Daniel", "Ava")
+  rate: number;    // words per minute (default ~175-200)
+}
+
+let macOsSayConfig: MacOsSayConfig = {
+  voice: "Samantha",
+  rate: 200,
+};
+
+if (TTS_ENGINE === "elevenlabs" && !ELEVENLABS_API_KEY) {
+  console.warn('⚠️  ELEVENLABS_API_KEY not found — falling back to macOS say');
+  TTS_ENGINE = "macos-say";
 }
 
 // ==========================================================================
@@ -136,6 +152,8 @@ interface LoadedVoiceConfig {
   voices: Record<string, VoiceEntry>;     // keyed by name ("main", "algorithm")
   voicesByVoiceId: Record<string, VoiceEntry>;  // keyed by voiceId for lookup
   desktopNotifications: boolean;  // whether to show macOS notification banners
+  ttsEngine?: TtsEngine;         // override from settings.json
+  macOsSay?: Partial<MacOsSayConfig>;  // macOS say config from settings.json
 }
 
 // Last-resort defaults if settings.json is entirely missing or unparseable
@@ -195,7 +213,11 @@ function loadVoiceConfig(): LoadedVoiceConfig {
       console.log(`   ${name}: ${entry.voiceName || entry.voiceId} (speed: ${entry.speed}, stability: ${entry.stability})`);
     }
 
-    return { defaultVoiceId, voices, voicesByVoiceId, desktopNotifications };
+    // TTS engine and macOS say config from settings.json
+    const ttsEngine = settings.voice?.tts_engine as TtsEngine | undefined;
+    const macOsSay = settings.voice?.macos_say as Partial<MacOsSayConfig> | undefined;
+
+    return { defaultVoiceId, voices, voicesByVoiceId, desktopNotifications, ttsEngine, macOsSay };
   } catch (error) {
     console.error('⚠️  Failed to load settings.json voice config:', error);
     return { defaultVoiceId: '', voices: {}, voicesByVoiceId: {}, desktopNotifications: true };
@@ -204,6 +226,15 @@ function loadVoiceConfig(): LoadedVoiceConfig {
 
 // Load config at startup
 const voiceConfig = loadVoiceConfig();
+
+// Apply settings.json TTS engine override (env var takes priority)
+if (!process.env.TTS_ENGINE && voiceConfig.ttsEngine) {
+  TTS_ENGINE = voiceConfig.ttsEngine;
+}
+if (voiceConfig.macOsSay) {
+  if (voiceConfig.macOsSay.voice) macOsSayConfig.voice = voiceConfig.macOsSay.voice;
+  if (voiceConfig.macOsSay.rate) macOsSayConfig.rate = voiceConfig.macOsSay.rate;
+}
 const DEFAULT_VOICE_ID = voiceConfig.defaultVoiceId || process.env.ELEVENLABS_VOICE_ID || "s3TPKV1kjDlVtZbl4Ksh";
 
 // Look up a voice entry by voice ID
@@ -394,6 +425,44 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
   });
 }
 
+// Speak text using macOS say command
+async function speakWithSay(text: string, volume?: number): Promise<void> {
+  // Apply pronunciation replacements before speaking
+  const pronouncedText = applyPronunciations(text);
+  if (pronouncedText !== text) {
+    console.log(`📖 Pronunciation: "${text}" → "${pronouncedText}"`);
+  }
+
+  const args = ['-v', macOsSayConfig.voice, '-r', macOsSayConfig.rate.toString()];
+
+  // macOS say doesn't have a volume flag, so use afplay with a generated AIFF
+  if (volume !== undefined && volume !== 1.0) {
+    const tempFile = `/tmp/voice-${Date.now()}.aiff`;
+    args.push('-o', tempFile);
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn('/usr/bin/say', [...args, pronouncedText]);
+      proc.on('error', reject);
+      proc.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`say exited with code ${code}`)));
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn('/usr/bin/afplay', ['-v', volume.toString(), tempFile]);
+      proc.on('error', reject);
+      proc.on('exit', (code) => {
+        spawn('/bin/rm', [tempFile]);
+        code === 0 ? resolve() : reject(new Error(`afplay exited with code ${code}`));
+      });
+    });
+  } else {
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn('/usr/bin/say', [...args, pronouncedText]);
+      proc.on('error', reject);
+      proc.on('exit', (code) => code === 0 ? resolve() : reject(new Error(`say exited with code ${code}`)));
+    });
+  }
+}
+
 // Spawn a process safely
 function spawnSafe(command: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -454,58 +523,69 @@ async function sendNotification(
   const { cleaned, emotion } = extractEmotionalMarker(safeMessage);
   safeMessage = cleaned;
 
-  // Generate and play voice using ElevenLabs
+  // Generate and play voice
   let voicePlayed = false;
   let voiceError: string | undefined;
 
-  if (voiceEnabled && ELEVENLABS_API_KEY) {
+  if (voiceEnabled) {
     try {
-      const voice = voiceId || DEFAULT_VOICE_ID;
+      if (TTS_ENGINE === "macos-say") {
+        // macOS say — no API key needed
+        const resolvedVolume = callerVolume ?? FALLBACK_VOLUME;
+        console.log(`🎙️  Speaking with macOS say (voice: ${macOsSayConfig.voice}, rate: ${macOsSayConfig.rate}, volume: ${resolvedVolume})`);
+        await speakWithSay(safeMessage, resolvedVolume);
+        voicePlayed = true;
+      } else if (ELEVENLABS_API_KEY) {
+        // ElevenLabs TTS
+        const voice = voiceId || DEFAULT_VOICE_ID;
 
-      // 3-tier voice settings resolution
-      let resolvedSettings: ElevenLabsVoiceSettings;
-      let resolvedVolume: number;
+        // 3-tier voice settings resolution
+        let resolvedSettings: ElevenLabsVoiceSettings;
+        let resolvedVolume: number;
 
-      if (callerVoiceSettings && Object.keys(callerVoiceSettings).length > 0) {
-        // Tier 1: Caller provided explicit voice_settings → pass through
-        resolvedSettings = {
-          stability: callerVoiceSettings.stability ?? FALLBACK_VOICE_SETTINGS.stability,
-          similarity_boost: callerVoiceSettings.similarity_boost ?? FALLBACK_VOICE_SETTINGS.similarity_boost,
-          style: callerVoiceSettings.style ?? FALLBACK_VOICE_SETTINGS.style,
-          speed: callerVoiceSettings.speed ?? FALLBACK_VOICE_SETTINGS.speed,
-          use_speaker_boost: callerVoiceSettings.use_speaker_boost ?? FALLBACK_VOICE_SETTINGS.use_speaker_boost,
-        };
-        resolvedVolume = callerVolume ?? FALLBACK_VOLUME;
-        console.log(`🔗 Voice settings: pass-through from caller`);
-      } else {
-        // Tier 2/3: Look up by voiceId, fall back to main
-        const voiceEntry = lookupVoiceByVoiceId(voice) || voiceConfig.voices.main;
-        if (voiceEntry) {
-          resolvedSettings = voiceEntryToSettings(voiceEntry);
-          resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME;
-          console.log(`📋 Voice settings: from settings.json (${voiceEntry.voiceName || voice})`);
-        } else {
-          resolvedSettings = { ...FALLBACK_VOICE_SETTINGS };
+        if (callerVoiceSettings && Object.keys(callerVoiceSettings).length > 0) {
+          // Tier 1: Caller provided explicit voice_settings → pass through
+          resolvedSettings = {
+            stability: callerVoiceSettings.stability ?? FALLBACK_VOICE_SETTINGS.stability,
+            similarity_boost: callerVoiceSettings.similarity_boost ?? FALLBACK_VOICE_SETTINGS.similarity_boost,
+            style: callerVoiceSettings.style ?? FALLBACK_VOICE_SETTINGS.style,
+            speed: callerVoiceSettings.speed ?? FALLBACK_VOICE_SETTINGS.speed,
+            use_speaker_boost: callerVoiceSettings.use_speaker_boost ?? FALLBACK_VOICE_SETTINGS.use_speaker_boost,
+          };
           resolvedVolume = callerVolume ?? FALLBACK_VOLUME;
-          console.log(`⚠️  Voice settings: fallback defaults (no config found for ${voice})`);
+          console.log(`🔗 Voice settings: pass-through from caller`);
+        } else {
+          // Tier 2/3: Look up by voiceId, fall back to main
+          const voiceEntry = lookupVoiceByVoiceId(voice) || voiceConfig.voices.main;
+          if (voiceEntry) {
+            resolvedSettings = voiceEntryToSettings(voiceEntry);
+            resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME;
+            console.log(`📋 Voice settings: from settings.json (${voiceEntry.voiceName || voice})`);
+          } else {
+            resolvedSettings = { ...FALLBACK_VOICE_SETTINGS };
+            resolvedVolume = callerVolume ?? FALLBACK_VOLUME;
+            console.log(`⚠️  Voice settings: fallback defaults (no config found for ${voice})`);
+          }
         }
+
+        // Emotional preset overlay — modifies stability + similarity_boost only
+        if (emotion && EMOTIONAL_PRESETS[emotion]) {
+          resolvedSettings = {
+            ...resolvedSettings,
+            stability: EMOTIONAL_PRESETS[emotion].stability,
+            similarity_boost: EMOTIONAL_PRESETS[emotion].similarity_boost,
+          };
+          console.log(`🎭 Emotion overlay: ${emotion}`);
+        }
+
+        console.log(`🎙️  Generating speech (voice: ${voice}, speed: ${resolvedSettings.speed}, stability: ${resolvedSettings.stability}, boost: ${resolvedSettings.similarity_boost}, style: ${resolvedSettings.style}, volume: ${resolvedVolume})`);
+
+        const audioBuffer = await generateSpeech(safeMessage, voice, resolvedSettings);
+        await playAudio(audioBuffer, resolvedVolume);
+        voicePlayed = true;
+      } else {
+        voiceError = "No TTS engine available (no API key and not using macos-say)";
       }
-
-      // Emotional preset overlay — modifies stability + similarity_boost only
-      if (emotion && EMOTIONAL_PRESETS[emotion]) {
-        resolvedSettings = {
-          ...resolvedSettings,
-          stability: EMOTIONAL_PRESETS[emotion].stability,
-          similarity_boost: EMOTIONAL_PRESETS[emotion].similarity_boost,
-        };
-        console.log(`🎭 Emotion overlay: ${emotion}`);
-      }
-
-      console.log(`🎙️  Generating speech (voice: ${voice}, speed: ${resolvedSettings.speed}, stability: ${resolvedSettings.stability}, boost: ${resolvedSettings.similarity_boost}, style: ${resolvedSettings.style}, volume: ${resolvedVolume})`);
-
-      const audioBuffer = await generateSpeech(safeMessage, voice, resolvedSettings);
-      await playAudio(audioBuffer, resolvedVolume);
-      voicePlayed = true;
     } catch (error: any) {
       console.error("Failed to generate/play speech:", error);
       voiceError = error.message || "TTS generation failed";
@@ -688,9 +768,11 @@ const server = serve({
         JSON.stringify({
           status: "healthy",
           port: PORT,
-          voice_system: "ElevenLabs",
-          default_voice_id: DEFAULT_VOICE_ID,
-          api_key_configured: !!ELEVENLABS_API_KEY,
+          tts_engine: TTS_ENGINE,
+          voice_system: TTS_ENGINE === "macos-say" ? "macOS say" : "ElevenLabs",
+          ...(TTS_ENGINE === "macos-say"
+            ? { macos_voice: macOsSayConfig.voice, macos_rate: macOsSayConfig.rate }
+            : { default_voice_id: DEFAULT_VOICE_ID, api_key_configured: !!ELEVENLABS_API_KEY }),
           pronunciation_rules: pronunciationRules.length,
           configured_voices: Object.keys(voiceConfig.voices),
         }),
@@ -709,8 +791,12 @@ const server = serve({
 });
 
 console.log(`🚀 Voice Server running on port ${PORT}`);
-console.log(`🎙️  Using ElevenLabs TTS (default voice: ${DEFAULT_VOICE_ID})`);
+if (TTS_ENGINE === "macos-say") {
+  console.log(`🎙️  Using macOS say (voice: ${macOsSayConfig.voice}, rate: ${macOsSayConfig.rate} wpm)`);
+} else {
+  console.log(`🎙️  Using ElevenLabs TTS (default voice: ${DEFAULT_VOICE_ID})`);
+  console.log(`🔑 API Key: ${ELEVENLABS_API_KEY ? '✅ Configured' : '❌ Missing'}`);
+}
 console.log(`📡 POST to http://localhost:${PORT}/notify`);
 console.log(`🔒 Security: CORS restricted to localhost, rate limiting enabled`);
-console.log(`🔑 API Key: ${ELEVENLABS_API_KEY ? '✅ Configured' : '❌ Missing'}`);
 console.log(`📖 Pronunciations: ${pronunciationRules.length} rules loaded`);

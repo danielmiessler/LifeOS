@@ -66,3 +66,6 @@ credentials/
 .claude/pai_updates/
 .claude/pai_backups/
 .claude/.pai-sync-history
+
+# Local backups (user customizations preserved across updates)
+.local-backup/
