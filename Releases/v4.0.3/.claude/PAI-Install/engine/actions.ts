@@ -12,6 +12,7 @@ import type { InstallState, EngineEventHandler, DetectionResult } from "./types"
 import { PAI_VERSION, ALGORITHM_VERSION } from "./types";
 import { detectSystem, validateElevenLabsKey } from "./detect";
 import { generateSettingsJson } from "./config-gen";
+import { COMMUNICATION_PROFILES, getProfile, generateCommStyleMarkdown } from "./communication-profiles";
 
 /**
  * Remove duplicate bun PATH entries from shell config.
@@ -412,7 +413,8 @@ export async function runApiKeys(
 export async function runIdentity(
   state: InstallState,
   emit: EngineEventHandler,
-  getInput: (id: string, prompt: string, type: "text" | "password" | "key", placeholder?: string) => Promise<string>
+  getInput: (id: string, prompt: string, type: "text" | "password" | "key", placeholder?: string) => Promise<string>,
+  getChoice: (id: string, prompt: string, choices: { label: string; value: string; description?: string }[]) => Promise<string>
 ): Promise<void> {
   await emit({ event: "step_start", step: "identity" });
 
@@ -484,6 +486,20 @@ export async function runIdentity(
   if (projDir.trim()) {
     state.collected.projectsDir = projDir.trim().replace(/^~/, homedir());
   }
+
+  // Communication style
+  const defaultStyle = state.collected.communicationStyle || "direct-expressive";
+  const styleChoices = COMMUNICATION_PROFILES.map((p) => ({
+    label: p.label,
+    value: p.id,
+    description: p.description,
+  }));
+  const style = await getChoice(
+    "communication-style",
+    "How should your AI communicate? Choose the style closest to your cultural context:",
+    styleChoices
+  );
+  state.collected.communicationStyle = style || defaultStyle;
 
   await emit({
     event: "message",
@@ -600,6 +616,7 @@ export async function runConfiguration(
     temperatureUnit: state.collected.temperatureUnit,
     voiceType: state.collected.voiceType,
     voiceId: state.collected.customVoiceId,
+    communicationStyle: state.collected.communicationStyle,
     paiDir,
     configDir,
   });
@@ -625,6 +642,18 @@ export async function runConfiguration(
       if (!existing.permissions) existing.permissions = config.permissions;
       if (!existing.contextFiles) existing.contextFiles = config.contextFiles;
       if (!existing.plansDirectory) existing.plansDirectory = config.plansDirectory;
+      // Apply communication style personality overrides
+      if (state.collected.communicationStyle) {
+        const profile = getProfile(state.collected.communicationStyle);
+        if (!existing.daidentity) existing.daidentity = {};
+        existing.daidentity.communicationStyle = profile.id;
+        if (profile.personalityOverrides && Object.keys(profile.personalityOverrides).length > 0) {
+          existing.daidentity.personality = {
+            ...(existing.daidentity.personality || {}),
+            ...profile.personalityOverrides,
+          };
+        }
+      }
       // Never touch: hooks, statusLine, spinnerVerbs, contextFiles (if present)
       writeFileSync(settingsPath, JSON.stringify(existing, null, 2));
     } catch {
@@ -635,6 +664,18 @@ export async function runConfiguration(
     writeFileSync(settingsPath, JSON.stringify(config, null, 2));
   }
   await emit({ event: "message", content: "settings.json generated." });
+
+  // Generate USER/COMMUNICATIONSTYLE.md (only if it doesn't already exist)
+  if (state.collected.communicationStyle) {
+    const userDir = join(paiDir, "PAI", "USER");
+    const commStylePath = join(userDir, "COMMUNICATIONSTYLE.md");
+    if (existsSync(userDir) && !existsSync(commStylePath)) {
+      const profile = getProfile(state.collected.communicationStyle);
+      const principalName = state.collected.principalName || "User";
+      writeFileSync(commStylePath, generateCommStyleMarkdown(profile, principalName));
+      await emit({ event: "message", content: `Communication style calibrated: ${profile.label}.` });
+    }
+  }
 
   // Update Algorithm LATEST version file (public repo may be behind)
   const latestPath = join(paiDir, "PAI", "Algorithm", "LATEST");

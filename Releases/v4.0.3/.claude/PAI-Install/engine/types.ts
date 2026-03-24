@@ -87,6 +87,7 @@ export interface InstallState {
     temperatureUnit?: "fahrenheit" | "celsius";
     voiceType?: "female" | "male" | "custom";
     customVoiceId?: string;
+    communicationStyle?: string;
   };
 
   // Results
@@ -112,6 +113,7 @@ export interface PAIConfig {
   temperatureUnit?: "fahrenheit" | "celsius";
   voiceType?: string;
   voiceId?: string;
+  communicationStyle?: string;
   paiDir: string;
   configDir: string;
 }
@@ -162,6 +164,7 @@ export interface InstallSummary {
   installType: "fresh" | "upgrade";
   completedSteps: number;
   totalSteps: number;
+  communicationStyle?: string;
 }
 
 // ─── Engine Events ───────────────────────────────────────────────

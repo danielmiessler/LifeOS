@@ -29,3 +29,4 @@ Load context on-demand by reading the file at the path listed. Only load what th
 | Projects | `PAI/USER/PROJECTS/README.md` |
 | Business context | `PAI/USER/BUSINESS/README.md` |
 | Telos (life goals) | `PAI/USER/TELOS/README.md` |
+| Communication style | `PAI/USER/COMMUNICATIONSTYLE.md` |

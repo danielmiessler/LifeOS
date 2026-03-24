@@ -45,6 +45,7 @@ export function generateSettingsJson(config: PAIConfig): Record<string, any> {
         },
       },
       startupCatchphrase: config.catchphrase,
+      ...(config.communicationStyle ? { communicationStyle: config.communicationStyle } : {}),
     },
 
     principal: {

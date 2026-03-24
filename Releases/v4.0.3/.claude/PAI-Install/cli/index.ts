@@ -163,7 +163,7 @@ export async function runCLI(): Promise<void> {
     if (!state.completedSteps.includes("identity")) {
       const step = STEPS[3];
       printStep(step.number, 8, step.name);
-      await runIdentity(state, emit, getInput);
+      await runIdentity(state, emit, getInput, getChoice);
       completeStep(state, "identity");
       state.currentStep = "repository";
     }

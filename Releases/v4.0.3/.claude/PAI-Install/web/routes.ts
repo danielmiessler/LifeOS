@@ -195,7 +195,7 @@ async function startInstallation(): Promise<void> {
 
     // Step 4: Identity
     if (!installState.completedSteps.includes("identity")) {
-      await runIdentity(installState, emit, requestInput);
+      await runIdentity(installState, emit, requestInput, requestChoice);
       completeStep(installState, "identity");
       installState.currentStep = "repository";
     }
