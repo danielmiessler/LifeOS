@@ -107,7 +107,7 @@ export async function runValidation(state: InstallState): Promise<ValidationChec
   }
 
   // 4. PAI skill present
-  const skillPath = join(paiDir, "skills", "PAI", "SKILL.md");
+  const skillPath = join(paiDir, "PAI", "SKILL.md");
   checks.push({
     name: "PAI core skill",
     passed: existsSync(skillPath),
