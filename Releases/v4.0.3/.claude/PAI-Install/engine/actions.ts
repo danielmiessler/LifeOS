@@ -500,7 +500,7 @@ export async function runRepository(
   emit: EngineEventHandler
 ): Promise<void> {
   await emit({ event: "step_start", step: "repository" });
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
+  const paiDir = state.detection?.paiDir || process.env.PAI_DIR || join(homedir(), ".claude");
 
   if (state.installType === "upgrade") {
     await emit({ event: "progress", step: "repository", percent: 20, detail: "Existing installation found, updating..." });
@@ -585,7 +585,7 @@ export async function runConfiguration(
   emit: EngineEventHandler
 ): Promise<void> {
   await emit({ event: "step_start", step: "configuration" });
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
+  const paiDir = state.detection?.paiDir || process.env.PAI_DIR || join(homedir(), ".claude");
   const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
 
   // Generate settings.json
@@ -985,7 +985,7 @@ export async function runVoiceSetup(
   }
 
   // ── Start voice server (works with or without ElevenLabs key) ──
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
+  const paiDir = state.detection?.paiDir || process.env.PAI_DIR || join(homedir(), ".claude");
   await emit({ event: "progress", step: "voice", percent: 25, detail: "Starting voice server..." });
   const voiceServerReady = await startVoiceServer(paiDir, emit);
 

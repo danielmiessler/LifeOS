@@ -57,6 +57,14 @@ echo ""
 echo -e "${STEEL}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
 echo ""
 
+# ─── Custom PAI_DIR Support ──────────────────────────────
+# Set PAI_DIR to install PAI into a non-default directory.
+# Default: ~/.claude   Example: PAI_DIR=~/Albert/.claude bash install.sh
+if [ -n "${PAI_DIR:-}" ]; then
+  info "Custom PAI_DIR: $PAI_DIR"
+  export PAI_DIR
+fi
+
 # ─── Resolve Script Directory ─────────────────────────────
 # Follow symlinks so install.sh works from ~/.claude/ symlink
 SOURCE="${BASH_SOURCE[0]}"
@@ -155,7 +163,7 @@ info "Launching installer..."
 echo ""
 
 # Auto-detect headless/SSH environments and fall back to CLI mode
-if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$(uname)" != "Darwin" ]; then
+if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
     INSTALL_MODE="cli"
     info "Headless environment detected — using CLI installer."
 else

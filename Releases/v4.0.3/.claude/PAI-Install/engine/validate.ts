@@ -25,7 +25,7 @@ async function checkVoiceServerHealth(): Promise<boolean> {
  * Run all validation checks against the current state.
  */
 export async function runValidation(state: InstallState): Promise<ValidationCheck[]> {
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
+  const paiDir = state.detection?.paiDir || process.env.PAI_DIR || join(homedir(), ".claude");
   const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
   const checks: ValidationCheck[] = [];
 

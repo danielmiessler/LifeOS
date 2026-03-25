@@ -126,7 +126,7 @@ function detectExisting(
  */
 export function detectSystem(): DetectionResult {
   const home = homedir();
-  const paiDir = join(home, ".claude");
+  const paiDir = process.env.PAI_DIR || join(home, ".claude");
   const configDir = process.env.PAI_CONFIG_DIR || join(home, ".config", "PAI");
 
   return {
