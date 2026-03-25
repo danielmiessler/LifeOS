@@ -32,7 +32,7 @@ const c = {
 
 // Paths
 const HOME = homedir();
-const CLAUDE_DIR = join(HOME, '.claude');
+const CLAUDE_DIR = process.env.PAI_DIR || join(HOME, '.claude');
 const ZSHRC = join(HOME, '.zshrc');
 const VOICE_SERVER_DIR = join(CLAUDE_DIR, 'VoiceServer');
 const VOICE_SERVER_PORT = 8888;
@@ -297,7 +297,7 @@ function generateSettingsJson(config: InstallConfig): object {
     "$schema": "https://json.schemastore.org/claude-code-settings.json",
     "paiVersion": "2.5",
     "env": {
-      "PAI_DIR": `${HOME}/.claude`,
+      "PAI_DIR": CLAUDE_DIR,
       "PROJECTS_DIR": config.PROJECTS_DIR || "",
       "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "80000",
       "BASH_DEFAULT_TIMEOUT_MS": "600000"
