@@ -26,7 +26,8 @@
       "ExitPlanMode",
       "Task",
       "Skill",
-      "mcp__*"
+      "mcp__*",
+      "Write(~/.claude/MEMORY/**)"
     ],
     "deny": [],
     "ask": [
@@ -60,7 +61,10 @@
       "Write(~/.ssh/*)",
       "Edit(~/.ssh/*)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "default",
+    "additionalDirectories": [
+      "~/.claude/MEMORY"
+    ]
   },
   "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [],
