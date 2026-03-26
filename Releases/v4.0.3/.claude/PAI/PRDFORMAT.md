@@ -79,6 +79,29 @@ ISC (Ideal State Criteria) checkboxes. Written during OBSERVE, checked during EX
 
 **Count enforcement:** Total ISC must meet effort tier floor (Standard: 8, Extended: 16, Advanced: 24, Deep: 40, Comprehensive: 64). If below floor after first pass, decompose compound criteria until met.
 
+### ## Sprint Contract
+
+Optional. Written during PLAN for Advanced+ effort tiers. Maps each ISC criterion to an implementation approach and verification method. Establishes agreement between builder and evaluator on what "done" means before BUILD begins. See Algorithm PLAN phase for the full sprint contract workflow.
+
+```markdown
+| ISC | Implementation Approach | Verification Method |
+|-----|------------------------|-------------------|
+| ISC-1 | How it will be built | How it will be tested |
+```
+
+### ## Evaluation Scores
+
+Optional. Written during VERIFY when calibrated evaluation is performed (Advanced+ with QA agent, or any build producing user-facing output). Scores work on four weighted dimensions (Correctness 30%, Completeness 25%, Craft 25%, User Experience 20%) after pass/fail testing. Threshold: score below 6 on any dimension triggers targeted redo.
+
+```markdown
+| Dimension | Score | Evidence |
+|-----------|-------|----------|
+| Correctness | 8/10 | All ISC criteria verified |
+| Completeness | 7/10 | All states handled |
+| Craft | 7/10 | Clean structure, good naming |
+| User Experience | 6/10 | Functional but could improve feedback |
+```
+
 ### ## Decisions
 
 Timestamped decision log. Written during any phase when non-obvious choices are made.
