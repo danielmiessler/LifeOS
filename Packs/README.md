@@ -44,6 +44,7 @@ Or manually: read `INSTALL.md`, copy files from `src/` to the specified location
 |------|-------------|
 | [Agents](Agents/) | Custom agent composition from traits, voices, and personalities |
 | [ContentAnalysis](ContentAnalysis/) | Content extraction and wisdom from videos, podcasts, articles, and YouTube |
+| [CopilotCLI](CopilotCLI/) | PAI skills ported to GitHub Copilot CLI — Thinking, Research, Investigation, Agents |
 | [Investigation](Investigation/) | OSINT and investigation — company intel, people search, domain lookup |
 | [Media](Media/) | Visual and video content — illustrations, diagrams, infographics, Remotion video |
 | [Research](Research/) | Multi-agent research with quick/standard/extensive/deep modes and 242+ Fabric patterns |
