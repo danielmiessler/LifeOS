@@ -36,6 +36,7 @@ Or manually: read `INSTALL.md`, copy files from `src/` to the specified location
 
 | Pack | Description |
 |------|-------------|
+| [BetterInsights](BetterInsights/) | `/better-insights` — fixes /insights undercounting, separates human messages from tool results, reports token usage |
 | [ContextSearch](ContextSearch/) | `/context-search` and `/cs` — search prior work to add context |
 
 ### Skills
