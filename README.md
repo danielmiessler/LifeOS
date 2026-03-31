@@ -356,6 +356,125 @@ cp -r .claude ~/ && cd ~/.claude && bash install.sh
 
 **After installation:** Run `source ~/.zshrc && pai` to launch PAI.
 
+### WSL/Linux Installation Notes
+
+If you're installing on WSL (Windows Subsystem for Linux) or Linux distributions, you may need a few additional steps:
+
+#### 1. Install Prerequisites
+
+```bash
+# Install unzip (required for Bun installation)
+sudo apt-get update && sudo apt-get install -y unzip
+```
+
+#### 2. Install Bun Runtime
+
+```bash
+# Install Bun
+curl -fsSL https://bun.sh/install | bash
+
+# Reload your shell to pick up Bun in PATH
+source ~/.bashrc
+```
+
+#### 3. Fix Hook Paths and Permissions
+
+**Add PAI alias to `~/.bashrc`:**
+```bash
+# PAI alias
+alias pai='bun ~/.claude/PAI/Tools/pai.ts'
+```
+
+**Fix hook permissions (IMPORTANT):**
+```bash
+cd ~/.claude
+chmod +x hooks/*.hook.ts
+chmod +x hooks/handlers/*.ts
+```
+
+**Fix hook paths - use absolute paths instead of environment variables:**
+
+Replace `<username>` with your username in the command below:
+```bash
+# Quick fix for all hooks at once (replace '<username>' with your username)
+sed -i 's|\${HOME}/.bun/bin/bun \${PAI_DIR}/hooks/|/home/<username>/.bun/bin/bun /home/<username>/.claude/hooks/|g' ~/.claude/settings.json
+```
+
+This fixes all 25 hooks in: `PreToolUse`, `PostToolUse`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, and `Stop` sections.
+
+**Verify the fix:**
+```bash
+# Should return nothing if all hooks are fixed
+grep '"command".*\${HOME}\|${PAI_DIR}' ~/.claude/settings.json
+```
+
+> [!WARNING]
+> **Why absolute paths?** Environment variables like `${HOME}` and `${PAI_DIR}` don't expand properly in WSL hook execution contexts. Using absolute paths ensures hooks work correctly.
+
+#### 4. Create Optional User Files
+
+To eliminate startup warnings about missing files:
+
+```bash
+mkdir -p ~/.claude/PAI/USER/PROJECTS
+touch ~/.claude/PAI/USER/AISTEERINGRULES.md
+touch ~/.claude/PAI/USER/PROJECTS/PROJECTS.md
+```
+
+#### 5. Launch PAI
+
+```bash
+source ~/.bashrc && pai
+```
+
+---
+
+#### WSL Troubleshooting
+
+**Hook errors persist after following above steps?**
+
+1. **Check permissions:** All hooks should show `-rwxr-xr-x`
+   ```bash
+   ls -la ~/.claude/hooks/*.hook.ts
+   ```
+
+2. **Verify no environment variables remain:**
+   ```bash
+   grep '"command".*\${' ~/.claude/settings.json
+   ```
+
+3. **Test a hook directly:**
+   ```bash
+   ~/.bun/bin/bun ~/.claude/hooks/KittyEnvPersist.hook.ts
+   ```
+   Should run without errors.
+
+**GUI installer fails with library errors?**
+
+Use the CLI installer instead (recommended for WSL):
+```bash
+cd ~/.claude
+bun run PAI-Install/main.ts --mode cli
+```
+
+Or install missing Electron dependencies:
+```bash
+sudo apt-get install -y libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxfixes3 libxrandr2 libgbm1 libasound2
+```
+
+**See identity placeholders like `{DAIDENTITY.NAME}` or `{PRINCIPAL.NAME}`?**
+
+This means the installer didn't complete the identity configuration step. Run the CLI installer:
+```bash
+cd ~/.claude
+bun run PAI-Install/main.ts --mode cli
+```
+
+The installer will ask for your name, AI assistant name, timezone, and temperature preference.
+
+> [!TIP]
+> The SessionStart hooks may show "error" messages on startup—these are actually informational logs written to stderr and are normal if the hooks complete successfully.
+
 ### Upgrading from a Previous Version
 
 ```bash
