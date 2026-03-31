@@ -51,6 +51,10 @@ COUNTS_CACHE="$PAI_DIR/MEMORY/STATE/counts-cache.sh"
 # Source .env for API keys
 [ -f "${PAI_CONFIG_DIR:-$HOME/.config/PAI}/.env" ] && source "${PAI_CONFIG_DIR:-$HOME/.config/PAI}/.env"
 
+# Source user statusline extensions (upgrade-safe customizations)
+_USER_EXTENSIONS="$PAI_DIR/PAI/USER/STATUSLINE/extensions.sh"
+[ -f "$_USER_EXTENSIONS" ] && source "$_USER_EXTENSIONS"
+
 # Cross-platform file mtime (seconds since epoch)
 # macOS uses stat -f %m, Linux uses stat -c %Y
 get_mtime() {
@@ -396,6 +400,9 @@ COUNTSEOF
     fi
 } &
 
+# User extensions prefetch
+{ type -t user_statusline_prefetch &>/dev/null && user_statusline_prefetch "$_parallel_tmp"; } &
+
 # --- PARALLEL BLOCK END - wait for all to complete ---
 wait
 
@@ -405,6 +412,7 @@ wait
 [ -f "$_parallel_tmp/weather.sh" ] && source "$_parallel_tmp/weather.sh"
 [ -f "$_parallel_tmp/counts.sh" ] && source "$_parallel_tmp/counts.sh"
 [ -f "$_parallel_tmp/usage.sh" ] && source "$_parallel_tmp/usage.sh"
+[ -f "$_parallel_tmp/user-ext.sh" ] && source "$_parallel_tmp/user-ext.sh"
 rm -rf "$_parallel_tmp" 2>/dev/null
 
 learning_count="$learnings_count"
@@ -1020,6 +1028,11 @@ print(f\"clock_7d='{clock_time(r7d, 'weekly')}'\")
     esac
     printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
 fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINE: USER EXTENSIONS DISPLAY
+# ═══════════════════════════════════════════════════════════════════════════════
+type -t user_statusline_display &>/dev/null && user_statusline_display
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINE 4: PWD & GIT (index-only: branch, age, stash, sync — no file status)

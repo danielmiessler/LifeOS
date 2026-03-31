@@ -217,6 +217,10 @@
           {
             "type": "command",
             "command": "bun ${PAI_DIR}/hooks/handlers/BuildCLAUDE.ts"
+          },
+          {
+            "type": "command",
+            "command": "bun ${PAI_DIR}/hooks/StatuslineExtensions.hook.ts"
           }
         ]
       }
