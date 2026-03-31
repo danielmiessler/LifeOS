@@ -401,7 +401,9 @@ COUNTSEOF
 } &
 
 # User extensions prefetch
-{ type -t user_statusline_prefetch &>/dev/null && user_statusline_prefetch "$_parallel_tmp"; } &
+if type -t user_statusline_prefetch &>/dev/null; then
+    user_statusline_prefetch "$_parallel_tmp" &
+fi
 
 # --- PARALLEL BLOCK END - wait for all to complete ---
 wait
