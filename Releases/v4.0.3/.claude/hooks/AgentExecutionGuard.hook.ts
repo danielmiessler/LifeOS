@@ -4,7 +4,7 @@
  *
  * PURPOSE:
  * Structural enforcement for the Algorithm's background execution rule.
- * When the Task tool is called without run_in_background: true and the
+ * When the Agent tool is called without run_in_background: true and the
  * timing context is not "fast", injects a warning system-reminder.
  *
  * TRIGGER: PreToolUse (matcher: Agent)
@@ -88,7 +88,7 @@ async function main() {
 WARNING: FOREGROUND AGENT DETECTED — "${desc}" (${agentType})
 run_in_background is NOT set to true. This will BLOCK the user interface.
 
-FIX: Add run_in_background: true to this Task call.
+FIX: Add run_in_background: true to this Agent call.
 
 The Algorithm requires ALL non-fast agents to run in background:
 - Spawn with run_in_background: true
