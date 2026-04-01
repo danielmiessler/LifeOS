@@ -1,0 +1,72 @@
+# PAI Repository .gitignore
+# This file excludes transient/generated files while preserving infrastructure
+
+# Transient debug and cache files
+debug/
+cache/
+paste-cache/
+shell-snapshots/
+telemetry/
+file-history/
+plans/
+todos/
+work-sessions/
+pending-summaries/
+pending-summaries.lock
+stats-cache.json
+session-env/
+
+# Credentials and secrets
+.credentials.json
+credentials/
+
+# Browser profiles (user-specific)
+browser-profiles/
+
+# Per-user project metadata
+projects/
+
+# Backup directories
+skills-backup-*/
+
+# Logs
+logs/
+*.log
+cleanup.log
+
+# Backup files
+*.backup-*
+CLAUDE.md.backup-*
+
+# Session-specific files
+history.jsonl
+
+# Temporary and scratch files
+scratchpad/
+telegram-pending/
+timebox/
+
+# Plugins (may contain user-specific data)
+plugins/
+
+# Tasks (work queue metadata)
+tasks/
+
+# Teams (user-specific collaboration data)
+teams/
+
+# Environment files (may contain secrets)
+.env
+
+# Large raw output files that exceed GitHub limits
+history/raw-outputs/*.jsonl
+
+# Keep these infrastructure files:
+# - skills/
+# - agents/
+# - tools/
+# - claudia/
+# - CLAUDE.md
+# - statusline-command.sh
+# - history/ (session history is valuable for learning)
+# - voice-server/
