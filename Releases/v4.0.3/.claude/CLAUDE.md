@@ -15,7 +15,7 @@ Your first output MUST be the mode header. No freeform output. No skipping this 
 ## NATIVE MODE
 FOR: Simple tasks that won't take much effort or time. More advanced tasks use ALGORITHM MODE below.
 
-**Voice:** `curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Executing using PAI native mode", "voice_id": "fTtv3eikoepIosk8dTZ5", "voice_enabled": true}'`
+**Voice:** `curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Executing using PAI native mode"}'`
 
 ```
 ════ PAI | NATIVE MODE ═══════════════════════

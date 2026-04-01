@@ -238,7 +238,7 @@ More ISC = finer verification = better hill-climbing. When in doubt, more criter
 
 🗒️ TASK: [8 word description]
 
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the PAI Algorithm Observe phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the PAI Algorithm Observe phase"}'`
 
 ━━━ 👁️ OBSERVE ━━━ 1/7
 ```
@@ -270,7 +270,7 @@ Walk the Full Capability Registry (25 capabilities, Sections A-F) and assign USE
 **Quality Gate → OPEN or BLOCKED.**
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Think phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Think phase"}'`
 
 ━━━ 🧠 THINK ━━━ 2/7
 ```
@@ -286,7 +286,7 @@ Walk the Full Capability Registry (25 capabilities, Sections A-F) and assign USE
 Extended+: Rehearse verification for each CRITICAL criterion.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Plan phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Plan phase"}'`
 
 ━━━ 📋 PLAN ━━━ 3/7
 ```
@@ -299,7 +299,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Quality Gate re-check.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Build phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Build phase"}'`
 
 ━━━ 🔨 BUILD ━━━ 4/7
 ```
@@ -309,7 +309,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Create artifacts. Log work and observations to PRD.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Execute phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Execute phase"}'`
 
 ━━━ ⚡ EXECUTE ━━━ 5/7
 ```
@@ -320,7 +320,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Log work and observations to PRD.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Verify phase."}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Verify phase."}'`
 
 ━━━ ✅ VERIFY ━━━ 6/7
 ```
@@ -337,7 +337,7 @@ Extended+: Rehearse verification for each CRITICAL criterion.
 - Clear ISC/VERIFICATION TaskList.
 
 ```
-`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"voice_id":"fTtv3eikoepIosk8dTZ5","message": "Entering the Learn phase"}'`
+`curl -s -X POST http://localhost:8888/notify -H "Content-Type: application/json" -d '{"message": "Entering the Learn phase"}'`
 
 ━━━ 📚 LEARN ━━━ 7/7
 ```

@@ -4,7 +4,7 @@
   "default_volume": 0.8,
   "voices": {
     "default": {
-      "voice_id": "bIHbv24MWmeRgasZH58o",
+      
       "voice_name": "Default (Male)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -14,7 +14,7 @@
       "type": "Premium"
     },
     "assistant": {
-      "voice_id": "bIHbv24MWmeRgasZH58o",
+      
       "voice_name": "Assistant (Male)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -24,7 +24,7 @@
       "type": "Premium"
     },
     "researcher": {
-      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      
       "voice_name": "Researcher (Female)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -34,7 +34,7 @@
       "type": "Premium"
     },
     "engineer": {
-      "voice_id": "bIHbv24MWmeRgasZH58o",
+      
       "voice_name": "Engineer (Male)",
       "rate_multiplier": 1.3,
       "rate_wpm": 228,
@@ -44,7 +44,7 @@
       "type": "Premium"
     },
     "architect": {
-      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      
       "voice_name": "Architect (Female)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -54,7 +54,7 @@
       "type": "Premium"
     },
     "designer": {
-      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      
       "voice_name": "Designer (Female)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -64,7 +64,7 @@
       "type": "Premium"
     },
     "analyst": {
-      "voice_id": "M563YhMmA0S8vEYwkgYa",
+      
       "voice_name": "Analyst (Neutral)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -74,7 +74,7 @@
       "type": "Premium"
     },
     "writer": {
-      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      
       "voice_name": "Writer (Female)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -84,7 +84,7 @@
       "type": "Premium"
     },
     "security": {
-      "voice_id": "bIHbv24MWmeRgasZH58o",
+      
       "voice_name": "Security (Male)",
       "rate_multiplier": 1.35,
       "rate_wpm": 236,
@@ -94,7 +94,7 @@
       "type": "Enhanced"
     },
     "intern": {
-      "voice_id": "M563YhMmA0S8vEYwkgYa",
+      
       "voice_name": "Intern (Neutral)",
       "rate_multiplier": 1.4,
       "rate_wpm": 245,

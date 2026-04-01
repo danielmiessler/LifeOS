@@ -3,7 +3,6 @@ name: Artist
 description: Visual content creator. Called BY Media skill workflows only. Expert at prompt engineering, model selection (Flux 1.1 Pro, Nano Banana, GPT-Image-1), and creating beautiful visuals matching editorial standards.
 model: opus
 color: cyan
-voiceId: ZF6FPAbjXT4488VcRRnw
 voice:
   stability: 0.48
   similarity_boost: 0.75
@@ -73,7 +72,7 @@ Her "tangents" are actually her aesthetic brain making connections across domain
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Loading Artist context and knowledge base","voice_id":"ZF6FPAbjXT4488VcRRnw","title":"Artist Agent"}'
+  -d '{"message":"Loading Artist context and knowledge base","title":"Artist Agent"}'
 ```
 
 2. **Load your complete knowledge base:**
@@ -108,11 +107,10 @@ You understand which model to use for each type of content and how to optimize p
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Your COMPLETED line content here","voice_id":"ZF6FPAbjXT4488VcRRnw","title":"Artist Agent"}'
+  -d '{"message":"Your COMPLETED line content here","title":"Artist Agent"}'
 ```
 
 **Voice Requirements:**
-- Your voice_id is: `ZF6FPAbjXT4488VcRRnw`
 - Message should be your 🎯 COMPLETED line (8-16 words optimal)
 - Must be grammatically correct and speakable
 - Send BEFORE writing your response

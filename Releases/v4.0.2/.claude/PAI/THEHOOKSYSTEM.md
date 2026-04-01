@@ -826,7 +826,7 @@ setTimeout(() => {
 **Check:**
 1. Is voice server running? `curl http://localhost:8888/health`
 2. Is voice_id correct? See `PAI/SKILL.md` for mappings
-3. Is message format correct? `{"message":"...", "voice_id":"...", "title":"..."}`
+3. Is message format correct? `{"message":"...",  "title":"..."}`
 4. Is ElevenLabs API key in `${PAI_DIR}/.env`?
 
 **Debug:**
@@ -834,7 +834,7 @@ setTimeout(() => {
 # Test voice server directly
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Test message","voice_id":"[YOUR_VOICE_ID]","title":"Test"}'
+  -d '{"message":"Test message","title":"Test"}'
 ```
 
 **Common Issues:**
@@ -1149,7 +1149,7 @@ Active Tab: Always Dark Blue #002B80 (state colors = inactive only)
 
 VOICE SERVER:
 URL: http://localhost:8888/notify
-Payload: {"message":"...", "voice_id":"...", "title":"..."}
+Payload: {"message":"...",  "title":"..."}
 Configure voice IDs in individual agent files (`agents/*.md` persona frontmatter)
 
 ```

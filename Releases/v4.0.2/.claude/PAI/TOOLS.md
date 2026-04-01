@@ -169,7 +169,7 @@ curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
   -d '{
     "message": "Your text here",
-    "voice_id": "$ELEVENLABS_VOICE_ID",
+    
     "title": "Voice Narrative"
   }'
 

@@ -72,7 +72,7 @@ When executing an actual workflow file from a `Workflows/` directory:
 ```bash
 curl -s -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message": "Running the WORKFLOWNAME workflow in the SKILLNAME skill to ACTION", "voice_id": "{DAIDENTITY.VOICEID}", "title": "{DAIDENTITY.NAME}"}' \
+  -d '{"message": "Running the WORKFLOWNAME workflow in the SKILLNAME skill to ACTION", "title": "{DAIDENTITY.NAME}"}' \
   > /dev/null 2>&1 &
 ```
 

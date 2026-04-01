@@ -67,7 +67,7 @@ ComposeAgent returns JSON with:
 {
   "name": "Research Enthusiastic Explorer",
   "voice": "Jeremy",
-  "voice_id": "bVMeCyTHy58xNoL34h3p",
+  
   "color": "#FF6B35",
   "traits": ["research", "enthusiastic", "exploratory"],
   "prompt": "# Dynamic Agent: Research Enthusiastic Explorer\n\nYou are a specialized agent..."
@@ -119,7 +119,7 @@ Each agent's prompt includes:
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"<COMPLETED line content>","voice_id":"<agent_voice_id>","title":"<agent_name>","voice_enabled":true}'
+  -d '{"message":"<COMPLETED line content>","title":"<agent_name>","voice_enabled":true}'
 ```
 
 ### Step 6: Spotcheck (Optional but Recommended)

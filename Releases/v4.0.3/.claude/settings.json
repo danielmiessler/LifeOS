@@ -915,7 +915,7 @@
     "voices": {
       "main": {
         "_docs": "Primary DA voice - stability 0.85 for consistent output, style 0.3 for minimal variation",
-        "voiceId": "{YOUR_ELEVENLABS_VOICE_ID}",
+        "voiceId": "bIHbv24MWmeRgasZH58o",
         "voiceName": "{DAIDENTITY.NAME}",
         "stability": 0.85,
         "similarity_boost": 0.7,
@@ -926,7 +926,7 @@
       },
       "algorithm": {
         "_docs": "Algorithm phase announcer voice",
-        "voiceId": "fTtv3eikoepIosk8dTZ5",
+        "voiceId": "bIHbv24MWmeRgasZH58o",
         "voiceName": "Algorithm Voice",
         "stability": 0.3,
         "similarity_boost": 0.75,

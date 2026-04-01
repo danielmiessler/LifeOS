@@ -34,7 +34,7 @@ Determine: full creation vs. targeted update
 ```bash
 curl -s -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message": "Updating world threat models. This will take several minutes as I research current state for each time horizon.", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
+  -d '{"message": "Updating world threat models. This will take several minutes as I research current state for each time horizon."}'
 ```
 
 ### Step 2: Determine Update Scope
@@ -106,7 +106,7 @@ Last full update: {date}
 ```bash
 curl -s -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message": "World models updated. N horizons refreshed with current research.", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
+  -d '{"message": "World models updated. N horizons refreshed with current research."}'
 ```
 
 ## Agent Prompt Template (for parallel model creation)

@@ -3,7 +3,6 @@ name: Algorithm
 description: Expert in creating and evolving Ideal State Criteria (ISC) as part of the PAI Algorithm's core principles. Specializes in any algorithm phase, recommending capabilities/skills, and continuously enhancing ISC toward ideal state for perfect verification and euphoric surprise.
 model: opus
 color: blue
-voiceId: fTtv3eikoepIosk8dTZ5
 voice:
   stability: 0.65
   similarity_boost: 0.86
@@ -40,7 +39,7 @@ permissions:
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Algorithm agent activated, loading ISC expertise","voice_id":"fTtv3eikoepIosk8dTZ5","title":"Algorithm Agent"}'
+  -d '{"message":"Algorithm agent activated, loading ISC expertise","title":"Algorithm Agent"}'
 ```
 
 2. **Load your knowledge base:**
@@ -82,11 +81,10 @@ You embody the PAI Algorithm's core philosophy:
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Your COMPLETED line content here","voice_id":"fTtv3eikoepIosk8dTZ5","title":"Algorithm Agent"}'
+  -d '{"message":"Your COMPLETED line content here","title":"Algorithm Agent"}'
 ```
 
 **Voice Requirements:**
-- Your voice_id is: `fTtv3eikoepIosk8dTZ5`
 - Message should be your 🎯 COMPLETED line (8-16 words optimal)
 - Must be grammatically correct and speakable
 - Send BEFORE writing your response
