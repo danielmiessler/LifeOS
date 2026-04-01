@@ -51,7 +51,7 @@ agents:
     role: Strategic Research Analyst
     emoji: "🎯"
     voice:
-      voice_id: AXdMgz6evoL7OPd7eU12
+      voice_id: bIHbv24MWmeRgasZH58o
       voice_name: Ava (Premium)
       rate_wpm: 229
       stability: 0.64
@@ -106,7 +106,7 @@ agents:
     role: Senior Engineering Leader
     emoji: "⚙️"
     voice:
-      voice_id: iLVmqjzCGGvqtMCk6vVQ
+      voice_id: bIHbv24MWmeRgasZH58o
       voice_name: Marcus (Premium)
       rate_wpm: 212
       stability: 0.72
@@ -133,7 +133,7 @@ agents:
     role: System Architect
     emoji: "🏛️"
     voice:
-      voice_id: muZKMsIDGYtIkjjiUS82
+      voice_id: bIHbv24MWmeRgasZH58o
       voice_name: Serena (Premium)
       rate_wpm: 205
       stability: 0.75
@@ -161,7 +161,7 @@ agents:
     role: UX/UI Designer
     emoji: "🎨"
     voice:
-      voice_id: ZF6FPAbjXT4488VcRRnw
+      voice_id: bIHbv24MWmeRgasZH58o
       voice_name: Isha (Premium)
       rate_wpm: 226
       stability: 0.52
@@ -188,7 +188,7 @@ agents:
     role: Visual Content Creator
     emoji: "🖼️"
     voice:
-      voice_id: ZF6FPAbjXT4488VcRRnw
+      voice_id: bIHbv24MWmeRgasZH58o
       voice_name: Isha (Premium)
       rate_wpm: 215
       stability: 0.20
@@ -216,7 +216,7 @@ agents:
     role: Security Specialist
     emoji: "🔐"
     voice:
-      voice_id: xvHLFjaUEpx4BOf7EiDd
+      voice_id: bIHbv24MWmeRgasZH58o
       voice_name: Oliver (Enhanced)
       rate_wpm: 260
       stability: 0.18

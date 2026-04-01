@@ -104,7 +104,7 @@ curl -s -X POST http://localhost:8888/notify \
 | Agent | Voice ID | Notes |
 |-------|----------|-------|
 | **{DAIDENTITY.NAME}** (default) | `{DAIDENTITY.VOICEID}` | Use for most workflows |
-| **Priya** (Artist) | `ZF6FPAbjXT4488VcRRnw` | Art skill workflows |
+| **Priya** (Artist) | `bIHbv24MWmeRgasZH58o` | Art skill workflows |
 
 **Full voice registry:** `~/.claude/skills/Agents/SKILL.md` (see Named Agents) and `~/.claude/settings.json` (daidentity.voiceId)
 

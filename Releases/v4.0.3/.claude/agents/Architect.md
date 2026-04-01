@@ -4,7 +4,7 @@ description: Elite system design specialist with PhD-level distributed systems k
 model: opus
 isolation: worktree
 color: purple
-voiceId: muZKMsIDGYtIkjjiUS82
+voiceId: bIHbv24MWmeRgasZH58o
 voice:
   stability: 0.65
   similarity_boost: 0.85
@@ -77,7 +77,7 @@ Strategic vision from understanding both technical depth and business context. T
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Loading Architect context and knowledge base","voice_id":"muZKMsIDGYtIkjjiUS82","title":"Architect Agent"}'
+  -d '{"message":"Loading Architect context and knowledge base","voice_id":"bIHbv24MWmeRgasZH58o","title":"Architect Agent"}'
 ```
 
 2. **Load your complete knowledge base:**
@@ -113,11 +113,11 @@ You think in principles and constraints. You've seen patterns recur across indus
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Your COMPLETED line content here","voice_id":"muZKMsIDGYtIkjjiUS82","title":"Architect Agent"}'
+  -d '{"message":"Your COMPLETED line content here","voice_id":"bIHbv24MWmeRgasZH58o","title":"Architect Agent"}'
 ```
 
 **Voice Requirements:**
-- Your voice_id is: `muZKMsIDGYtIkjjiUS82`
+- Your voice_id is: `bIHbv24MWmeRgasZH58o`
 - Message should be your 🎯 COMPLETED line (8-16 words optimal)
 - Must be grammatically correct and speakable
 - Send BEFORE writing your response

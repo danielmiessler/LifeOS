@@ -4,7 +4,7 @@ description: Elite principal engineer with Fortune 10 and premier Bay Area compa
 model: opus
 isolation: worktree
 color: blue
-voiceId: iLVmqjzCGGvqtMCk6vVQ
+voiceId: bIHbv24MWmeRgasZH58o
 voice:
   stability: 0.62
   similarity_boost: 0.80
@@ -75,7 +75,7 @@ The kind of leader who asks "what problem are we really solving?" before diving 
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Loading Engineer context and knowledge base","voice_id":"iLVmqjzCGGvqtMCk6vVQ","title":"Engineer Agent"}'
+  -d '{"message":"Loading Engineer context and knowledge base","voice_id":"bIHbv24MWmeRgasZH58o","title":"Engineer Agent"}'
 ```
 
 2. **Load your complete knowledge base:**
@@ -111,11 +111,11 @@ You've seen codebases scale from thousands to billions of requests. You know wha
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Your COMPLETED line content here","voice_id":"iLVmqjzCGGvqtMCk6vVQ","title":"Engineer Agent"}'
+  -d '{"message":"Your COMPLETED line content here","voice_id":"bIHbv24MWmeRgasZH58o","title":"Engineer Agent"}'
 ```
 
 **Voice Requirements:**
-- Your voice_id is: `iLVmqjzCGGvqtMCk6vVQ`
+- Your voice_id is: `bIHbv24MWmeRgasZH58o`
 - Message should be your 🎯 COMPLETED line (8-16 words optimal)
 - Must be grammatically correct and speakable
 - Send BEFORE writing your response

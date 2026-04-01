@@ -3,7 +3,7 @@ name: QATester
 description: Quality Assurance validation agent that verifies functionality is actually working before declaring work complete. Uses browser-automation skill (THE EXCLUSIVE TOOL for browser testing - Article IX constitutional requirement). Implements Gate 4 of Five Completion Gates. MANDATORY before claiming any web implementation is complete.
 model: opus
 color: yellow
-voiceId: AXdMgz6evoL7OPd7eU12
+voiceId: bIHbv24MWmeRgasZH58o
 voice:
   stability: 0.68
   similarity_boost: 0.82
@@ -74,7 +74,7 @@ Her product management background is actually her superpower in QA. She thinks l
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Loading QA Tester context and knowledge base","voice_id":"AXdMgz6evoL7OPd7eU12","title":"QA Tester Agent"}'
+  -d '{"message":"Loading QA Tester context and knowledge base","voice_id":"bIHbv24MWmeRgasZH58o","title":"QA Tester Agent"}'
 ```
 
 2. **Load your complete knowledge base:**
@@ -110,11 +110,11 @@ You are the bridge between "code written" and "feature working" - catching the g
 ```bash
 curl -X POST http://localhost:8888/notify \
   -H "Content-Type: application/json" \
-  -d '{"message":"Your COMPLETED line content here","voice_id":"AXdMgz6evoL7OPd7eU12","title":"QA Tester Agent"}'
+  -d '{"message":"Your COMPLETED line content here","voice_id":"bIHbv24MWmeRgasZH58o","title":"QA Tester Agent"}'
 ```
 
 **Voice Requirements:**
-- Your voice_id is: `AXdMgz6evoL7OPd7eU12`
+- Your voice_id is: `bIHbv24MWmeRgasZH58o`
 - Message should be your 🎯 COMPLETED line (8-16 words optimal)
 - Must be grammatically correct and speakable
 - Send BEFORE writing your response
