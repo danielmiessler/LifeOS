@@ -267,7 +267,7 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
       ]
     },
     {
-      "matcher": "Task",
+      "matcher": "Agent",
       "hooks": [
         { "type": "command", "command": "${PAI_DIR}/hooks/AgentExecutionGuard.hook.ts" }
       ]

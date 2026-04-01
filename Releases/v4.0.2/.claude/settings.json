@@ -24,7 +24,7 @@
       "NotebookEdit",
       "TodoWrite",
       "ExitPlanMode",
-      "Task",
+      "Agent",
       "Skill",
       "mcp__*"
     ],

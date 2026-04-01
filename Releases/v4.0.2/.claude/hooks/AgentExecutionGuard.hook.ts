@@ -7,7 +7,7 @@
  * When the Task tool is called without run_in_background: true and the
  * timing context is not "fast", injects a warning system-reminder.
  *
- * TRIGGER: PreToolUse (matcher: Task)
+ * TRIGGER: PreToolUse (matcher: Agent)
  *
  * DECISION LOGIC:
  * - run_in_background: true → PASS (correct usage)
