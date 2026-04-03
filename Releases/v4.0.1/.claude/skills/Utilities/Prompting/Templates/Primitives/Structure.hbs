@@ -1,0 +1,86 @@
+{{!--
+  STRUCTURE Template - Workflow Patterns
+
+  Purpose: Generate standardized multi-step execution patterns.
+
+  Use Cases:
+  - Phased analysis workflows (RedTeam 5-phase)
+  - Round-based debate patterns (Council 3-round)
+  - Sequential pipelines (Development gates)
+  - Research methodologies
+
+  Input Data Structure:
+  ```yaml
+  workflow:
+    name: string
+    description: string
+    timing: string (optional)
+    phases:
+      - name: string
+        purpose: string
+        steps:
+          - action: string
+            instructions: string
+            tools: [string] (optional)
+            output: string (optional)
+  ```
+
+  Usage:
+  bun run RenderTemplate.ts -t Primitives/Structure.hbs -d Data/RedTeamWorkflow.yaml -o Compiled/RedTeamWorkflow.md
+--}}
+
+# {{workflow.name}}
+
+{{#if workflow.description}}
+{{workflow.description}}
+{{/if}}
+
+{{#if workflow.timing}}
+**Estimated Timing:** {{workflow.timing}}
+{{/if}}
+
+---
+
+{{#each workflow.phases}}
+## Phase {{@index}}: {{name}}
+
+{{#if purpose}}
+**Purpose:** {{purpose}}
+{{/if}}
+
+{{#each steps}}
+### Step {{@index}}: {{action}}
+
+{{instructions}}
+
+{{#if tools}}
+**Tools:**
+{{#each tools}}
+- `{{this}}`
+{{/each}}
+{{/if}}
+
+{{#if output}}
+**Expected Output:**
+{{output}}
+{{/if}}
+
+{{/each}}
+
+---
+
+{{/each}}
+
+{{#if workflow.completion_criteria}}
+## Completion Criteria
+
+{{#each workflow.completion_criteria}}
+- [ ] {{this}}
+{{/each}}
+{{/if}}
+
+{{#if workflow.notes}}
+## Notes
+
+{{workflow.notes}}
+{{/if}}

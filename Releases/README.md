@@ -20,7 +20,61 @@ This is the fastest way to get PAI running. Copy the directory, run the wizard, 
 
 ## Available Releases
 
-### v3.0.0 — The Algorithm Matures (Current)
+### v4.0.3 — Community PR Patch (Current)
+
+4 community-contributed fixes from open PRs.
+
+- Inference: JSON parsing now handles arrays `[]` alongside objects `{}`
+- Documentation: removed 29 dead references from CONTEXT_ROUTING.md
+- Portability: WorldThreatModelHarness uses `$PAI_DIR` instead of hardcoded path
+- Installer: migrates user context from v2.5/v3.0 paths on upgrade
+
+**[Get v4.0.3 →](v4.0.3/)**
+
+---
+
+### v4.0.2 — Bug Fix Patch
+
+13 surgical fixes — no new features, no breaking changes.
+
+- Linux compatibility: cross-platform OAuth token extraction, GNU coreutils `tr` fix
+- Installer: correct alias path, shell detection (bash/fish/zsh), headless CLI fallback
+- Statusline: width cache, algorithmVersion field, cross-platform OAuth
+- Hooks: inference guard (~15s savings), lineage tracking, dead code removal, exit codes, voice config
+
+**[Get v4.0.2 →](v4.0.2/)**
+
+---
+
+### v4.0.1 — Upgrade Path & Preferences
+
+Patch release addressing community feedback on upgrade difficulties and missing preferences.
+
+- Upgrade path documentation with backup, merge, and post-upgrade checklist
+- Configurable temperature unit (Fahrenheit/Celsius) in statusline
+- Installer prompts for temperature preference during setup
+- Statusline fixes: dynamic timezone, context fallback, startup estimate, f-string syntax (PRs #762, #780, #806)
+- FAQ fixes (removed stale Python reference, improved recovery guidance)
+
+**[Get v4.0.1 →](v4.0.1/)**
+
+---
+
+### v4.0.0 — Lean and Mean
+
+38 flat skill directories compressed into 12 hierarchical categories. Dead systems removed. Context footprint cut in half.
+
+- 63 Skills, 21 Hooks, 180 Workflows
+- Algorithm v3.5.0
+- CLAUDE.md template system with BuildCLAUDE.ts + SessionStart hook
+- Comprehensive security sanitization (33+ files cleaned)
+- ~19% context at startup (down from ~38%)
+
+**[Get v4.0.0 →](v4.0.0/)**
+
+---
+
+### v3.0.0 — The Algorithm Matures
 
 The Algorithm reaches v1.4.0 with constraint extraction, build drift prevention, persistent PRDs, and parallel loop execution.
 
@@ -79,22 +133,16 @@ The release that introduced persistent learning and sentiment capture.
 
 ```bash
 # 1. Clone the repo
-git clone https://github.com/danielmiessler/PAI.git
-cd PAI/Releases/v3.0
+git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
+cd Personal_AI_Infrastructure/Releases/v4.0.3
 
-# 2. Back up existing installation (if any)
-[ -d ~/.claude ] && mv ~/.claude ~/.claude-backup-$(date +%Y%m%d)
-
-# 3. Copy the release
-cp -r .claude ~/
-
-# 4. Run the installer
-cd ~/.claude && ./PAI-Install/install.sh
-
-# 5. Restart Claude Code
+# 2. Copy the release and run the installer
+cp -r .claude ~/ && cd ~/.claude && bash install.sh
 ```
 
-The wizard asks for your name, AI name, timezone, and optional voice preferences.
+The wizard asks for your name, AI name, timezone, temperature unit, and optional voice preferences.
+
+See the [main README](../README.md#upgrading-from-a-previous-version) for upgrade instructions.
 
 ---
 

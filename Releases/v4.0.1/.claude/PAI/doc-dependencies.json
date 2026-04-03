@@ -1,0 +1,178 @@
+{
+  "$schema": "doc-dependencies-schema",
+  "version": "1.0.0",
+  "description": "Defines authoritative relationships between PAI documentation files for cross-reference integrity",
+
+  "authoritative_docs": {
+    "PAISYSTEMARCHITECTURE.md": {
+      "description": "Master architecture document - source of truth for all system design",
+      "tier": 1,
+      "sections": {
+        "cloud-execution": {
+          "heading": "## Cloud Execution Architecture (Arbol)",
+          "line_range_hint": [400, 460],
+          "dependents": ["ACTIONS.md", "PIPELINES.md", "FLOWS.md"],
+          "key_facts": [
+            "Worker naming: arbol-[apf]-{name}",
+            "Two-tier model: V8 isolate vs Sandbox",
+            "Auth: Bearer token via shared/auth.ts",
+            "Service bindings for internal calls"
+          ]
+        },
+        "skill-system": {
+          "heading": "## Skill System Architecture",
+          "dependents": ["SKILLSYSTEM.md"]
+        },
+        "hook-system": {
+          "heading": "## Hook System Architecture",
+          "dependents": ["THEHOOKSYSTEM.md"]
+        },
+        "memory-system": {
+          "heading": "## Memory System Architecture",
+          "dependents": ["MEMORYSYSTEM.md"]
+        },
+        "agent-system": {
+          "heading": "## Agent System Architecture",
+          "dependents": ["PAIAGENTSYSTEM.md"]
+        },
+        "notification-system": {
+          "heading": "## Notification System Architecture",
+          "dependents": ["THENOTIFICATIONSYSTEM.md"]
+        },
+        "security": {
+          "heading": "## Security Architecture",
+          "dependents": ["PAISECURITYSYSTEM/ARCHITECTURE.md"]
+        }
+      }
+    },
+
+    "ACTIONS.md": {
+      "description": "Action system documentation",
+      "tier": 2,
+      "sections": {
+        "deployed-workers": {
+          "heading": "## Deployed Workers",
+          "dependents": ["../ACTIONS/README.md"],
+          "key_facts": ["Worker URLs", "Worker types"]
+        },
+        "naming-convention": {
+          "heading": "## Naming Convention",
+          "dependents": ["PIPELINES.md", "FLOWS.md"],
+          "key_facts": ["A_ prefix", "UPPER_SNAKE_CASE"]
+        }
+      },
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "PIPELINES.md": {
+      "description": "Pipeline system documentation",
+      "tier": 2,
+      "sections": {
+        "naming-convention": {
+          "heading": "## Naming Convention",
+          "dependents": ["FLOWS.md"],
+          "key_facts": ["P_ prefix"]
+        }
+      },
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "FLOWS.md": {
+      "description": "Flow system documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "SKILLSYSTEM.md": {
+      "description": "Skill system detailed documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "MEMORYSYSTEM.md": {
+      "description": "Memory system detailed documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "THEHOOKSYSTEM.md": {
+      "description": "Hook system detailed documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "PAIAGENTSYSTEM.md": {
+      "description": "Agent system detailed documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "THEDELEGATIONSYSTEM.md": {
+      "description": "Delegation patterns documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "THENOTIFICATIONSYSTEM.md": {
+      "description": "Notification system documentation",
+      "tier": 2,
+      "upstream": "PAISYSTEMARCHITECTURE.md"
+    },
+
+    "FEEDSYSTEM.md": {
+      "description": "Feed/intelligence system documentation",
+      "tier": 2
+    },
+
+    "DOCUMENTATIONINDEX.md": {
+      "description": "Meta-index of all documentation - must be updated when docs added/removed",
+      "tier": 2,
+      "special": "meta-index",
+      "tracks_all": true
+    }
+  },
+
+  "readme_mappings": {
+    "ACTIONS.md": "../ACTIONS/README.md",
+    "PIPELINES.md": "../PIPELINES/README.md",
+    "FLOWS.md": "../FLOWS/README.md"
+  },
+
+  "changelog_config": {
+    "max_entries": 20,
+    "archive_location": "MEMORY/PAISYSTEMUPDATES/",
+    "format": "| {date} | {change} | {author} | {related} |"
+  },
+
+  "integrity_rules": [
+    {
+      "id": "naming-consistency",
+      "description": "Action/Pipeline/Flow naming conventions must be consistent across all docs",
+      "check": "regex_match",
+      "sources": ["PAISYSTEMARCHITECTURE.md"],
+      "targets": ["ACTIONS.md", "PIPELINES.md", "FLOWS.md"],
+      "patterns": {
+        "action_prefix": "A_",
+        "pipeline_prefix": "P_",
+        "flow_prefix": "F_",
+        "worker_pattern": "arbol-[apf]-"
+      }
+    },
+    {
+      "id": "auth-consistency",
+      "description": "Authentication method must be consistent",
+      "check": "key_fact",
+      "fact": "Bearer token authentication",
+      "sources": ["PAISYSTEMARCHITECTURE.md"],
+      "targets": ["ACTIONS.md", "FLOWS.md"]
+    },
+    {
+      "id": "worker-list-sync",
+      "description": "Deployed worker lists should match between related docs",
+      "check": "section_hash",
+      "section": "## Deployed Workers",
+      "sources": ["ACTIONS.md"],
+      "targets": ["FLOWS.md"]
+    }
+  ]
+}

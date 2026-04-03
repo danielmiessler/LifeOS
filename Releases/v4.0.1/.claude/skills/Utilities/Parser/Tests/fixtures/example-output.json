@@ -1,0 +1,200 @@
+{
+  "content": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "type": "article",
+    "title": "OpenAI Announces GPT-4",
+    "summary": {
+      "short": "OpenAI releases GPT-4, a multimodal AI model with significantly improved reasoning capabilities, scoring 90th percentile on the bar exam.",
+      "medium": "OpenAI has released GPT-4, its most advanced AI model yet, featuring multimodal capabilities (text and image input) and substantial reasoning improvements. The model achieves 90th percentile performance on the bar exam, up from GPT-3.5's 10th percentile, and shows enhanced performance across numerous benchmarks. GPT-4 also demonstrates reduced hallucinations and better adherence to safety guidelines. The model is being rolled out to ChatGPT Plus subscribers, with API access coming to developers.",
+      "long": "OpenAI has unveiled GPT-4, marking a significant advancement in large language model capabilities. Unlike its predecessors, GPT-4 is multimodal, accepting both text and image inputs while generating text outputs. This architectural enhancement enables new use cases including visual analysis, chart interpretation, and document understanding.\n\nThe model demonstrates substantial improvements in reasoning and problem-solving. On standardized tests, GPT-4 achieves 90th percentile on the bar exam (vs GPT-3.5's 10th percentile), 99th percentile on GRE Verbal, and high scores across numerous academic benchmarks. OpenAI attributes these gains to improved training methodologies and architectural refinements.\n\nSafety and alignment received major focus in GPT-4's development. The model shows 82% reduction in responding to disallowed content requests and 40% improvement in producing factual responses compared to GPT-3.5. OpenAI employed constitutional AI techniques and extensive red-teaming before public release.\n\nAvailability begins immediately for ChatGPT Plus subscribers and gradually expands to API customers through a waitlist system."
+    },
+    "content": {
+      "full_text": "[Full article text would be here...]",
+      "transcript": null,
+      "excerpts": [
+        "\"GPT-4 is our most capable and aligned model yet\" - Sam Altman, OpenAI CEO",
+        "GPT-4 achieves 90th percentile on the bar exam, compared to GPT-3.5's 10th percentile performance",
+        "The model shows 82% reduction in responding to disallowed content requests"
+      ]
+    },
+    "metadata": {
+      "source_url": "https://openai.com/blog/gpt-4",
+      "canonical_url": "https://openai.com/blog/gpt-4",
+      "published_date": "2024-03-14T10:00:00Z",
+      "accessed_date": "2024-11-14T15:30:00Z",
+      "language": "en",
+      "word_count": 1500,
+      "read_time_minutes": 6,
+      "author_platform": "blog"
+    }
+  },
+  "people": [
+    {
+      "name": "Sam Altman",
+      "role": "author",
+      "title": "CEO of OpenAI",
+      "company": "OpenAI",
+      "social": {
+        "twitter": "@sama",
+        "linkedin": "https://linkedin.com/in/sam-altman",
+        "email": null,
+        "website": "https://blog.samaltman.com"
+      },
+      "context": "OpenAI CEO announcing and explaining GPT-4 capabilities",
+      "importance": "primary"
+    },
+    {
+      "name": "Greg Brockman",
+      "role": "quoted",
+      "title": "President and Co-Founder",
+      "company": "OpenAI",
+      "social": {
+        "twitter": "@gdb",
+        "linkedin": null,
+        "email": null,
+        "website": null
+      },
+      "context": "Quoted discussing technical improvements in GPT-4",
+      "importance": "secondary"
+    }
+  ],
+  "companies": [
+    {
+      "name": "OpenAI",
+      "domain": "openai.com",
+      "industry": "AI",
+      "context": "Main subject of announcement - released GPT-4 model",
+      "mentioned_as": "subject",
+      "sentiment": "positive"
+    },
+    {
+      "name": "Microsoft",
+      "domain": "microsoft.com",
+      "industry": "Technology",
+      "context": "Mentioned as partner and investor providing infrastructure",
+      "mentioned_as": "partner",
+      "sentiment": "positive"
+    },
+    {
+      "name": "Google",
+      "domain": "google.com",
+      "industry": "Technology",
+      "context": "Referenced as competitor with Gemini and Bard models",
+      "mentioned_as": "competitor",
+      "sentiment": "neutral"
+    }
+  ],
+  "topics": {
+    "primary_category": "AI",
+    "secondary_categories": ["technology", "business"],
+    "tags": [
+      "gpt-4",
+      "openai",
+      "large-language-models",
+      "multimodal-ai",
+      "chatgpt",
+      "ai-benchmarks",
+      "ai-safety"
+    ],
+    "keywords": [
+      "GPT-4",
+      "OpenAI",
+      "ChatGPT",
+      "multimodal AI",
+      "language model",
+      "reasoning capabilities",
+      "bar exam",
+      "benchmarks",
+      "Sam Altman",
+      "AI safety",
+      "constitutional AI"
+    ],
+    "themes": [
+      "AI capability improvements accelerating",
+      "Multimodal AI becoming mainstream",
+      "AI safety and alignment in commercial products",
+      "Competition driving rapid AI advancement"
+    ],
+    "newsletter_sections": ["AI", "Headlines", "Analysis"]
+  },
+  "links": [
+    {
+      "url": "https://openai.com/research/gpt-4",
+      "domain": "openai.com",
+      "title": "GPT-4 Technical Report",
+      "description": "Technical paper detailing GPT-4 architecture, training, and benchmarks",
+      "link_type": "research",
+      "context": "Primary technical documentation for GPT-4 capabilities and methodology",
+      "position": "beginning"
+    },
+    {
+      "url": "https://chat.openai.com/",
+      "domain": "openai.com",
+      "title": "ChatGPT",
+      "description": "ChatGPT interface where GPT-4 is available to Plus subscribers",
+      "link_type": "product",
+      "context": "Main product where users can access GPT-4",
+      "position": "middle"
+    },
+    {
+      "url": "https://platform.openai.com/docs/models/gpt-4",
+      "domain": "openai.com",
+      "title": "GPT-4 API Documentation",
+      "description": "Developer documentation for GPT-4 API access",
+      "link_type": "tool",
+      "context": "API documentation for developers wanting to integrate GPT-4",
+      "position": "end"
+    }
+  ],
+  "sources": [
+    {
+      "publication": "OpenAI Blog",
+      "author": "OpenAI Team",
+      "url": "https://openai.com/blog/gpt-4",
+      "published_date": "2024-03-14T10:00:00Z",
+      "source_type": "blog_post"
+    },
+    {
+      "publication": "OpenAI Research",
+      "author": "OpenAI",
+      "url": "https://openai.com/research/gpt-4",
+      "published_date": "2024-03-14T10:00:00Z",
+      "source_type": "research_paper"
+    }
+  ],
+  "newsletter_metadata": {
+    "issue_number": null,
+    "section": null,
+    "position_in_section": null,
+    "editorial_note": null,
+    "include_in_newsletter": false,
+    "scheduled_date": null
+  },
+  "analysis": {
+    "sentiment": "positive",
+    "importance_score": 9,
+    "novelty_score": 8,
+    "controversy_score": 5,
+    "relevance_to_audience": [
+      "ai_researchers",
+      "technologists",
+      "executives",
+      "general_tech"
+    ],
+    "key_insights": [
+      "GPT-4 represents first mainstream multimodal large language model",
+      "Performance improvements validated on standardized academic benchmarks",
+      "Safety and alignment prioritized with constitutional AI and red-teaming",
+      "Rollout strategy targets both consumer (ChatGPT Plus) and enterprise (API) markets"
+    ],
+    "related_content_ids": [],
+    "trending_potential": "high"
+  },
+  "extraction_metadata": {
+    "processed_date": "2024-11-14T15:30:45Z",
+    "processing_method": "gemini",
+    "confidence_score": 0.92,
+    "warnings": [],
+    "version": "1.0.0"
+  }
+}

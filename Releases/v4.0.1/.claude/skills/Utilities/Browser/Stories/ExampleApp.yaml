@@ -1,0 +1,39 @@
+name: Example Localhost App
+url: http://localhost:3000
+stories:
+  - name: Home page loads successfully
+    steps:
+      - action: wait
+        description: Page loads completely
+    assertions:
+      - type: snapshot_contains
+        text: "Welcome"
+      - type: url_matches
+        pattern: "localhost:3000"
+
+  - name: Navigation links work
+    steps:
+      - action: click
+        target: "First navigation menu link"
+      - action: wait
+        description: "Target page loads"
+    assertions:
+      - type: element_visible
+        description: "Page content area with text"
+
+  - name: Form submission works
+    steps:
+      - action: click
+        target: "Input field or search box"
+      - action: fill
+        target: "Input field or search box"
+        value: "test input"
+      - action: click
+        target: "Submit or search button"
+      - action: wait
+        description: "Response or results appear"
+    assertions:
+      - type: element_visible
+        description: "Results or confirmation message"
+      - type: element_absent
+        description: "Error message or error banner"

@@ -1,0 +1,62 @@
+{{!--
+  VOICE Template - Personality Calibration
+
+  Purpose: Generate voice configuration for agents and notifications.
+
+  Use Cases:
+  - ElevenLabs voice settings
+  - Agent personality calibration
+  - Notification type configuration
+  - Voice preset documentation
+
+  Input Data Structure:
+  ```yaml
+  agents:
+    agent_id:
+      voice:
+        voice_id: string
+        voice_name: string
+        rate_wpm: number
+        stability: number
+        similarity_boost: number
+  presets:
+    preset_name:
+      stability: number
+      similarity_boost: number
+      rate_modifier: number
+  ```
+
+  Usage:
+  bun run RenderTemplate.ts -t Primitives/Voice.hbs -d Data/Agents.yaml -o Compiled/VoiceConfig.json
+--}}
+
+{{!-- JSON output for VoiceServer consumption --}}
+{
+  "version": "{{default version '1.0.0'}}",
+  "generated": "{{now 'date'}}",
+  "default_rate": {{default defaults.rate_wpm 175}},
+  "voices": {
+{{#each agents}}
+    "{{@key}}": {
+      "voice_id": "{{voice.voice_id}}",
+      "voice_name": "{{voice.voice_name}}",
+      "name": "{{name}}",
+      "rate_wpm": {{voice.rate_wpm}},
+      "stability": {{voice.stability}},
+      "similarity_boost": {{voice.similarity_boost}},
+      "archetype": "{{archetype}}",
+      "description": "{{personality.perspective}}"
+    }{{#unless @last}},{{/unless}}
+{{/each}}
+  },
+  "archetypes": {
+{{#each archetypes}}
+    "{{@key}}": {
+      "stability_range": [{{stability_range.[0]}}, {{stability_range.[1]}}],
+      "similarity_range": [{{similarity_range.[0]}}, {{similarity_range.[1]}}],
+      "rate_range": [{{rate_range.[0]}}, {{rate_range.[1]}}],
+      "description": "{{description}}"
+    }{{#unless @last}},{{/unless}}
+{{/each}}
+  }
+}

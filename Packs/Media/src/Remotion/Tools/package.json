@@ -1,0 +1,28 @@
+{
+  "name": "@pai/remotion",
+  "version": "1.0.0",
+  "description": "PAI Remotion skill - programmatic video creation with React",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "render": "bun run index.ts render",
+    "list": "bun run index.ts list",
+    "create": "bun run index.ts create"
+  },
+  "keywords": [
+    "remotion",
+    "video",
+    "react",
+    "animation",
+    "pai",
+    "skill"
+  ],
+  "dependencies": {},
+  "peerDependencies": {
+    "remotion": ">=4.0.0"
+  },
+  "devDependencies": {
+    "bun-types": "latest",
+    "typescript": "^5.0.0"
+  }
+}

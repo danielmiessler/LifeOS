@@ -1,0 +1,13 @@
+# Dependencies
+electron/node_modules/
+node_modules/
+
+# Build artifacts
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Install state (user-specific)
+install-state.json

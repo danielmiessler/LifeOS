@@ -1,0 +1,14 @@
+{
+  "thinkingLevel": "high",
+  "theme": "dark",
+  "steeringMode": "one-at-a-time",
+  "followUpMode": "one-at-a-time",
+  "transport": "auto",
+  "enableSkillCommands": true,
+  "quietStartup": true,
+  "compaction": {
+    "enabled": true,
+    "proactive": true,
+    "contextThreshold": 0.85
+  }
+}
