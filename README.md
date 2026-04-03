@@ -34,20 +34,20 @@
 
 <!-- Content -->
 [![Get Started](https://img.shields.io/badge/🚀_Get_Started-Install-22C55E?style=flat)](#-installation)
-[![Release v3.0](https://img.shields.io/badge/📦_Release-v3.0-8B5CF6?style=flat)](Releases/v3.0/)
+[![Release v4.0.3](https://img.shields.io/badge/📦_Release-v4.0.3-8B5CF6?style=flat)](Releases/v4.0.3/)
 [![Contributors](https://img.shields.io/github/contributors/danielmiessler/Personal_AI_Infrastructure?style=flat&logo=githubsponsors&logoColor=white&label=Contributors&color=EC4899)](https://github.com/danielmiessler/Personal_AI_Infrastructure/graphs/contributors)
 
 <!-- Tech Stack -->
 [![Built with Claude](https://img.shields.io/badge/Built_with-Claude-D4A574?style=flat&logo=anthropic&logoColor=white)](https://claude.ai)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Bun](https://img.shields.io/badge/Bun-000000?style=flat&logo=bun&logoColor=white)](https://bun.sh)
-[![UL Community](https://img.shields.io/badge/UL_Community-5865F2?style=flat&logo=discord&logoColor=white)](https://danielmiessler.com/upgrade)
+[![Community](https://img.shields.io/badge/Community-5865F2?style=flat&logo=discord&logoColor=white)](https://danielmiessler.com/upgrade)
 
 <br/>
 
 **Overview:** [Purpose](#the-purpose-of-this-project) · [What is PAI?](#what-is-pai) · [New to AI?](#new-to-this-start-here) · [Principles](#the-pai-principles) · [Primitives](#pai-primitives)
 
-**Get Started:** [Installation](#-installation) · [Releases](Releases/)
+**Get Started:** [Installation](#-installation) · [Releases](Releases/) · [Packs](Packs/)
 
 **Resources:** [FAQ](#-faq) · [Roadmap](#-roadmap) · [Community](#-community) · [Contributing](#-contributing)
 
@@ -62,9 +62,9 @@
 </div>
 
 > [!IMPORTANT]
-> **PAI v3.0.0 Released** — The Algorithm Matures: Constraint Extraction, Build Drift Prevention, Persistent PRDs, and Parallel Loop Execution.
+> **PAI v4.0.3 Released** — 3 patch updates since v4.0.0 with 30+ community-contributed fixes: Linux compatibility, JSON parsing, installer improvements, portability, and upgrade migration.
 >
-> **[Release notes →](Releases/v3.0/README.md)** | **[GitHub Release →](https://github.com/danielmiessler/Personal_AI_Infrastructure/releases/tag/v3.0.0)**
+> **[Release notes →](Releases/v4.0.3/README.md)** | **[All releases →](Releases/)**
 
 <div align="center">
 
@@ -336,23 +336,87 @@ Rich tab titles and pane management. Dynamic status lines show learning signals,
 > [!CAUTION]
 > **Project in Active Development** — PAI is evolving rapidly. Expect breaking changes, restructuring, and frequent updates. We are working on stable and development branches, but currently it's all combined.
 
+### Fresh Install
+
 ```bash
 # Clone the repo
 git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
-cd Personal_AI_Infrastructure/Releases/v3.0
+cd Personal_AI_Infrastructure/Releases/v4.0.3
 
 # Copy the release and run the installer
-cp -r .claude ~/ && cd ~/.claude && bash PAI-Install/install.sh
+cp -r .claude ~/ && cd ~/.claude && bash install.sh
 ```
 
 **The installer will:**
 - Detect your system and install prerequisites (Bun, Git, Claude Code)
-- Ask for your name, AI assistant name, and timezone
+- Ask for your name, AI assistant name, timezone, and temperature unit preference
 - Clone/configure the PAI repository into `~/.claude/`
 - Set up voice features with ElevenLabs (optional)
 - Configure your shell alias and verify the installation
 
 **After installation:** Run `source ~/.zshrc && pai` to launch PAI.
+
+### Upgrading from a Previous Version
+
+```bash
+# 1. Back up your current installation
+cp -r ~/.claude ~/.claude-backup-$(date +%Y%m%d)
+
+# 2. Clone and copy the new release over your installation
+git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
+cd Personal_AI_Infrastructure/Releases/v4.0.3
+cp -r .claude ~/
+
+# 3. Run the installer (detects existing installation, preserves your data)
+cd ~/.claude && bash install.sh
+
+# 4. Rebuild your CLAUDE.md
+bun ~/.claude/PAI/Tools/BuildCLAUDE.ts
+```
+
+> [!TIP]
+> The installer **auto-detects** existing installations. It preserves your `USER/` files, merges `settings.json` (only updating installer-managed fields like identity and version), and never overwrites your hooks, statusline, or custom configuration.
+
+**Post-upgrade checklist:**
+- [ ] Verify your identity in `settings.json` (name, AI name, timezone)
+- [ ] Confirm the statusline displays correctly
+- [ ] Test voice notifications (if enabled)
+- [ ] Run a simple prompt to confirm PAI responds correctly
+
+---
+
+## 📦 PAI Packs
+
+Don't want to install all of PAI? **Packs** are standalone, AI-installable capabilities you can add one at a time. Each pack is self-contained — your AI reads the install guide and sets everything up for you. No PAI installation required.
+
+Point your AI at any pack and say "install this":
+
+```
+"Install the Research pack from PAI/Packs/Research/"
+```
+
+Your AI walks through a 5-phase wizard: system analysis, user questions, backup, installation, verification.
+
+### Available Packs
+
+| Pack | What It Does |
+|------|-------------|
+| [ContextSearch](Packs/ContextSearch/) | `/context-search` and `/cs` — instant recall of prior work sessions |
+| [Agents](Packs/Agents/) | Custom agent composition from traits, voices, and personalities |
+| [ContentAnalysis](Packs/ContentAnalysis/) | Wisdom extraction from videos, podcasts, articles, and YouTube |
+| [Investigation](Packs/Investigation/) | OSINT and investigation — company intel, people search, domain lookup |
+| [Media](Packs/Media/) | AI image generation, diagrams, infographics, and Remotion video |
+| [Research](Packs/Research/) | Multi-agent research — quick, standard, extensive, and deep modes |
+| [Scraping](Packs/Scraping/) | Web scraping via Bright Data proxy and Apify social media actors |
+| [Security](Packs/Security/) | Recon, web app testing, prompt injection testing, security news |
+| [Telos](Packs/Telos/) | Life OS — goals, beliefs, wisdom, project dashboards, McKinsey reports |
+| [Thinking](Packs/Thinking/) | First principles, council debates, red team, brainstorming, science |
+| [USMetrics](Packs/USMetrics/) | 68 US economic indicators from FRED, EIA, Treasury, BLS, Census |
+| [Utilities](Packs/Utilities/) | CLI generation, skill scaffolding, Fabric patterns, Cloudflare, browser automation |
+
+Each pack works standalone — install one, install five, or install all of them. They're designed to give you PAI-level capabilities whether or not you run the full PAI system.
+
+**[Browse all packs →](Packs/)**
 
 ---
 
@@ -382,7 +446,7 @@ PAI is the complete system built on those primitives. It connects everything tog
 
 PAI is Claude Code native. We believe Claude Code's hook system, context management, and agentic capabilities make it the best platform for personal AI infrastructure, and PAI is designed to take full advantage of those features.
 
-That said, PAI's concepts (skills, memory, algorithms) are universal, and the code is TypeScript, Python, and Bash — so community members are welcome to adapt it for other platforms.
+That said, PAI's concepts (skills, memory, algorithms) are universal, and the code is TypeScript and Bash — so community members are welcome to adapt it for other platforms.
 
 ### How is this different from fabric?
 
@@ -394,10 +458,13 @@ PAI is infrastructure for *how your DA operates*—memory, skills, routing, cont
 
 Recovery is straightforward:
 
+- **Back up first** — Before any upgrade: `cp -r ~/.claude ~/.claude-backup-$(date +%Y%m%d)`
+- **USER/ is safe** — Your customizations in `USER/` are never touched by the installer or upgrades
+- **Settings merge, not overwrite** — The installer only updates identity and version fields; your hooks, statusline, and custom config are preserved
 - **Git-backed** — Version control everything, roll back when needed
 - **History is preserved** — Your DA's memory survives mistakes
 - **DA can fix it** — Your DA helped build it, it can help repair it
-- **Re-install** — Run the installer again to reset to a clean state
+- **Re-install** — Run the installer again; it detects existing installations and merges intelligently
 
 ---
 
@@ -417,7 +484,7 @@ Recovery is straightforward:
 
 **GitHub Discussions:** [Join the conversation](https://github.com/danielmiessler/Personal_AI_Infrastructure/discussions)
 
-**UL Community Discord:** PAI is discussed in the [Unsupervised Learning community](https://danielmiessler.com/upgrade) along with other AI projects
+**Community Discord:** PAI is discussed in the [community Discord](https://danielmiessler.com/upgrade) along with other AI projects
 
 **Twitter/X:** [@danielmiessler](https://twitter.com/danielmiessler)
 
@@ -490,6 +557,35 @@ MIT License - see [LICENSE](LICENSE) for details.
 <summary><strong>📜 Update History</strong></summary>
 
 <br/>
+
+**v4.0.3 (2026-03-01) — Community PR Patch**
+- JSON array parsing fix in Inference.ts
+- 29 dead references removed from CONTEXT_ROUTING.md
+- WorldThreatModelHarness PAI_DIR portability
+- User context migration for v2.5/v3.0 upgraders
+- [Release Notes](Releases/v4.0.3/README.md)
+
+**v4.0.2 (2026-03-01) — Bug Fix Patch**
+- 13 surgical fixes: Linux compatibility, installer, statusline, hooks
+- Cross-platform OAuth token extraction, GNU coreutils tr fix
+- Inference guard (~15s savings), lineage tracking, dead code removal
+- [Release Notes](Releases/v4.0.2/README.md)
+
+**v4.0.1 (2026-02-28) — Upgrade Path & Preferences**
+- Upgrade documentation with backup, merge, and post-upgrade checklist
+- Configurable temperature unit (Fahrenheit/Celsius) in statusline and installer
+- FAQ fixes: removed stale Python reference, improved recovery guidance
+- [Release Notes](Releases/v4.0.1/README.md)
+
+**v4.0.0 (2026-02-27) — Lean and Mean**
+- 38 flat skill directories → 12 hierarchical categories (-68% top-level dirs)
+- Dead systems removed: Components/, DocRebuild, RebuildSkill
+- CLAUDE.md template system with BuildCLAUDE.ts + SessionStart hook
+- Algorithm v3.5.0 (up from v1.4.0)
+- Comprehensive security sanitization (33+ files cleaned)
+- All version refs updated, Electron crash fix
+- 63 skills, 21 hooks, 180 workflows, 14 agents
+- [Release Notes](Releases/v4.0.0/README.md)
 
 **v3.0.0 (2026-02-15) — The Algorithm Matures**
 - Algorithm v1.4.0 with constraint extraction and build drift prevention

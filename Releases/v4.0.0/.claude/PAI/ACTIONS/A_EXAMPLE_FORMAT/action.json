@@ -1,0 +1,15 @@
+{
+  "name": "A_EXAMPLE_FORMAT",
+  "version": "1.0.0",
+  "description": "Format a summary into structured markdown with title, bullet points, and metadata. Pure code action — no LLM required. Demonstrates the passthrough pipe pattern.",
+  "input": {
+    "summary": { "type": "string", "required": true }
+  },
+  "output": {
+    "formatted": { "type": "string" },
+    "format": { "type": "string" }
+  },
+  "requires": [],
+  "tags": ["example", "formatting", "text"],
+  "license": "MIT"
+}

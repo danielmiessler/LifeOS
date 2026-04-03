@@ -1,0 +1,107 @@
+{
+  "$schema": "./voices-schema.json",
+  "default_rate": 175,
+  "default_volume": 0.8,
+  "voices": {
+    "default": {
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "voice_name": "Default (Male)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.50,
+      "similarity_boost": 0.75,
+      "description": "Default male voice - balanced and professional",
+      "type": "Premium"
+    },
+    "assistant": {
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "voice_name": "Assistant (Male)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.50,
+      "similarity_boost": 0.75,
+      "description": "Primary assistant voice - warm and helpful",
+      "type": "Premium"
+    },
+    "researcher": {
+      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      "voice_name": "Researcher (Female)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.65,
+      "similarity_boost": 0.9,
+      "description": "Research agent voice - analytical and authoritative",
+      "type": "Premium"
+    },
+    "engineer": {
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "voice_name": "Engineer (Male)",
+      "rate_multiplier": 1.3,
+      "rate_wpm": 228,
+      "stability": 0.7,
+      "similarity_boost": 0.85,
+      "description": "Engineering voice - measured and precise",
+      "type": "Premium"
+    },
+    "architect": {
+      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      "voice_name": "Architect (Female)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.7,
+      "similarity_boost": 0.85,
+      "description": "Architecture voice - strategic and sophisticated",
+      "type": "Premium"
+    },
+    "designer": {
+      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      "voice_name": "Designer (Female)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.62,
+      "similarity_boost": 0.85,
+      "description": "Design voice - creative and discerning",
+      "type": "Premium"
+    },
+    "analyst": {
+      "voice_id": "M563YhMmA0S8vEYwkgYa",
+      "voice_name": "Analyst (Neutral)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.65,
+      "similarity_boost": 0.85,
+      "description": "Analyst voice - thorough and balanced",
+      "type": "Premium"
+    },
+    "writer": {
+      "voice_id": "MClEFoImJXBTgLwdLI5n",
+      "voice_name": "Writer (Female)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.6,
+      "similarity_boost": 0.8,
+      "description": "Writer voice - articulate and warm",
+      "type": "Premium"
+    },
+    "security": {
+      "voice_id": "bIHbv24MWmeRgasZH58o",
+      "voice_name": "Security (Male)",
+      "rate_multiplier": 1.35,
+      "rate_wpm": 236,
+      "stability": 0.32,
+      "similarity_boost": 0.88,
+      "description": "Security voice - alert and focused",
+      "type": "Enhanced"
+    },
+    "intern": {
+      "voice_id": "M563YhMmA0S8vEYwkgYa",
+      "voice_name": "Intern (Neutral)",
+      "rate_multiplier": 1.4,
+      "rate_wpm": 245,
+      "stability": 0.42,
+      "similarity_boost": 0.72,
+      "description": "Intern voice - enthusiastic and eager",
+      "type": "Premium"
+    }
+  }
+}

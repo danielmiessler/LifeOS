@@ -1,0 +1,43 @@
+{
+  "providers": {
+    "_comment": "Configure your model providers here. Examples below — uncomment and fill in the ones you use.",
+
+    "_example_ollama": {
+      "type": "ollama",
+      "baseUrl": "http://localhost:11434",
+      "models": {
+        "default": "llama3.1:70b",
+        "fast": "llama3.1:8b",
+        "thinking": "qwen2.5:72b"
+      }
+    },
+
+    "_example_openai_compatible": {
+      "type": "openai",
+      "baseUrl": "http://localhost:1234/v1",
+      "apiKey": "your-api-key-here",
+      "models": {
+        "default": "your-model-name"
+      }
+    },
+
+    "_example_anthropic": {
+      "type": "anthropic",
+      "apiKey": "your-api-key-here",
+      "models": {
+        "default": "claude-sonnet-4-6",
+        "thinking": "claude-opus-4-6"
+      }
+    },
+
+    "_example_openrouter": {
+      "type": "openai",
+      "baseUrl": "https://openrouter.ai/api/v1",
+      "apiKey": "your-openrouter-key",
+      "models": {
+        "default": "anthropic/claude-sonnet-4-6",
+        "fast": "anthropic/claude-haiku-4-5"
+      }
+    }
+  }
+}

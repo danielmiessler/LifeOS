@@ -1,0 +1,10 @@
+{
+  "name": "kai-agents-tools",
+  "version": "1.0.0",
+  "description": "Agent composition and management tools for PAI",
+  "type": "module",
+  "dependencies": {
+    "yaml": "^2.3.4",
+    "handlebars": "^4.7.8"
+  }
+}

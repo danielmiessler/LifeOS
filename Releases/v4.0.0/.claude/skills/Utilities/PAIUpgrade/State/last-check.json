@@ -1,0 +1,125 @@
+{
+  "last_check_timestamp": "2026-02-13T07:41:49.995Z",
+  "sources": {
+    "blog_main_news": {
+      "last_hash": "d1bcbcce651400529d6220ac64bba829",
+      "last_title": "Main News: Newsroom",
+      "last_checked": "2026-02-13T07:41:49.995Z"
+    },
+    "changelog_claude_code_changelog": {
+      "last_hash": "1936d27c6f70bc58e09323345074e12d",
+      "last_title": "Claude Code CHANGELOG: inputChange",
+      "last_checked": "2026-02-13T07:41:49.995Z"
+    },
+    "changelog_mcp_changelog": {
+      "last_hash": "6ff60e032368e3fe2635c2aa9905c9ce",
+      "last_title": "MCP Changelog: Latest update",
+      "last_checked": "2026-02-13T07:41:49.995Z"
+    },
+    "docs_mcp_docs": {
+      "last_hash": "6ff60e032368e3fe2635c2aa9905c9ce",
+      "last_title": "MCP Docs: Documentation updated",
+      "last_checked": "2026-02-13T07:41:49.995Z"
+    },
+    "docs_mcp_specification": {
+      "last_hash": "a0404d2390e4f2319fcbe2d386e022a7",
+      "last_title": "MCP Specification: Documentation updated",
+      "last_checked": "2025-11-19T07:21:59.389Z"
+    },
+    "docs_mcp_registry": {
+      "last_hash": "ec94737081fd3c6f9ab24cc23094e2d6",
+      "last_title": "MCP Registry: Documentation updated",
+      "last_checked": "2026-02-08T18:08:39.832Z"
+    },
+    "docs_skills_documentation": {
+      "last_hash": "213cf8f45e3cd51b6ab50b6b5c704451",
+      "last_title": "Skills Documentation: Documentation updated",
+      "last_checked": "2026-02-08T18:08:39.832Z"
+    },
+    "github_claude-code_commits": {
+      "last_sha": "f2a930799b352d5e92c8ac90a4bae3baf8257201",
+      "last_title": "Merge pull request #25102 from anthropics/fvolcic/code-review-comment-update",
+      "last_checked": "2026-02-13T07:41:49.995Z"
+    },
+    "github_skills_commits": {
+      "last_sha": "a5bcdd7e58cdff48566bf876f0a72a2008dcefbc",
+      "last_title": "Delete legacy html2pptx.tgz dependency. (#331)",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_mcp_specification_commits": {
+      "last_sha": "244010ca40f30276bd3294b75f7dddcd282b24ce",
+      "last_title": "Merge branch 'main' into localden/ssrf",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_claude-cookbooks_commits": {
+      "last_sha": "ce4c093127bb52ad79294bd433b2de5a19dab31f",
+      "last_title": "Merge pull request #343 from anthropics/feature/code-compaction-cookbook",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_mcp_specification_releases": {
+      "last_version": "2024-11-05-final",
+      "last_title": "2024-11-05-final: 2024-11-05-final",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "blog_alignment_science_blog": {
+      "last_hash": "4258a31de9cbcb914e8e5fff5e51a9a8",
+      "last_title": "Alignment Science Blog: Alignment Science Blog",
+      "last_checked": "2026-02-08T18:08:39.832Z"
+    },
+    "blog_research_page": {
+      "last_hash": "ecdbdf3ac0a85233b3cf5d31cd455ec8",
+      "last_title": "Research Page: Research",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "docs_claude_docs_home": {
+      "last_hash": "5fbf6c41ef6bd48c7540e219cc5df1e9",
+      "last_title": "Claude Docs Home: Documentation updated",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "docs_anthropic_api_docs": {
+      "last_hash": "ff7adf95971b7d66b7a95f79ca26b115",
+      "last_title": "Anthropic API Docs: Documentation updated",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_anthropic-sdk-typescript_releases": {
+      "last_version": "foundry-sdk-v0.2.3",
+      "last_title": "foundry-sdk-v0.2.3: foundry-sdk: v0.2.3",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_claude-quickstarts_commits": {
+      "last_sha": "4b2549e8093a6dee1c394bdd8fcf83cb914a271a",
+      "last_title": "Update computer-use-demo to use text_editor_20250728 exclusively with correct insert_text parameter (#352)",
+      "last_checked": "2026-02-08T18:08:39.832Z"
+    },
+    "blog_transformer_circuits": {
+      "last_hash": "2a0d56bf5f8ade7f438375af437e0450",
+      "last_title": "Transformer Circuits: Anthropic’s Interpretability Research",
+      "last_checked": "2026-02-08T18:08:39.832Z"
+    },
+    "changelog_claude_docs_release_notes": {
+      "last_hash": "a9355b03790e26960665f3936d5e9aa6",
+      "last_title": "Claude Docs Release Notes: Latest update",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "changelog_api_release_notes": {
+      "last_hash": "53c9806797d70ddd1f9fce03e45fb472",
+      "last_title": "API Release Notes: Latest update",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_anthropic-sdk-python_releases": {
+      "last_version": "v0.77.1",
+      "last_title": "v0.77.1: v0.77.1",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    },
+    "github_courses_commits": {
+      "last_sha": "f4dbb137d7b02dddaf3cc73e32e20a702d3b5e77",
+      "last_title": "Merge pull request #45 from emmanuel-ferdman/master",
+      "last_checked": "2025-11-14T19:49:50.328Z"
+    },
+    "github_claude-code_releases": {
+      "last_version": "v2.1.36",
+      "last_title": "v2.1.36: v2.1.36",
+      "last_checked": "2026-02-13T07:41:49.996Z"
+    }
+  }
+}

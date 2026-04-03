@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Parser</title>
+</head>
+<body>
+    <h1>Debug JSON Loading</h1>
+    <pre id="output"></pre>
+    <script>
+        async function test() {
+            const output = document.getElementById('output');
+            try {
+                const response = await fetch('output/index.json');
+                output.textContent += 'Index fetch status: ' + response.status + '\n';
+                const files = await response.json();
+                output.textContent += 'Files found: ' + files.length + '\n';
+                output.textContent += files.join('\n') + '\n\n';
+
+                for (const file of files) {
+                    const r = await fetch('output/' + file);
+                    output.textContent += 'File: ' + file + ', Status: ' + r.status + '\n';
+                    if (r.ok) {
+                        const data = await r.json();
+                        output.textContent += 'Title: ' + data.content.title + '\n\n';
+                    }
+                }
+            } catch (error) {
+                output.textContent += 'Error: ' + error.message + '\n' + error.stack;
+            }
+        }
+        test();
+    </script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "last_check": "2025-10-21T06:07:28.625Z",
+  "tracked_commits": {
+    "domains_txt": "",
+    "hackerone": "e68db8d5786a2f7dc4985c73118d58dd426b68b4",
+    "bugcrowd": "dee533d5522795bd069b436944f8b4cd66b9490a",
+    "intigriti": "ae55073aa73ca95ad023729173fd276eca701d96",
+    "yeswehack": "356f3e78f0851547df78caed654d434646f338e8"
+  },
+  "initialized": true
+}

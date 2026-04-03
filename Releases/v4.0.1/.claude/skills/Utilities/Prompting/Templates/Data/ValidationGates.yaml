@@ -1,0 +1,250 @@
+# Validation Gates
+# Used by: GATE template for quality checklists
+# Reusable validation patterns across skills
+
+version: 1.0.0
+last_updated: 2025-12-09
+
+# Gate categories
+categories:
+  - development
+  - content
+  - security
+  - deployment
+  - research
+
+# Gate definitions
+gates:
+  # === DEVELOPMENT GATES ===
+  code_review:
+    name: Code Review Gate
+    category: development
+    description: Pre-merge code quality checklist
+    action_on_fail: request_changes
+    mandatory:
+      - name: Tests Pass
+        description: All existing tests pass with the changes
+      - name: Type Safety
+        description: No TypeScript errors, proper type annotations
+      - name: No Secrets
+        description: No API keys, passwords, or sensitive data
+    recommended:
+      - name: Code Style
+        description: Follows project formatting conventions
+      - name: Documentation
+        description: Public APIs documented appropriately
+      - name: Performance
+        description: No obvious performance regressions
+
+  development_complete:
+    name: Development Completion Gate
+    category: development
+    description: Feature ready for deployment
+    action_on_fail: continue_development
+    mandatory:
+      - name: Feature Works
+        description: Core functionality implemented and tested
+      - name: Tests Added
+        description: New functionality has test coverage
+      - name: No Regressions
+        description: Existing functionality unaffected
+      - name: Build Passes
+        description: Project builds without errors
+    recommended:
+      - name: Edge Cases
+        description: Error handling and edge cases covered
+      - name: Performance Check
+        description: No significant performance impact
+
+  # === CONTENT GATES ===
+  art_validation:
+    name: Art Generation Gate
+    category: content
+    description: Visual content quality checklist
+    action_on_fail: regenerate
+    mandatory:
+      - name: No Text in Image
+        description: AI-generated text is notoriously broken
+      - name: Correct Aspect Ratio
+        description: Matches requested dimensions
+      - name: Subject Present
+        description: Main subject is clearly visible
+      - name: Quality Check
+        description: No obvious artifacts or distortions
+    recommended:
+      - name: Brand Alignment
+        description: Colors/style match brand guidelines
+      - name: Composition
+        description: Good visual balance and framing
+
+  blog_publish:
+    name: Blog Publication Gate
+    category: content
+    description: Article ready for publication
+    action_on_fail: revise_draft
+    mandatory:
+      - name: Spell Check
+        description: No spelling or grammar errors
+      - name: Links Work
+        description: All internal/external links valid
+      - name: Images Load
+        description: All images render correctly
+      - name: Frontmatter Complete
+        description: Title, description, date set
+    recommended:
+      - name: SEO Basics
+        description: Meta description, proper headings
+      - name: Mobile Preview
+        description: Renders well on mobile devices
+      - name: Cross-links
+        description: Related articles linked
+
+  # === SECURITY GATES ===
+  sensitive_data:
+    name: Sensitive Data Gate
+    category: security
+    description: Pre-commit security check
+    action_on_fail: block_commit
+    mandatory:
+      - name: No API Keys
+        description: No hardcoded API keys or tokens
+      - name: No Passwords
+        description: No passwords or secrets in code
+      - name: No Private Data
+        description: No personal/customer data
+      - name: Correct Repo
+        description: Pushing to intended repository
+    recommended:
+      - name: .env in .gitignore
+        description: Environment files excluded
+      - name: Secrets in Vault
+        description: Secrets managed properly
+
+  deployment_security:
+    name: Deployment Security Gate
+    category: security
+    description: Pre-deployment security checklist
+    action_on_fail: abort_deploy
+    mandatory:
+      - name: No Debug Mode
+        description: Debug/development flags disabled
+      - name: HTTPS Enforced
+        description: All traffic over HTTPS
+      - name: Auth Configured
+        description: Authentication properly set up
+      - name: Correct Environment
+        description: Deploying to intended target
+    recommended:
+      - name: Rate Limiting
+        description: API rate limits configured
+      - name: Error Handling
+        description: No stack traces exposed
+
+  # === DEPLOYMENT GATES ===
+  pre_deploy:
+    name: Pre-Deployment Gate
+    category: deployment
+    description: Ready for production deployment
+    action_on_fail: abort_deploy
+    mandatory:
+      - name: Tests Pass
+        description: Full test suite passes
+      - name: Build Succeeds
+        description: Production build completes
+      - name: Config Verified
+        description: Environment variables set correctly
+      - name: Rollback Plan
+        description: Know how to revert if needed
+    recommended:
+      - name: Monitoring Ready
+        description: Logging and alerting configured
+      - name: Documented
+        description: Changes documented in changelog
+
+  post_deploy:
+    name: Post-Deployment Gate
+    category: deployment
+    description: Verify deployment success
+    action_on_fail: trigger_rollback
+    mandatory:
+      - name: Site Responds
+        description: Application is accessible
+      - name: Health Check Passes
+        description: Health endpoints return OK
+      - name: Core Features Work
+        description: Critical paths functional
+    recommended:
+      - name: Performance Normal
+        description: Response times acceptable
+      - name: Logs Clean
+        description: No unexpected errors in logs
+
+  # === RESEARCH GATES ===
+  research_complete:
+    name: Research Completion Gate
+    category: research
+    description: Research ready for synthesis
+    action_on_fail: continue_research
+    mandatory:
+      - name: Question Answered
+        description: Original question addressed
+      - name: Sources Cited
+        description: All claims have sources
+      - name: Multiple Sources
+        description: Cross-verified with multiple sources
+    recommended:
+      - name: Recency Check
+        description: Information is current
+      - name: Bias Assessment
+        description: Multiple perspectives considered
+      - name: Confidence Stated
+        description: Uncertainty acknowledged where present
+
+  eval_complete:
+    name: Evaluation Completion Gate
+    category: research
+    description: Evaluation results valid
+    action_on_fail: rerun_evaluation
+    mandatory:
+      - name: All Cases Run
+        description: Every test case executed
+      - name: Scores Calculated
+        description: All scorers produced results
+      - name: Results Saved
+        description: Output persisted correctly
+    recommended:
+      - name: Statistical Validity
+        description: Sample size sufficient
+      - name: Bias Checks
+        description: Position bias mitigated
+      - name: Confidence Intervals
+        description: Uncertainty quantified
+
+# Gate templates for common patterns
+templates:
+  simple_checklist:
+    structure: |
+      ### {{gate.name}} Checklist
+
+      {{#each gate.mandatory}}
+      - [ ] **{{name}}** — {{description}}
+      {{/each}}
+
+  detailed_checklist:
+    structure: |
+      ### {{gate.name}}
+
+      **Category:** {{gate.category}}
+      **Action on Fail:** {{gate.action_on_fail}}
+
+      **🚨 MANDATORY (if ANY missing, {{gate.action_on_fail}}):**
+      {{#each gate.mandatory}}
+      - [ ] **{{name}}** — {{description}}
+      {{/each}}
+
+      {{#if gate.recommended}}
+      **✅ RECOMMENDED:**
+      {{#each gate.recommended}}
+      - [ ] {{name}} — {{description}}
+      {{/each}}
+      {{/if}}

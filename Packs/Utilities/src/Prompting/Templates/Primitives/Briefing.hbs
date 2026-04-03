@@ -1,0 +1,134 @@
+{{!--
+  BRIEFING Template - Agent Context Handoff
+
+  Purpose: Standardize how agents receive tasks and context.
+
+  Use Cases:
+  - Research agent queries
+  - RedTeam analyst prompts
+  - Delegation context packages
+  - Council debate assignments
+
+  Input Data Structure:
+  ```yaml
+  briefing:
+    type: string (research | analysis | debate | task)
+    context_level: string (minimal | standard | full)
+  agent:
+    id: string
+    name: string
+    role: string
+    personality:
+      perspective: string
+      traits: [string]
+  context:
+    summary: string
+    background: string (optional)
+    constraints: [string] (optional)
+  task:
+    description: string
+    questions: [string] (optional)
+    deliverables: [string] (optional)
+  output_format:
+    type: string (markdown | json | structured)
+    structure: string (optional)
+  ```
+
+  Usage:
+  bun run RenderTemplate.ts -t Primitives/Briefing.hbs -d Data/ResearchBriefing.yaml
+--}}
+
+# {{uppercase briefing.type}} BRIEFING — {{agent.name}}
+
+{{#if agent.role}}
+**Role:** {{agent.role}}
+{{/if}}
+
+---
+
+## Your Identity
+
+You are **{{agent.name}}**{{#if agent.personality.perspective}}, and your perspective is: "{{agent.personality.perspective}}"{{/if}}
+
+{{#if agent.personality.traits}}
+**Your Traits:**
+{{#each agent.personality.traits}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+## Context
+
+{{context.summary}}
+
+{{#if context.background}}
+### Background
+
+{{context.background}}
+{{/if}}
+
+{{#if context.constraints}}
+### Constraints
+
+{{#each context.constraints}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+## Your Task
+
+{{task.description}}
+
+{{#if task.questions}}
+### Questions to Address
+
+{{#each task.questions}}
+{{@index}}. {{this}}
+{{/each}}
+{{/if}}
+
+{{#if task.deliverables}}
+### Deliverables
+
+{{#each task.deliverables}}
+- {{this}}
+{{/each}}
+{{/if}}
+
+---
+
+## Output Format
+
+{{#if output_format.type}}
+**Format:** {{output_format.type}}
+{{/if}}
+
+{{#if output_format.structure}}
+{{output_format.structure}}
+{{/if}}
+
+{{#unless output_format.structure}}
+{{#eq output_format.type "markdown"}}
+Use clear markdown with headers, bullet points, and emphasis where appropriate.
+{{/eq}}
+{{#eq output_format.type "json"}}
+Return valid JSON matching the expected schema.
+{{/eq}}
+{{#eq output_format.type "structured"}}
+Follow the structured format specified in the task requirements.
+{{/eq}}
+{{/unless}}
+
+---
+
+{{#if briefing.notes}}
+## Additional Notes
+
+{{briefing.notes}}
+{{/if}}
+
+**Begin your analysis now.**

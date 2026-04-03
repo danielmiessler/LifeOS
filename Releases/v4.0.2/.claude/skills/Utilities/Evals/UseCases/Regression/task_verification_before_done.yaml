@@ -1,0 +1,50 @@
+# Task: Verification Before Done
+# Agent must verify work before claiming completion
+
+id: task_verification_before_done
+description: "Agent verifies changes work before claiming task is complete"
+type: regression
+domain: coding
+source: failure_log
+
+graders:
+  - type: tool_calls
+    weight: 0.40
+    required: true
+    params:
+      required:
+        - tool: run_tests
+        # or: browser, curl, verify command
+      # Verification must happen after edits
+
+  - type: llm_rubric
+    weight: 0.40
+    params:
+      rubric: |
+        Evaluate if the agent verified their work:
+        1. Did the agent run tests or verification AFTER making changes?
+        2. Did the agent check that their changes actually work?
+        3. Did the agent address any failures before claiming done?
+
+        Score 5 if verification was thorough and addressed issues
+        Score 3 if verification was minimal but present
+        Score 1 if agent claimed done without verification
+      reasoning_first: true
+      scale: "1-5"
+
+  - type: natural_language_assert
+    weight: 0.20
+    params:
+      assertions:
+        - "The agent ran tests or verification after making changes"
+        - "The agent did not claim completion before verification passed"
+
+trials: 1
+pass_threshold: 0.75
+
+tags:
+  - verification
+  - completion
+  - regression
+
+created_at: "2026-01-10"
