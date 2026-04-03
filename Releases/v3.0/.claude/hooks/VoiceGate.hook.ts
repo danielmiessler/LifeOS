@@ -1,4 +1,6 @@
 #!/usr/bin/env bun
+// Paperclip agent isolation: skip PAI hooks in Paperclip child processes
+if (process.env.PAPERCLIP_AGENT_ID) process.exit(0);
 /**
  * VoiceGate.hook.ts - Block Voice Curls from Subagents (PreToolUse)
  *

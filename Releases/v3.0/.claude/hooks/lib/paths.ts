@@ -73,3 +73,13 @@ export function getSkillsDir(): string {
 export function getMemoryDir(): string {
   return paiPath('MEMORY');
 }
+
+/**
+ * Check if running inside a Paperclip agent child process.
+ * Paperclip sets PAPERCLIP_AGENT_ID in every spawned claude process.
+ * PAI hooks should exit early when this returns true to avoid
+ * contaminating Paperclip agents with PAI context.
+ */
+export function isPaperclipAgent(): boolean {
+  return !!process.env.PAPERCLIP_AGENT_ID;
+}
