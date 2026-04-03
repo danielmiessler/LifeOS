@@ -260,6 +260,23 @@ function escapeForAppleScript(input: string): string {
   return input.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 }
 
+// Send desktop notification using OS-appropriate mechanism
+async function sendDesktopNotification(title: string, message: string): Promise<void> {
+  const platform = process.platform;
+  if (platform === 'darwin') {
+    const escapedTitle = escapeForAppleScript(title);
+    const escapedMessage = escapeForAppleScript(message);
+    const script = `display notification "${escapedMessage}" with title "${escapedTitle}" sound name ""`;
+    await spawnSafe('/usr/bin/osascript', ['-e', script]);
+  } else if (platform === 'linux') {
+    if (existsSync('/usr/bin/notify-send')) {
+      await spawnSafe('/usr/bin/notify-send', [title, message]);
+    } else {
+      console.log('⚠️ notify-send not found — skipping desktop notification');
+    }
+  }
+}
+
 // Extract emotional marker from message
 function extractEmotionalMarker(message: string): { cleaned: string; emotion?: string } {
   const emojiToEmotion: Record<string, string> = {
@@ -512,13 +529,10 @@ async function sendNotification(
     }
   }
 
-  // Display macOS notification (can be disabled via settings.json: notifications.desktop.enabled: false)
+  // Display desktop notification (can be disabled via settings.json: notifications.desktop.enabled: false)
   if (voiceConfig.desktopNotifications) {
     try {
-      const escapedTitle = escapeForAppleScript(safeTitle);
-      const escapedMessage = escapeForAppleScript(safeMessage);
-      const script = `display notification "${escapedMessage}" with title "${escapedTitle}" sound name ""`;
-      await spawnSafe('/usr/bin/osascript', ['-e', script]);
+      await sendDesktopNotification(safeTitle, safeMessage);
     } catch (error) {
       console.error("Notification display error:", error);
     }
