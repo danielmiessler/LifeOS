@@ -66,3 +66,7 @@ credentials/
 .claude/pai_updates/
 .claude/pai_backups/
 .claude/.pai-sync-history
+
+# Local machine config and session data
+.claude/settings.local.json
+**/sessions/

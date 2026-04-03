@@ -2,7 +2,7 @@
   🔨 GENERATED FILE - Do not edit directly
   Edit:   ~/.claude/skills/PAI/Components/
   Build:  bun ~/.claude/skills/PAI/Tools/RebuildPAI.ts
-  Built:  13 March 2026 08:13:22
+  Built:  28 March 2026 11:56:07
 -->
 ---
 name: PAI
