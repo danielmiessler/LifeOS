@@ -18,7 +18,7 @@
  *   bun Tools/MemoryManager.ts status
  *   bun Tools/MemoryManager.ts cleanup --worktrees --dry-run
  *   bun Tools/MemoryManager.ts migrate /old/path/project /new/path/project
- *   bun Tools/MemoryManager.ts adopt -Users-umut-old-healthTrack
+ *   bun Tools/MemoryManager.ts adopt <encoded-dir-name>
  */
 
 import { existsSync, readdirSync, statSync, readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from 'fs';
@@ -119,8 +119,10 @@ function isWorktreeDir(name: string): boolean {
 }
 
 function isSpecialDir(name: string): boolean {
-  const specials = ['-Users-umut', '-Users-umut--claude', '-tmp'];
-  return specials.some(s => name === s) || name.startsWith('-tmp-');
+  const homeEncoded = encodePath(homedir());
+  const claudeEncoded = encodePath(join(homedir(), '.claude'));
+  const specials = [homeEncoded, claudeEncoded];
+  return specials.some(s => name === s) || name.startsWith('-tmp-') || name === '-tmp';
 }
 
 /**
@@ -133,7 +135,7 @@ function guessRealPath(encodedDir: string): string {
   const entry = registry.projects.find(p => p.encodedDir === encodedDir);
   if (entry) return entry.realPath;
 
-  // Best effort: replace leading -Users-umut- with /Users/umut/
+  // Best effort: replace leading encoded home dir with actual home
   // and assume remaining dashes are path separators
   const home = homedir();
   const homeEncoded = encodePath(home);
@@ -613,8 +615,8 @@ switch (command) {
     bun Tools/MemoryManager.ts cleanup --worktrees --dry-run
     bun Tools/MemoryManager.ts cleanup --worktrees --empty
     bun Tools/MemoryManager.ts migrate /old/path/project /new/path/project
-    bun Tools/MemoryManager.ts adopt -Users-umut-old-healthTrack
-    bun Tools/MemoryManager.ts normalize-paths -Users-umut-Documents-Projects-personal-healthTrack
+    bun Tools/MemoryManager.ts adopt <encoded-dir-from-orphans-list>
+    bun Tools/MemoryManager.ts normalize-paths <encoded-dir-name>
 `);
     break;
 }
