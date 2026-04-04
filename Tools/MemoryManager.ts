@@ -2,30 +2,30 @@
 /**
  * MemoryManager - Smart project memory management for PAI
  *
- * Commands:
- *   scan                              - List all project memory dirs with status
- *   status                            - Summary dashboard
- *   orphans                           - List orphaned directories
- *   worktrees                         - List worktree memory directories
- *   migrate <old-path> <new-path>     - Migrate memory between project paths
- *   adopt <encoded-dir>               - Adopt orphaned memory for current CWD
- *   cleanup [--worktrees] [--empty] [--dry-run] - Remove stale memory dirs
- *   normalize-paths <encoded-dir>     - Replace hardcoded absolute paths in memory files
- *   registry                          - Show registry contents
+ * Self-contained tool. Run `setup` to deploy hooks automatically.
  *
- * Usage:
- *   bun Tools/MemoryManager.ts scan
+ * Commands:
+ *   setup                              - Deploy hooks and configure settings (run once)
+ *   scan                               - List all project memory dirs with status
+ *   status                             - Summary dashboard
+ *   orphans                            - List orphaned directories
+ *   worktrees                          - List worktree memory directories
+ *   migrate <old-path> <new-path>      - Migrate memory between project paths
+ *   adopt <encoded-dir>                - Adopt orphaned memory for current CWD
+ *   cleanup [--worktrees] [--empty] [--dry-run] - Remove stale memory dirs
+ *   normalize-paths <encoded-dir>      - Replace hardcoded absolute paths in memory files
+ *   registry                           - Show registry contents
+ *
+ * Quick start:
+ *   bun Tools/MemoryManager.ts setup
  *   bun Tools/MemoryManager.ts status
- *   bun Tools/MemoryManager.ts cleanup --worktrees --dry-run
- *   bun Tools/MemoryManager.ts migrate /old/path/project /new/path/project
- *   bun Tools/MemoryManager.ts adopt <encoded-dir-name>
  */
 
-import { existsSync, readdirSync, statSync, readFileSync, writeFileSync, cpSync, rmSync, mkdirSync } from 'fs';
+import { existsSync, readdirSync, statSync, readFileSync, writeFileSync, cpSync, rmSync, mkdirSync, chmodSync } from 'fs';
 import { homedir } from 'os';
 import { join, basename } from 'path';
+import { execSync } from 'child_process';
 
-// Import from PAI hooks lib (these live at ~/.claude/hooks/lib/)
 const PAI_DIR = process.env.PAI_DIR || join(homedir(), '.claude');
 const PROJECTS_DIR = join(PAI_DIR, 'projects');
 const REGISTRY_PATH = join(PAI_DIR, 'MEMORY', 'STATE', 'project-registry.json');
@@ -530,12 +530,326 @@ function cmdRegistry(): void {
   console.log();
 }
 
+// ─── Setup: Generate hook source files programmatically ─────────────────
+
+function generateRegistrySrc(): string {
+  const lines = [
+    '/**',
+    ' * Memory Registry - Shared library for project memory management',
+    ' *',
+    ' * Provides fingerprinting (git remote URL), registry CRUD, and path encoding',
+    ' * that mirrors Claude Code\'s internal sanitizePath().',
+    ' */',
+    '',
+    "import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';",
+    "import { join, basename, dirname } from 'path';",
+    "import { execSync } from 'child_process';",
+    "import { getProjectsDir, getRegistryPath } from './paths';",
+    '',
+    'export interface ProjectEntry {',
+    '  encodedDir: string;',
+    '  realPath: string;',
+    '  gitRemote: string | null;',
+    '  projectName: string;',
+    '  lastSeen: string;',
+    '  memoryFiles: number;',
+    '}',
+    '',
+    'export interface Registry {',
+    '  version: 1;',
+    '  projects: ProjectEntry[];',
+    '}',
+    '',
+    'export function encodePath(absolutePath: string): string {',
+    '  return absolutePath.replace(/[^a-zA-Z0-9]/g, \'-\');',
+    '}',
+    '',
+    'export function getGitRemote(projectPath: string): string | null {',
+    '  try {',
+    '    const url = execSync(`git -C "${projectPath}" remote get-url origin 2>/dev/null`, {',
+    "      encoding: 'utf-8',",
+    '      timeout: 3000,',
+    '    }).trim();',
+    '    return url || null;',
+    '  } catch {',
+    '    return null;',
+    '  }',
+    '}',
+    '',
+    'export function normalizeGitUrl(url: string): string {',
+    '  let normalized = url.trim();',
+    '  const httpsMatch = normalized.match(/^https?:\\/\\/(?:[^@]+@)?(.+)$/);',
+    '  if (httpsMatch) {',
+    '    normalized = httpsMatch[1];',
+    '  } else {',
+    '    const sshMatch = normalized.match(/^(?:ssh:\\/\\/)?[^@]+@([^:\\/]+)[:\\/](.+)$/);',
+    '    if (sshMatch) {',
+    '      normalized = `${sshMatch[1]}/${sshMatch[2]}`;',
+    '    }',
+    '  }',
+    "  normalized = normalized.replace(/\\.git$/, '');",
+    "  normalized = normalized.replace(/\\/$/, '');",
+    '  return normalized.toLowerCase();',
+    '}',
+    '',
+    'export function loadRegistry(): Registry {',
+    '  const empty: Registry = { version: 1, projects: [] };',
+    '  try {',
+    '    const path = getRegistryPath();',
+    '    if (!existsSync(path)) return empty;',
+    "    const data = JSON.parse(readFileSync(path, 'utf-8'));",
+    '    if (data.version !== 1 || !Array.isArray(data.projects)) return empty;',
+    '    return data;',
+    '  } catch {',
+    '    return empty;',
+    '  }',
+    '}',
+    '',
+    'export function saveRegistry(registry: Registry): void {',
+    '  const path = getRegistryPath();',
+    '  const dir = dirname(path);',
+    '  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });',
+    '  writeFileSync(path, JSON.stringify(registry, null, 2));',
+    '}',
+    '',
+    'export function getMemoryPath(encodedDir: string): string {',
+    "  return join(getProjectsDir(), encodedDir, 'memory');",
+    '}',
+    '',
+    'export function countMemoryFiles(encodedDir: string): number {',
+    '  const memDir = getMemoryPath(encodedDir);',
+    '  if (!existsSync(memDir)) return 0;',
+    '  try {',
+    '    return readdirSync(memDir, { recursive: true })',
+    "      .filter(f => String(f).endsWith('.md'))",
+    '      .length;',
+    '  } catch {',
+    '    return 0;',
+    '  }',
+    '}',
+    '',
+    'export function registerProject(realPath: string): ProjectEntry {',
+    '  const registry = loadRegistry();',
+    '  const encodedDir = encodePath(realPath);',
+    '  const gitRemoteRaw = getGitRemote(realPath);',
+    '  const gitRemote = gitRemoteRaw ? normalizeGitUrl(gitRemoteRaw) : null;',
+    '  const projectName = basename(realPath);',
+    '  const memoryFiles = countMemoryFiles(encodedDir);',
+    '  const entry: ProjectEntry = {',
+    '    encodedDir, realPath, gitRemote, projectName,',
+    '    lastSeen: new Date().toISOString(), memoryFiles,',
+    '  };',
+    '  const idx = registry.projects.findIndex(p => p.encodedDir === encodedDir);',
+    '  if (idx >= 0) registry.projects[idx] = entry;',
+    '  else registry.projects.push(entry);',
+    '  saveRegistry(registry);',
+    '  return entry;',
+    '}',
+    '',
+    'export function findByGitRemote(normalizedUrl: string): ProjectEntry[] {',
+    '  const registry = loadRegistry();',
+    '  return registry.projects',
+    '    .filter(p => p.gitRemote === normalizedUrl && p.memoryFiles > 0)',
+    '    .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));',
+    '}',
+    '',
+    'export function findByName(name: string): ProjectEntry[] {',
+    '  const registry = loadRegistry();',
+    '  return registry.projects',
+    '    .filter(p => p.projectName === name && p.memoryFiles > 0)',
+    '    .sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));',
+    '}',
+  ];
+  return lines.join('\n') + '\n';
+}
+
+function generateHookSrc(): string {
+  const lines = [
+    '#!/usr/bin/env bun',
+    '/**',
+    ' * MemoryDetect.hook.ts - Auto-detect and migrate orphaned project memory',
+    ' * TRIGGER: SessionStart (before LoadContext)',
+    ' */',
+    '',
+    "import { existsSync, cpSync, mkdirSync } from 'fs';",
+    'import {',
+    '  encodePath, getGitRemote, normalizeGitUrl, registerProject,',
+    '  findByGitRemote, findByName, getMemoryPath, countMemoryFiles,',
+    "} from './lib/memory-registry';",
+    '',
+    'function isSubagent(): boolean {',
+    "  if ((process.env.CLAUDE_PROJECT_DIR || '').includes('/.claude/Agents/')) return true;",
+    '  if (process.env.CLAUDE_AGENT_TYPE) return true;',
+    '  return false;',
+    '}',
+    '',
+    'function main(): void {',
+    '  if (isSubagent()) return;',
+    '  const cwd = process.cwd();',
+    '  const encodedDir = encodePath(cwd);',
+    '  const memDir = getMemoryPath(encodedDir);',
+    '',
+    '  if (existsSync(memDir) && countMemoryFiles(encodedDir) > 0) {',
+    '    registerProject(cwd);',
+    '    return;',
+    '  }',
+    '',
+    '  const gitRemoteRaw = getGitRemote(cwd);',
+    '  if (gitRemoteRaw) {',
+    '    const normalizedUrl = normalizeGitUrl(gitRemoteRaw);',
+    '    const candidates = findByGitRemote(normalizedUrl).filter(m => m.encodedDir !== encodedDir);',
+    '    if (candidates.length > 0) {',
+    '      const best = candidates[0];',
+    '      const oldMemDir = getMemoryPath(best.encodedDir);',
+    '      if (existsSync(oldMemDir)) {',
+    '        if (!existsSync(memDir)) mkdirSync(memDir, { recursive: true });',
+    '        try {',
+    '          cpSync(oldMemDir, memDir, { recursive: true });',
+    '          const copied = countMemoryFiles(encodedDir);',
+    '          process.stderr.write(',
+    "            '[MemoryDetect] Migrated ' + copied + ' memory files from previous location\\n' +",
+    "            '  Old: ' + best.realPath + '\\n  New: ' + cwd + '\\n'",
+    '          );',
+    '        } catch (err) {',
+    "          process.stderr.write('[MemoryDetect] Migration failed: ' + err + '\\n');",
+    '        }',
+    '      }',
+    '    }',
+    '  }',
+    '',
+    '  if (countMemoryFiles(encodedDir) === 0) {',
+    "    const projectName = cwd.split('/').pop() || '';",
+    '    if (projectName) {',
+    '      const nameMatches = findByName(projectName).filter(m => m.encodedDir !== encodedDir);',
+    '      if (nameMatches.length === 1) {',
+    '        const match = nameMatches[0];',
+    '        process.stderr.write(',
+    "          '[MemoryDetect] Found possible orphaned memory for \"' + projectName + '\" at:\\n' +",
+    "          '  ' + match.realPath + ' (' + match.memoryFiles + ' files)\\n' +",
+    "          '  Run: bun Tools/MemoryManager.ts adopt ' + match.encodedDir + '\\n'",
+    '        );',
+    '      }',
+    '    }',
+    '  }',
+    '',
+    '  registerProject(cwd);',
+    '}',
+    '',
+    'main();',
+  ];
+  return lines.join('\n') + '\n';
+}
+
+const PATHS_ADDITIONS = [
+  '',
+  '/**',
+  ' * Get the projects directory (~/.claude/projects/)',
+  ' */',
+  'export function getProjectsDir(): string {',
+  "  return paiPath('projects');",
+  '}',
+  '',
+  '/**',
+  ' * Get the project registry path',
+  ' */',
+  'export function getRegistryPath(): string {',
+  "  return paiPath('MEMORY', 'STATE', 'project-registry.json');",
+  '}',
+].join('\n') + '\n';
+
+function cmdSetup(): void {
+  const hooksDir = join(PAI_DIR, 'hooks');
+  const hooksLibDir = join(hooksDir, 'lib');
+  const settingsPath = join(PAI_DIR, 'settings.json');
+
+  console.log('\n  MemoryManager Setup\n');
+
+  // 1. Ensure directories exist
+  if (!existsSync(hooksLibDir)) {
+    mkdirSync(hooksLibDir, { recursive: true });
+    console.log('  + Created hooks/lib directory');
+  }
+
+  // 2. Deploy memory-registry.ts
+  const registryLibPath = join(hooksLibDir, 'memory-registry.ts');
+  const registryExists = existsSync(registryLibPath);
+  writeFileSync(registryLibPath, generateRegistrySrc());
+  console.log('  + ' + (registryExists ? 'Updated' : 'Created') + ' hooks/lib/memory-registry.ts');
+
+  // 3. Deploy MemoryDetect.hook.ts
+  const hookPath = join(hooksDir, 'MemoryDetect.hook.ts');
+  const hookExists = existsSync(hookPath);
+  writeFileSync(hookPath, generateHookSrc());
+  chmodSync(hookPath, 0o755);
+  console.log('  + ' + (hookExists ? 'Updated' : 'Created') + ' hooks/MemoryDetect.hook.ts');
+
+  // 4. Update paths.ts if needed
+  const pathsFile = join(hooksLibDir, 'paths.ts');
+  if (existsSync(pathsFile)) {
+    const pathsContent = readFileSync(pathsFile, 'utf-8');
+    if (!pathsContent.includes('getProjectsDir')) {
+      writeFileSync(pathsFile, pathsContent + PATHS_ADDITIONS);
+      console.log('  + Added getProjectsDir/getRegistryPath to paths.ts');
+    } else {
+      console.log('  . paths.ts already has required functions');
+    }
+  } else {
+    console.log('  ! hooks/lib/paths.ts not found — skipping (install PAI first)');
+  }
+
+  // 5. Update settings.json if needed
+  if (existsSync(settingsPath)) {
+    try {
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+      const hookCommand = '${PAI_DIR}/hooks/MemoryDetect.hook.ts';
+      const sessionStart = settings.hooks?.SessionStart;
+
+      if (sessionStart && Array.isArray(sessionStart)) {
+        const hookGroup = sessionStart[0];
+        if (hookGroup?.hooks && Array.isArray(hookGroup.hooks)) {
+          const alreadyAdded = hookGroup.hooks.some(
+            (h: any) => h.command?.includes('MemoryDetect')
+          );
+          if (!alreadyAdded) {
+            hookGroup.hooks.unshift({ type: 'command', command: hookCommand });
+            writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+            console.log('  + Added MemoryDetect hook to settings.json SessionStart');
+          } else {
+            console.log('  . MemoryDetect hook already in settings.json');
+          }
+        }
+      } else {
+        console.log('  ! No SessionStart hooks in settings.json — add manually');
+      }
+    } catch (err) {
+      console.log('  ! Could not update settings.json: ' + err);
+    }
+  } else {
+    console.log('  ! settings.json not found — hook needs manual configuration');
+  }
+
+  // 6. Ensure MEMORY/STATE directory exists
+  const stateDir = join(PAI_DIR, 'MEMORY', 'STATE');
+  if (!existsSync(stateDir)) {
+    mkdirSync(stateDir, { recursive: true });
+    console.log('  + Created MEMORY/STATE directory');
+  }
+
+  console.log('\n  Setup complete! The MemoryDetect hook will now:');
+  console.log('  - Register every project you open (with git remote fingerprint)');
+  console.log('  - Auto-migrate memory when you open a moved/renamed project');
+  console.log('\n  Try: bun Tools/MemoryManager.ts status\n');
+}
+
 // ─── Main ───────────────────────────────────────────────────────────────
 
 const args = process.argv.slice(2);
 const command = args[0];
 
 switch (command) {
+  case 'setup':
+    cmdSetup();
+    break;
   case 'scan':
     cmdScan();
     break;
@@ -597,7 +911,12 @@ switch (command) {
     console.log(`
   MemoryManager — Smart project memory management for PAI
 
+  Quick start:
+    bun Tools/MemoryManager.ts setup     Deploy hooks (run once after install)
+    bun Tools/MemoryManager.ts status    See current state
+
   Commands:
+    setup                               Deploy hooks and configure settings
     scan                                List all project memory dirs with status
     status                              Summary dashboard
     orphans                             List orphaned directories
@@ -610,13 +929,12 @@ switch (command) {
     registry                            Show registry contents
 
   Examples:
+    bun Tools/MemoryManager.ts setup
     bun Tools/MemoryManager.ts scan
     bun Tools/MemoryManager.ts status
     bun Tools/MemoryManager.ts cleanup --worktrees --dry-run
     bun Tools/MemoryManager.ts cleanup --worktrees --empty
     bun Tools/MemoryManager.ts migrate /old/path/project /new/path/project
-    bun Tools/MemoryManager.ts adopt <encoded-dir-from-orphans-list>
-    bun Tools/MemoryManager.ts normalize-paths <encoded-dir-name>
 `);
     break;
 }
