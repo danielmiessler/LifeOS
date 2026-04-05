@@ -28,7 +28,7 @@ import { join, basename } from "path";
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = join(homedir(), ".claude");
+const CLAUDE_DIR = process.env.PAI_DIR || join(homedir(), ".claude");
 const MCP_DIR = join(CLAUDE_DIR, "MCPs");
 const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
 const BANNER_SCRIPT = join(CLAUDE_DIR, "PAI", "Tools", "Banner.ts");

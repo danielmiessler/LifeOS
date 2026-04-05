@@ -21,7 +21,7 @@ import * as path from "path";
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = process.env.PAI_DIR || path.join(process.env.HOME!, ".claude");
 const MEMORY_DIR = path.join(CLAUDE_DIR, "MEMORY");
 const USERNAME = process.env.USER || require("os").userInfo().username;
 const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", `-Users-${USERNAME}--claude`);  // Claude Code native storage

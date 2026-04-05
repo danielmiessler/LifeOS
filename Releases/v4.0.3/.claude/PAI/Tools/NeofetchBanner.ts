@@ -20,7 +20,7 @@ import { join } from "path";
 import { spawnSync } from "child_process";
 
 const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const CLAUDE_DIR = process.env.PAI_DIR || join(HOME, ".claude");
 
 // ═══════════════════════════════════════════════════════════════════════
 // Terminal Width Detection

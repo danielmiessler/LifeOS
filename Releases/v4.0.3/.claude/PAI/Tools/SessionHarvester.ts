@@ -25,7 +25,7 @@ import { getLearningCategory, isLearningCapture } from "../../hooks/lib/learning
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = process.env.PAI_DIR || path.join(process.env.HOME!, ".claude");
 // Derive the project slug dynamically from CLAUDE_DIR (works on macOS and Linux)
 // macOS: ${HOME}/.claude → -Users-username--claude
 // Linux: /home/username/.claude → -home-username--claude

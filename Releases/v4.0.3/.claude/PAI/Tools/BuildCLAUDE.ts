@@ -15,9 +15,9 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const PAI_DIR = join(process.env.HOME!, ".claude");
+const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME!, ".claude");
 const TEMPLATE_PATH = join(PAI_DIR, "CLAUDE.md.template");
-const OUTPUT_PATH = join(PAI_DIR, "CLAUDE.md");
+const OUTPUT_PATH = join(process.env.HOME!, ".claude", "CLAUDE.md");  // Always ~/.claude/ — Claude Code reads from fixed location
 const SETTINGS_PATH = join(PAI_DIR, "settings.json");
 const ALGORITHM_DIR = join(PAI_DIR, "PAI/Algorithm");
 const LATEST_PATH = join(ALGORITHM_DIR, "LATEST");

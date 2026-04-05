@@ -13,11 +13,12 @@ import { readdirSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
 
 const HOME = process.env.HOME!;
-const PAI_DIR = join(HOME, ".claude/PAI");
+const CLAUDE_DIR = process.env.PAI_DIR || join(HOME, ".claude");
+const PAI_DIR = join(CLAUDE_DIR, "PAI");
 const COMPONENTS_DIR = join(PAI_DIR, "Components");
 const ALGORITHM_DIR = join(COMPONENTS_DIR, "Algorithm");
 const OUTPUT_FILE = join(PAI_DIR, "SKILL.md");
-const SETTINGS_PATH = join(HOME, ".claude/settings.json");
+const SETTINGS_PATH = join(CLAUDE_DIR, "settings.json");
 
 /**
  * Load identity variables from settings.json for template resolution

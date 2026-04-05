@@ -15,7 +15,8 @@ import { join } from "path";
 import { homedir } from "os";
 import { parseArgs } from "util";
 
-const STATE_DIR = join(homedir(), ".claude", "MEMORY", "STATE");
+const PAI_DIR = process.env.PAI_DIR || join(homedir(), ".claude");
+const STATE_DIR = join(PAI_DIR, "MEMORY", "STATE");
 const STATE_FILE = join(STATE_DIR, "algorithm-phase.json");
 
 interface AlgorithmState {
