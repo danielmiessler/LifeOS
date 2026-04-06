@@ -82,6 +82,7 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
       '--tools', '',  // Disable tools for faster response
       '--output-format', 'text',
       '--setting-sources', '',  // Disable hooks to prevent recursion
+      '--no-session-persistence',  // Prevent orphan .jsonl files (fixes #947)
       '--system-prompt', options.systemPrompt,
     ];
 
