@@ -242,6 +242,16 @@
           }
         ]
       }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${PAI_DIR}/hooks/PostCompact.hook.ts"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
