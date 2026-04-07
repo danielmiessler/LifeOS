@@ -21,9 +21,26 @@ See `SKILL.md` for full URL Verification Protocol.
 
 ## Workflow
 
-### Step 0: Generate Creative Research Angles (deep thinking)
+### Step 0: Check Research Vault for Prior Work
 
-**Use deep thinking to generate diverse research angles:**
+Before generating angles, check if the research vault already has relevant coverage:
+
+```
+1. List files in MEMORY/RESEARCH/ (recursive, .md files only)
+2. Match file names and directory names against the research topic keywords
+3. If matches found: read the matched file's frontmatter/first 20 lines for a summary
+```
+
+**If relevant prior research exists:**
+- Use prior findings to inform angle generation in Step 0.5 — avoid re-researching known territory, focus angles on gaps
+- Include a brief summary in each agent's prompt: "Prior research on this topic found: [summary]. Focus on NEW findings beyond what's already known."
+- If prior research is comprehensive and recent (<30 days), suggest: "We have existing research on this topic from [date]. Want to extend it rather than start fresh?"
+
+**If no relevant research:** Proceed normally.
+
+### Step 0.5: Generate Creative Research Angles (deep thinking)
+
+**Use deep thinking to generate diverse research angles** (informed by any prior vault findings from Step 0):
 
 Think deeply about the research topic:
 - Explore multiple unusual perspectives and domains

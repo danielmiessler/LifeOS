@@ -20,6 +20,22 @@ See `SKILL.md` for full URL Verification Protocol.
 
 ## Workflow
 
+### Step 0.5: Check Research Vault for Prior Work
+
+Before spawning agents, check if the research vault already has relevant coverage:
+
+```
+1. List files in MEMORY/RESEARCH/ (recursive, .md files only)
+2. Match file names and directory names against the research topic keywords
+3. If matches found: read the matched file's frontmatter/first 20 lines for a summary
+```
+
+**If relevant prior research exists:**
+- Include a brief summary in each agent's prompt as context: "Prior research on this topic found: [summary]. Build on these findings."
+- If prior research is comprehensive and recent (<30 days), suggest to the user: "We have existing research on this topic from [date]. Want to extend it rather than start fresh?"
+
+**If no relevant research:** Proceed normally.
+
 ### Step 1: Craft One Query Per Researcher
 
 Create ONE focused query optimized for each researcher's strengths:

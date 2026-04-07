@@ -11,6 +11,22 @@
 
 ## Workflow
 
+### Step 0.5: Check Research Vault for Prior Work
+
+Before spawning the agent, do a fast check of the research vault:
+
+```
+1. List files in MEMORY/RESEARCH/ (recursive, .md files only)
+2. Match file names and directory names against the research topic keywords
+3. If matches found: read the matched file's frontmatter/first 20 lines for a summary
+```
+
+**If relevant prior research exists:**
+- Include a brief summary in the agent's prompt: "Prior research on this topic found: [summary]. Build on these findings."
+- If prior research is comprehensive and recent (<30 days), suggest: "We have existing research on this topic from [date]. Want to extend it rather than start fresh?"
+
+**If no relevant research:** Proceed normally.
+
 ### Step 1: Launch Single Claude Agent
 
 **ONE Task call - Claude researcher with a single focused query:**

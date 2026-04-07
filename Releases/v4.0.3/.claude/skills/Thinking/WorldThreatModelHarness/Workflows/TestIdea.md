@@ -44,6 +44,23 @@ curl -s -X POST http://localhost:8888/notify \
   -d '{"message": "Testing your idea against all eleven world threat models at TIER tier", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
 ```
 
+### Step 1.5: Check Research Vault for Relevant Prior Work
+
+Before decomposing the idea, check if the research vault has relevant prior research:
+
+```
+1. List files in MEMORY/RESEARCH/ (recursive, .md files only)
+2. Match file names and directory names against the idea's domain keywords
+3. If matches found: read the matched file's frontmatter/first 20 lines for a summary
+```
+
+**If relevant prior research exists:**
+- Summarize the key findings from prior research
+- Include this summary as grounding context in Step 3's agent briefs: "Prior research on this domain found: [summary]. Use these findings as factual grounding when testing the idea against your time horizon."
+- This gives world model agents concrete evidence instead of relying solely on training knowledge
+
+**If no relevant research:** Proceed normally — note "no prior research vault data for this domain."
+
 ### Step 2: Extract and Decompose the Idea
 
 Before hitting it with world models, decompose the idea:

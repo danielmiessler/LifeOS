@@ -51,6 +51,12 @@ Read `~/.claude/MEMORY/STATE/current-work.json` for the active work directory.
 ### Step 0: Detect Iteration State
 
 ```
+CHECK broader research vault for related prior work:
+  - List all directories/files in MEMORY/RESEARCH/
+  - If OTHER research topics (not this investigation's vault) have keyword overlap,
+    note them as supplementary context for landscape and entity research
+  - Include relevant prior findings in agent briefs during Steps 1 and 4
+
 READ vault directory for existing artifacts:
   - LANDSCAPE.md exists? → This is a CONTINUATION (skip to Step 3 or 4)
   - ENTITIES.md exists? → This is a CONTINUATION (skip to Step 3 or 4)
