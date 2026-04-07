@@ -190,6 +190,10 @@
         "hooks": [
           {
             "type": "command",
+            "command": "${PAI_DIR}/hooks/PreContextReset.hook.ts"
+          },
+          {
+            "type": "command",
             "command": "${PAI_DIR}/hooks/RatingCapture.hook.ts"
           },
           {
