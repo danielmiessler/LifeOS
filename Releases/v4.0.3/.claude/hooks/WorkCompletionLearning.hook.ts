@@ -12,7 +12,7 @@
  *
  * INPUT:
  * - stdin: Hook input JSON (session_id, transcript_path)
- * - Files: MEMORY/STATE/current-work.json, MEMORY/WORK/<dir>/META.yaml
+ * - Files: MEMORY/STATE/work.json (populated by PRDSync), MEMORY/WORK/<dir>/PRD.md
  *
  * OUTPUT:
  * - stdout: None
@@ -59,15 +59,55 @@ const MEMORY_DIR = join(BASE_DIR, 'MEMORY');
 const STATE_DIR = join(MEMORY_DIR, 'STATE');
 const WORK_DIR = join(MEMORY_DIR, 'WORK');
 const LEARNING_DIR = join(MEMORY_DIR, 'LEARNING');
+const WORK_JSON = join(STATE_DIR, 'work.json');
 
-// Session-scoped state file lookup with legacy fallback
-function findStateFile(sessionId?: string): string | null {
-  if (sessionId) {
-    const scoped = join(STATE_DIR, `current-work-${sessionId}.json`);
-    if (existsSync(scoped)) return scoped;
-  }
-  const legacy = join(STATE_DIR, 'current-work.json');
-  if (existsSync(legacy)) return legacy;
+// Find the active work session from work.json (populated by PRDSync hook).
+// Matches by sessionUUID when available, otherwise returns the most recently
+// updated non-complete session.
+function findWorkSession(sessionId?: string): CurrentWork | null {
+  if (!existsSync(WORK_JSON)) return null;
+  try {
+    const registry = JSON.parse(readFileSync(WORK_JSON, 'utf-8'));
+    const sessions: Record<string, any> = registry.sessions || {};
+
+    // Prefer exact session UUID match
+    if (sessionId) {
+      for (const [slug, session] of Object.entries(sessions) as [string, any][]) {
+        if (session.sessionUUID === sessionId) {
+          return {
+            session_id: session.sessionUUID || sessionId,
+            session_dir: slug,
+            created_at: session.started || '',
+            prd_path: session.prd,
+            current_task: session.task,
+            task_title: session.task,
+            task_count: session.criteria?.length || 0,
+          };
+        }
+      }
+    }
+
+    // Fallback: most recently updated non-complete session
+    let best: [string, any] | null = null;
+    let bestTime = 0;
+    for (const [slug, session] of Object.entries(sessions) as [string, any][]) {
+      if (session.phase === 'complete') continue;
+      const t = new Date(session.updatedAt || session.started || 0).getTime();
+      if (t > bestTime) { bestTime = t; best = [slug, session]; }
+    }
+    if (best) {
+      const [slug, session] = best;
+      return {
+        session_id: session.sessionUUID || '',
+        session_dir: slug,
+        created_at: session.started || '',
+        prd_path: session.prd,
+        current_task: session.task,
+        task_title: session.task,
+        task_count: session.criteria?.length || 0,
+      };
+    }
+  } catch { /* corrupt work.json -- treat as no session */ }
   return null;
 }
 
@@ -114,7 +154,7 @@ function parseYaml(content: string): WorkMeta {
     if (trimmed.startsWith('- ') && inArray) {
       const value = trimmed.slice(2).replace(/^["']|["']$/g, '');
       if (arrayKey === 'lineage') {
-        // Nested array in lineage — use tracked sub-key
+        // Nested array in lineage -- use tracked sub-key
         if (lineageSubKey) meta.lineage[lineageSubKey].push(value);
       } else {
         meta[arrayKey].push(value);
@@ -163,6 +203,12 @@ function parseYaml(content: string): WorkMeta {
       }
     }
   }
+
+  // Map v2.0 PRD frontmatter fields to WorkMeta interface fields.
+  // PRD uses: task, slug, started. WorkMeta expects: title, id, created_at.
+  if (meta.task && !meta.title) meta.title = meta.task;
+  if (meta.slug && !meta.id) meta.id = meta.slug;
+  if (meta.started && !meta.created_at) meta.created_at = meta.started;
 
   return meta as WorkMeta;
 }
@@ -254,7 +300,7 @@ ${idealContent || 'Not specified'}
 
 async function main() {
   try {
-    // Read input from stdin with timeout — SessionEnd hooks may receive
+    // Read input from stdin with timeout -- SessionEnd hooks may receive
     // empty or slow stdin. Proceed regardless since state is read from disk.
     let sessionId: string | undefined;
     try {
@@ -267,21 +313,18 @@ async function main() {
         sessionId = parsed.session_id;
       }
     } catch {
-      // Timeout or parse error — proceed without session_id
+      // Timeout or parse error -- proceed without session_id
     }
 
-    // Check if there's an active work session (session-scoped with legacy fallback)
-    const stateFile = findStateFile(sessionId);
-    if (!stateFile) {
+    // Find the active work session from work.json (populated by PRDSync hook)
+    const currentWork = findWorkSession(sessionId);
+    if (!currentWork) {
       console.error('[WorkCompletionLearning] No active work session');
       process.exit(0);
     }
 
-    // Read current work state
-    const currentWork: CurrentWork = JSON.parse(readFileSync(stateFile, 'utf-8'));
-
     // Guard: don't process another session's state
-    if (sessionId && currentWork.session_id !== sessionId) {
+    if (sessionId && currentWork.session_id && currentWork.session_id !== sessionId) {
       console.error('[WorkCompletionLearning] State file belongs to different session, skipping');
       process.exit(0);
     }
@@ -291,7 +334,7 @@ async function main() {
       process.exit(0);
     }
 
-    // Read work directory metadata — from PRD.md frontmatter (v4.0) or META.yaml (legacy)
+    // Read work directory metadata -- from PRD.md frontmatter (v4.0) or META.yaml (legacy)
     const workPath = join(WORK_DIR, currentWork.session_dir);
     const prdPath = join(workPath, 'PRD.md');
     const metaPath = join(workPath, 'META.yaml');
@@ -318,12 +361,13 @@ async function main() {
       workMeta.completed_at = getISOTimestamp();
     }
 
-    // Extract ISC from PRD.md ISC section (v4.0) or ISC.json (legacy)
+    // Extract ISC from PRD.md Criteria section (v2.0: "## Criteria") or
+    // legacy format ("## IDEAL STATE CRITERIA"), or ISC.json fallback
     let idealContent = '';
     if (existsSync(prdPath)) {
       try {
         const prdContent = readFileSync(prdPath, 'utf-8');
-        const iscMatch = prdContent.match(/## IDEAL STATE CRITERIA[\s\S]*?(?=\n## |$)/);
+        const iscMatch = prdContent.match(/## (?:IDEAL STATE CRITERIA|Criteria)[\s\S]*?(?=\n## |$)/);
         if (iscMatch) {
           const checked = (iscMatch[0].match(/- \[x\]/g) || []).length;
           const unchecked = (iscMatch[0].match(/- \[ \]/g) || []).length;
