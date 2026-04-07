@@ -33,7 +33,7 @@ import { join } from 'path';
 import { getPaiDir } from './lib/paths';
 import { getPSTComponents } from './lib/time';
 import { getDAName, getPrincipalName } from './lib/identity';
-import { parseTranscript } from '../PAI/Tools/TranscriptParser';
+import { parseTranscript, contentToText } from '../PAI/Tools/TranscriptParser';
 
 interface HookInput {
   session_id: string;
@@ -74,14 +74,31 @@ function readTranscriptEntries(path: string): TranscriptEntry[] {
 
   try {
     const parsed = parseTranscript(path);
-    // Combine user prompts and assistant completions into entry pairs
     const entries: TranscriptEntry[] = [];
-    if (parsed.userPrompt) {
-      entries.push({ type: 'user', text: parsed.userPrompt });
+
+    // Parse user and assistant messages from the raw JSONL transcript.
+    // parsed.userPrompt does not exist on ParsedTranscript; the previous
+    // code silently returned no user entries. parsed.plainCompletion is a
+    // short tab-title string, too small for the relationship regexes.
+    // Instead, iterate the raw JSONL lines (same approach TranscriptParser
+    // uses internally in parseLastAssistantMessage / collectCurrentResponseText).
+    const lines = parsed.raw.split('\n');
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const entry = JSON.parse(line) as any;
+        if ((entry.type === 'human' || entry.type === 'user') && entry.message?.content) {
+          const text = contentToText(entry.message.content);
+          if (text) entries.push({ type: 'user', text });
+        } else if (entry.type === 'assistant' && entry.message?.content) {
+          const text = contentToText(entry.message.content);
+          if (text) entries.push({ type: 'assistant', text });
+        }
+      } catch {
+        // Skip invalid JSON lines
+      }
     }
-    if (parsed.plainCompletion) {
-      entries.push({ type: 'assistant', text: parsed.plainCompletion });
-    }
+
     return entries;
   } catch {
     return [];
