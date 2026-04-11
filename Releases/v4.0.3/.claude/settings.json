@@ -1021,6 +1021,10 @@
       "enabled": true,
       "toNumber": "${TWILIO_TO_NUMBER}"
     },
+    "pushcut": {
+      "enabled": false,
+      "webhookUrl": "${PUSHCUT_WEBHOOK_URL}"
+    },
     "thresholds": {
       "longTaskMinutes": 5
     },

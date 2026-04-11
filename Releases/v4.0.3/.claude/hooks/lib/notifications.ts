@@ -90,3 +90,49 @@ export async function sendPush(
     return false;
   }
 }
+
+// ============================================================================
+// Pushcut Push (fire-and-forget) — iOS rich notifications + Shortcuts bridge
+// ============================================================================
+
+function loadPushcutConfig(): { enabled: boolean; webhookUrl: string } {
+  try {
+    const paiDir = process.env.PAI_DIR || join(homedir(), '.claude');
+    const settingsPath = join(paiDir, 'settings.json');
+    if (!existsSync(settingsPath)) return { enabled: false, webhookUrl: '' };
+
+    const raw = readFileSync(settingsPath, 'utf-8')
+      .replace(/\$\{(\w+)\}/g, (_, key) => process.env[key] || '');
+    const settings = JSON.parse(raw);
+    const pushcut = settings.notifications?.pushcut;
+    return {
+      enabled: pushcut?.enabled ?? false,
+      webhookUrl: pushcut?.webhookUrl ?? '',
+    };
+  } catch {
+    return { enabled: false, webhookUrl: '' };
+  }
+}
+
+export async function sendPushcut(
+  message: string,
+  options: NotificationOptions = {}
+): Promise<boolean> {
+  const config = loadPushcutConfig();
+  if (!config.enabled || !config.webhookUrl) return false;
+
+  try {
+    const body: Record<string, unknown> = { text: message };
+    if (options.title) body.title = options.title;
+
+    const response = await fetch(config.webhookUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(5000),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
