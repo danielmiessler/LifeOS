@@ -369,14 +369,47 @@ async function generateSpeech(
   return await response.arrayBuffer();
 }
 
-// Play audio using afplay (macOS)
+// Resolve the audio player command + arg builder for the current platform.
+// macOS uses afplay; Linux tries ffplay (ffmpeg) then falls back to mpg123.
+function getAudioPlayer(volume: number, tempFile: string): { command: string; args: string[] } | null {
+  if (process.platform === 'darwin') {
+    return { command: '/usr/bin/afplay', args: ['-v', volume.toString(), tempFile] };
+  }
+
+  const clamped = Math.max(0, Math.min(1, volume));
+
+  if (existsSync('/usr/bin/ffplay')) {
+    return {
+      command: '/usr/bin/ffplay',
+      args: ['-nodisp', '-autoexit', '-loglevel', 'quiet', '-volume', Math.round(clamped * 100).toString(), tempFile],
+    };
+  }
+
+  if (existsSync('/usr/bin/mpg123')) {
+    // mpg123 -f scales raw PCM by integer 0..32768
+    return {
+      command: '/usr/bin/mpg123',
+      args: ['-q', '-f', Math.round(clamped * 32768).toString(), tempFile],
+    };
+  }
+
+  return null;
+}
+
+// Play audio: macOS uses afplay, Linux uses ffplay or mpg123 (whichever is installed).
 async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
   const tempFile = `/tmp/voice-${Date.now()}.mp3`;
 
   await Bun.write(tempFile, audioBuffer);
 
+  const player = getAudioPlayer(volume, tempFile);
+  if (!player) {
+    spawn('/bin/rm', [tempFile]);
+    throw new Error('No supported audio player found. Install ffmpeg (ffplay) or mpg123.');
+  }
+
   return new Promise((resolve, reject) => {
-    const proc = spawn('/usr/bin/afplay', ['-v', volume.toString(), tempFile]);
+    const proc = spawn(player.command, player.args);
 
     proc.on('error', (error) => {
       console.error('Error playing audio:', error);
@@ -388,7 +421,7 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
       if (code === 0) {
         resolve();
       } else {
-        reject(new Error(`afplay exited with code ${code}`));
+        reject(new Error(`${player.command} exited with code ${code}`));
       }
     });
   });
