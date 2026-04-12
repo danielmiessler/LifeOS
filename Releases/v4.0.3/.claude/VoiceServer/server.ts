@@ -20,10 +20,13 @@ import { homedir } from "os";
 import { join } from "path";
 import { existsSync, readFileSync } from "fs";
 
-// Load .env from user home directory
-const envPath = join(homedir(), '.env');
-if (existsSync(envPath)) {
-  const envContent = await Bun.file(envPath).text();
+// Load .env files — XDG-compliant location first, then ~/.env as optional
+// user overlay. The user owns ~/.env for their own purposes; PAI-managed
+// secrets live at ~/.config/PAI/.env so they never collide with user's file.
+// Values in ~/.env win in the case of key collisions (explicit user override).
+async function loadEnvFile(path: string): Promise<void> {
+  if (!existsSync(path)) return;
+  const envContent = await Bun.file(path).text();
   envContent.split('\n').forEach(line => {
     const [key, value] = line.split('=');
     if (key && value && !key.startsWith('#')) {
@@ -32,12 +35,20 @@ if (existsSync(envPath)) {
   });
 }
 
+const xdgEnvPath = join(homedir(), '.config', 'PAI', '.env');
+const homeEnvPath = join(homedir(), '.env');
+
+// Load PAI's managed secrets first (canonical location)
+await loadEnvFile(xdgEnvPath);
+// Then user overlay — any key in ~/.env wins over the XDG file
+await loadEnvFile(homeEnvPath);
+
 const PORT = parseInt(process.env.PORT || "8888");
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 
 if (!ELEVENLABS_API_KEY) {
-  console.error('⚠️  ELEVENLABS_API_KEY not found in ~/.env');
-  console.error('Add: ELEVENLABS_API_KEY=your_key_here');
+  console.error('⚠️  ELEVENLABS_API_KEY not found');
+  console.error(`Add it to ${xdgEnvPath} (or ~/.env) as: ELEVENLABS_API_KEY=your_key_here`);
 }
 
 // ==========================================================================

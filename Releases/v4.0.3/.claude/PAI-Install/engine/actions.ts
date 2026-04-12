@@ -724,28 +724,29 @@ export async function runConfiguration(
     await emit({ event: "message", content: "API keys saved securely." });
   }
 
-  // Create symlinks so all consumers can find the .env
-  // Voice server reads ~/.env, hooks read ~/.claude/.env
+  // Create a symlink at ~/.claude/.env for PAI hooks that still read from
+  // the claude-scoped path. ~/.claude/ is PAI's own namespace so the symlink
+  // is safe; we do NOT symlink ~/.env anymore because ~/.env belongs to the
+  // user — they may have their own shell environment file there unrelated to
+  // PAI. VoiceServer and other components now read from envPath
+  // (~/.config/PAI/.env) directly, with an optional overlay from ~/.env if
+  // the user chooses to put PAI-relevant keys there.
   if (existsSync(envPath)) {
-    const symlinkPaths = [
-      join(paiDir, ".env"),         // ~/.claude/.env
-      join(homedir(), ".env"),      // ~/.env (voice server reads this)
-    ];
-    for (const symlinkPath of symlinkPaths) {
-      try {
-        // Remove stale symlink or file before creating
-        if (existsSync(symlinkPath)) {
-          const stat = lstatSync(symlinkPath);
-          if (stat.isSymbolicLink()) {
-            unlinkSync(symlinkPath);
-          } else {
-            continue; // Don't overwrite a real file
-          }
+    const claudeEnvSymlink = join(paiDir, ".env");
+    try {
+      if (existsSync(claudeEnvSymlink)) {
+        const stat = lstatSync(claudeEnvSymlink);
+        if (stat.isSymbolicLink()) {
+          unlinkSync(claudeEnvSymlink);
+        } else {
+          // Don't overwrite a real file — skip creating the symlink.
         }
-        symlinkSync(envPath, symlinkPath);
-      } catch {
-        // Permission error or path conflict
       }
+      if (!existsSync(claudeEnvSymlink)) {
+        symlinkSync(envPath, claudeEnvSymlink);
+      }
+    } catch {
+      // Permission error or path conflict — non-fatal.
     }
   }
 
