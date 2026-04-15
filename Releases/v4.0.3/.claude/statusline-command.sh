@@ -18,6 +18,11 @@
 
 set -o pipefail
 
+if ! command -v jq >/dev/null 2>&1; then
+  echo "PAI statusline: jq not found. Install with: sudo apt-get install -y jq (or brew install jq)"
+  exit 0
+fi
+
 # ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────

@@ -77,6 +77,22 @@ case "$OS" in
   *)      error "Unsupported platform: $OS"; exit 1 ;;
 esac
 
+# ─── Package Manager Detection ────────────────────────────
+# Probe in preference order: brew (macOS), apt-get, dnf, yum.
+# PKG_MGR is later used by the dependency-install branches and
+# by the runtime dependency check to print actionable hints.
+PKG_MGR="unknown"
+if command -v brew &>/dev/null; then
+  PKG_MGR="brew"
+elif command -v apt-get &>/dev/null; then
+  PKG_MGR="apt-get"
+elif command -v dnf &>/dev/null; then
+  PKG_MGR="dnf"
+elif command -v yum &>/dev/null; then
+  PKG_MGR="yum"
+fi
+info "Package manager: $PKG_MGR"
+
 # ─── Check curl ───────────────────────────────────────────
 if ! command -v curl &>/dev/null; then
   error "curl is required but not found."
@@ -86,6 +102,11 @@ fi
 success "curl found"
 
 # ─── Check/Install Git ───────────────────────────────────
+# Linux branches no longer swallow installer stderr with `2>/dev/null`
+# so real package-manager errors (missing repos, auth failures, locked
+# dpkg, etc.) surface to the user instead of silently leaving git
+# missing. Unknown package managers fail loudly with a manual-install
+# hint. The Darwin branch is preserved byte-identical.
 if command -v git &>/dev/null; then
   success "Git found: $(git --version 2>&1 | head -1)"
 else
@@ -100,26 +121,41 @@ else
       exit 1
     fi
   elif [[ "$OS" == "Linux" ]]; then
-    if command -v apt-get &>/dev/null; then
-      sudo apt-get install -y git 2>/dev/null || warn "Could not install Git"
-    elif command -v yum &>/dev/null; then
-      sudo yum install -y git 2>/dev/null || warn "Could not install Git"
-    fi
+    case "$PKG_MGR" in
+      apt-get)
+        sudo apt-get install -y git || { error "apt-get failed to install git"; exit 1; }
+        ;;
+      dnf)
+        sudo dnf install -y git || { error "dnf failed to install git"; exit 1; }
+        ;;
+      yum)
+        sudo yum install -y git || { error "yum failed to install git"; exit 1; }
+        ;;
+      *)
+        error "Git not found and no supported package manager detected."
+        echo "  Please install git manually (e.g. from https://git-scm.com/downloads) and re-run this script."
+        exit 1
+        ;;
+    esac
   fi
 
   if command -v git &>/dev/null; then
     success "Git installed: $(git --version 2>&1 | head -1)"
   else
-    warn "Git could not be installed automatically. Please install it manually."
+    error "Git could not be installed automatically. Please install it manually."
+    exit 1
   fi
 fi
 
 # ─── Check/Install Bun ───────────────────────────────────
+# The previous `bash 2>/dev/null` swallowed real installer errors
+# (network failures, architecture mismatches, missing unzip on some
+# Linux distros). Drop the redirect so problems are visible.
 if command -v bun &>/dev/null; then
   success "Bun found: v$(bun --version 2>/dev/null || echo 'unknown')"
 else
   info "Installing Bun runtime..."
-  curl -fsSL https://bun.sh/install | bash 2>/dev/null
+  curl -fsSL https://bun.sh/install | bash
 
   # Add to PATH for this session
   export PATH="$HOME/.bun/bin:$PATH"
@@ -138,6 +174,70 @@ if command -v claude &>/dev/null; then
 else
   warn "Claude Code not found — will install during setup"
 fi
+
+# ─── Runtime Dependency Check ─────────────────────────────
+# Loudly verify the runtime tools PAI relies on (tracked in
+# https://github.com/danielmiessler/Personal_AI_Infrastructure/issues/1065).
+# Missing tools print a package-manager-specific install hint and
+# cause the installer to exit non-zero so problems are caught before
+# users hit them at runtime.
+MISSING_DEPS=()
+
+check_dep() {
+  # check_dep <label> <cmd1> [cmd2 ...]
+  # Passes if any of the supplied commands exist on PATH.
+  local label="$1"; shift
+  local cmd
+  for cmd in "$@"; do
+    if command -v "$cmd" &>/dev/null; then
+      success "$label found ($cmd)"
+      return 0
+    fi
+  done
+  error "$label not found (checked: $*)"
+  MISSING_DEPS+=("$label")
+  return 1
+}
+
+info "Checking runtime dependencies..."
+check_dep "jq" jq || true
+check_dep "audio player (mpg123 or ffplay)" mpg123 ffplay || true
+check_dep "pdftotext (poppler-utils)" pdftotext || true
+
+if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
+  echo ""
+  error "Missing runtime dependencies: ${MISSING_DEPS[*]}"
+  echo ""
+  case "$PKG_MGR" in
+    brew)
+      echo "  Install with Homebrew:"
+      echo "    brew install jq mpg123 poppler"
+      ;;
+    apt-get)
+      echo "  Install with apt-get:"
+      echo "    sudo apt-get install -y jq mpg123 poppler-utils"
+      ;;
+    dnf)
+      echo "  Install with dnf:"
+      echo "    sudo dnf install -y jq mpg123 poppler-utils"
+      ;;
+    yum)
+      echo "  Install with yum:"
+      echo "    sudo yum install -y jq mpg123 poppler-utils"
+      ;;
+    *)
+      echo "  No supported package manager detected. Install these manually:"
+      echo "    - jq:         https://stedolan.github.io/jq/"
+      echo "    - mpg123:     https://www.mpg123.de/  (or ffmpeg for ffplay)"
+      echo "    - pdftotext:  part of poppler-utils / https://poppler.freedesktop.org/"
+      ;;
+  esac
+  echo ""
+  echo "  See: https://github.com/danielmiessler/Personal_AI_Infrastructure/issues/1065"
+  echo ""
+  exit 1
+fi
+success "All runtime dependencies found"
 
 # ─── Launch Installer ────────────────────────────────────
 # Resolve PAI-Install directory (may be sibling or child of script location)
