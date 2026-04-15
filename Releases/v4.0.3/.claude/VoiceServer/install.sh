@@ -14,9 +14,11 @@ NC='\033[0m' # No Color
 
 # Configuration
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
+LOG_PATH="$(pai_log_path)"
 ENV_FILE="$HOME/.env"
 
 echo -e "${BLUE}=====================================================${NC}"

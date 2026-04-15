@@ -7,6 +7,25 @@
 PAI_DIR="${PAI_DIR:-$HOME/.claude}"
 VOICE_SERVER_DIR="$PAI_DIR/VoiceServer"
 
+# Source the shared platform helpers if available. BitBar/SwiftBar runs this
+# from an arbitrary cwd so we resolve the library relative to the script.
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ -r "$SCRIPT_DIR/../lib/platform.sh" ]; then
+    # shellcheck source=../lib/platform.sh
+    . "$SCRIPT_DIR/../lib/platform.sh"
+elif [ -r "$VOICE_SERVER_DIR/lib/platform.sh" ]; then
+    # shellcheck source=/dev/null
+    . "$VOICE_SERVER_DIR/lib/platform.sh"
+fi
+
+# Resolve log path once. Fall back to the historical macOS literal if the
+# helper isn't available (e.g., running from an older checkout).
+if command -v pai_log_path >/dev/null 2>&1; then
+    LOG_PATH="$(pai_log_path)"
+else
+    LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
+fi
+
 # Check if server is running
 if curl -s -f http://localhost:8888/health > /dev/null 2>&1; then
     # Server is running - show green indicator with size
@@ -41,7 +60,7 @@ fi
 
 echo "---"
 echo "Check Status | bash='$VOICE_SERVER_DIR/status.sh' terminal=true"
-echo "View Logs | bash='tail -f ~/Library/Logs/pai-voice-server.log' terminal=true"
+echo "View Logs | bash='tail -f $LOG_PATH' terminal=true"
 echo "---"
 echo "Test Voice | bash='curl -X POST http://localhost:8888/notify -H \"Content-Type: application/json\" -d \"{\\\"message\\\":\\\"Testing voice server\\\"}\"' terminal=false"
 echo "---"

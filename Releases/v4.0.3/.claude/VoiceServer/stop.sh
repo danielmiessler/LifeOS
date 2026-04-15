@@ -2,6 +2,10 @@
 
 # Stop the Voice Server
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
 
@@ -28,9 +32,12 @@ else
     echo -e "${YELLOW}! Voice server is not running${NC}"
 fi
 
-# Kill any remaining processes on port 8888
-if lsof -i :8888 > /dev/null 2>&1; then
+# Kill any remaining processes on port 8888 — uses pai_port_pids which
+# cascades lsof > ss > netstat for cross-platform coverage.
+PORT_PIDS=$(pai_port_pids 8888 || true)
+if [ -n "$PORT_PIDS" ]; then
     echo -e "${YELLOW}> Cleaning up port 8888...${NC}"
-    lsof -ti :8888 | xargs kill -9 2>/dev/null
+    # shellcheck disable=SC2086
+    kill -9 $PORT_PIDS 2>/dev/null || true
     echo -e "${GREEN}OK Port 8888 cleared${NC}"
 fi

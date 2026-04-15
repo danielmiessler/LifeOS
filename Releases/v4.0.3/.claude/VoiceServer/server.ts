@@ -448,6 +448,103 @@ function spawnSafe(command: string, args: string[]): Promise<void> {
 }
 
 // ==========================================================================
+// Cross-platform helpers
+// ==========================================================================
+
+// isWSL — single source of truth for WSL1/WSL2 detection. Shell scripts use
+// the matching `pai_is_wsl` helper in lib/platform.sh. Do NOT duplicate this
+// /proc/version read elsewhere in the TS codebase.
+function isWSL(): boolean {
+  if (process.platform !== 'linux') return false;
+  try {
+    if (!existsSync('/proc/version')) return false;
+    const content = readFileSync('/proc/version', 'utf-8');
+    return /microsoft/i.test(content);
+  } catch {
+    return false;
+  }
+}
+
+// getLogPath — absolute path to the pai-voice-server log file, respecting
+// the platform's conventional location. On macOS this is byte-identical to
+// the historical ~/Library/Logs literal so the Darwin flow is untouched.
+// server.ts currently only emits console.log; this helper exists for
+// symmetry with the shell-side pai_log_path and for future consumers
+// (status endpoint, metrics, etc.) that may need to report the log location.
+function getLogPath(): string {
+  if (process.platform === 'darwin') {
+    return join(homedir(), 'Library', 'Logs', 'pai-voice-server.log');
+  }
+  const xdgData = process.env.XDG_DATA_HOME || join(homedir(), '.local', 'share');
+  return join(xdgData, 'pai', 'logs', 'pai-voice-server.log');
+}
+
+// Resolve the desktop-notification command + arg builder for the current
+// platform. Mirrors the getAudioPlayer() shape introduced for playAudio().
+//
+// Darwin: osascript `display notification "MSG" with title "TITLE" sound
+//         name ""` — byte-identical to the pre-refactor literal at the call
+//         site so macOS behavior is preserved.
+// WSL2:   prefer wsl-notify-send when on PATH; else invoke powershell.exe
+//         with BurntToast (New-BurntToastNotification) if the module is
+//         importable; else fall back to a bare
+//         [Windows.UI.Notifications.ToastNotificationManager] one-liner that
+//         needs no module.
+// Linux:  notify-send "title" "message".
+function getNotificationCmd(
+  title: string,
+  message: string,
+): { command: string; args: string[] } {
+  if (process.platform === 'darwin') {
+    // escapeForAppleScript is applied by the caller before reaching here.
+    const script = `display notification "${message}" with title "${title}" sound name ""`;
+    return { command: '/usr/bin/osascript', args: ['-e', script] };
+  }
+
+  if (isWSL()) {
+    // Prefer the zero-friction native-ish path: wsl-notify-send if installed.
+    if (existsSync('/usr/bin/wsl-notify-send') || existsSync('/usr/local/bin/wsl-notify-send')) {
+      const bin = existsSync('/usr/bin/wsl-notify-send')
+        ? '/usr/bin/wsl-notify-send'
+        : '/usr/local/bin/wsl-notify-send';
+      return { command: bin, args: [`--category=${title}`, message] };
+    }
+
+    // Fall back to powershell.exe via WSL interop. Escape embedded single
+    // quotes for PowerShell by doubling them.
+    const psEscape = (s: string) => s.replace(/'/g, "''");
+    const pTitle = psEscape(title);
+    const pMessage = psEscape(message);
+
+    // Prefer BurntToast when available (widely installed), otherwise fall
+    // back to the bare WinRT ToastNotificationManager one-liner. The `try`
+    // block exits 0 on either path; stderr from Import-Module is swallowed.
+    const script =
+      `$ErrorActionPreference='SilentlyContinue';` +
+      `if (Get-Module -ListAvailable -Name BurntToast) {` +
+      `  Import-Module BurntToast;` +
+      `  New-BurntToastNotification -Text '${pTitle}','${pMessage}'` +
+      `} else {` +
+      `  [Windows.UI.Notifications.ToastNotificationManager,Windows.UI.Notifications,ContentType=WindowsRuntime] | Out-Null;` +
+      `  $template = [Windows.UI.Notifications.ToastNotificationManager]::GetTemplateContent([Windows.UI.Notifications.ToastTemplateType]::ToastText02);` +
+      `  $texts = $template.GetElementsByTagName('text');` +
+      `  $texts.Item(0).AppendChild($template.CreateTextNode('${pTitle}')) | Out-Null;` +
+      `  $texts.Item(1).AppendChild($template.CreateTextNode('${pMessage}')) | Out-Null;` +
+      `  $toast = [Windows.UI.Notifications.ToastNotification]::new($template);` +
+      `  [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('PAI').Show($toast)` +
+      `}`;
+
+    return {
+      command: '/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe',
+      args: ['-NoProfile', '-NonInteractive', '-Command', script],
+    };
+  }
+
+  // Plain Linux desktop.
+  return { command: '/usr/bin/notify-send', args: [title, message] };
+}
+
+// ==========================================================================
 // Core: Send notification with 3-tier voice settings resolution
 // ==========================================================================
 
@@ -545,13 +642,20 @@ async function sendNotification(
     }
   }
 
-  // Display macOS notification (can be disabled via settings.json: notifications.desktop.enabled: false)
+  // Display desktop notification (can be disabled via settings.json: notifications.desktop.enabled: false)
+  // Darwin: osascript display notification (byte-identical to pre-refactor path).
+  // Linux:  notify-send.
+  // WSL2:   wsl-notify-send or powershell.exe BurntToast / ToastNotificationManager.
   if (voiceConfig.desktopNotifications) {
     try {
+      // escapeForAppleScript double-escapes backslashes and quotes — safe for
+      // the Darwin osascript branch. On non-Darwin branches the escaped form
+      // is harmless since notify-send/PowerShell receive the strings as
+      // separate argv entries.
       const escapedTitle = escapeForAppleScript(safeTitle);
       const escapedMessage = escapeForAppleScript(safeMessage);
-      const script = `display notification "${escapedMessage}" with title "${escapedTitle}" sound name ""`;
-      await spawnSafe('/usr/bin/osascript', ['-e', script]);
+      const notifyCmd = getNotificationCmd(escapedTitle, escapedMessage);
+      await spawnSafe(notifyCmd.command, notifyCmd.args);
     } catch (error) {
       console.error("Notification display error:", error);
     }

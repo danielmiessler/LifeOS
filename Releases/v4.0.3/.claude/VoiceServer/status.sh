@@ -2,9 +2,13 @@
 
 # Check status of Voice Server
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
+LOG_PATH="$(pai_log_path)"
 ENV_FILE="$HOME/.env"
 
 # Colors
@@ -45,13 +49,21 @@ else
     echo -e "  ${RED}X Server is not responding${NC}"
 fi
 
-# Check port binding
+# Check port binding — pai_port_pids cascades lsof > ss > netstat.
 echo
 echo -e "${BLUE}Port Status:${NC}"
-if lsof -i :8888 > /dev/null 2>&1; then
-    PROCESS=$(lsof -i :8888 | grep LISTEN | head -1)
+PORT_PIDS=$(pai_port_pids 8888 || true)
+if [ -n "$PORT_PIDS" ]; then
     echo -e "  ${GREEN}OK Port 8888 is in use${NC}"
-    echo "$PROCESS" | awk '{print "  Process: " $1 " (PID: " $2 ")"}'
+    for pid in $PORT_PIDS; do
+        PNAME=""
+        if [ -r "/proc/$pid/comm" ]; then
+            PNAME=$(cat "/proc/$pid/comm" 2>/dev/null || true)
+        elif command -v ps >/dev/null 2>&1; then
+            PNAME=$(ps -p "$pid" -o comm= 2>/dev/null || true)
+        fi
+        echo "  Process: ${PNAME:-unknown} (PID: $pid)"
+    done
 else
     echo -e "  ${YELLOW}! Port 8888 is not in use${NC}"
 fi

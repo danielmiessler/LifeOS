@@ -2,9 +2,13 @@
 
 # Uninstall Voice Server
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-LOG_PATH="$HOME/Library/Logs/pai-voice-server.log"
+LOG_PATH="$(pai_log_path)"
 
 # Colors
 RED='\033[0;31m'
@@ -51,10 +55,13 @@ else
     echo -e "${YELLOW}  LaunchAgent file not found${NC}"
 fi
 
-# Kill any remaining processes
-if lsof -i :8888 > /dev/null 2>&1; then
+# Kill any remaining processes on port 8888 — pai_port_pids cascades
+# lsof > ss > netstat for cross-platform coverage.
+PORT_PIDS=$(pai_port_pids 8888 || true)
+if [ -n "$PORT_PIDS" ]; then
     echo -e "${YELLOW}> Cleaning up port 8888...${NC}"
-    lsof -ti :8888 | xargs kill -9 2>/dev/null
+    # shellcheck disable=SC2086
+    kill -9 $PORT_PIDS 2>/dev/null || true
     echo -e "${GREEN}OK Port 8888 cleared${NC}"
 fi
 

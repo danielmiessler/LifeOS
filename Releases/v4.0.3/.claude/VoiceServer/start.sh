@@ -2,9 +2,12 @@
 
 # Start the Voice Server
 
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# shellcheck source=lib/platform.sh
+. "$SCRIPT_DIR/lib/platform.sh"
+
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Colors
 RED='\033[0;31m'
@@ -42,7 +45,7 @@ if [ $? -eq 0 ]; then
         echo "  Test: curl -X POST http://localhost:8888/notify -H 'Content-Type: application/json' -d '{\"message\":\"Test\"}'"
     else
         echo -e "${YELLOW}! Server started but not responding yet${NC}"
-        echo "  Check logs: tail -f ~/Library/Logs/pai-voice-server.log"
+        echo "  Check logs: tail -f $(pai_log_path)"
     fi
 else
     echo -e "${RED}X Failed to start voice server${NC}"
