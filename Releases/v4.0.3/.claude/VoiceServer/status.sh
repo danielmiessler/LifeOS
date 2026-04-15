@@ -8,6 +8,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
+SYSTEMD_UNIT_NAME="pai-voice.service"
 LOG_PATH="$(pai_log_path)"
 ENV_FILE="$HOME/.env"
 
@@ -23,17 +24,34 @@ echo -e "${BLUE}     PAI Voice Server Status${NC}"
 echo -e "${BLUE}=====================================================${NC}"
 echo
 
-# Check LaunchAgent
+# Check service manager — platform branch.
+# Darwin path preserved byte-identical. Linux/WSL reads systemd --user
+# state via `systemctl is-active` and `is-enabled`.
 echo -e "${BLUE}Service Status:${NC}"
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
-    PID=$(launchctl list | grep "$SERVICE_NAME" | awk '{print $1}')
-    if [ "$PID" != "-" ]; then
-        echo -e "  ${GREEN}OK Service is loaded (PID: $PID)${NC}"
+if pai_is_darwin; then
+    if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
+        PID=$(launchctl list | grep "$SERVICE_NAME" | awk '{print $1}')
+        if [ "$PID" != "-" ]; then
+            echo -e "  ${GREEN}OK Service is loaded (PID: $PID)${NC}"
+        else
+            echo -e "  ${YELLOW}! Service is loaded but not running${NC}"
+        fi
     else
-        echo -e "  ${YELLOW}! Service is loaded but not running${NC}"
+        echo -e "  ${RED}X Service is not loaded${NC}"
     fi
 else
-    echo -e "  ${RED}X Service is not loaded${NC}"
+    if systemctl --user is-active --quiet "$SYSTEMD_UNIT_NAME" 2>/dev/null; then
+        SYSTEMD_PID=$(systemctl --user show "$SYSTEMD_UNIT_NAME" -p MainPID 2>/dev/null | cut -d= -f2)
+        if [ -n "$SYSTEMD_PID" ] && [ "$SYSTEMD_PID" != "0" ]; then
+            echo -e "  ${GREEN}OK Service is active (PID: $SYSTEMD_PID)${NC}"
+        else
+            echo -e "  ${GREEN}OK Service is active${NC}"
+        fi
+    elif systemctl --user list-unit-files "$SYSTEMD_UNIT_NAME" 2>/dev/null | grep -q "$SYSTEMD_UNIT_NAME"; then
+        echo -e "  ${YELLOW}! Service is installed but not running${NC}"
+    else
+        echo -e "  ${RED}X Service is not installed${NC}"
+    fi
 fi
 
 # Check if server is responding

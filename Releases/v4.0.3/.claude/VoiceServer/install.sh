@@ -1,7 +1,10 @@
 #!/bin/bash
 
 # Voice Server Installation Script
-# This script installs the voice server as a macOS service
+# Installs the voice server as a system service:
+#   - macOS   → launchctl LaunchAgent (unchanged, byte-identical)
+#   - Linux   → systemd --user unit
+#   - WSL2    → systemd --user unit (requires systemd-on-WSL enabled)
 
 set -e
 
@@ -18,6 +21,9 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 . "$SCRIPT_DIR/lib/platform.sh"
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
+SYSTEMD_UNIT_NAME="pai-voice.service"
+SYSTEMD_UNIT_DIR="$HOME/.config/systemd/user"
+SYSTEMD_UNIT_PATH="$SYSTEMD_UNIT_DIR/$SYSTEMD_UNIT_NAME"
 LOG_PATH="$(pai_log_path)"
 ENV_FILE="$HOME/.env"
 
@@ -37,17 +43,59 @@ fi
 echo -e "${GREEN}OK Bun is installed${NC}"
 
 # Check for existing installation
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
-    echo -e "${YELLOW}! Voice server is already installed${NC}"
-    read -p "Do you want to reinstall? (y/n): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}> Stopping existing service...${NC}"
-        launchctl unload "$PLIST_PATH" 2>/dev/null || true
-        echo -e "${GREEN}OK Existing service stopped${NC}"
-    else
-        echo "Installation cancelled"
-        exit 0
+# Darwin path preserved byte-identical. On Linux/WSL we probe the
+# systemd --user unit; user is prompted the same way as on macOS.
+if pai_is_darwin; then
+    if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
+        echo -e "${YELLOW}! Voice server is already installed${NC}"
+        read -p "Do you want to reinstall? (y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}> Stopping existing service...${NC}"
+            launchctl unload "$PLIST_PATH" 2>/dev/null || true
+            echo -e "${GREEN}OK Existing service stopped${NC}"
+        else
+            echo "Installation cancelled"
+            exit 0
+        fi
+    fi
+else
+    # Require systemd --user to be reachable. On bare Linux this is
+    # the default; on WSL2 it requires systemd-on-WSL to be enabled
+    # (/etc/wsl.conf: [boot] systemd=true). Fail loudly if not.
+    if ! command -v systemctl >/dev/null 2>&1; then
+        echo -e "${RED}X systemctl not found${NC}"
+        echo "  The Linux voice server installer requires systemd."
+        echo "  Install or enable systemd and re-run this script."
+        exit 1
+    fi
+    if ! systemctl --user list-units --no-pager >/dev/null 2>&1; then
+        echo -e "${RED}X systemd --user session is not reachable${NC}"
+        if pai_is_wsl; then
+            echo "  On WSL2, enable systemd by adding the following to"
+            echo "  /etc/wsl.conf and running 'wsl --shutdown' from Windows:"
+            echo "    [boot]"
+            echo "    systemd=true"
+        else
+            echo "  Ensure systemd --user is available for your session"
+            echo "  (user@${UID}.service should be running)."
+        fi
+        exit 1
+    fi
+    if [ -f "$SYSTEMD_UNIT_PATH" ] \
+       || systemctl --user list-unit-files "$SYSTEMD_UNIT_NAME" 2>/dev/null | grep -q "$SYSTEMD_UNIT_NAME"; then
+        echo -e "${YELLOW}! Voice server is already installed${NC}"
+        read -p "Do you want to reinstall? (y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo -e "${YELLOW}> Stopping existing service...${NC}"
+            systemctl --user stop "$SYSTEMD_UNIT_NAME" 2>/dev/null || true
+            systemctl --user disable "$SYSTEMD_UNIT_NAME" 2>/dev/null || true
+            echo -e "${GREEN}OK Existing service stopped${NC}"
+        else
+            echo "Installation cancelled"
+            exit 0
+        fi
     fi
 fi
 
@@ -86,11 +134,17 @@ if [ "$ELEVENLABS_CONFIGURED" = false ]; then
     echo
 fi
 
-# Create LaunchAgent plist
-echo -e "${YELLOW}> Creating LaunchAgent configuration...${NC}"
-mkdir -p "$HOME/Library/LaunchAgents"
+# Create and load the service unit (platform branch)
+# Darwin path preserved byte-identical: same plist content, same
+# launchctl load invocation. Linux/WSL writes a systemd --user unit
+# at ~/.config/systemd/user/pai-voice.service, templated after the
+# reference unit that ships with PAI on WSL2.
+if pai_is_darwin; then
+    # Create LaunchAgent plist
+    echo -e "${YELLOW}> Creating LaunchAgent configuration...${NC}"
+    mkdir -p "$HOME/Library/LaunchAgents"
 
-cat > "$PLIST_PATH" << EOF
+    cat > "$PLIST_PATH" << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -134,15 +188,59 @@ cat > "$PLIST_PATH" << EOF
 </plist>
 EOF
 
-echo -e "${GREEN}OK LaunchAgent configuration created${NC}"
+    echo -e "${GREEN}OK LaunchAgent configuration created${NC}"
 
-# Load the LaunchAgent
-echo -e "${YELLOW}> Starting voice server service...${NC}"
-launchctl load "$PLIST_PATH" 2>/dev/null || {
-    echo -e "${RED}X Failed to load LaunchAgent${NC}"
-    echo "  Try manually: launchctl load $PLIST_PATH"
-    exit 1
-}
+    # Load the LaunchAgent
+    echo -e "${YELLOW}> Starting voice server service...${NC}"
+    launchctl load "$PLIST_PATH" 2>/dev/null || {
+        echo -e "${RED}X Failed to load LaunchAgent${NC}"
+        echo "  Try manually: launchctl load $PLIST_PATH"
+        exit 1
+    }
+else
+    # Create systemd --user unit
+    echo -e "${YELLOW}> Creating systemd user unit...${NC}"
+    mkdir -p "$SYSTEMD_UNIT_DIR"
+    mkdir -p "$(dirname "$LOG_PATH")"
+
+    BUN_BIN="$(command -v bun)"
+    if [ -z "$BUN_BIN" ]; then
+        echo -e "${RED}X Could not locate bun on PATH${NC}"
+        exit 1
+    fi
+
+    cat > "$SYSTEMD_UNIT_PATH" << EOF
+[Unit]
+Description=PAI Voice Server (ElevenLabs TTS)
+After=default.target
+
+[Service]
+Type=simple
+WorkingDirectory=${SCRIPT_DIR}
+ExecStart=${BUN_BIN} run server.ts
+Restart=on-failure
+RestartSec=3
+StandardOutput=append:${LOG_PATH}
+StandardError=append:${LOG_PATH}
+Environment=HOME=${HOME}
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${HOME}/.bun/bin
+
+[Install]
+WantedBy=default.target
+EOF
+
+    echo -e "${GREEN}OK systemd unit written to $SYSTEMD_UNIT_PATH${NC}"
+
+    # Load and start the service
+    echo -e "${YELLOW}> Starting voice server service...${NC}"
+    systemctl --user daemon-reload
+    systemctl --user enable --now "$SYSTEMD_UNIT_NAME" || {
+        echo -e "${RED}X Failed to start systemd unit${NC}"
+        echo "  Try manually: systemctl --user status $SYSTEMD_UNIT_NAME"
+        echo "  Logs:          journalctl --user -u $SYSTEMD_UNIT_NAME -n 50"
+        exit 1
+    }
+fi
 
 # Wait for server to start
 sleep 2
@@ -172,15 +270,21 @@ echo -e "${GREEN}     Installation Complete!${NC}"
 echo -e "${GREEN}=====================================================${NC}"
 echo
 echo -e "${BLUE}Service Information:${NC}"
-echo "  - Service: $SERVICE_NAME"
+if pai_is_darwin; then
+    echo "  - Service: $SERVICE_NAME (launchd)"
+else
+    echo "  - Service: $SYSTEMD_UNIT_NAME (systemd --user)"
+fi
 echo "  - Status: Running"
 echo "  - Port: 8888"
 echo "  - Logs: $LOG_PATH"
 
 if [ "$ELEVENLABS_CONFIGURED" = true ]; then
     echo "  - Voice: ElevenLabs AI"
-else
+elif pai_is_darwin; then
     echo "  - Voice: macOS Say (fallback)"
+else
+    echo "  - Voice: none (configure ElevenLabs API key in ~/.env)"
 fi
 
 echo

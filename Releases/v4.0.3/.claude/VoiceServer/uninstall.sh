@@ -8,6 +8,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
+SYSTEMD_UNIT_NAME="pai-voice.service"
+SYSTEMD_UNIT_PATH="$HOME/.config/systemd/user/$SYSTEMD_UNIT_NAME"
 LOG_PATH="$(pai_log_path)"
 
 # Colors
@@ -25,7 +27,11 @@ echo
 # Confirm uninstall
 echo -e "${YELLOW}This will:${NC}"
 echo "  - Stop the voice server"
-echo "  - Remove the LaunchAgent"
+if pai_is_darwin; then
+    echo "  - Remove the LaunchAgent"
+else
+    echo "  - Remove the systemd --user unit"
+fi
 echo "  - Keep your server files and configuration"
 echo
 read -p "Are you sure you want to uninstall? (y/n): " -n 1 -r
@@ -37,22 +43,43 @@ if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     exit 0
 fi
 
-# Stop the service if running
+# Stop the service if running — platform branch.
+# Darwin path preserved byte-identical.
 echo -e "${YELLOW}> Stopping voice server...${NC}"
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
-    launchctl unload "$PLIST_PATH" 2>/dev/null
-    echo -e "${GREEN}OK Voice server stopped${NC}"
-else
-    echo -e "${YELLOW}  Service was not running${NC}"
-fi
+if pai_is_darwin; then
+    if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
+        launchctl unload "$PLIST_PATH" 2>/dev/null
+        echo -e "${GREEN}OK Voice server stopped${NC}"
+    else
+        echo -e "${YELLOW}  Service was not running${NC}"
+    fi
 
-# Remove LaunchAgent plist
-echo -e "${YELLOW}> Removing LaunchAgent...${NC}"
-if [ -f "$PLIST_PATH" ]; then
-    rm "$PLIST_PATH"
-    echo -e "${GREEN}OK LaunchAgent removed${NC}"
+    # Remove LaunchAgent plist
+    echo -e "${YELLOW}> Removing LaunchAgent...${NC}"
+    if [ -f "$PLIST_PATH" ]; then
+        rm "$PLIST_PATH"
+        echo -e "${GREEN}OK LaunchAgent removed${NC}"
+    else
+        echo -e "${YELLOW}  LaunchAgent file not found${NC}"
+    fi
 else
-    echo -e "${YELLOW}  LaunchAgent file not found${NC}"
+    if systemctl --user is-active --quiet "$SYSTEMD_UNIT_NAME" 2>/dev/null; then
+        systemctl --user stop "$SYSTEMD_UNIT_NAME" 2>/dev/null || true
+        echo -e "${GREEN}OK Voice server stopped${NC}"
+    else
+        echo -e "${YELLOW}  Service was not running${NC}"
+    fi
+
+    # Remove systemd unit
+    echo -e "${YELLOW}> Removing systemd unit...${NC}"
+    systemctl --user disable "$SYSTEMD_UNIT_NAME" 2>/dev/null || true
+    if [ -f "$SYSTEMD_UNIT_PATH" ]; then
+        rm "$SYSTEMD_UNIT_PATH"
+        systemctl --user daemon-reload 2>/dev/null || true
+        echo -e "${GREEN}OK systemd unit removed${NC}"
+    else
+        echo -e "${YELLOW}  systemd unit file not found${NC}"
+    fi
 fi
 
 # Kill any remaining processes on port 8888 — pai_port_pids cascades

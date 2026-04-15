@@ -8,6 +8,8 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 SERVICE_NAME="com.pai.voice-server"
 PLIST_PATH="$HOME/Library/LaunchAgents/${SERVICE_NAME}.plist"
+SYSTEMD_UNIT_NAME="pai-voice.service"
+SYSTEMD_UNIT_PATH="$HOME/.config/systemd/user/$SYSTEMD_UNIT_NAME"
 
 # Colors
 RED='\033[0;31m'
@@ -17,24 +19,46 @@ NC='\033[0m'
 
 echo -e "${YELLOW}> Starting Voice Server...${NC}"
 
-# Check if LaunchAgent exists
-if [ ! -f "$PLIST_PATH" ]; then
-    echo -e "${RED}X Service not installed${NC}"
-    echo "  Run ./install.sh first to install the service"
-    exit 1
+# Darwin path preserved byte-identical. Linux/WSL uses systemd --user.
+if pai_is_darwin; then
+    # Check if LaunchAgent exists
+    if [ ! -f "$PLIST_PATH" ]; then
+        echo -e "${RED}X Service not installed${NC}"
+        echo "  Run ./install.sh first to install the service"
+        exit 1
+    fi
+
+    # Check if already running
+    if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
+        echo -e "${YELLOW}! Voice server is already running${NC}"
+        echo "  To restart, use: ./restart.sh"
+        exit 0
+    fi
+
+    # Load the service
+    launchctl load "$PLIST_PATH" 2>/dev/null
+    START_RC=$?
+else
+    # Check if systemd unit exists
+    if [ ! -f "$SYSTEMD_UNIT_PATH" ]; then
+        echo -e "${RED}X Service not installed${NC}"
+        echo "  Run ./install.sh first to install the service"
+        exit 1
+    fi
+
+    # Check if already running
+    if systemctl --user is-active --quiet "$SYSTEMD_UNIT_NAME"; then
+        echo -e "${YELLOW}! Voice server is already running${NC}"
+        echo "  To restart, use: systemctl --user restart $SYSTEMD_UNIT_NAME"
+        exit 0
+    fi
+
+    # Start the service
+    systemctl --user start "$SYSTEMD_UNIT_NAME"
+    START_RC=$?
 fi
 
-# Check if already running
-if launchctl list | grep -q "$SERVICE_NAME" 2>/dev/null; then
-    echo -e "${YELLOW}! Voice server is already running${NC}"
-    echo "  To restart, use: ./restart.sh"
-    exit 0
-fi
-
-# Load the service
-launchctl load "$PLIST_PATH" 2>/dev/null
-
-if [ $? -eq 0 ]; then
+if [ $START_RC -eq 0 ]; then
     # Wait for server to start
     sleep 2
 
