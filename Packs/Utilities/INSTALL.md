@@ -373,7 +373,20 @@ Check that the sub-skill's SKILL.md exists in its directory. The routing table i
 ### Sub-skill workflow fails with missing dependency
 
 Individual sub-skills may require external tools:
-- **AudioEditor**: Install ffmpeg (`brew install ffmpeg`)
+- **AudioEditor**: Install ffmpeg
+  <details><summary>macOS</summary>
+
+  ```bash
+  brew install ffmpeg
+  ```
+  </details>
+  <details><summary>Linux / WSL</summary>
+
+  ```bash
+  sudo apt-get install -y ffmpeg    # Debian/Ubuntu/WSL
+  sudo dnf install -y ffmpeg        # Fedora
+  ```
+  </details>
 - **Cloudflare**: Install wrangler (`npm install -g wrangler`)
 - **Fabric**: Install fabric (see fabric docs)
 - **CreateCLI, Evals, PAIUpgrade, Parser**: Install bun (`curl -fsSL https://bun.sh/install | bash`)

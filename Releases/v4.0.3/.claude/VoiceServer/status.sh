@@ -71,6 +71,10 @@ fi
 # Check ElevenLabs configuration
 echo
 echo -e "${BLUE}Voice Configuration:${NC}"
+# Platform-aware fallback messages — Darwin strings preserved
+# byte-identical. On Linux/WSL the server has no built-in TTS
+# fallback when ElevenLabs is not configured, and the status line
+# now says so instead of falsely claiming macOS 'say'.
 if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
     API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | cut -d'=' -f2)
     if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
@@ -80,10 +84,18 @@ if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
             echo "  Voice ID: $VOICE_ID"
         fi
     else
-        echo -e "  ${YELLOW}! Using macOS 'say' (no API key)${NC}"
+        if pai_is_darwin; then
+            echo -e "  ${YELLOW}! Using macOS 'say' (no API key)${NC}"
+        else
+            echo -e "  ${YELLOW}! No TTS fallback (no API key)${NC}"
+        fi
     fi
 else
-    echo -e "  ${YELLOW}! Using macOS 'say' (no configuration)${NC}"
+    if pai_is_darwin; then
+        echo -e "  ${YELLOW}! Using macOS 'say' (no configuration)${NC}"
+    else
+        echo -e "  ${YELLOW}! No TTS fallback (no configuration)${NC}"
+    fi
 fi
 
 # Check logs

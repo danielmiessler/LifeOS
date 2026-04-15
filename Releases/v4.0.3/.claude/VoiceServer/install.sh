@@ -53,6 +53,15 @@ fi
 
 # Check for ElevenLabs configuration
 echo -e "${YELLOW}> Checking ElevenLabs configuration...${NC}"
+# Platform-aware fallback message — the historical string mentioned
+# macOS 'say' regardless of host OS, which is misleading on Linux/WSL
+# where no built-in TTS fallback exists. The Darwin message is kept
+# byte-identical so the macOS flow reads the same as before.
+if pai_is_darwin; then
+    FALLBACK_NOTE="Voice server will use macOS 'say' command as fallback"
+else
+    FALLBACK_NOTE="Voice server will have no TTS fallback without an ElevenLabs API key"
+fi
 if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
     API_KEY=$(grep "ELEVENLABS_API_KEY=" "$ENV_FILE" | cut -d'=' -f2)
     if [ "$API_KEY" != "your_api_key_here" ] && [ -n "$API_KEY" ]; then
@@ -60,12 +69,12 @@ if [ -f "$ENV_FILE" ] && grep -q "ELEVENLABS_API_KEY=" "$ENV_FILE"; then
         ELEVENLABS_CONFIGURED=true
     else
         echo -e "${YELLOW}! ElevenLabs API key not configured${NC}"
-        echo "  Voice server will use macOS 'say' command as fallback"
+        echo "  $FALLBACK_NOTE"
         ELEVENLABS_CONFIGURED=false
     fi
 else
     echo -e "${YELLOW}! No ElevenLabs configuration found${NC}"
-    echo "  Voice server will use macOS 'say' command as fallback"
+    echo "  $FALLBACK_NOTE"
     ELEVENLABS_CONFIGURED=false
 fi
 

@@ -19,6 +19,24 @@ echo -e "${BLUE}     PAI Voice Menu Bar Installation${NC}"
 echo -e "${BLUE}=====================================================${NC}"
 echo
 
+# ─── Platform guard ──────────────────────────────────────
+# SwiftBar and BitBar are macOS-only. On Linux and WSL there is no
+# equivalent persistent tray plugin host, and the plan scope is to
+# deliver notifications via notify-send / wsl-notify-send from the
+# voice server itself (see getNotificationCmd() in server.ts). Exit
+# cleanly with exit 0 so CI pipelines and cross-platform bootstrap
+# scripts can invoke this unconditionally without failing.
+if [ "$(uname -s)" != "Darwin" ]; then
+    echo -e "${YELLOW}! SwiftBar menu bar indicator is macOS-only.${NC}"
+    echo
+    echo "  On Linux and WSL, PAI delivers voice-server notifications via"
+    echo "  notify-send (Linux) or wsl-notify-send / BurntToast (WSL)."
+    echo "  See VoiceServer/server.ts getNotificationCmd() for details."
+    echo
+    echo "  Skipping menu bar install."
+    exit 0
+fi
+
 # Check if SwiftBar is installed
 if [ -d "/Applications/SwiftBar.app" ]; then
     echo -e "${GREEN}OK SwiftBar is installed${NC}"
