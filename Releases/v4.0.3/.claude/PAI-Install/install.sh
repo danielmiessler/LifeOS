@@ -154,8 +154,11 @@ fi
 info "Launching installer..."
 echo ""
 
-# Auto-detect headless/SSH environments and fall back to CLI mode
-if [ -z "$DISPLAY" ] && [ -z "$WAYLAND_DISPLAY" ] && [ "$(uname)" != "Darwin" ]; then
+# Auto-detect headless/SSH environments and fall back to CLI mode.
+# Use ${VAR:-} to tolerate `set -u` (nounset, enabled on line 8) — on SSH/headless
+# Linux hosts DISPLAY and WAYLAND_DISPLAY are typically unset, which would abort
+# the script before the detection runs.
+if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
     INSTALL_MODE="cli"
     info "Headless environment detected — using CLI installer."
 else

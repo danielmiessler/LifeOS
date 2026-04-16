@@ -15,7 +15,18 @@ import { existsSync } from "fs";
 
 const args = process.argv.slice(2);
 const modeIdx = args.indexOf("--mode");
-const mode = modeIdx >= 0 ? args[modeIdx + 1] : "gui";
+
+// Auto-detect headless (no DISPLAY/WAYLAND_DISPLAY on non-Darwin) when --mode
+// is omitted. install.sh already does this when invoked via bash, but running
+// main.ts directly (e.g. `bun PAI-Install/main.ts`) bypassed that check and
+// unconditionally launched the Electron GUI, which fails on headless Linux.
+function defaultMode(): "gui" | "cli" {
+  if (process.platform === "darwin") return "gui";
+  if (!process.env.DISPLAY && !process.env.WAYLAND_DISPLAY) return "cli";
+  return "gui";
+}
+
+const mode = modeIdx >= 0 ? args[modeIdx + 1] : defaultMode();
 
 const ROOT = import.meta.dir;
 
