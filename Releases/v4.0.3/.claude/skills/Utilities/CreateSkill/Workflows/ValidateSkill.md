@@ -150,6 +150,22 @@ Verify:
 - No `backups/` directory inside skill
 - Reference docs at skill root (not in Workflows/)
 
+### Sub-Skill Frontmatter
+
+**If this is a nested sub-skill** (lives at depth ≥ 2 under
+`skills/`, e.g., `skills/<Parent>/<SubSkill>/SKILL.md`), its YAML
+frontmatter MUST set `user-invocable: false`:
+
+```bash
+grep -q '^user-invocable: false$' ~/.claude/skills/[Parent]/[SubSkill]/SKILL.md
+```
+
+Why: Claude Code auto-indexes every `SKILL.md` and advertises each
+as a `/slash-command` tip. Sub-skills are routed to by the parent,
+not invoked by the user, so they must be hidden from the `/` menu.
+
+See `PAI/SKILLSYSTEM.md § Sub-Skill Frontmatter` for the full rule.
+
 ---
 
 ## Step 7a: Check CLI-First Integration (for skills with CLI tools)
@@ -216,6 +232,7 @@ grep -l "Intent-to-Flag" ~/.claude/skills/[SkillName]/Workflows/*.md
 ### Structure
 - [ ] `tools/` directory exists
 - [ ] No `backups/` inside skill
+- [ ] Nested sub-skills set `user-invocable: false` in frontmatter
 
 ### CLI-First Integration (for skills with CLI tools)
 - [ ] CLI tools expose configuration via flags (not hardcoded)

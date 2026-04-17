@@ -1,6 +1,7 @@
 ---
 name: Cloudflare
 description: Deploy and manage Cloudflare Workers, Pages, and services via Code Mode MCP (API queries) + wrangler (deploys). OAuth auth for wrangler (tokens lack Pages perms). USE WHEN Cloudflare, worker, deploy, Pages, MCP server, wrangler, DNS, KV, R2, D1, Vectorize.
+user-invocable: false
 ---
 
 ## Customization

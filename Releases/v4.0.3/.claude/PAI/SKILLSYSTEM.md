@@ -40,6 +40,66 @@ If a skill does not follow this structure, it is not properly configured and wil
 
 ---
 
+## Sub-Skill Frontmatter (MANDATORY)
+
+**Every nested sub-skill `SKILL.md` MUST set `user-invocable: false`
+in its YAML frontmatter.**
+
+### Why
+
+Claude Code auto-indexes every `SKILL.md` file in the `skills/` tree
+and advertises each one as an invokable slash-command tip. PAI
+organizes skills hierarchically — a top-level `SKILL.md` is
+user-invokable, but sub-skills nested underneath are routed to by
+the parent's Workflow Routing table and are NOT meant to be invoked
+by the user directly. Without the `user-invocable: false` flag,
+Claude Code advertises broken tips like `/annual-reports` that do
+not work when the user tries them, eroding trust in every tip the
+system emits.
+
+The `user-invocable: false` frontmatter field is the spec-blessed
+mechanism for this. From the Claude Code Skills documentation:
+
+> `user-invocable` — Set to `false` to hide from the `/` menu. Use
+> for background knowledge users shouldn't invoke directly.
+> Default: `true`.
+
+Reference: https://code.claude.com/docs/en/skills (Frontmatter
+reference table).
+
+### Correct frontmatter for a nested sub-skill
+
+```yaml
+---
+name: AnnualReports
+description: [...]. USE WHEN annual reports, security trends, [...].
+user-invocable: false
+---
+```
+
+### Rule
+
+- **Top-level skills** (`skills/<Name>/SKILL.md`): no
+  `user-invocable` field (defaults to `true`, user-invokable).
+- **Nested sub-skills** (`skills/<Parent>/<SubSkill>/SKILL.md` and
+  deeper): MUST include `user-invocable: false`.
+
+Parent skill routing tables continue to reference sub-skill paths
+as before — `user-invocable: false` hides the skill from the `/`
+menu but does not prevent Claude from reading the file when
+directed by the parent.
+
+### Validator check
+
+```bash
+# Every nested SKILL.md must contain `user-invocable: false`
+find ~/.claude/skills -mindepth 3 -name SKILL.md \
+  -exec grep -L '^user-invocable: false$' {} +
+# MUST return empty.
+```
+
+---
+
 ## Personal vs System Skills (CRITICAL)
 
 **Skills are classified into two categories:**

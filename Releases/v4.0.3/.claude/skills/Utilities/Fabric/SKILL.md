@@ -1,6 +1,7 @@
 ---
 name: Fabric
 description: 240+ specialized prompt patterns for content analysis, extraction, and transformation — run patterns, sync from repo, create threat models, summarize. USE WHEN fabric, fabric pattern, run fabric, update patterns, sync fabric, summarize with fabric, create threat model, analyze with fabric.
+user-invocable: false
 ---
 
 ## Customization

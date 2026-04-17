@@ -1,6 +1,7 @@
 ---
 name: AnnualReports
 description: Aggregate and analyze annual security reports from major vendors — extract trends, compare threat landscapes year-over-year, produce synthesized threat intelligence summaries. Fetch, list, and update report sources. USE WHEN annual reports, security reports, threat reports, industry reports, vendor reports, threat landscape, fetch report, list sources, update sources.
+user-invocable: false
 ---
 
 ## Customization

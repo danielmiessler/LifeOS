@@ -1,6 +1,7 @@
 ---
 name: PromptInjection
 description: Test LLM applications for prompt injection vulnerabilities — jailbreak attempts, system prompt extraction, context manipulation, guardrail bypass techniques, direct injection, indirect injection, multi-stage attacks, and reconnaissance. USE WHEN prompt injection, jailbreak, LLM security, AI security assessment, pentest AI application, test chatbot, guardrail bypass, direct injection, indirect injection, RAG poisoning, multi-stage attack, complete assessment, reconnaissance.
+user-invocable: false
 ---
 
 ## Customization

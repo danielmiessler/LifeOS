@@ -1,6 +1,7 @@
 ---
 name: Prompting
 description: Meta-prompting system that generates optimized prompts using templates, standards, and patterns. Produces structured prompts with role, context, and output format. USE WHEN meta-prompting, template generation, prompt optimization, programmatic prompt composition, render template, validate template, prompt engineering.
+user-invocable: false
 ---
 
 ## Customization

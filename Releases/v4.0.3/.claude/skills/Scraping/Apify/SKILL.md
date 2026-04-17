@@ -1,6 +1,7 @@
 ---
 name: Apify
 description: Social media scraping, business data, e-commerce via Apify actors — with auto-update workflow for actor catalog. USE WHEN Twitter, Instagram, LinkedIn, TikTok, YouTube, Facebook, Google Maps, Amazon scraping, Apify, update Apify actors, social media scraping, lead generation, web scraper.
+user-invocable: false
 ---
 
 ## Customization

@@ -1,6 +1,7 @@
 ---
 name: SECUpdates
 description: Security news from tldrsec, no.security, Krebs, Schneier, and other sources. USE WHEN security news, security updates, what's new in security, breaches, security research, sec updates, tldrsec, Krebs, Schneier.
+user-invocable: false
 ---
 
 ## Customization

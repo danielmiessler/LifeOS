@@ -1,6 +1,7 @@
 ---
 name: Science
 description: Hypothesis-test-analyze cycles for systematic problem-solving — the meta-skill governing all others. Includes define goal, generate hypotheses, design experiment, measure results, analyze results, iterate, full cycle, quick diagnosis, and structured investigation. USE WHEN think about, figure out, try approaches, experiment with, iterate on, improve, optimize, define goal, generate hypotheses, design experiment, measure results, analyze results, full cycle, quick diagnosis, structured investigation, science, hypothesis.
+user-invocable: false
 ---
 
 ## Customization

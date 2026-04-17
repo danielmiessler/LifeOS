@@ -1,6 +1,7 @@
 ---
 name: Evals
 description: Objective eval metrics via code/model/human graders with pass@k/pass^k scoring. USE WHEN eval, evaluate, test agent, benchmark, verify behavior, regression test, capability test, run eval, compare models, compare prompts, create judge, create use case, view results, failure to task, suite manager, transcript capture, trial runner.
+user-invocable: false
 ---
 
 ## Customization

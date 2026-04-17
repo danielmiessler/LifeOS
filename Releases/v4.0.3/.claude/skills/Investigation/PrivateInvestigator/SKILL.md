@@ -1,6 +1,7 @@
 ---
 name: PrivateInvestigator
 description: Ethical people-finding using 15 parallel research agents (45 search threads) across public records, social media, reverse lookups. Public data only, no pretexting. USE WHEN find person, locate, reconnect, people search, skip trace, reverse lookup, social media search, public records search, verify identity.
+user-invocable: false
 ---
 
 ## Customization

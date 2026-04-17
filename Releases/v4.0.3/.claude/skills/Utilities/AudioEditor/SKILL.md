@@ -1,6 +1,7 @@
 ---
 name: AudioEditor
 description: AI-powered audio/video editing — transcription, intelligent cut detection, automated editing with crossfades, and optional cloud polish. USE WHEN clean audio, edit audio, remove filler words, clean podcast, remove ums, fix audio, cut dead air, polish audio, clean recording, transcribe and edit.
+user-invocable: false
 ---
 
 # AudioEditor

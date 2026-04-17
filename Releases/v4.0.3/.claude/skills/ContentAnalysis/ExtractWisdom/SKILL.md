@@ -1,6 +1,7 @@
 ---
 name: ExtractWisdom
 description: Content-adaptive wisdom extraction — detects what domains exist in content and builds custom sections (not static IDEAS/QUOTES). Produces tailored insight reports from videos, podcasts, articles. USE WHEN extract wisdom, analyze video, analyze podcast, extract insights, what's interesting, extract from YouTube, what did I miss, key takeaways.
+user-invocable: false
 ---
 
 ## Customization

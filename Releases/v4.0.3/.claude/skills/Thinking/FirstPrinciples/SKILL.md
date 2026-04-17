@@ -1,6 +1,7 @@
 ---
 name: FirstPrinciples
 description: Decompose to axioms, challenge inherited assumptions, reconstruct from verified truths. USE WHEN first principles, fundamental, root cause, decompose, challenge assumptions, rebuild from scratch.
+user-invocable: false
 ---
 
 ## Customization

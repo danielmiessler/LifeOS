@@ -1,6 +1,7 @@
 ---
 name: Xlsx
 description: Create, read, analyze Excel workbooks — formulas, financial models, data analysis, recalculation, and CSV/TSV conversion. USE WHEN xlsx, Excel, spreadsheet, formulas, financial model, data analysis.
+user-invocable: false
 ---
 
 # Requirements for Outputs

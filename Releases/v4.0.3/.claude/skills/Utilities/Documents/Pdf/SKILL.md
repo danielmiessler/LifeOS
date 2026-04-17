@@ -1,6 +1,7 @@
 ---
 name: Pdf
 description: Create, merge, split, extract text/tables from PDFs, fill forms, add watermarks, and convert to/from other formats. USE WHEN pdf, PDF file, merge PDF, extract tables, fill form, split PDF.
+user-invocable: false
 ---
 
 # PDF Processing Guide

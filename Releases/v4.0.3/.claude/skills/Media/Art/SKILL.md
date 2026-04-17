@@ -1,6 +1,7 @@
 ---
 name: Art
 description: Generate illustrations, technical diagrams, mermaid flowcharts, infographics, header images, thumbnails, comics, and PAI pack icons using multiple rendering backends. USE WHEN art, header images, visualizations, mermaid, flowchart, technical diagram, infographic, PAI icon, pack icon, YouTube thumbnails, ad hoc thumbnails, annotated screenshots, aphorisms, comics, comparisons, D3 dashboards, embossed logo wallpaper, essay illustration, frameworks, maps, recipe cards, remove background, stats, taxonomies, timelines, brand wallpaper, visualize, generate image, Midjourney, compose thumbnail, generate prompt.
+user-invocable: false
 ---
 
 # Art Skill

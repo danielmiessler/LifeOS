@@ -144,6 +144,36 @@ skills/OSINT/Workflows/CompanyDueDiligence.md
 
 **Rule:** If you need to organize many files, use clear filenames NOT subdirectories.
 
+### Nested Sub-Skill Frontmatter
+
+**Every nested `SKILL.md` (depth ≥ 2) MUST set `user-invocable: false`
+in its YAML frontmatter.**
+
+```bash
+# Every nested SKILL.md must have the flag
+find ~/.claude/skills -mindepth 3 -name SKILL.md \
+  -exec grep -L '^user-invocable: false$' {} +
+# MUST return empty.
+```
+
+Why: Claude Code auto-indexes every `SKILL.md` and advertises each
+as a `/slash-command` tip. Nested sub-skills are routed to by the
+parent, not invoked by the user, so they must be hidden from the `/`
+menu via the `user-invocable: false` frontmatter field.
+
+When canonicalizing a nested sub-skill, add the field to its
+frontmatter if missing:
+
+```yaml
+---
+name: SubSkillName
+description: [...]
+user-invocable: false
+---
+```
+
+See `PAI/SKILLSYSTEM.md § Sub-Skill Frontmatter` for the full rule.
+
 ---
 
 ## Step 6: Convert YAML Frontmatter
@@ -290,6 +320,7 @@ Run checklist:
 - [ ] Workflows contain ONLY work execution procedures
 - [ ] Reference docs live at skill root (not in Workflows/)
 - [ ] No `backups/` directory inside skill
+- [ ] Nested sub-skills set `user-invocable: false` in frontmatter
 
 ---
 

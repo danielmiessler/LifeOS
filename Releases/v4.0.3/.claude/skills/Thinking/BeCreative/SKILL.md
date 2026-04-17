@@ -1,6 +1,7 @@
 ---
 name: BeCreative
 description: Divergent ideation via Verbalized Sampling + extended thinking (1.6-2.1x diversity). USE WHEN be creative, deep thinking, brainstorm, divergent ideas, creative solutions, maximum creativity, tree of thoughts, idea generation, domain specific creativity, technical creativity, standard creativity.
+user-invocable: false
 ---
 
 ## Customization

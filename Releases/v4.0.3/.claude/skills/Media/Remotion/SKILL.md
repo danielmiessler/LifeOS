@@ -1,6 +1,7 @@
 ---
 name: Remotion
 description: Programmatic video creation with React via Remotion — compositions, animations, motion graphics, rendered to MP4. USE WHEN video, animation, motion graphics, video rendering, React video, intro video, YouTube video, TikTok video, video production, render video, content to animation, animate content, video overlay.
+user-invocable: false
 ---
 
 ## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)

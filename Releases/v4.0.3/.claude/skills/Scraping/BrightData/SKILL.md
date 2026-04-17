@@ -1,6 +1,7 @@
 ---
 name: BrightData
 description: 4-tier progressive URL scraping and multi-page crawling — WebFetch, then Chrome-header curl, then Playwright browser, then Bright Data proxy. Auto-escalates when lower tiers fail. USE WHEN Bright Data, scrape URL, web scraping, site blocking me, can't access, bot detection, crawl site, crawl pages, spider, CAPTCHA, four tier scrape, progressive scraping, Chrome headers.
+user-invocable: false
 ---
 
 ## Customization

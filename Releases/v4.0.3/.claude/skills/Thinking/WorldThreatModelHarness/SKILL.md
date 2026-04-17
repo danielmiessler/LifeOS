@@ -1,6 +1,7 @@
 ---
 name: WorldThreatModelHarness
 description: Stress-test ideas, strategies, and investments across 11 time horizons (6mo-50yr). Update and view world models. USE WHEN threat model, world model, test idea, test strategy, future analysis, test investment, test against future, stress test idea, time horizon analysis, update models, view models, refresh models, model status.
+user-invocable: false
 ---
 
 # World Threat Model Harness
