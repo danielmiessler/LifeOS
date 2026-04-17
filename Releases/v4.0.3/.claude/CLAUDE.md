@@ -51,6 +51,15 @@ FOR: Multi-step, complex, or difficult work. Troubleshooting, debugging, buildin
 
 - **Mandatory output format** — Every response MUST use exactly one of the output formats above (ALGORITHM, NATIVE, or MINIMAL). No freeform output.
 - **Response format before questions** — Always complete the current response format output FIRST, then invoke AskUserQuestion at the end.
+- **Modifying this file** — This file is generated from `CLAUDE.md.template` by `BuildCLAUDE.ts`. Do not edit `CLAUDE.md` directly — changes will be overwritten on next session. To modify: (1) edit `CLAUDE.md.template`, (2) run `bun PAI/Tools/BuildCLAUDE.ts` to regenerate, (3) inform the user that their manual post-build verification step is needed before the next session.
+
+---
+
+### Behavioral Rules
+
+@PAI/AISTEERINGRULES.md
+
+@PAI/USER/AISTEERINGRULES.md
 
 ---
 

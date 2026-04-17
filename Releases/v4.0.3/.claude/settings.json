@@ -888,8 +888,6 @@
   "loadAtStartup": {
     "_docs": "Files force-loaded into session context at startup by LoadContext.hook.ts. Paths relative to PAI_DIR. Injected as <system-reminder> blocks.",
     "files": [
-      "PAI/AISTEERINGRULES.md",
-      "PAI/USER/AISTEERINGRULES.md",
       "PAI/USER/PROJECTS/PROJECTS.md"
     ]
   },
