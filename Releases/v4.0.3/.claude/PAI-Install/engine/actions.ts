@@ -152,6 +152,71 @@ function tryExec(cmd: string, timeout = 30000): string | null {
   }
 }
 
+/**
+ * Set +x on files that actually need to be executable — shell scripts and
+ * any file whose first two bytes are `#!` (shebang). Walks paiDir recursively,
+ * skipping .git and node_modules. Returns the number of files touched.
+ *
+ * Replaces the previous `chmod -R 755 paiDir` which flipped every data file
+ * (.md/.json/.yaml/.txt/etc.) to executable and, when paiDir is a git-managed
+ * tree, produced thousands of mode-only diffs on every upgrade.
+ *
+ * Extension list for shebang-check is conservative — covers common script
+ * types while avoiding reads on likely-binary files.
+ */
+function setExecutableForScripts(root: string): number {
+  let changed = 0;
+
+  const isShebangCandidate = (name: string): boolean =>
+    name.endsWith(".ts") ||
+    name.endsWith(".js") ||
+    name.endsWith(".mjs") ||
+    name.endsWith(".cjs") ||
+    name.endsWith(".py");
+
+  const walk = (dir: string): void => {
+    let entries;
+    try {
+      entries = readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+
+    for (const entry of entries) {
+      if (entry.name === ".git" || entry.name === "node_modules") continue;
+      const p = join(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        walk(p);
+        continue;
+      }
+      if (!entry.isFile()) continue;
+
+      let needsExec = entry.name.endsWith(".sh");
+      if (!needsExec && isShebangCandidate(entry.name)) {
+        try {
+          const buf = readFileSync(p);
+          needsExec = buf.length >= 2 && buf[0] === 0x23 && buf[1] === 0x21;
+        } catch {
+          // unreadable — skip
+        }
+      }
+
+      if (needsExec) {
+        try {
+          chmodSync(p, 0o755);
+          changed++;
+        } catch {
+          // mode change failed — non-fatal
+        }
+      }
+    }
+  };
+
+  walk(root);
+  return changed;
+}
+
 // ─── User Context Migration (v2.5/v3.0 → v4.x) ─────────────────
 //
 // In v2.5–v3.0, user context (ABOUTME.md, TELOS/, CONTACTS.md, etc.)
@@ -770,10 +835,16 @@ export async function runConfiguration(
     writeFileSync(rcPath, `${marker}\n${aliasLine}\n`);
   }
 
-  // Fix permissions
+  // Fix permissions — only on files that actually need +x (shell scripts and
+  // files with a #! shebang). The previous `chmod -R 755 ${paiDir}` flipped
+  // every .md/.json/.yaml under paiDir to executable, producing 1000+ line
+  // mode-only diffs in user-managed git repos on every upgrade.
   await emit({ event: "progress", step: "configuration", percent: 90, detail: "Setting permissions..." });
   try {
-    tryExec(`chmod -R 755 "${paiDir}"`, 10000);
+    const changed = setExecutableForScripts(paiDir);
+    if (changed > 0) {
+      await emit({ event: "message", content: `Made ${changed} script file(s) executable.` });
+    }
   } catch {
     // Non-fatal
   }
