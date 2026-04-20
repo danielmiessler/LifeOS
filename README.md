@@ -356,6 +356,23 @@ cp -r .claude ~/ && cd ~/.claude && bash install.sh
 
 **After installation:** Run `source ~/.zshrc && pai` to launch PAI.
 
+### Headless / Server Install (no GUI)
+
+The default `install.sh` launches an Electron GUI, which fails on headless
+Linux servers with errors like `libnss3.so: cannot open shared object file`.
+The installer ships a terminal wizard for exactly this case — skip
+`install.sh` and invoke the CLI mode directly:
+
+```bash
+# Clone and stage the release as usual
+git clone https://github.com/danielmiessler/Personal_AI_Infrastructure.git
+cd Personal_AI_Infrastructure/Releases/v4.0.3
+cp -r .claude ~/
+
+# Run the terminal wizard instead of the Electron GUI
+cd ~/.claude && bun run PAI-Install/main.ts --mode cli
+```
+
 ### Upgrading from a Previous Version
 
 ```bash
