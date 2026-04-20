@@ -19,6 +19,15 @@
 set -o pipefail
 
 # ─────────────────────────────────────────────────────────────────────────────
+# OPTIONS
+# ─────────────────────────────────────────────────────────────────────────────
+
+COMPACT=false
+for arg in "$@"; do
+    [ "$arg" = "--compact" ] && COMPACT=true
+done
+
+# ─────────────────────────────────────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -766,160 +775,62 @@ calc_bar_width() {
     echo "$buckets"
 }
 
+# ─────────────────────────────────────────────────────────────────────────────
+# LINE TRUNCATION FILTER
+# ─────────────────────────────────────────────────────────────────────────────
+# Claude Code's statusline subprocess gets a stale TTY width, so dynamic
+# detection is unreliable. Instead, truncate all lines to a fixed 72 visible
+# chars (matching the separator width). Lines already ≤72 pass through unchanged.
+# ANSI escape codes are excluded from width measurement.
+
+truncate_output() {
+    python3 -c "
+import sys, re
+
+MAX = 72
+ANSI = re.compile(r'\033\[[0-9;]*m')
+
+for raw_line in sys.stdin:
+    line = raw_line.rstrip('\n')
+    vis = ANSI.sub('', line)
+    if len(vis) <= MAX:
+        print(line)
+        continue
+    target = MAX - 1
+    out = []
+    vis_count = 0
+    i = 0
+    while i < len(line) and vis_count < target:
+        if line[i] == '\033' and i + 1 < len(line) and line[i + 1] == '[':
+            j = i + 2
+            while j < len(line) and line[j] != 'm':
+                j += 1
+            out.append(line[i:j + 1])
+            i = j + 1
+        else:
+            out.append(line[i])
+            vis_count += 1
+            i += 1
+    print(''.join(out) + '\u2026\033[0m')
+"
+}
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINE 0: PAI BRANDING (location, time, weather)
 # ═══════════════════════════════════════════════════════════════════════════════
 # NOTE: location_city, location_state, weather_str are populated by PARALLEL PREFETCH
 
-current_time=$(date +"%H:%M")
-
-# Session label: uppercase 2-word label
-session_display=""
-if [ -n "$SESSION_LABEL" ]; then
-    session_display=$(echo "$SESSION_LABEL" | tr '[:lower:]' '[:upper:]')
-fi
-
-# Output PAI branding line
-case "$MODE" in
-    nano)
-        printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${SLATE_600}│ ────────────${RESET}\n"
-        printf "${PAI_TIME}${current_time}${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
-        printf "${SLATE_400}ENV:${RESET} ${SLATE_500}${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_400}S:${SLATE_300}${skills_count}${RESET}\n"
-        ;;
-    micro)
-        if [ -n "$session_display" ]; then
-            local_left="── │ PAI STATUSLINE │"
-            local_right="${session_display}"
-            local_left_len=${#local_left}
-            local_right_len=${#session_display}
-            local_fill=$((72 - local_left_len - local_right_len))
-            [ "$local_fill" -lt 2 ] && local_fill=2
-            local_dashes=$(printf '%*s' "$local_fill" '' | sed 's/ /─/g')
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
-        else
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ──────────────────${RESET}\n"
-        fi
-        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
-        printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${SLATE_400}S:${SLATE_300}${skills_count}${RESET} ${SLATE_400}W:${SLATE_300}${workflows_count}${RESET} ${SLATE_400}H:${SLATE_300}${hooks_count}${RESET}\n"
-        ;;
-    mini)
-        if [ -n "$session_display" ]; then
-            local_left="── │ PAI STATUSLINE │"
-            local_right="${session_display}"
-            local_left_len=${#local_left}
-            local_right_len=${#session_display}
-            local_fill=$((72 - local_left_len - local_right_len))
-            [ "$local_fill" -lt 2 ] && local_fill=2
-            local_dashes=$(printf '%*s' "$local_fill" '' | sed 's/ /─/g')
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
-        else
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ────────────────────────────────────────${RESET}\n"
-        fi
-        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
-        printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET}${SLATE_300}${skills_count}${RESET} ${WIELD_WORKFLOWS}WF:${RESET}${SLATE_300}${workflows_count}${RESET} ${WIELD_HOOKS}Hooks:${RESET}${SLATE_300}${hooks_count}${RESET}\n"
-        ;;
-    normal)
-        if [ -n "$session_display" ]; then
-            local_left="── │ PAI STATUSLINE │"
-            local_right="${session_display}"
-            local_left_len=${#local_left}
-            local_right_len=${#session_display}
-            local_fill=$((72 - local_left_len - local_right_len))
-            [ "$local_fill" -lt 2 ] && local_fill=2
-            local_dashes=$(printf '%*s' "$local_fill" '' | sed 's/ /─/g')
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
-        else
-            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ──────────────────────────────────────────────────${RESET}\n"
-        fi
-        printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
-        printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET} ${SLATE_300}${skills_count}${RESET} ${SLATE_600}│${RESET} ${WIELD_WORKFLOWS}WF:${RESET} ${SLATE_300}${workflows_count}${RESET} ${SLATE_600}│${RESET} ${WIELD_HOOKS}Hooks:${RESET} ${SLATE_300}${hooks_count}${RESET}\n"
-        ;;
-esac
-printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE 1: CONTEXT
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# Format duration
-duration_sec=$((duration_ms / 1000))
-if   [ "$duration_sec" -ge 3600 ]; then time_display="$((duration_sec / 3600))h$((duration_sec % 3600 / 60))m"
-elif [ "$duration_sec" -ge 60 ];   then time_display="$((duration_sec / 60))m$((duration_sec % 60))s"
-else time_display="${duration_sec}s"
-fi
-
-# Context display - scale to compaction threshold if configured
-context_max="${context_max:-200000}"
-max_k=$((context_max / 1000))
-
-# Read compaction threshold from settings (default 100 = no scaling)
-COMPACTION_THRESHOLD=$(jq -r '.contextDisplay.compactionThreshold // 100' "$SETTINGS_FILE" 2>/dev/null)
-COMPACTION_THRESHOLD="${COMPACTION_THRESHOLD:-100}"
-
-# Get raw percentage from Claude Code
-raw_pct="${context_pct%%.*}"  # Remove decimals
-[ -z "$raw_pct" ] && raw_pct=0
-
-# Scale percentage: if threshold is 62, then 62% raw = 100% displayed
-# Formula: display_pct = (raw_pct * 100) / threshold
-if [ "$COMPACTION_THRESHOLD" -lt 100 ] && [ "$COMPACTION_THRESHOLD" -gt 0 ]; then
-    display_pct=$((raw_pct * 100 / COMPACTION_THRESHOLD))
-    # Cap at 100% (could exceed if past compaction point)
-    [ "$display_pct" -gt 100 ] && display_pct=100
-else
-    display_pct="$raw_pct"
-fi
-
-# Color based on scaled percentage (same thresholds work for scaled 0-100%)
-if [ "$display_pct" -ge 80 ]; then
-    pct_color="$ROSE"                  # Red: 80%+ - getting full
-elif [ "$display_pct" -ge 60 ]; then
-    pct_color='\033[38;2;251;146;60m'  # Orange: 60-80%
-elif [ "$display_pct" -ge 40 ]; then
-    pct_color='\033[38;2;251;191;36m'  # Yellow: 40-60%
-else
-    pct_color="$EMERALD"               # Green: <40%
-fi
-
-# Calculate bar width to match statusline content width (72 chars)
-bar_width=$(calc_bar_width "$MODE")
-
-case "$MODE" in
-    nano)
-        bar=$(render_context_bar $bar_width $display_pct)
-        printf "${CTX_PRIMARY}◉${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
-        ;;
-    micro)
-        bar=$(render_context_bar $bar_width $display_pct)
-        printf "${CTX_PRIMARY}◉${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
-        ;;
-    mini)
-        bar=$(render_context_bar $bar_width $display_pct)
-        printf "${CTX_PRIMARY}◉${RESET} ${CTX_SECONDARY}CONTEXT:${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
-        ;;
-    normal)
-        bar=$(render_context_bar $bar_width $display_pct)
-        printf "${CTX_PRIMARY}◉${RESET} ${CTX_SECONDARY}CONTEXT:${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
-        ;;
-esac
-printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# LINE: ACCOUNT USAGE (Claude API limits)
-# ═══════════════════════════════════════════════════════════════════════════════
-# NOTE: usage_5h, usage_7d, usage_5h_reset, usage_7d_reset populated by PARALLEL PREFETCH
+# ─────────────────────────────────────────────────────────────────────────────
+# PRE-COMPUTE USAGE VALUES (needed by both compact dense line and USE section)
+# ─────────────────────────────────────────────────────────────────────────────
 
 usage_5h_int=${usage_5h%%.*}
 usage_7d_int=${usage_7d%%.*}
 [ -z "$usage_5h_int" ] && usage_5h_int=0
 [ -z "$usage_7d_int" ] && usage_7d_int=0
 
-# Only show usage line if we have data (token was valid)
+# Compute reset times (single python3 call for all 4 values)
 if [ "$usage_5h_int" -gt 0 ] || [ "$usage_7d_int" -gt 0 ] || [ -f "$USAGE_CACHE" ]; then
-    usage_5h_color=$(get_usage_color "$usage_5h_int")
-    usage_7d_color=$(get_usage_color "$usage_7d_int")
-
-    # Batch all 4 python3 calls into one process (saves ~150ms)
     eval "$(python3 -c "
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
@@ -965,6 +876,163 @@ print(f\"clock_7d='{clock_time(r7d, 'weekly')}'\")
 " 2>/dev/null)"
     reset_5h="${reset_5h:-—}"
     reset_7d="${reset_7d:-—}"
+    reset_5h_time="${clock_5h:-${reset_5h}}"
+    reset_7d_time="${clock_7d:-${reset_7d}}"
+fi
+
+# ─── BEGIN OUTPUT (piped through truncation filter) ───
+{
+
+current_time=$(date +"%H:%M")
+
+# Session label: uppercase 2-word label
+session_display=""
+if [ -n "$SESSION_LABEL" ]; then
+    session_display=$(echo "$SESSION_LABEL" | tr '[:lower:]' '[:upper:]')
+fi
+
+# ─── PRE-COMPUTE CONTEXT VALUES (needed by dense line and context bar) ───
+# Read compaction threshold from settings (default 100 = no scaling)
+COMPACTION_THRESHOLD=$(jq -r '.contextDisplay.compactionThreshold // 100' "$SETTINGS_FILE" 2>/dev/null)
+COMPACTION_THRESHOLD="${COMPACTION_THRESHOLD:-100}"
+raw_pct="${context_pct%%.*}"
+[ -z "$raw_pct" ] && raw_pct=0
+if [ "$COMPACTION_THRESHOLD" -lt 100 ] && [ "$COMPACTION_THRESHOLD" -gt 0 ]; then
+    display_pct=$((raw_pct * 100 / COMPACTION_THRESHOLD))
+    [ "$display_pct" -gt 100 ] && display_pct=100
+else
+    display_pct="$raw_pct"
+fi
+if [ "$display_pct" -ge 80 ]; then
+    pct_color="$ROSE"
+elif [ "$display_pct" -ge 60 ]; then
+    pct_color='\033[38;2;251;146;60m'
+elif [ "$display_pct" -ge 40 ]; then
+    pct_color='\033[38;2;251;191;36m'
+else
+    pct_color="$EMERALD"
+fi
+
+# ─── COMPACT: Dense summary line (replaces header, USE, and PWD sections) ───
+if [ "$COMPACT" = true ]; then
+    # Build dense line: CTX:XX% │ 5H:XX%↻HH:MM │ 7D:XX%↻HH:MM │ S:$X.XX
+    _dense=""
+    _dense+="${CTX_PRIMARY}CTX:${RESET}${pct_color}${raw_pct}%%${RESET}"
+    _dense+=" ${SLATE_600}│${RESET} ${SLATE_400}5H:${RESET}$(get_usage_color "${usage_5h_int:-0}")${usage_5h_int:-0}%%${RESET}${SLATE_400}↻${SLATE_500}${reset_5h_time:-—}${RESET}"
+    _dense+=" ${SLATE_600}│${RESET} ${SLATE_400}7D:${RESET}$(get_usage_color "${usage_7d_int:-0}")${usage_7d_int:-0}%%${RESET}${SLATE_400}↻${SLATE_500}${reset_7d_time:-—}${RESET}"
+    [ -n "$session_cost_str" ] && _dense+=" ${SLATE_600}│${RESET} ${USAGE_EXTRA}S:${session_cost_str}${RESET}"
+    printf "${_dense}\n"
+    # Compact ENV line: CC version │ PAI │ ALG │ SK WF Hooks
+    printf "${SLATE_400}CC:${RESET}${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET}${SLATE_300}${skills_count}${RESET} ${WIELD_WORKFLOWS}WF:${RESET}${SLATE_300}${workflows_count}${RESET} ${WIELD_HOOKS}H:${RESET}${SLATE_300}${hooks_count}${RESET}\n"
+else
+    # Output PAI branding line
+    case "$MODE" in
+        nano)
+            printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${SLATE_600}│ ────────────${RESET}\n"
+            printf "${PAI_TIME}${current_time}${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+            printf "${SLATE_400}ENV:${RESET} ${SLATE_500}${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_400}S:${SLATE_300}${skills_count}${RESET}\n"
+            ;;
+        micro)
+            if [ -n "$session_display" ]; then
+                local_left="── │ PAI STATUSLINE │"
+                local_right="${session_display}"
+                local_left_len=${#local_left}
+                local_right_len=${#session_display}
+                local_fill=$((72 - local_left_len - local_right_len))
+                [ "$local_fill" -lt 2 ] && local_fill=2
+                local_dashes=$(printf '%*s' "$local_fill" '' | sed 's/ /─/g')
+                printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
+            else
+                printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ──────────────────${RESET}\n"
+            fi
+            printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+            printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${SLATE_400}S:${SLATE_300}${skills_count}${RESET} ${SLATE_400}W:${SLATE_300}${workflows_count}${RESET} ${SLATE_400}H:${SLATE_300}${hooks_count}${RESET}\n"
+            ;;
+        mini)
+            if [ -n "$session_display" ]; then
+                local_left="── │ PAI STATUSLINE │"
+                local_right="${session_display}"
+                local_left_len=${#local_left}
+                local_right_len=${#session_display}
+                local_fill=$((72 - local_left_len - local_right_len))
+                [ "$local_fill" -lt 2 ] && local_fill=2
+                local_dashes=$(printf '%*s' "$local_fill" '' | sed 's/ /─/g')
+                printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
+            else
+                printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ────────────────────────────────────────${RESET}\n"
+            fi
+            printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+            printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET}${SLATE_300}${skills_count}${RESET} ${WIELD_WORKFLOWS}WF:${RESET}${SLATE_300}${workflows_count}${RESET} ${WIELD_HOOKS}Hooks:${RESET}${SLATE_300}${hooks_count}${RESET}\n"
+            ;;
+        normal)
+            if [ -n "$session_display" ]; then
+                local_left="── │ PAI STATUSLINE │"
+                local_right="${session_display}"
+                local_left_len=${#local_left}
+                local_right_len=${#session_display}
+                local_fill=$((72 - local_left_len - local_right_len))
+                [ "$local_fill" -lt 2 ] && local_fill=2
+                local_dashes=$(printf '%*s' "$local_fill" '' | sed 's/ /─/g')
+                printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ${local_dashes}${RESET} ${PAI_SESSION}${session_display}${RESET}\n"
+            else
+                printf "${SLATE_600}── │${RESET} ${PAI_P}P${PAI_A}A${PAI_I}I${RESET} ${PAI_A}STATUSLINE${RESET} ${SLATE_600}│ ──────────────────────────────────────────────────${RESET}\n"
+            fi
+            printf "${PAI_LABEL}LOC:${RESET} ${PAI_CITY}${location_city}${RESET}${SLATE_600},${RESET} ${PAI_STATE}${location_state}${RESET} ${SLATE_600}│${RESET} ${PAI_TIME}${current_time}${RESET} ${SLATE_600}│${RESET} ${PAI_WEATHER}${weather_str}${RESET}\n"
+            printf "${SLATE_400}ENV:${RESET} ${SLATE_400}CC:${RESET} ${PAI_A}${cc_version}${RESET} ${SLATE_600}│${RESET} ${SLATE_500}PAI:${PAI_A}${PAI_VERSION}${RESET} ${SLATE_400}ALG:${PAI_A}${ALGO_VERSION}${RESET} ${SLATE_600}│${RESET} ${WIELD_ACCENT}SK:${RESET} ${SLATE_300}${skills_count}${RESET} ${SLATE_600}│${RESET} ${WIELD_WORKFLOWS}WF:${RESET} ${SLATE_300}${workflows_count}${RESET} ${SLATE_600}│${RESET} ${WIELD_HOOKS}Hooks:${RESET} ${SLATE_300}${hooks_count}${RESET}\n"
+            ;;
+    esac
+    printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINE 1: CONTEXT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Format duration
+duration_sec=$((duration_ms / 1000))
+if   [ "$duration_sec" -ge 3600 ]; then time_display="$((duration_sec / 3600))h$((duration_sec % 3600 / 60))m"
+elif [ "$duration_sec" -ge 60 ];   then time_display="$((duration_sec / 60))m$((duration_sec % 60))s"
+else time_display="${duration_sec}s"
+fi
+
+# Context display - scale to compaction threshold if configured
+context_max="${context_max:-200000}"
+max_k=$((context_max / 1000))
+
+# NOTE: raw_pct, display_pct, pct_color pre-computed above (before dense line)
+
+# Calculate bar width to match statusline content width (72 chars)
+bar_width=$(calc_bar_width "$MODE")
+
+case "$MODE" in
+    nano)
+        bar=$(render_context_bar $bar_width $display_pct)
+        printf "${CTX_PRIMARY}◉${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
+        ;;
+    micro)
+        bar=$(render_context_bar $bar_width $display_pct)
+        printf "${CTX_PRIMARY}◉${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
+        ;;
+    mini)
+        bar=$(render_context_bar $bar_width $display_pct)
+        printf "${CTX_PRIMARY}◉${RESET} ${CTX_SECONDARY}CONTEXT:${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
+        ;;
+    normal)
+        bar=$(render_context_bar $bar_width $display_pct)
+        printf "${CTX_PRIMARY}◉${RESET} ${CTX_SECONDARY}CONTEXT:${RESET} ${bar} ${pct_color}${raw_pct}%%${RESET}\n"
+        ;;
+esac
+[ "$COMPACT" != true ] && printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINE: ACCOUNT USAGE (Claude API limits — skipped in compact, included in dense line)
+# ═══════════════════════════════════════════════════════════════════════════════
+# NOTE: usage_5h_int, usage_7d_int, reset_5h_time, reset_7d_time pre-computed above
+
+# Only show usage line if we have data (token was valid)
+if [ "$COMPACT" != true ] && { [ "$usage_5h_int" -gt 0 ] || [ "$usage_7d_int" -gt 0 ] || [ -f "$USAGE_CACHE" ]; }; then
+    usage_5h_color=$(get_usage_color "$usage_5h_int")
+    usage_7d_color=$(get_usage_color "$usage_7d_int")
 
     # Extra usage display: Max plan overage credits (both monthly_limit and used_credits are in cents)
     extra_display=""
@@ -973,7 +1041,6 @@ print(f\"clock_7d='{clock_time(r7d, 'weekly')}'\")
         extra_used_dollars=$((${usage_extra_used%%.*} / 100))
         extra_used_int=${extra_used_dollars:-0}
         [ -z "$extra_used_int" ] && extra_used_int=0
-        # Format limit nicely
         if [ "$extra_limit_dollars" -ge 1000 ]; then
             extra_limit_fmt="\$$(( extra_limit_dollars / 1000 ))K"
         else
@@ -987,10 +1054,6 @@ print(f\"clock_7d='{clock_time(r7d, 'weekly')}'\")
     [ -z "$ws_cost_cents_int" ] && ws_cost_cents_int=0
     ws_cost_dollars=$((ws_cost_cents_int / 100))
     ws_display="A:\$${ws_cost_dollars}"
-
-    # Reset times: just use clock time directly (no countdown, no parens)
-    reset_5h_time="${clock_5h:-${reset_5h}}"
-    reset_7d_time="${clock_7d:-${reset_7d}}"
 
     case "$MODE" in
         nano)
@@ -1022,7 +1085,7 @@ print(f\"clock_7d='{clock_time(r7d, 'weekly')}'\")
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# LINE 4: PWD & GIT (index-only: branch, age, stash, sync — no file status)
+# LINE 4: PWD & GIT
 # ═══════════════════════════════════════════════════════════════════════════════
 
 # Calculate age display from prefetched last_commit_epoch
@@ -1041,44 +1104,59 @@ if [ "$is_git_repo" = "true" ] && [ -n "$last_commit_epoch" ]; then
     fi
 fi
 
-case "$MODE" in
-    nano)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        [ "$is_git_repo" = true ] && printf " ${GIT_VALUE}${branch}${RESET}"
-        printf "\n"
-        ;;
-    micro)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        if [ "$is_git_repo" = true ]; then
-            printf " ${GIT_VALUE}${branch}${RESET}"
-            [ -n "$age_display" ] && printf " ${age_color}${age_display}${RESET}"
+if [ "$COMPACT" = true ]; then
+    # Compact: dir:branch age ↑N↓N stash:N — no labels, tight format
+    printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
+    if [ "$is_git_repo" = true ] && [ -n "$branch" ]; then
+        printf ":${GIT_VALUE}${branch}${RESET}"
+        [ -n "$age_display" ] && printf " ${age_color}${age_display}${RESET}"
+        if [ "$ahead" -gt 0 ] || [ "$behind" -gt 0 ]; then
+            [ "$ahead" -gt 0 ] && printf " ${GIT_CLEAN}↑${ahead}${RESET}"
+            [ "$behind" -gt 0 ] && printf " ${GIT_STASH}↓${behind}${RESET}"
         fi
-        printf "\n"
-        ;;
-    mini)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        if [ "$is_git_repo" = true ]; then
-            printf " ${SLATE_600}│${RESET} ${GIT_VALUE}${branch}${RESET}"
-            [ -n "$age_display" ] && printf " ${SLATE_600}│${RESET} ${age_color}${age_display}${RESET}"
-        fi
-        printf "\n"
-        ;;
-    normal)
-        printf "${GIT_PRIMARY}◈${RESET} ${GIT_PRIMARY}PWD:${RESET} ${GIT_DIR}${dir_name}${RESET}"
-        if [ "$is_git_repo" = true ]; then
-            printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Branch:${RESET} ${GIT_VALUE}${branch}${RESET}"
-            [ -n "$age_display" ] && printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Age:${RESET} ${age_color}${age_display}${RESET}"
-            [ "$stash_count" -gt 0 ] && printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Stash:${RESET} ${GIT_STASH}${stash_count}${RESET}"
-            if [ "$ahead" -gt 0 ] || [ "$behind" -gt 0 ]; then
-                printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Sync:${RESET} "
-                [ "$ahead" -gt 0 ] && printf "${GIT_CLEAN}↑${ahead}${RESET}"
-                [ "$behind" -gt 0 ] && printf "${GIT_STASH}↓${behind}${RESET}"
+        [ "$stash_count" -gt 0 ] && printf " ${GIT_STASH}stash:${stash_count}${RESET}"
+    fi
+    printf "\n"
+else
+    case "$MODE" in
+        nano)
+            printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
+            [ "$is_git_repo" = true ] && printf " ${GIT_VALUE}${branch}${RESET}"
+            printf "\n"
+            ;;
+        micro)
+            printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
+            if [ "$is_git_repo" = true ]; then
+                printf " ${GIT_VALUE}${branch}${RESET}"
+                [ -n "$age_display" ] && printf " ${age_color}${age_display}${RESET}"
             fi
-        fi
-        printf "\n"
-        ;;
-esac
-printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+            printf "\n"
+            ;;
+        mini)
+            printf "${GIT_PRIMARY}◈${RESET} ${GIT_DIR}${dir_name}${RESET}"
+            if [ "$is_git_repo" = true ]; then
+                printf " ${SLATE_600}│${RESET} ${GIT_VALUE}${branch}${RESET}"
+                [ -n "$age_display" ] && printf " ${SLATE_600}│${RESET} ${age_color}${age_display}${RESET}"
+            fi
+            printf "\n"
+            ;;
+        normal)
+            printf "${GIT_PRIMARY}◈${RESET} ${GIT_PRIMARY}PWD:${RESET} ${GIT_DIR}${dir_name}${RESET}"
+            if [ "$is_git_repo" = true ]; then
+                printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Branch:${RESET} ${GIT_VALUE}${branch}${RESET}"
+                [ -n "$age_display" ] && printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Age:${RESET} ${age_color}${age_display}${RESET}"
+                [ "$stash_count" -gt 0 ] && printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Stash:${RESET} ${GIT_STASH}${stash_count}${RESET}"
+                if [ "$ahead" -gt 0 ] || [ "$behind" -gt 0 ]; then
+                    printf " ${SLATE_600}│${RESET} ${GIT_PRIMARY}Sync:${RESET} "
+                    [ "$ahead" -gt 0 ] && printf "${GIT_CLEAN}↑${ahead}${RESET}"
+                    [ "$behind" -gt 0 ] && printf "${GIT_STASH}↓${behind}${RESET}"
+                fi
+            fi
+            printf "\n"
+            ;;
+    esac
+    printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINE 5: MEMORY
@@ -1106,7 +1184,7 @@ case "$MODE" in
         printf "${SLATE_600}│${RESET} ${LEARN_RESEARCH}◇${RESET}${SLATE_300}${research_count}${RESET} ${LEARN_RESEARCH}Research${RESET}\n"
         ;;
 esac
-printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+[ "$COMPACT" != true ] && printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINE 6: LEARNING (with sparklines in normal mode)
@@ -1328,7 +1406,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 
 if [ "$MODE" = "normal" ]; then
-    printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
+    [ "$COMPACT" != true ] && printf "${SLATE_600}────────────────────────────────────────────────────────────────────────${RESET}\n"
 
     # Quote was prefetched in parallel block — just read the cache
     if [ -f "$QUOTE_CACHE" ]; then
@@ -1389,3 +1467,5 @@ if [ "$MODE" = "normal" ]; then
         fi
     fi
 fi
+
+} | truncate_output
