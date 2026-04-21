@@ -56,4 +56,4 @@ Or manually: read `INSTALL.md`, copy files from `src/` to the specified location
 
 ## Creating a Pack
 
-See [PAIPackTemplate.md](../Tools/PAIPackTemplate.md) for the full specification.
+Each pack is a self-contained directory under `Packs/` with its own `README.md` and `INSTALL.md`. See the existing packs above for reference structure.
