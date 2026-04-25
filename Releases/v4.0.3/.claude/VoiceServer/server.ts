@@ -399,6 +399,71 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
   });
 }
 
+// ==========================================================================
+// Local TTS Voice Catalogue
+// ==========================================================================
+
+interface LocalVoiceInfo {
+  name: string;
+  locale: string;
+  accent: string;
+  gender: string;
+  category: 'natural' | 'classic' | 'novelty';
+  sample: string;
+}
+
+// Curated catalogue of realistic English voices available via macOS say command.
+// Novelty voices (Albert, Bahh, Bells, etc.) are excluded from this list.
+const LOCAL_VOICE_CATALOGUE: LocalVoiceInfo[] = [
+  // Natural — modern high-quality voices
+  { name: 'Samantha',              locale: 'en_US', accent: 'American',        gender: 'female', category: 'natural',  sample: 'Clear, neutral American female — good all-purpose default' },
+  { name: 'Eddy (English (US))',   locale: 'en_US', accent: 'American',        gender: 'male',   category: 'natural',  sample: 'Modern American male with natural cadence' },
+  { name: 'Flo (English (US))',    locale: 'en_US', accent: 'American',        gender: 'female', category: 'natural',  sample: 'Modern American female, warm and conversational' },
+  { name: 'Reed (English (US))',   locale: 'en_US', accent: 'American',        gender: 'male',   category: 'natural',  sample: 'Modern American male, clear and professional' },
+  { name: 'Rocko (English (US))',  locale: 'en_US', accent: 'American',        gender: 'male',   category: 'natural',  sample: 'Modern American male, energetic tone' },
+  { name: 'Sandy (English (US))',  locale: 'en_US', accent: 'American',        gender: 'female', category: 'natural',  sample: 'Modern American female, upbeat and friendly' },
+  { name: 'Shelley (English (US))',locale: 'en_US', accent: 'American',        gender: 'female', category: 'natural',  sample: 'Modern American female, calm and measured' },
+  { name: 'Daniel',                locale: 'en_GB', accent: 'British',         gender: 'male',   category: 'natural',  sample: 'British male — professional, clear RP accent' },
+  { name: 'Eddy (English (UK))',   locale: 'en_GB', accent: 'British',         gender: 'male',   category: 'natural',  sample: 'Modern British male, natural and conversational' },
+  { name: 'Flo (English (UK))',    locale: 'en_GB', accent: 'British',         gender: 'female', category: 'natural',  sample: 'Modern British female, warm and clear' },
+  { name: 'Reed (English (UK))',   locale: 'en_GB', accent: 'British',         gender: 'male',   category: 'natural',  sample: 'Modern British male, measured and reliable' },
+  { name: 'Rocko (English (UK))',  locale: 'en_GB', accent: 'British',         gender: 'male',   category: 'natural',  sample: 'Modern British male, confident tone' },
+  { name: 'Sandy (English (UK))',  locale: 'en_GB', accent: 'British',         gender: 'female', category: 'natural',  sample: 'Modern British female, friendly and clear' },
+  { name: 'Shelley (English (UK))',locale: 'en_GB', accent: 'British',         gender: 'female', category: 'natural',  sample: 'Modern British female, calm and professional' },
+  { name: 'Karen',                 locale: 'en_AU', accent: 'Australian',      gender: 'female', category: 'natural',  sample: 'Australian female — distinctive, friendly accent' },
+  { name: 'Moira',                 locale: 'en_IE', accent: 'Irish',           gender: 'female', category: 'natural',  sample: 'Irish female — warm, melodic accent' },
+  { name: 'Tessa',                 locale: 'en_ZA', accent: 'South African',   gender: 'female', category: 'natural',  sample: 'South African female — distinctive and clear' },
+  { name: 'Rishi',                 locale: 'en_IN', accent: 'Indian English',  gender: 'male',   category: 'natural',  sample: 'Indian English male — clear and distinctive' },
+  // Classic — older synthesised voices, still intelligible
+  { name: 'Fred',                  locale: 'en_US', accent: 'American',        gender: 'male',   category: 'classic',  sample: 'Classic American male, robotic but reliable' },
+  { name: 'Kathy',                 locale: 'en_US', accent: 'American',        gender: 'female', category: 'classic',  sample: 'Classic American female synthesiser' },
+  { name: 'Junior',                locale: 'en_US', accent: 'American',        gender: 'male',   category: 'classic',  sample: 'Classic high-pitched American male' },
+  { name: 'Ralph',                 locale: 'en_US', accent: 'American',        gender: 'male',   category: 'classic',  sample: 'Classic gruff American male' },
+];
+
+// Get voices installed on this system that are also in our catalogue
+async function getInstalledLocalVoices(): Promise<LocalVoiceInfo[]> {
+  try {
+    const result = await new Promise<string>((resolve, reject) => {
+      const proc = spawn('/usr/bin/say', ['-v', '?']);
+      let output = '';
+      proc.stdout?.on('data', (d: Buffer) => { output += d.toString(); });
+      proc.on('error', reject);
+      proc.on('exit', () => resolve(output));
+    });
+
+    const installedNames = new Set(
+      result.split('\n')
+        .filter(line => /en_/.test(line))
+        .map(line => line.split(/\s{2,}/)[0].trim())
+    );
+
+    return LOCAL_VOICE_CATALOGUE.filter(v => installedNames.has(v.name));
+  } catch {
+    return LOCAL_VOICE_CATALOGUE; // fallback: return full catalogue
+  }
+}
+
 // Play audio using macOS say command (local TTS — no API key required)
 async function playLocalSpeech(text: string, voice: string, volume: number = FALLBACK_VOLUME): Promise<void> {
   const tempFile = `/tmp/voice-local-${Date.now()}.aiff`;
@@ -733,6 +798,25 @@ const server = serve({
       }
     }
 
+    if (url.pathname === "/voices/local" && req.method === "GET") {
+      const voices = await getInstalledLocalVoices();
+      const current = voiceConfig.localVoice;
+      return new Response(
+        JSON.stringify({
+          current_voice: current,
+          how_to_change: 'Set voiceServer.local_voice in ~/.claude/settings.json',
+          voices: voices.map(v => ({
+            ...v,
+            active: v.name === current,
+          })),
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200
+        }
+      );
+    }
+
     if (url.pathname === "/health") {
       return new Response(
         JSON.stringify({
@@ -753,7 +837,7 @@ const server = serve({
       );
     }
 
-    return new Response("Voice Server - POST to /notify, /notify/personality, or /pai", {
+    return new Response("Voice Server — POST /notify | GET /health | GET /voices/local", {
       headers: corsHeaders,
       status: 200
     });
