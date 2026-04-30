@@ -4,9 +4,9 @@
 
 > Personal patterns, friction points, and persistent failure modes you're aware of.
 
-- **C0:** (sample) I tend to start more projects than I finish — when something gets hard or boring, a new idea looks more attractive than completing the current one.
-- **C1:** (sample) I avoid hard conversations until they become harder than they needed to be.
-- **C2:** (sample) I optimize small surface-area tasks (inbox, tweaks) when I'm avoiding the one big thing that actually matters this week.
+- **C0**: (sample) I tend to start more projects than I finish — when something gets hard or boring, a new idea looks more attractive than completing the current one.
+- **C1**: (sample) I avoid hard conversations until they become harder than they needed to be.
+- **C2**: (sample) I optimize small surface-area tasks (inbox, tweaks) when I'm avoiding the one big thing that actually matters this week.
 
 ## Notes
 

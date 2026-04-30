@@ -4,9 +4,9 @@
 
 > What you're here to do — the most durable north star.
 
-- **M0:** (sample) Help one million people make better decisions through accessible AI tools.
-- **M1:** (sample) Build infrastructure that lets individuals own their data and AI.
-- **M2:** (sample — aspirational, optional) Leave behind work that's still useful 50 years after I'm gone.
+- **M0**: (sample) Help one million people make better decisions through accessible AI tools.
+- **M1**: (sample) Build infrastructure that lets individuals own their data and AI.
+- **M2**: (sample — aspirational, optional) Leave behind work that's still useful 50 years after I'm gone.
 
 ## Notes
 

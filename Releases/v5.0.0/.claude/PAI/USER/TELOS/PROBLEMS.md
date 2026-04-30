@@ -4,9 +4,9 @@
 
 > External problems in the world you're working to address.
 
-- **P0:** (sample) Most knowledge workers spend more time fighting their tools than doing the work the tools are supposed to enable.
-- **P1:** (sample) High-quality information is unevenly distributed — people without insider networks pay a real cost in worse decisions.
-- **P2:** (sample) Personal data is held by platforms that don't share the user's incentives.
+- **P0**: (sample) Most knowledge workers spend more time fighting their tools than doing the work the tools are supposed to enable.
+- **P1**: (sample) High-quality information is unevenly distributed — people without insider networks pay a real cost in worse decisions.
+- **P2**: (sample) Personal data is held by platforms that don't share the user's incentives.
 
 ## Notes
 

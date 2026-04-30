@@ -4,9 +4,9 @@
 
 > How you approach your missions, goals, and problems — the playbook.
 
-- **S0:** (sample) Ship the crappy version, then iterate in public — speed of feedback beats polish in the first 80%.
-- **S1:** (sample) Write before building — if I can't explain it in plain prose, the design isn't ready.
-- **S2:** (sample) Default to open — open-source the tools, share the work, let distribution come from usefulness.
+- **S0**: (sample) Ship the crappy version, then iterate in public — speed of feedback beats polish in the first 80%.
+- **S1**: (sample) Write before building — if I can't explain it in plain prose, the design isn't ready.
+- **S2**: (sample) Default to open — open-source the tools, share the work, let distribution come from usefulness.
 
 ## Notes
 

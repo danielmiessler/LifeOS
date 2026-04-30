@@ -6,9 +6,9 @@
 
 ## Active
 
-- **G0:** (sample) Ship MVP of Project X by 2026-Q2 — measurable: 100 daily active users.
-- **G1:** (sample) Publish 24 newsletter issues this year — measurable: one every other Sunday, no skipped weeks.
-- **G2:** (sample) Reach a sustainable monthly revenue target — measurable: $X MRR by end of year.
+- **G0**: (sample) Ship MVP of Project X by 2026-Q2 — measurable: 100 daily active users.
+- **G1**: (sample) Publish 24 newsletter issues this year — measurable: one every other Sunday, no skipped weeks.
+- **G2**: (sample) Reach a sustainable monthly revenue target — measurable: $X MRR by end of year.
 
 ## Deferred / Ongoing
 

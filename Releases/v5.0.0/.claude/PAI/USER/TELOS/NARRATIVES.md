@@ -4,9 +4,9 @@
 
 > The stories you tell yourself (and others) about the world — the frames your work operates within.
 
-- **N0:** (sample) I build tools that move power from institutions to individuals.
-- **N1:** (sample) The next decade rewards people who can ship working software end-to-end without waiting for a team.
-- **N2:** (sample — conference one-liner) I'm a [your craft] who helps [your audience] do [your outcome].
+- **N0**: (sample) I build tools that move power from institutions to individuals.
+- **N1**: (sample) The next decade rewards people who can ship working software end-to-end without waiting for a team.
+- **N2**: (sample — conference one-liner) I'm a [your craft] who helps [your audience] do [your outcome].
 
 ## Notes
 
