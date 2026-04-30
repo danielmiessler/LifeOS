@@ -98,26 +98,13 @@ function parseGoals(): { active: string[]; deferred: string[] } {
  */
 function parseProblems(): string[] {
   const content = readTelosFile('PROBLEMS.md');
-  const lines: string[] = [];
-
-  // Format: ## P0: Title (optional parenthetical)
-  const headers = [...content.matchAll(/^##\s+(P\d+):\s*(.+?)(?:\s*\(.*\))?\s*$/gm)];
-  for (const match of headers) {
-    const title = match[2].trim();
-    const short = title.length > 60 ? title.substring(0, 57) + '...' : title;
-    lines.push(`- **${match[1]}**: ${short}`);
-  }
-
-  // Fallback: try list items
-  if (lines.length === 0) {
-    const items = parseItems(content);
-    for (const item of items) {
-      const title = item.text.split(/[—-]/)[0].trim().replace(/\*\*/g, '');
-      lines.push(`- **${item.id}**: ${title}`);
-    }
-  }
-
-  return lines;
+  return parseItems(content)
+    .filter(i => /^P\d+$/.test(i.id))
+    .map(i => {
+      const title = i.text.split(/[—-]/)[0].trim().replace(/\*\*/g, '');
+      const short = title.length > 60 ? title.substring(0, 57) + '...' : title;
+      return `- **${i.id}**: ${short}`;
+    });
 }
 
 /**
@@ -125,16 +112,9 @@ function parseProblems(): string[] {
  */
 function parseStrategies(): string[] {
   const content = readTelosFile('STRATEGIES.md');
-  const lines: string[] = [];
-
-  // Extract strategy headers: ## S0: name or ### S1: name
-  const headers = [...content.matchAll(/^#{2,3}\s+(S\d+):\s*(.+?)(?:\s*\(.*\))?\s*$/gm)];
-  for (const match of headers) {
-    const short = match[2].length > 60 ? match[2].substring(0, 57) + '...' : match[2];
-    lines.push(`- **${match[1]}**: ${short}`);
-  }
-
-  return lines;
+  return parseItems(content)
+    .filter(i => /^S\d+$/.test(i.id))
+    .map(i => `- **${i.id}**: ${truncate(i.text, 60)}`);
 }
 
 /**
