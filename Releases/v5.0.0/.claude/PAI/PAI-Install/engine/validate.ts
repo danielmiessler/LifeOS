@@ -8,7 +8,7 @@ import { join } from "path";
 import { spawnSync } from "child_process";
 import type { InstallState, ValidationCheck, InstallSummary, EngineEventHandler } from "./types";
 import { PAI_VERSION } from "./types";
-import { homedir } from "os";
+import { homedir, platform } from "os";
 
 /**
  * Check if Pulse is running. PAI 5.0 absorbed the standalone voice server
@@ -234,14 +234,21 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     critical: false,
   });
 
-  // 7b. Pulse launchd plist present (auto-start on login)
-  const pulsePlist = join(homedir(), "Library", "LaunchAgents", "com.pai.pulse.plist");
-  const pulsePlistInstalled = existsSync(pulsePlist);
+  // 7b. Pulse system service unit present (auto-start on login).
+  //     macOS: ~/Library/LaunchAgents/com.pai.pulse.plist (launchd)
+  //     Linux: ~/.config/systemd/user/pai-pulse.service (systemd --user)
+  const isLinux = platform() === "linux";
+  const serviceUnit = isLinux
+    ? join(homedir(), ".config", "systemd", "user", "pai-pulse.service")
+    : join(homedir(), "Library", "LaunchAgents", "com.pai.pulse.plist");
+  const serviceUnitInstalled = existsSync(serviceUnit);
+  const serviceLabel = isLinux ? "Pulse systemd unit" : "Pulse launchd agent";
+  const serviceDisplayPath = serviceUnit.replace(homedir(), "~");
   checks.push({
-    name: "Pulse launchd agent",
-    passed: pulsePlistInstalled,
-    detail: pulsePlistInstalled
-      ? "Installed at ~/Library/LaunchAgents/com.pai.pulse.plist"
+    name: serviceLabel,
+    passed: serviceUnitInstalled,
+    detail: serviceUnitInstalled
+      ? `Installed at ${serviceDisplayPath}`
       : "Not installed — Pulse will not auto-start on login",
     critical: false,
   });

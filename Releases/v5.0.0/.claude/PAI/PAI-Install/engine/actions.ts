@@ -1573,9 +1573,11 @@ async function isPulseRunning(): Promise<boolean> {
   }
 }
 
-// Install Pulse as a launchd agent via the canonical `PULSE/manage.sh install`.
-// Manage.sh substitutes __HOME__ in the public plist template, copies it to
-// ~/Library/LaunchAgents/com.pai.pulse.plist, and `launchctl load`s it.
+// Install Pulse as a system service via the canonical `PULSE/manage.sh install`.
+// manage.sh detects the OS and registers the appropriate service unit (with
+// __HOME__ + __BUN_PATH__ substituted into the shipped template):
+//   macOS: ~/Library/LaunchAgents/com.pai.pulse.plist (launchctl load)
+//   Linux: ~/.config/systemd/user/pai-pulse.service (systemctl --user enable --now)
 async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<boolean> {
   const pulseDir = join(paiDir, "PAI", "PULSE");
   const manageScript = join(pulseDir, "manage.sh");
@@ -1859,7 +1861,7 @@ export async function runVoiceSetup(
       "Installing it as a launchd agent makes it auto-start on login and stay running across reboots.",
   });
 
-  const installPulseChoice = await getChoice("install-pulse", "Install Pulse as a system launchd service?", [
+  const installPulseChoice = await getChoice("install-pulse", "Install Pulse as a system service?", [
     { label: "Yes — install Pulse (recommended)", value: "yes", description: "Auto-starts on login. Voice + Dashboard + Observability." },
     { label: "Skip — don't install Pulse now", value: "skip", description: "Voice notifications will not work until you run: bash ~/.claude/PAI/PULSE/manage.sh install" },
   ], daName);
