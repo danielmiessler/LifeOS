@@ -62,8 +62,16 @@ function checkSecurityHookSmoke(claudeDir: string, paiDir: string): { passed: bo
       input: payload,
       encoding: "utf-8",
       timeout: 8000,
-      // Match Claude Code: no inherited zshrc, minimal env. HOME and PATH only.
-      env: { HOME: homedir(), PATH: process.env.PATH || "" },
+      // Match Claude Code: no inherited zshrc, minimal env. HOME + PATH only,
+      // PLUS CLAUDE_CONFIG_DIR + PAI_DIR so the hook's path lib resolves to
+      // the configured install location (otherwise it falls back to default
+      // ~/.claude/PAI and PATTERNS.yaml lookup misses).
+      env: {
+        HOME: homedir(),
+        PATH: process.env.PATH || "",
+        ...(process.env.CLAUDE_CONFIG_DIR ? { CLAUDE_CONFIG_DIR: process.env.CLAUDE_CONFIG_DIR } : {}),
+        ...(process.env.PAI_DIR ? { PAI_DIR: process.env.PAI_DIR } : {}),
+      },
     });
     const stderr = (res.stderr || "").toString();
     if (res.status !== 0) {

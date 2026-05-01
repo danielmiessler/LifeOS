@@ -1326,6 +1326,29 @@ export async function runRepository(
     rmSync(bundlePaiDir, { recursive: true, force: true });
   }
 
+  // Install runtime npm dependencies (yaml for security hooks, smol-toml /
+  // grammy / jose / minisearch / @anthropic-ai/claude-agent-sdk for Pulse,
+  // openai for TOOLS). The bundle ships package.json + bun.lock at
+  // claudeDir; without `bun install` here, hooks fail with
+  // "Cannot find package 'yaml'" and Pulse never binds :31337.
+  if (existsSync(join(claudeDir, "package.json"))) {
+    await emit({ event: "progress", step: "repository", percent: 95, detail: "Installing runtime dependencies (bun install)..." });
+    const installOk = await new Promise<boolean>((resolve) => {
+      const child = spawn("bun", ["install"], { cwd: claudeDir, stdio: ["ignore", "pipe", "pipe"] });
+      const timer = setTimeout(() => { child.kill(); resolve(false); }, 120000);
+      child.on("close", (code) => { clearTimeout(timer); resolve(code === 0); });
+      child.on("error", () => { clearTimeout(timer); resolve(false); });
+    });
+    if (installOk) {
+      await emit({ event: "message", content: "Runtime dependencies installed." });
+    } else {
+      await emit({
+        event: "message",
+        content: `bun install failed at ${claudeDir.replace(homedir(), "~")}. Hooks and Pulse may not work until you run it manually: cd ${claudeDir.replace(homedir(), "~")} && bun install`,
+      });
+    }
+  }
+
   // Create required directories regardless of clone result
   const requiredPaiDirs = [
     "MEMORY",

@@ -1,0 +1,15 @@
+{
+  "name": "pai-runtime",
+  "version": "5.0.0",
+  "private": true,
+  "description": "PAI v5.0.0 runtime dependencies — installed at claudeConfigDir so hooks, Pulse, and TOOLS can resolve the npm packages they import. The installer runs `bun install` post-bundle-copy.",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.126",
+    "grammy": "^1.42.0",
+    "jose": "^6.2.3",
+    "minisearch": "^7.2.0",
+    "openai": "^6.35.0",
+    "smol-toml": "^1.6.1",
+    "yaml": "^2.8.4"
+  }
+}

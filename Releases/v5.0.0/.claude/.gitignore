@@ -17,8 +17,9 @@ todos/
 # Bun build cache
 *.bun-build
 
-# Accidental npm/bun debris at root
-/package.json
+# Root /package.json IS tracked — declares the runtime deps the
+# installer's `bun install` step pulls in (hooks/security yaml,
+# Pulse smol-toml/grammy/etc., TOOLS openai). Lockfiles ignored.
 /package-lock.json
 /bun.lock
 
