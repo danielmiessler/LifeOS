@@ -49,8 +49,10 @@ function parseItems(content: string): ParsedItem[] {
   const lines = content.split('\n');
 
   for (const line of lines) {
-    // Match "- **M0**: text" or "- M0: text" or "- **G0**: text" patterns
-    const match = line.match(/^-\s+\*?\*?(\w+)\*?\*?:\s*(.+)/);
+    // Match all four bullet styles: "- **M0**: text", "- **M0:** text",
+    // "- M0: text", and "- M0:** text". Optional ** before AND after the
+    // colon handles the template/parser drift identified in upstream #1113.
+    const match = line.match(/^-\s+\*?\*?(\w+)\*?\*?:\*?\*?\s*(.+)/);
     if (match) {
       items.push({ id: match[1], text: match[2].trim() });
     }
@@ -68,29 +70,80 @@ function parseMissions(): string[] {
 }
 
 /**
- * Parse goals from GOALS.md, separating 2026 goals from older ones
+ * Parse goals from GOALS.md by walking section headers, not by ID heuristic.
+ * Section headers (## Active / ## Deferred / ## Ongoing / ## Completed) drive
+ * classification — fixes upstream #1115 where G2 was misclassified as deferred
+ * because the old code used `num >= 9 || [0,1].includes(num)`.
  */
-function parseGoals(): { active: string[]; deferred: string[] } {
+function parseGoals(): {
+  active: string[];
+  deferredIds: string[];
+  deferredPlain: string[];
+} {
   const content = readTelosFile('GOALS.md');
-  const items = parseItems(content);
-
-  // Goals with IDs G9+ are 2026 goals based on the file structure
   const active: string[] = [];
-  const deferred: string[] = [];
+  const deferredIds: string[] = [];
+  const deferredPlain: string[] = [];
 
-  for (const item of items) {
-    const num = parseInt(item.id.replace(/\D/g, ''), 10);
-    // Split on " — " (em-dash with spaces) or sentence-ending period (not in URLs)
-    const firstSentence = item.text.split(/\s—\s|(?<!\w\.\w)(?<=\w)\.\s/)[0].trim();
+  type Section = 'active' | 'deferred' | 'completed' | 'other';
+  let currentSection: Section = 'other';
 
-    if (num >= 9 || [0, 1].includes(num)) {
-      active.push(`- **${item.id}**: ${truncate(firstSentence, 70)}`);
-    } else {
-      deferred.push(`- **${item.id}**: ${truncate(firstSentence, 50)}`);
+  for (const rawLine of content.split('\n')) {
+    const line = rawLine.trimEnd();
+
+    // Only top-level (##) headings switch the section. Sub-headings like
+    // `### Work`, `### Home`, `### Tech / PAI` are children of the parent
+    // section and must inherit it (otherwise G0-G7 under `## Active` →
+    // `### Work` get classified as 'other' and silently dropped).
+    const headerMatch = line.match(/^##\s+(.+?)\s*$/);
+    if (headerMatch) {
+      const h = headerMatch[1].toLowerCase();
+      if (h.startsWith('active')) currentSection = 'active';
+      else if (h.startsWith('deferred') || h.startsWith('ongoing')) currentSection = 'deferred';
+      else if (h.startsWith('completed')) currentSection = 'completed';
+      else currentSection = 'other';
+      continue;
+    }
+
+    if (currentSection === 'other') continue;
+
+    const idMatch = line.match(/^-\s+\*?\*?(\w+)\*?\*?:\*?\*?\s*(.+)/);
+    if (idMatch) {
+      const id = idMatch[1];
+      const text = idMatch[2].trim();
+      const firstSentence = text.split(/\s—\s|(?<!\w\.\w)(?<=\w)\.\s/)[0].trim();
+
+      if (currentSection === 'active') {
+        active.push(`- **${id}**: ${truncate(firstSentence, 70)}`);
+      } else {
+        // deferred or completed → both go to deferredIds (the inline ID-list line)
+        deferredIds.push(id);
+      }
+      continue;
+    }
+
+    // Plain bullet without ID — used by Deferred / Ongoing / Completed items
+    // in the shipped template. These were silently dropped in upstream #1115.
+    const plainMatch = line.match(/^-\s+(.+)/);
+    if (plainMatch) {
+      const text = plainMatch[1].trim();
+      const firstSentence = text.split(/\s—\s|(?<!\w\.\w)(?<=\w)\.\s/)[0].trim();
+
+      // Skip template placeholders like `*(none recorded yet — update as items ship)*`
+      if (/^\*?\(.*(none|tbd|placeholder)/i.test(firstSentence)) continue;
+
+      if (currentSection === 'deferred' || currentSection === 'completed') {
+        // Strip surrounding **bold** so we keep just the name for the inline list.
+        const bare = firstSentence.replace(/^\*\*(.+?)\*\*.*$/, '$1');
+        deferredPlain.push(truncate(bare, 60));
+      } else if (currentSection === 'active') {
+        // Active without ID — uncommon but render directly so it isn't lost.
+        active.push(`- ${truncate(firstSentence, 70)}`);
+      }
     }
   }
 
-  return { active, deferred };
+  return { active, deferredIds, deferredPlain };
 }
 
 /**
@@ -121,20 +174,19 @@ function parseProblems(): string[] {
 }
 
 /**
- * Parse strategies from STRATEGIES.md
+ * Parse strategies from STRATEGIES.md.
+ *
+ * The shipped template stores strategies as bullets (`- **S0:** Kaizen…`)
+ * under `## Active` / `## Anti-Strategies`, not as `## S0:` headers — the
+ * old header-only regex returned an empty list (upstream #1113). Use the
+ * shared bullet parser; it now picks up Sn AND An entries.
  */
 function parseStrategies(): string[] {
   const content = readTelosFile('STRATEGIES.md');
-  const lines: string[] = [];
-
-  // Extract strategy headers: ## S0: name or ### S1: name
-  const headers = [...content.matchAll(/^#{2,3}\s+(S\d+):\s*(.+?)(?:\s*\(.*\))?\s*$/gm)];
-  for (const match of headers) {
-    const short = match[2].length > 60 ? match[2].substring(0, 57) + '...' : match[2];
-    lines.push(`- **${match[1]}**: ${short}`);
-  }
-
-  return lines;
+  const items = parseItems(content);
+  return items
+    .filter(i => /^[SA]\d+$/.test(i.id))
+    .map(i => `- **${i.id}**: ${truncate(i.text, 80)}`);
 }
 
 /**
@@ -231,13 +283,13 @@ function generate(): string {
     ...goals.active,
   ];
 
-  if (goals.deferred.length > 0) {
-    // Compress deferred goals to a single inline line — they're not active and don't need full bullets
-    const deferredIds = goals.deferred
-      .map(line => line.match(/\*\*(\w+)\*\*/)?.[1])
-      .filter(Boolean)
-      .join(', ');
-    lines.push('', `_Deferred (full text in TELOS/GOALS.md): ${deferredIds}_`);
+  if (goals.deferredIds.length > 0) {
+    lines.push('', `_Deferred (full text in TELOS/GOALS.md): ${goals.deferredIds.join(', ')}_`);
+  }
+  if (goals.deferredPlain.length > 0) {
+    // Plain bullets without IDs from Deferred / Ongoing / Completed sections —
+    // render as a single compact inline line so they aren't silently dropped (#1115).
+    lines.push(`_Ongoing: ${goals.deferredPlain.join(', ')}_`);
   }
 
   lines.push(
