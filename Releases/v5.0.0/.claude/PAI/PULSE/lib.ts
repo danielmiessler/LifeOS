@@ -242,8 +242,14 @@ export function isSentinel(output: string): boolean {
 
 // ── Process Spawning ──
 
+// Resolve bash absolutely so cron-spawned children don't hit ENOENT when the
+// inherited PATH is sparse (observed on Linux when Pulse runs under a
+// minimal-env service manager). /bin/bash is the POSIX fallback — present on
+// macOS natively and on every mainstream Linux distro (on Arch /bin → usr/bin).
+const BASH_PATH = Bun.which("bash") ?? "/bin/bash"
+
 export async function spawnScript(command: string, timeoutMs = 60_000): Promise<string> {
-  const proc = Bun.spawn(["bash", "-c", command], {
+  const proc = Bun.spawn([BASH_PATH, "-c", command], {
     stdout: "pipe",
     stderr: "pipe",
     cwd: join(process.env.HOME ?? "~", ".claude", "PAI", "Pulse"),
