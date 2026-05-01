@@ -20,8 +20,8 @@ import { join } from "path";
 
 const HOME = process.env.HOME || "";
 const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
-const PULSE_STATE = join(PAI_DIR, "Pulse", "state", "state.json");
-const PULSE_TOML = join(PAI_DIR, "Pulse", "PULSE.toml");
+const PULSE_STATE = join(PAI_DIR, "PULSE", "state", "state.json");
+const PULSE_TOML = join(PAI_DIR, "PULSE", "PULSE.toml");
 
 // Jobs we specifically monitor — the Current→Ideal pipeline ones.
 const WATCHED_JOBS = [
