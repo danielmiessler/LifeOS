@@ -1,0 +1,15 @@
+{
+  "name": "pai-claude",
+  "private": true,
+  "type": "module",
+  "description": "Runtime dependencies for PAI Pulse and PAI tooling. Run `bun install` after extracting the release.",
+  "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "latest",
+    "grammy": "latest",
+    "jose": "latest",
+    "minisearch": "latest",
+    "openai": "latest",
+    "smol-toml": "latest",
+    "yaml": "latest"
+  }
+}

@@ -22,6 +22,11 @@ todos/
 /package-lock.json
 /bun.lock
 
+# Exception: ship the deliberate Pulse/runtime package.json so a fresh install
+# can `bun install` and have Pulse + tooling resolve smol-toml, grammy, yaml,
+# jose, minisearch, openai, and the Claude Agent SDK without a manual step.
+!/package.json
+
 # Accidental CLI-flag/URL files at root — agent-browser/playwright misuse
 # where flags or URLs get written as positional filenames. Root-anchored so
 # real dirs deeper in the tree aren't affected.
