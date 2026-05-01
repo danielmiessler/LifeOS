@@ -72,6 +72,16 @@ let pronunciationRules: CompiledRule[] = []
 let voiceConfig: LoadedVoiceConfig = { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
 let defaultVoiceId = ""
 let initialized = false
+let broadcastAudio: ((buffer: ArrayBuffer) => void) | null = null
+let wsAudioClientCount = 0
+
+export function setAudioBroadcaster(fn: (buffer: ArrayBuffer) => void): void {
+  broadcastAudio = fn
+}
+
+export function setWsAudioClientCount(n: number): void {
+  wsAudioClientCount = n
+}
 
 // ── Constants ──
 
@@ -347,27 +357,52 @@ async function generateSpeech(
 // ── Audio Playback ──
 
 async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
-  const tempFile = `/tmp/voice-${Date.now()}.mp3`
+  const platform = process.platform
 
-  await Bun.write(tempFile, audioBuffer)
-
-  return new Promise((resolve, reject) => {
-    const proc = spawn("/usr/bin/afplay", ["-v", volume.toString(), tempFile])
-
-    proc.on("error", (error) => {
-      log("error", "Voice: error playing audio", { error: String(error) })
-      reject(error)
+  if (platform === "darwin") {
+    const tempFile = `/tmp/voice-${Date.now()}.mp3`
+    await Bun.write(tempFile, audioBuffer)
+    await new Promise<void>((resolve, reject) => {
+      const proc = spawn("/usr/bin/afplay", ["-v", volume.toString(), tempFile])
+      proc.on("error", (error) => {
+        log("error", "Voice: error playing audio", { error: String(error) })
+        reject(error)
+      })
+      proc.on("exit", (code) => {
+        spawn("/bin/rm", [tempFile])
+        code === 0 ? resolve() : reject(new Error(`afplay exited with code ${code}`))
+      })
     })
+  } else if (platform === "linux") {
+    const tempFile = `/tmp/voice-${Date.now()}.mp3`
+    await Bun.write(tempFile, audioBuffer)
+    const players: [string, string[]][] = [
+      ["paplay",  [tempFile]],
+      ["aplay",   ["-q", tempFile]],
+      ["mpg123",  ["-q", tempFile]],
+    ]
+    let played = false
+    for (const [player, args] of players) {
+      const found = Bun.which(player)
+      if (!found) continue
+      try {
+        await new Promise<void>((res, rej) => {
+          const p = spawn(found, args)
+          p.on("error", rej)
+          p.on("exit", (code) => (code === 0 ? res() : rej(new Error(`${player} exited ${code}`))))
+        })
+        played = true
+        break
+      } catch { /* try next player */ }
+    }
+    spawn("/bin/rm", [tempFile])
+    if (!played) log("debug", "Voice: no native audio player found on linux — skipping native playback")
+  }
 
-    proc.on("exit", (code) => {
-      spawn("/bin/rm", [tempFile])
-      if (code === 0) {
-        resolve()
-      } else {
-        reject(new Error(`afplay exited with code ${code}`))
-      }
-    })
-  })
+  // Always broadcast to connected browser WS clients — fire and forget
+  if (broadcastAudio) {
+    try { broadcastAudio(audioBuffer) } catch { /* don't let broadcast errors kill the notification */ }
+  }
 }
 
 // ── macOS Desktop Notification ──
@@ -478,7 +513,9 @@ async function sendNotification(
       voicePlayed = true
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: failed to generate/play speech", { error: msg })
+      // 402 = expected on free ElevenLabs tier (library voice); everything else is unexpected
+      const level = msg.includes("402") || msg.includes("payment_required") ? "warn" : "error"
+      log(level, "Voice: failed to generate/play speech", { error: msg })
       voiceError = msg
     }
   }
@@ -554,6 +591,7 @@ export function voiceHealth(): Record<string, unknown> {
     pronunciation_rules: pronunciationRules.length,
     configured_voices: Object.keys(voiceConfig.voices),
     desktop_notifications: voiceConfig.desktopNotifications,
+    ws_audio_clients: wsAudioClientCount,
   }
 }
 

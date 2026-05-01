@@ -25,8 +25,11 @@ import {
   BarChart3,
   Eye,
   EyeOff,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { useObserverMode } from "@/contexts/ObserverModeContext";
+import { useAudioStreamContext } from "@/contexts/AudioStreamContext";
 
 const lifeNav = [
   { href: "/telos", label: "TELOS", icon: Target },
@@ -54,6 +57,7 @@ export default function AppHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const { observerMode, toggleObserverMode } = useObserverMode();
+  const { enabled: audioEnabled, connected: audioConnected, toggle: toggleAudio } = useAudioStreamContext();
 
   useEffect(() => { setMobileMenuOpen(false); }, [pathname]);
 
@@ -108,6 +112,27 @@ export default function AppHeader() {
             </nav>
 
             <div className="flex items-center gap-2 absolute right-4 sm:right-6">
+              <button
+                onClick={toggleAudio}
+                className={cn(
+                  "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[12px] tracking-[0.1em] transition-all duration-200",
+                  audioEnabled
+                    ? audioConnected
+                      ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                      : "bg-blue-500/10 text-blue-500/60 border border-blue-500/20"
+                    : "text-slate-500 hover:text-slate-300 hover:bg-white/5"
+                )}
+                title={
+                  audioEnabled
+                    ? audioConnected
+                      ? "Browser audio ON — connected"
+                      : "Browser audio ON — connecting…"
+                    : "Enable browser audio for voice notifications"
+                }
+              >
+                {audioEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline" style={fontStyle}>AUDIO</span>
+              </button>
               <button
                 onClick={toggleObserverMode}
                 className={cn(

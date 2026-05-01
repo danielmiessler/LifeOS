@@ -380,12 +380,38 @@ async function main() {
   // Opt in to all-interface binding (for LAN access from phone, Mac mini
   // fleet, etc.) via PAI_PULSE_BIND_ALL=1 in the env or .env file.
   const bindAll = (process.env.PAI_PULSE_BIND_ALL ?? "").trim() === "1"
+
+  // ── WebSocket Audio Clients ──
+  const audioClients = new Set<import("bun").ServerWebSocket<unknown>>()
+
   const server = Bun.serve({
     hostname: bindAll ? "0.0.0.0" : "127.0.0.1",
     port: config.port,
+
+    websocket: {
+      open(ws) {
+        audioClients.add(ws)
+        log("info", "WS audio client connected", { total: audioClients.size })
+        voiceModule?.setWsAudioClientCount?.(audioClients.size)
+      },
+      close(ws) {
+        audioClients.delete(ws)
+        log("info", "WS audio client disconnected", { total: audioClients.size })
+        voiceModule?.setWsAudioClientCount?.(audioClients.size)
+      },
+      message(_ws, _msg) { /* clients send nothing; server-to-client only */ },
+    },
+
     async fetch(req) {
       const url = new URL(req.url)
       const pathname = url.pathname
+
+      // WebSocket audio upgrade — must be first
+      if (pathname === "/ws/audio") {
+        const upgraded = server.upgrade(req)
+        if (upgraded) return undefined as unknown as Response
+        return new Response("WebSocket upgrade failed", { status: 400 })
+      }
 
       // Health (unified) — moved to /api/pulse/health to avoid conflict with Life Dashboard /health page
       if (req.method === "GET" && (pathname === "/api/pulse/health" || pathname === "/healthz")) {
@@ -446,6 +472,16 @@ async function main() {
   })
 
   log("info", "HTTP server listening", { port: server.port })
+
+  // Wire WS audio broadcaster into voice module (must happen after server is defined)
+  if (voiceModule && config.voice?.enabled !== false) {
+    voiceModule.setAudioBroadcaster((buffer: ArrayBuffer) => {
+      for (const client of audioClients) {
+        try { client.send(buffer) } catch { /* client disconnected mid-send */ }
+      }
+    })
+    log("info", "Voice: WS audio broadcaster wired")
+  }
 
   // Menu bar app is launched by its own launchd agent (com.pai.pulse-menubar)
   // Do NOT spawn it here — that causes duplicate menu bar icons
@@ -543,6 +579,9 @@ async function main() {
   if (syslogModule) await syslogModule.stop?.()
   await writeState(STATE_PATH, state).catch(() => {})
   log("info", "PAI Pulse stopped", { uptimeMs: Date.now() - state.startedAt })
+  // supervise() coroutines may still be sleeping — exit explicitly so systemd
+  // doesn't wait 90s for them to wake up and check the shuttingDown flag.
+  process.exit(0)
 }
 
 main().catch((err) => {
