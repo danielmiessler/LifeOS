@@ -1,0 +1,36 @@
+# PAI Pulse — systemd user-unit template (Linux companion to com.pai.pulse.plist)
+#
+# Installed by manage.sh on Linux to ~/.config/systemd/user/pai-pulse.service.
+# manage.sh substitutes __HOME__ and __BUN_PATH__ at install time, the same
+# placeholders the launchd plist uses.
+#
+# Manual install:
+#   mkdir -p ~/.config/systemd/user
+#   sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$(command -v bun)|g" \
+#       ~/.claude/PAI/PULSE/pai-pulse.service > ~/.config/systemd/user/pai-pulse.service
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now pai-pulse.service
+#
+# Status / logs:
+#   systemctl --user status pai-pulse
+#   journalctl --user -u pai-pulse -f
+
+[Unit]
+Description=PAI Pulse — Personal AI Infrastructure unified daemon
+Documentation=https://github.com/danielmiessler/Personal_AI_Infrastructure
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=__HOME__/.claude/PAI/PULSE
+ExecStart=__BUN_PATH__ run pulse.ts
+Environment=HOME=__HOME__
+Environment=PATH=__HOME__/.bun/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin
+StandardOutput=append:__HOME__/.claude/PAI/PULSE/logs/pulse-stdout.log
+StandardError=append:__HOME__/.claude/PAI/PULSE/logs/pulse-stderr.log
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target
