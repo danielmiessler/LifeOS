@@ -1,23 +1,36 @@
 #!/bin/bash
 # PAI Pulse — Process Management
 # Usage: manage.sh {start|stop|restart|status|install|uninstall}
+#
+# macOS: launchd via com.pai.pulse.plist + ~/Library/LaunchAgents.
+# Linux: systemd --user via pai-pulse.service + ~/.config/systemd/user.
 
 PULSE_DIR="$HOME/.claude/PAI/PULSE"
+
+# launchd (macOS) artifacts
 PLIST_NAME="com.pai.pulse"
 PLIST_SRC="$PULSE_DIR/$PLIST_NAME.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
+
+# systemd (Linux) artifacts
+SERVICE_NAME="pai-pulse.service"
+SERVICE_SRC="$PULSE_DIR/$SERVICE_NAME"
+SERVICE_DST="$HOME/.config/systemd/user/$SERVICE_NAME"
+
 PID_FILE="$PULSE_DIR/state/pulse.pid"
 STATE_FILE="$PULSE_DIR/state/state.json"
 
-# Resolve bun's actual location for the launchd job. The public plist
-# template ships with `__BUN_PATH__` so the job works for both brew users
+OS="$(uname -s)"
+
+# Resolve bun's actual location for the service unit. Templates ship with
+# `__BUN_PATH__` so the job works for both brew users
 # (/opt/homebrew/bin/bun) and curl-installer users (~/.bun/bin/bun).
 #
 # Order matters. `command -v bun` can resolve to a temporary helper shim
 # inside `/private/tmp/bun-node-*/bun` when this script runs inside `bun
 # install` (the child shell has its own PATH). That path is ephemeral and
-# the launchd job would fail on next boot. Prefer the canonical install
-# locations and fall back to `command -v bun` only if neither exists.
+# the launchd / systemd job would fail on next boot. Prefer the canonical
+# install locations and fall back to `command -v bun` only if neither exists.
 if [ -x "$HOME/.bun/bin/bun" ]; then
   BUN_PATH="$HOME/.bun/bin/bun"
 elif [ -x "/opt/homebrew/bin/bun" ]; then
@@ -28,19 +41,96 @@ else
   BUN_PATH="$(command -v bun || echo "$HOME/.bun/bin/bun")"
 fi
 
+# Substitute __HOME__ + __BUN_PATH__ placeholders into the destination path.
+render_template() {
+  local src="$1" dst="$2"
+  mkdir -p "$(dirname "$dst")"
+  sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$src" > "$dst"
+}
+
+# ── Per-OS lifecycle helpers ──────────────────────────────────
+
+service_start() {
+  case "$OS" in
+    Darwin)
+      [ -f "$PLIST_DST" ] || render_template "$PLIST_SRC" "$PLIST_DST"
+      launchctl load "$PLIST_DST" 2>/dev/null
+      ;;
+    Linux)
+      if [ ! -f "$SERVICE_DST" ]; then
+        render_template "$SERVICE_SRC" "$SERVICE_DST"
+        systemctl --user daemon-reload
+      fi
+      systemctl --user start "$SERVICE_NAME"
+      ;;
+    *)
+      echo "ERROR: unsupported OS '$OS' — supported: Darwin, Linux" >&2
+      exit 1
+      ;;
+  esac
+}
+
+service_stop() {
+  case "$OS" in
+    Darwin) launchctl unload "$PLIST_DST" 2>/dev/null ;;
+    Linux)  systemctl --user stop "$SERVICE_NAME" 2>/dev/null ;;
+  esac
+}
+
+service_install() {
+  case "$OS" in
+    Darwin)
+      if [ -f "$PLIST_DST" ]; then
+        launchctl unload "$PLIST_DST" 2>/dev/null || true
+      fi
+      pkill -9 -f "bun.*pulse.ts" 2>/dev/null || true
+      sleep 1
+      render_template "$PLIST_SRC" "$PLIST_DST"
+      launchctl load "$PLIST_DST"
+      ;;
+    Linux)
+      systemctl --user stop "$SERVICE_NAME" 2>/dev/null || true
+      pkill -9 -f "bun.*pulse.ts" 2>/dev/null || true
+      sleep 1
+      render_template "$SERVICE_SRC" "$SERVICE_DST"
+      systemctl --user daemon-reload
+      systemctl --user enable --now "$SERVICE_NAME"
+      # Hint about linger so the service keeps running after logout.
+      if ! loginctl show-user "$USER" 2>/dev/null | grep -q "Linger=yes"; then
+        echo "Hint: 'sudo loginctl enable-linger $USER' to keep Pulse running after logout." >&2
+      fi
+      ;;
+    *)
+      echo "ERROR: unsupported OS '$OS' — supported: Darwin, Linux" >&2
+      exit 1
+      ;;
+  esac
+}
+
+service_uninstall() {
+  case "$OS" in
+    Darwin)
+      launchctl unload "$PLIST_DST" 2>/dev/null
+      rm -f "$PLIST_DST"
+      ;;
+    Linux)
+      systemctl --user disable --now "$SERVICE_NAME" 2>/dev/null
+      rm -f "$SERVICE_DST"
+      systemctl --user daemon-reload
+      ;;
+  esac
+}
+
+# ── Commands ──────────────────────────────────────────────────
+
 case "$1" in
   start)
-    if [ ! -f "$PLIST_DST" ]; then
-      # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
-      # no-op on plists that already have literal paths.
-      sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
-    fi
-    launchctl load "$PLIST_DST" 2>/dev/null
+    service_start
     echo "PAI Pulse started"
     ;;
 
   stop)
-    launchctl unload "$PLIST_DST" 2>/dev/null
+    service_stop
     if [ -f "$PID_FILE" ]; then
       PID=$(cat "$PID_FILE")
       kill "$PID" 2>/dev/null
@@ -87,18 +177,9 @@ case "$1" in
     mkdir -p "$PULSE_DIR/state" "$PULSE_DIR/logs"
 
     # Cleanup any prior pulse before installing fresh — prevents the stale-PID
-    # / unbound-port half-dead state where a previous launchd-managed pulse is
+    # / unbound-port half-dead state where a previous service-managed pulse is
     # alive with open fds but never bound :31337.
-    if [ -f "$PLIST_DST" ]; then
-      launchctl unload "$PLIST_DST" 2>/dev/null || true
-    fi
-    pkill -9 -f "bun.*pulse.ts" 2>/dev/null || true
-    sleep 1
-
-    # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
-    # no-op on plists that already have literal paths.
-    sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
-    launchctl load "$PLIST_DST"
+    service_install
 
     # Verify pulse actually binds :31337 within 10s. Fail loud if not — prior
     # behavior was silent success even when the daemon never came up.
@@ -112,14 +193,16 @@ case "$1" in
       fi
     done
 
-    echo "ERROR: PAI Pulse plist installed but port 31337 did not bind within 10s." >&2
+    echo "ERROR: PAI Pulse service installed but port 31337 did not bind within 10s." >&2
     echo "  Check: tail -50 $PULSE_DIR/logs/pulse-stderr.log" >&2
+    if [ "$OS" = "Linux" ]; then
+      echo "  Or:    journalctl --user -u $SERVICE_NAME -n 50 --no-pager" >&2
+    fi
     exit 1
     ;;
 
   uninstall)
-    launchctl unload "$PLIST_DST" 2>/dev/null
-    rm -f "$PLIST_DST"
+    service_uninstall
     echo "PAI Pulse uninstalled"
     ;;
 
