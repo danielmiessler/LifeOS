@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState } from "react"
 
-export function useAudioStream(enabled: boolean): { connected: boolean } {
+export function useAudioStream(enabled: boolean): { connected: boolean; initAudio: () => void } {
   const [connected, setConnected] = useState(false)
   const wsRef = useRef<WebSocket | null>(null)
   const audioCtxRef = useRef<AudioContext | null>(null)
   const backoffRef = useRef(1000)
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const enabledRef = useRef(enabled)
+  const unlockRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     enabledRef.current = enabled
@@ -19,8 +20,31 @@ export function useAudioStream(enabled: boolean): { connected: boolean } {
       wsRef.current?.close()
       wsRef.current = null
       if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      if (unlockRef.current) {
+        document.removeEventListener("click", unlockRef.current)
+        document.removeEventListener("keydown", unlockRef.current)
+        unlockRef.current = null
+      }
       setConnected(false)
       return
+    }
+
+    // Create AudioContext eagerly so it's ready when audio arrives
+    if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
+      audioCtxRef.current = new AudioContext()
+    }
+
+    // If suspended (page loaded without a prior gesture), unlock on first user interaction
+    if (audioCtxRef.current.state === "suspended" && !unlockRef.current) {
+      const unlock = () => {
+        audioCtxRef.current?.resume()
+        document.removeEventListener("click", unlock)
+        document.removeEventListener("keydown", unlock)
+        unlockRef.current = null
+      }
+      unlockRef.current = unlock
+      document.addEventListener("click", unlock)
+      document.addEventListener("keydown", unlock)
     }
 
     function connect() {
@@ -71,5 +95,20 @@ export function useAudioStream(enabled: boolean): { connected: boolean } {
     }
   }, [enabled])
 
-  return { connected }
+  function initAudio() {
+    // Replace any stuck-suspended context with a fresh one during the user gesture
+    if (audioCtxRef.current?.state === "suspended") {
+      audioCtxRef.current.close()
+      audioCtxRef.current = null
+    }
+    if (unlockRef.current) {
+      document.removeEventListener("click", unlockRef.current)
+      document.removeEventListener("keydown", unlockRef.current)
+      unlockRef.current = null
+    }
+    if (!audioCtxRef.current) audioCtxRef.current = new AudioContext()
+    audioCtxRef.current.resume()
+  }
+
+  return { connected, initAudio }
 }

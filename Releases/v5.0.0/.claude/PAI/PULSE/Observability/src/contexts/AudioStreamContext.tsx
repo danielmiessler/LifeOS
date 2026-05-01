@@ -25,14 +25,13 @@ export function AudioStreamProvider({ children }: { children: React.ReactNode })
     setEnabled(localStorage.getItem(LS_KEY) === "true")
   }, [])
 
-  const { connected } = useAudioStream(enabled)
+  const { connected, initAudio } = useAudioStream(enabled)
 
   const toggle = () => {
-    setEnabled((prev) => {
-      const next = !prev
-      localStorage.setItem(LS_KEY, String(next))
-      return next
-    })
+    const next = !enabled
+    localStorage.setItem(LS_KEY, String(next))
+    if (next) initAudio() // unlock AudioContext during the user gesture, before state update
+    setEnabled(next)
   }
 
   return (
