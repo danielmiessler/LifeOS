@@ -1,7 +1,7 @@
 /**
  * Path resolution semantics — regression tests for two-domain config.
  *
- * Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
+ * Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md "## Directory Structure"
  *
  * Run: bun test hooks/lib/paths.test.ts
  *
@@ -13,6 +13,7 @@
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { homedir } from 'os';
 import { join, isAbsolute } from 'path';
+import { readFileSync } from 'fs';
 
 import * as claude from './paths';
 import * as pai from '../../PAI/lib/paths';
@@ -162,5 +163,22 @@ describe('PAI domain — derived helpers', () => {
     } finally {
       process.chdir(cwd);
     }
+  });
+});
+
+describe('mirror-lib drift guard', () => {
+  // The two libs are deliberate mirrors per C1 (no cross-domain relative
+  // imports). Drift between them silently breaks one domain. Bodies must be
+  // byte-identical below the docblock; if you need different behavior,
+  // extract the difference rather than letting them drift.
+  test('hooks/lib/paths.ts and PAI/lib/paths.ts have identical bodies (post-docblock)', () => {
+    const stripDocblock = (src: string): string => src.replace(/^\/\*\*[\s\S]*?\*\/\s*/, '');
+    const claudeBody = stripDocblock(
+      readFileSync(join(import.meta.dir, 'paths.ts'), 'utf-8')
+    );
+    const paiBody = stripDocblock(
+      readFileSync(join(import.meta.dir, '../../PAI/lib/paths.ts'), 'utf-8')
+    );
+    expect(claudeBody).toBe(paiBody);
   });
 });

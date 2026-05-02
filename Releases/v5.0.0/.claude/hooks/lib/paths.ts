@@ -1,7 +1,7 @@
 /**
  * Claude Path Resolution — self-contained.
  *
- * Architecture L18-34 (PAI/DOCUMENTATION/PAISystemArchitecture.md):
+ * Architecture (PAI/DOCUMENTATION/PAISystemArchitecture.md, "## Directory Structure"):
  * - CLAUDE_CONFIG_DIR (~/.claude)        — Claude Code: settings, hooks, skills, agents
  * - PAI_DIR           (~/.claude/PAI)    — PAI data: MEMORY, ALGORITHM, TOOLS, USER
  *

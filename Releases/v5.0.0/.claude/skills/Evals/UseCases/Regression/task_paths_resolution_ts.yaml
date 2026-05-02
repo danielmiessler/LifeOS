@@ -1,13 +1,13 @@
 # Task: Path Resolution Semantics — TypeScript
 # Verifies hooks/lib/paths.ts and PAI/lib/paths.ts resolution against the
 # two-domain config contract documented in
-# PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34.
+# PAI/DOCUMENTATION/PAISystemArchitecture.md "## Directory Structure".
 #
 # Auto-deprecate signal: if the architecture doc's directory-structure block
-# (L18-34) changes to introduce/remove domains, this task must be revised.
+# ("## Directory Structure" block) changes to introduce/remove domains, this task must be revised.
 
 id: task_paths_resolution_ts
-description: "TS path lib resolves CLAUDE_CONFIG_DIR + PAI_DIR per architecture L18-34"
+description: "TS path lib resolves CLAUDE_CONFIG_DIR + PAI_DIR per architecture Directory Structure"
 type: regression
 domain: coding
 source: refactor
@@ -28,6 +28,6 @@ tags:
   - paths
   - configurability
   - regression
-  - architecture-L18-34
+  - architecture-directory-structure
 
 created_at: "2026-05-02"

@@ -4,7 +4,7 @@
  * Tests the PAI installer's intake of install location via env vars and
  * CLI flags, with precedence: CLI flag > env var > default.
  *
- * Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
+ * Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md "## Directory Structure"
  *
  * Contract symmetry: the installer's resolved values MUST match the runtime
  * lib's `getClaudeDir()` / `getPaiDir()` for the same env, so installer and
@@ -125,6 +125,20 @@ describe('resolveInstallPaths — CLI flags override env', () => {
     expect(() =>
       resolveInstallPaths({ cliPaiDir: 'relative/path' })
     ).toThrow(/--pai-dir/);
+  });
+
+  test('cliClaude + PAI_DIR="   " (whitespace env) → PAI defaults under CLI Claude', () => {
+    process.env.PAI_DIR = '   ';
+    const { claudeConfigDir, paiDir } = resolveInstallPaths({ cliClaudeConfigDir: '/y' });
+    expect(claudeConfigDir).toBe('/y');
+    expect(paiDir).toBe('/y/PAI');
+  });
+
+  test('cliClaude + PAI_DIR="" (empty env) → PAI defaults under CLI Claude', () => {
+    process.env.PAI_DIR = '';
+    const { claudeConfigDir, paiDir } = resolveInstallPaths({ cliClaudeConfigDir: '/y' });
+    expect(claudeConfigDir).toBe('/y');
+    expect(paiDir).toBe('/y/PAI');
   });
 });
 

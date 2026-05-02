@@ -1,7 +1,7 @@
 #!/usr/bin/env bats
 # Path resolution semantics — regression tests for two-domain config (shell).
 #
-# Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
+# Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md "## Directory Structure"
 # Plan reference: ~/.claude-vanilla/plans/kind-questing-kernighan.md
 #
 # Run: bats PAI/lib/paths.bats

@@ -6,7 +6,7 @@
  * trim/empty/whitespace/absolute semantics from `PAI/lib/paths.ts` so the
  * installer and runtime agree on where things live.
  *
- * Architecture: PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
+ * Architecture: PAI/DOCUMENTATION/PAISystemArchitecture.md "## Directory Structure"
  */
 
 import { homedir } from 'os';
@@ -42,6 +42,7 @@ function clean(value: string | undefined): string | undefined {
 export function resolveInstallPaths(opts: ResolveOptions): ResolvedInstallPaths {
   const cliClaude = clean(opts.cliClaudeConfigDir);
   const cliPai = clean(opts.cliPaiDir);
+  const envPai = clean(process.env.PAI_DIR);
 
   const claudeConfigDir = cliClaude
     ? assertAbsolute(expandPath(cliClaude), '--claude-config-dir')
@@ -50,9 +51,11 @@ export function resolveInstallPaths(opts: ResolveOptions): ResolvedInstallPaths 
   let paiDir: string;
   if (cliPai) {
     paiDir = assertAbsolute(expandPath(cliPai), '--pai-dir');
-  } else if (cliClaude && !process.env.PAI_DIR?.trim()) {
+  } else if (cliClaude && !envPai) {
     // CLI gave a Claude override and no explicit PAI override → PAI defaults
-    // under the CLI-supplied Claude root.
+    // under the CLI-supplied Claude root (rather than the runtime lib's
+    // env-resolved getPaiDir, which would honor a non-CLI CLAUDE_CONFIG_DIR
+    // env var the user did not intend to use).
     paiDir = join(claudeConfigDir, 'PAI');
   } else {
     paiDir = getPaiDir();

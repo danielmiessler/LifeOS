@@ -3,7 +3,7 @@
 #
 # PAI Path Helper — single source of truth for shell scripts.
 #
-# Architecture L18-34 (PAI/DOCUMENTATION/PAISystemArchitecture.md):
+# Architecture (PAI/DOCUMENTATION/PAISystemArchitecture.md, "## Directory Structure"):
 #   CLAUDE_CONFIG_DIR (~/.claude)     — Claude Code: settings, hooks, skills
 #   PAI_DIR           (~/.claude/PAI) — PAI data: MEMORY, ALGORITHM, USER
 #
@@ -84,6 +84,10 @@ __pai_paths_resolve_pai() {
   fi
 }
 
+# Propagate failure: `return` works when the helper is sourced (the common
+# case); `return` outside a function fails silently with stderr suppressed
+# and we fall through to `exit`, which works when the helper is executed
+# directly. Keeps a single line working for both contexts.
 __pai_paths_resolve_claude || return 1 2>/dev/null || exit 1
 __pai_paths_resolve_pai    || return 1 2>/dev/null || exit 1
 
