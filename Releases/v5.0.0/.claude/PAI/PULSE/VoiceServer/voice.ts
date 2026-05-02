@@ -17,6 +17,7 @@ import { spawn } from "child_process"
 import { join } from "path"
 import { existsSync, readFileSync } from "fs"
 import { log } from "../lib"
+import { getPaiDir, getSettingsPath } from "../../lib/paths"
 
 // ── Public Config Interface ──
 
@@ -162,7 +163,7 @@ function escapeRegex(str: string): string {
 }
 
 function loadPronunciations(customPath?: string): void {
-  const paiDir = join(process.env.HOME ?? "~", ".claude", "PAI")
+  const paiDir = getPaiDir()
   const userPronPath = customPath ?? join(paiDir, "USER", "pronunciations.json")
 
   try {
@@ -195,7 +196,7 @@ function applyPronunciations(text: string): string {
 // ── Voice Config from settings.json ──
 
 function loadVoiceConfigFromSettings(): LoadedVoiceConfig {
-  const settingsPath = join(process.env.HOME ?? "~", ".claude", "settings.json")
+  const settingsPath = getSettingsPath()
 
   try {
     if (!existsSync(settingsPath)) {
@@ -652,7 +653,7 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
       // /notify/personality honest with whatever the user last selected.
       let voiceId: string | null = null
       try {
-        const settingsFile = join(process.env.HOME ?? "~", ".claude", "settings.json")
+        const settingsFile = getSettingsPath()
         const settings = JSON.parse(readFileSync(settingsFile, "utf-8"))
         const main = settings?.daidentity?.voices?.main
         const vid = (main?.voiceId || main?.VOICE_ID || main?.voice_id) as string | undefined

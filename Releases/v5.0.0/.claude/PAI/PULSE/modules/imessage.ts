@@ -27,6 +27,7 @@ import {
 import { sendMessage } from "../lib/imessage-send"
 import { join } from "path"
 import { appendFile, mkdir, rename } from "fs/promises"
+import { getClaudeDir, paiPath } from "../../lib/paths"
 
 // BILLING: Strip ANTHROPIC_API_KEY before any SDK query() call. Same rationale
 // as modules/telegram.ts — prevents API billing when the module is re-enabled.
@@ -58,10 +59,9 @@ export interface IMessageHealth {
 
 // ── Module State ──
 
-const HOME = process.env.HOME ?? ""
-const CWD = join(HOME, ".claude")
-const STATE_DIR = join(HOME, ".claude", "PAI", "Pulse", "state", "imessage")
-const LOGS_DIR = join(HOME, ".claude", "PAI", "Pulse", "logs", "imessage")
+const CWD = getClaudeDir()
+const STATE_DIR = paiPath("Pulse", "state", "imessage")
+const LOGS_DIR = paiPath("Pulse", "logs", "imessage")
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let running = false

@@ -17,11 +17,10 @@
 
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { paiPath } from "../../lib/paths";
 
-const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
-const PULSE_STATE = join(PAI_DIR, "Pulse", "state", "state.json");
-const PULSE_TOML = join(PAI_DIR, "Pulse", "PULSE.toml");
+const PULSE_STATE = paiPath("Pulse", "state", "state.json");
+const PULSE_TOML = paiPath("Pulse", "PULSE.toml");
 
 // Jobs we specifically monitor — the Current→Ideal pipeline ones.
 const WATCHED_JOBS = [

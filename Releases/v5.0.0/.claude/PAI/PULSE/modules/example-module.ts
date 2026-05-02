@@ -7,9 +7,6 @@
  * A module must export: start(), stop(), health(), and handleRequest()
  */
 
-import { join } from "path"
-
-const HOME = process.env.HOME ?? ""
 const MODULE_NAME = "example"
 
 interface ModuleState {

@@ -9,9 +9,9 @@
  */
 
 import { join } from "path"
+import { paiPath } from "../../lib/paths"
 
-const HOME = process.env.HOME ?? ""
-const STATE_FILE = join(HOME, ".claude", "PAI", "PULSE", "state", "github-seen.json")
+const STATE_FILE = paiPath("PULSE", "state", "github-seen.json")
 // Repos to monitor for new issues / activity. Override via PAI_PULSE_REPOS
 // env var (comma-separated "owner/name" pairs). Empty default keeps fresh
 // installs from polling repos the user hasn't opted into.

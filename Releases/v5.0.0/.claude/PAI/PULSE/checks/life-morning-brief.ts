@@ -11,9 +11,9 @@
 
 import { join } from "path"
 import { existsSync, readFileSync } from "fs"
+import { paiPath } from "../../lib/paths"
 
-const HOME = process.env.HOME ?? ""
-const TELOS_DIR = join(HOME, ".claude", "PAI", "USER", "TELOS")
+const TELOS_DIR = paiPath("USER", "TELOS")
 
 function readFile(name: string): string {
   const p = join(TELOS_DIR, name)

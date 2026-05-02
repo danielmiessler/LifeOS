@@ -12,10 +12,10 @@
 
 import { join, basename, dirname } from "path"
 import { existsSync, readFileSync, writeFileSync, appendFileSync, readdirSync, statSync, mkdirSync } from "fs"
+import { getPaiDir, paiPath, getClaudeDir } from "../../lib/paths"
 
-const HOME = process.env.HOME ?? ""
-const PAI_DIR = join(HOME, ".claude", "PAI")
-const PROJECTS_DIR = join(HOME, ".claude", "projects")
+const PAI_DIR = getPaiDir()
+const PROJECTS_DIR = join(getClaudeDir(), "projects")
 const OUTPUT_FILE = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "session-costs.jsonl")
 const STATE_FILE = join(PAI_DIR, "Pulse", "Performance", "aggregator-state.json")
 

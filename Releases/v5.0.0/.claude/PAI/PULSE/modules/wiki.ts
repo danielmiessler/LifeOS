@@ -32,22 +32,22 @@ import {
   writeFileSync,
 } from "fs"
 import MiniSearch from "minisearch"
+import { getPaiDir, paiPath, getClaudeDir, getSettingsPath, getKnowledgeDir, getDocumentationDir, getAlgorithmDir } from "../../lib/paths"
 
 // Path Construction
 
-const HOME = process.env.HOME ?? "~"
-const PAI_DIR = join(HOME, ".claude", "PAI")
-const DOCUMENTATION_DIR = join(PAI_DIR, "DOCUMENTATION")
-const KNOWLEDGE_DIR = join(PAI_DIR, "MEMORY", "KNOWLEDGE")
-const BOOKMARKS_DIR = join(PAI_DIR, "MEMORY", "BOOKMARKS")
+const PAI_DIR = getPaiDir()
+const DOCUMENTATION_DIR = getDocumentationDir()
+const KNOWLEDGE_DIR = getKnowledgeDir()
+const BOOKMARKS_DIR = paiPath("MEMORY", "BOOKMARKS")
 const BOOKMARKS_CSV = join(BOOKMARKS_DIR, "bookmarks.csv")
-const ALGORITHM_DIR = join(PAI_DIR, "Algorithm")
-const SKILLS_DIR = join(HOME, ".claude", "skills")
-const HOOKS_DIR = join(HOME, ".claude", "hooks")
-const SETTINGS_PATH = join(HOME, ".claude", "settings.json")
-const ARBOL_WORKERS_DIR = join(PAI_DIR, "USER", "ARBOL", "Workers")
+const ALGORITHM_DIR = getAlgorithmDir()
+const SKILLS_DIR = join(getClaudeDir(), "skills")
+const HOOKS_DIR = join(getClaudeDir(), "hooks")
+const SETTINGS_PATH = getSettingsPath()
+const ARBOL_WORKERS_DIR = paiPath("USER", "ARBOL", "Workers")
 
-const SYSTEM_PROMPT_PATH = join(PAI_DIR, "PAI_SYSTEM_PROMPT.md")
+const SYSTEM_PROMPT_PATH = paiPath("PAI_SYSTEM_PROMPT.md")
 const KNOWLEDGE_DOMAINS = ["People", "Companies", "Ideas", "Blogs"] as const
 type KnowledgeDomain = (typeof KNOWLEDGE_DOMAINS)[number]
 

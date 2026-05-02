@@ -17,14 +17,14 @@
 import { join } from "path"
 import { readFileSync, existsSync } from "fs"
 import { parse } from "smol-toml"
+import { getPaiDir, paiPath, getEnvPath } from "../lib/paths"
 
 // ── Load .env before anything else ──
 
-const HOME = process.env.HOME ?? "~"
-const PAI_DIR = join(HOME, ".claude", "PAI")
-const PULSE_DIR = join(PAI_DIR, "Pulse")
+const PAI_DIR = getPaiDir()
+const PULSE_DIR = paiPath("Pulse")
 
-const envPath = join(HOME, ".claude", ".env")
+const envPath = getEnvPath()
 try {
   const envContent = readFileSync(envPath, "utf-8")
   for (const line of envContent.split("\n")) {

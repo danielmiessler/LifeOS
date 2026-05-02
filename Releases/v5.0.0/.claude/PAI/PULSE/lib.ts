@@ -7,7 +7,9 @@
 
 import { parse } from "smol-toml"
 import { join } from "path"
+import { homedir } from "os"
 import { rename } from "fs/promises"
+import { paiPath } from "../lib/paths"
 
 // ── Types ──
 
@@ -246,7 +248,7 @@ export async function spawnScript(command: string, timeoutMs = 60_000): Promise<
   const proc = Bun.spawn(["bash", "-c", command], {
     stdout: "pipe",
     stderr: "pipe",
-    cwd: join(process.env.HOME ?? "~", ".claude", "PAI", "Pulse"),
+    cwd: paiPath("Pulse"),
     env: { ...process.env },
   })
 
@@ -283,9 +285,9 @@ export async function spawnClaude(prompt: string, opts: { model: string; timeout
     "--setting-sources", "",
     "--system-prompt", "",
   ]
-  const claudePath = Bun.which("claude") ?? join(process.env.HOME ?? "~", ".local", "bin", "claude")
+  const claudePath = Bun.which("claude") ?? join(homedir(), ".local", "bin", "claude")
 
-  const env: Record<string, string> = { ...process.env, HOME: process.env.HOME ?? "" } as Record<string, string>
+  const env: Record<string, string> = { ...process.env, HOME: homedir() } as Record<string, string>
   delete env.ANTHROPIC_API_KEY
 
   const proc = Bun.spawn([claudePath, ...args], {

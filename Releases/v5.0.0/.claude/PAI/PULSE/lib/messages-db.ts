@@ -11,9 +11,9 @@
 
 import { Database } from "bun:sqlite"
 import { join } from "path"
+import { homedir } from "os"
 
-const HOME = process.env.HOME ?? ""
-const CHAT_DB_PATH = join(HOME, "Library", "Messages", "chat.db")
+const CHAT_DB_PATH = join(homedir(), "Library", "Messages", "chat.db")
 
 // Apple epoch: 2001-01-01 00:00:00 UTC
 // chat.db stores dates as nanoseconds since Apple epoch
