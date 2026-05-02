@@ -16,16 +16,14 @@
 
 import { existsSync, readFileSync } from "fs";
 import { basename, dirname, extname, join, resolve } from "path";
-import { homedir } from "os";
+import { getEnvPath } from "../../../PAI/lib/paths";
 
 // ============================================================================
 // Environment Loading — keys from ~/.claude/.env
 // ============================================================================
 
 function loadEnv(): void {
-  const envPath = process.env.PAI_CONFIG_DIR
-    ? resolve(process.env.PAI_CONFIG_DIR, ".env")
-    : resolve(homedir(), ".claude/.env");
+  const envPath = getEnvPath();
   try {
     const content = readFileSync(envPath, "utf-8");
     for (const line of content.split("\n")) {

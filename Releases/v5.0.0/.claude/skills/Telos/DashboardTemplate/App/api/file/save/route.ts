@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
+import { getClaudeDir } from '../../../../../../PAI/lib/paths'
 
-const TELOS_DIR = path.join(os.homedir(), '.claude/skills/Telos')
+const TELOS_DIR = path.join(getClaudeDir(), 'skills', 'Telos')
 
 export async function POST(request: Request) {
   try {

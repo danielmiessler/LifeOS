@@ -11,16 +11,16 @@ set -o pipefail
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-PAI_DIR="${PAI_DIR:-$HOME/.claude/PAI}"
-CLAUDE_HOME="$HOME/.claude"
-SETTINGS_FILE="$CLAUDE_HOME/settings.json"
-RATINGS_FILE="$PAI_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl"
-MODEL_CACHE="$PAI_DIR/MEMORY/STATE/model-cache.txt"
+# shellcheck source=PAI/lib/paths.sh
+. "${CLAUDE_CONFIG_DIR:-${HOME:?HOME unset}/.claude}/PAI/lib/paths.sh"
+SETTINGS_FILE="$CLAUDE_SETTINGS_FILE"
+RATINGS_FILE="$PAI_LEARNING_DIR/SIGNALS/ratings.jsonl"
+MODEL_CACHE="$PAI_STATE_DIR/model-cache.txt"
 QUOTE_CACHE="$PAI_DIR/.quote-cache"
-LOCATION_CACHE="$PAI_DIR/MEMORY/STATE/location-cache.json"
-WEATHER_CACHE="$PAI_DIR/MEMORY/STATE/weather-cache.json"
+LOCATION_CACHE="$PAI_STATE_DIR/location-cache.json"
+WEATHER_CACHE="$PAI_STATE_DIR/weather-cache.json"
 USAGE_CACHE="/tmp/pai-usage-${USER:-anon}.json"
-LEARNING_CACHE="$PAI_DIR/MEMORY/STATE/learning-cache.sh"
+LEARNING_CACHE="$PAI_STATE_DIR/learning-cache.sh"
 
 # Settings values read once up front. Re-reading settings.json is measurable on
 # a 1-second refresh loop, so we mtime-cache the jq extraction to /tmp.
@@ -59,8 +59,8 @@ PAI_VERSION="${PAI_VERSION:-—}"
 # multiple candidate paths in order, keeping the first non-empty result.
 ALGO_VERSION=""
 for _algo_path in \
-    "$PAI_DIR/ALGORITHM/LATEST" \
-    "$HOME/.claude/PAI/ALGORITHM/LATEST" \
+    "$PAI_ALGORITHM_DIR/LATEST" \
+    "$CLAUDE_CONFIG_DIR/PAI/ALGORITHM/LATEST" \
     "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST" \
     "$(eval echo ~"$(id -un 2>/dev/null)")/.claude/PAI/ALGORITHM/LATEST"; do
     if [ -n "$_algo_path" ] && [ -f "$_algo_path" ]; then
@@ -73,8 +73,8 @@ done
     printf '[%s] ALGO_VERSION=%q HOME=%q PAI_DIR=%q USER=%q paths_tried:' \
         "$(date '+%H:%M:%S')" "$ALGO_VERSION" "${HOME:-UNSET}" "${PAI_DIR:-UNSET}" "${USER:-UNSET}"
     for _algo_path in \
-        "$PAI_DIR/ALGORITHM/LATEST" \
-        "$HOME/.claude/PAI/ALGORITHM/LATEST" \
+        "$PAI_ALGORITHM_DIR/LATEST" \
+        "$CLAUDE_CONFIG_DIR/PAI/ALGORITHM/LATEST" \
         "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST"; do
         printf ' %s=%s' "$_algo_path" "$([ -f "$_algo_path" ] && echo OK || echo MISS)"
     done
@@ -102,7 +102,7 @@ WEATHER_CACHE_TTL=900
 USAGE_CACHE_TTL=900      # 15 min: /api/oauth/usage has aggressive per-token rate limits (~5 req before 429)
 
 # Source .env for API keys
-[ -f "${PAI_CONFIG_DIR:-$HOME/.claude/PAI}/.env" ] && source "${PAI_CONFIG_DIR:-$HOME/.claude/PAI}/.env"
+[ -f "${PAI_CONFIG_DIR:-$PAI_DIR}/.env" ] && source "${PAI_CONFIG_DIR:-$PAI_DIR}/.env"
 
 # Cross-platform file mtime (seconds since epoch). Detect stat flavor once;
 # probing both variants on every mtime check is expensive on macOS.
@@ -262,7 +262,7 @@ if [ "$context_pct" = "0" ] && [ "$total_input" -eq 0 ] 2>/dev/null; then
         _est=$((_est + 12000))
 
         # CLAUDE.md (loaded natively by Claude Code, ~3.5 chars/token)
-        [ -f "$CLAUDE_HOME/CLAUDE.md" ] && _est=$((_est + $(wc -c < "$CLAUDE_HOME/CLAUDE.md") * 10 / 35))
+        [ -f "$CLAUDE_CONFIG_DIR/CLAUDE.md" ] && _est=$((_est + $(wc -c < "$CLAUDE_CONFIG_DIR/CLAUDE.md") * 10 / 35))
 
         # System prompt (loaded via --append-system-prompt-file, ~3.5 chars/token)
         [ -f "$PAI_DIR/PAI_SYSTEM_PROMPT.md" ] && _est=$((_est + $(wc -c < "$PAI_DIR/PAI_SYSTEM_PROMPT.md") * 10 / 35))
@@ -273,7 +273,7 @@ if [ "$context_pct" = "0" ] && [ "$total_input" -eq 0 ] 2>/dev/null; then
         done < <(jq -r '.loadAtStartup.files[]? // empty' "$SETTINGS_FILE" 2>/dev/null)
 
         # Project memory files (CC native memory at ~/.claude/projects/*/memory/)
-        for _f in "$HOME"/.claude/projects/*/memory/MEMORY.md; do
+        for _f in "$CLAUDE_CONFIG_DIR"/projects/*/memory/MEMORY.md; do
             [ -f "$_f" ] && _est=$((_est + $(wc -c < "$_f") * 10 / 35))
         done
 
@@ -625,8 +625,8 @@ if [ "$MODE" != "nano" ]; then
     # Skills count is dynamic (dirs with SKILL.md) — never stale after skill changes
     # Private skills start with _ prefix, public skills don't
     shopt -s nullglob
-    _skill_files=("$CLAUDE_HOME"/skills/*/SKILL.md)
-    _private_skill_files=("$CLAUDE_HOME"/skills/_*/SKILL.md)
+    _skill_files=("$CLAUDE_SKILLS_DIR"/*/SKILL.md)
+    _private_skill_files=("$CLAUDE_SKILLS_DIR"/_*/SKILL.md)
     _live_skills=${#_skill_files[@]}
     _private_skills=${#_private_skill_files[@]}
     shopt -u nullglob
@@ -694,7 +694,7 @@ USAGEEOF
             if [ "$(uname -s)" = "Darwin" ]; then
                 cred_json=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
             else
-                cred_json=$(cat "${HOME}/.claude/.credentials.json" 2>/dev/null)
+                cred_json=$(cat "$CLAUDE_CONFIG_DIR/.credentials.json" 2>/dev/null)
             fi
             token=$(echo "$cred_json" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
 
@@ -1245,7 +1245,7 @@ printf "${SLATE_600}%s${RESET}\n" "$SEP_DOT"
 _ctx_files=()
 while IFS= read -r _cf; do
     [ -n "$_cf" ] && _ctx_files+=("${_cf##*/}")
-done < <(sed -n 's/^@//p' "$CLAUDE_HOME/CLAUDE.md" 2>/dev/null)
+done < <(sed -n 's/^@//p' "$CLAUDE_CONFIG_DIR/CLAUDE.md" 2>/dev/null)
 _ctx_count=${#_ctx_files[@]}
 if [ "$_ctx_count" -gt 0 ]; then
     _prefix="  FILES(${_ctx_count}): "

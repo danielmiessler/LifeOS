@@ -16,18 +16,18 @@ import { DiscordBotClient } from '../lib/discord-bot.js';
 import { MidjourneyClient, MidjourneyError } from '../lib/midjourney-client.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { getEnvPath } from '../../../PAI/lib/paths';
 
 // ============================================================================
 // Environment Loading
 // ============================================================================
 
 /**
- * Load environment variables from ${PAI_DIR}/.env
+ * Load environment variables from ~/.claude/.env
  * This ensures API keys are available regardless of how the CLI is invoked
  */
 async function loadEnv(): Promise<void> {
-  const paiDir = process.env.PAI_DIR || resolve(process.env.HOME!, '.claude');
-  const envPath = resolve(paiDir, '.env');
+  const envPath = getEnvPath();
   try {
     const envContent = await readFile(envPath, 'utf-8');
     for (const line of envContent.split('\n')) {

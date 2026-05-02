@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import os from 'os'
+import { getUserDir } from '../../../../PAI/lib/paths'
 
 export interface TelosFile {
   name: string
@@ -9,7 +9,7 @@ export interface TelosFile {
   type: 'markdown' | 'csv'
 }
 
-const TELOS_DIR = path.join(os.homedir(), '.claude/PAI/USER/TELOS')
+const TELOS_DIR = path.join(getUserDir(), 'TELOS')
 
 export function getAllTelosData(): TelosFile[] {
   const files: TelosFile[] = []

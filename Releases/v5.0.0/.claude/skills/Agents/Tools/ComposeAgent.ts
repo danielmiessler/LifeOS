@@ -31,13 +31,13 @@ import { parseArgs } from "util";
 import { readFileSync, existsSync, readdirSync, unlinkSync, mkdirSync, writeFileSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import Handlebars from "handlebars";
+import { getClaudeDir, getPaiDir } from "../../../PAI/lib/paths";
 
 // Paths
-const HOME = process.env.HOME || "~";
-const BASE_TRAITS_PATH = `${HOME}/.claude/skills/Agents/Data/Traits.yaml`;
-const USER_TRAITS_PATH = `${HOME}/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml`;
-const TEMPLATE_PATH = `${HOME}/.claude/skills/Agents/Templates/DynamicAgent.hbs`;
-const CUSTOM_AGENTS_DIR = `${HOME}/.claude/custom-agents`;
+const BASE_TRAITS_PATH = `${getClaudeDir()}/skills/Agents/Data/Traits.yaml`;
+const USER_TRAITS_PATH = `${getPaiDir()}/USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml`;
+const TEMPLATE_PATH = `${getClaudeDir()}/skills/Agents/Templates/DynamicAgent.hbs`;
+const CUSTOM_AGENTS_DIR = `${getClaudeDir()}/custom-agents`;
 
 // Types
 interface ProsodySettings {

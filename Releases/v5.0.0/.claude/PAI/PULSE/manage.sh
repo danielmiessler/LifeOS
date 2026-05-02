@@ -2,7 +2,9 @@
 # PAI Pulse — Process Management
 # Usage: manage.sh {start|stop|restart|status|install|uninstall}
 
-PULSE_DIR="$HOME/.claude/PAI/PULSE"
+# shellcheck source=PAI/lib/paths.sh
+. "${CLAUDE_CONFIG_DIR:-${HOME:?HOME unset}/.claude}/PAI/lib/paths.sh"
+PULSE_DIR="$PAI_DIR/PULSE"
 PLIST_NAME="com.pai.pulse"
 PLIST_SRC="$PULSE_DIR/$PLIST_NAME.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"

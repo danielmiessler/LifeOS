@@ -17,18 +17,19 @@ import OpenAI from "openai";
 import { GoogleGenAI } from "@google/genai";
 import { writeFile, readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
+import { homedir } from "node:os";
+import { getEnvPath, getClaudeDir } from "../../../PAI/lib/paths";
 
 // ============================================================================
 // Environment Loading
 // ============================================================================
 
 /**
- * Load environment variables from ${PAI_DIR}/.env
+ * Load environment variables from ~/.claude/.env
  * This ensures API keys are available regardless of how the CLI is invoked
  */
 async function loadEnv(): Promise<void> {
-  const paiDir = process.env.PAI_DIR || resolve(process.env.HOME!, '.claude');
-  const envPath = resolve(paiDir, '.env');
+  const envPath = getEnvPath();
   try {
     const envContent = await readFile(envPath, 'utf-8');
     for (const line of envContent.split('\n')) {
@@ -100,7 +101,7 @@ interface CLIArgs {
 const DEFAULTS = {
   model: "flux" as Model,
   size: "16:9" as Size,
-  output: `${process.env.HOME}/Downloads/ul-image.png`,
+  output: `${homedir()}/Downloads/ul-image.png`,
 };
 
 const REPLICATE_SIZES: ReplicateSize[] = ["1:1", "16:9", "3:2", "2:3", "3:4", "4:3", "4:5", "5:4", "9:16", "21:9"];
@@ -205,8 +206,8 @@ async function detectMimeType(filePath: string): Promise<string> {
 // Help Text
 // ============================================================================
 
-// PAI directory for documentation paths
-const PAI_DIR = process.env.PAI_DIR || `${process.env.HOME}/.claude`;
+// Claude home for documentation paths
+const PAI_DIR = getClaudeDir();
 
 function showHelp(): void {
   console.log(`
@@ -559,9 +560,7 @@ async function addBackgroundColor(inputPath: string, outputPath: string, hexColo
 }
 
 async function removeBackground(imagePath: string): Promise<string> {
-  const home = process.env.HOME;
-  if (!home) throw new CLIError("HOME not set; cannot resolve rembg binary");
-  const rembgBin = process.env.REMBG_BIN || resolve(home, ".local/bin/rembg");
+  const rembgBin = process.env.REMBG_BIN || resolve(homedir(), ".local/bin/rembg");
 
   const { existsSync } = await import("node:fs");
   if (!existsSync(rembgBin)) {

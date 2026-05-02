@@ -7,6 +7,16 @@
 # ═══════════════════════════════════════════════════════════
 set -euo pipefail
 
+# ─── Path resolution (PAI may not exist yet — fallback bootstrap) ──────────
+if [ -f "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/PAI/lib/paths.sh" ]; then
+  # shellcheck source=PAI/lib/paths.sh
+  . "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/PAI/lib/paths.sh"
+else
+  : "${CLAUDE_CONFIG_DIR:=$HOME/.claude}"
+  : "${PAI_DIR:=$CLAUDE_CONFIG_DIR/PAI}"
+  export CLAUDE_CONFIG_DIR PAI_DIR
+fi
+
 # ─── Colors ───────────────────────────────────────────────
 BLUE='\033[38;2;59;130;246m'
 LIGHT_BLUE='\033[38;2;147;197;253m'

@@ -4,6 +4,9 @@
 
 set -euo pipefail
 
+# shellcheck source=PAI/lib/paths.sh
+. "${CLAUDE_CONFIG_DIR:-${HOME:?HOME unset}/.claude}/PAI/lib/paths.sh"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOME_DIR="$HOME"
 APP_NAME="PAI Pulse"
@@ -68,7 +71,7 @@ sed "s|__HOME__|$HOME_DIR|g" "$PLIST_SRC" > "$PLIST_DST"
 echo "  Installed $PLIST_DST"
 
 # Ensure logs directory exists
-mkdir -p "$HOME_DIR/.claude/PAI/PULSE/logs"
+mkdir -p "$PAI_DIR/PULSE/logs"
 
 launchctl load "$PLIST_DST"
 echo "  Loaded $PLIST_LABEL"

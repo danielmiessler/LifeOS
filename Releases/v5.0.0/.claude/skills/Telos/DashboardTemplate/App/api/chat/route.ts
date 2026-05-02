@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { getTelosContext } from "@/lib/telos-data"
 import { spawn } from "child_process"
+import { paiPath } from '../../../../../PAI/lib/paths'
 
 export async function POST(request: Request) {
   try {
@@ -29,8 +30,7 @@ When answering questions:
 
     // Use Inference tool instead of direct API
     const inferenceResult = await new Promise<{ success: boolean; output?: string; error?: string }>((resolve) => {
-      const homeDir = process.env.HOME || ''
-      const proc = spawn('bun', ['run', `${homeDir}/.claude/PAI/TOOLS/Inference.ts`, '--level', 'fast', systemPrompt, message], {
+      const proc = spawn('bun', ['run', paiPath('TOOLS', 'Inference.ts'), '--level', 'fast', systemPrompt, message], {
         stdio: ['ignore', 'pipe', 'pipe'],
       })
 

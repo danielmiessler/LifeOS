@@ -21,12 +21,13 @@
 import { parseArgs } from "util";
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "fs";
 import { join } from "path";
+import { homedir } from "os";
 
 // ============================================================================
 // CONFIGURATION
 // ============================================================================
 
-const SUBSTRATE_PATH = join(process.env.HOME || "", "Projects/Substrate/Data/US-Common-Metrics");
+const SUBSTRATE_PATH = join(homedir(), "Projects/Substrate/Data/US-Common-Metrics");
 const FRED_API_KEY = process.env.FRED_API_KEY;
 const EIA_API_KEY = process.env.EIA_API_KEY;
 

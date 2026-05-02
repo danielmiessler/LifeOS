@@ -10,6 +10,9 @@ fi
 
 set -euo pipefail
 
+# shellcheck source=PAI/lib/paths.sh
+. "${CLAUDE_CONFIG_DIR:-${HOME:?HOME unset}/.claude}/PAI/lib/paths.sh"
+
 INPUT=$(cat)
 CMD=$(echo "$INPUT" | jq -r '.tool_input.command // empty')
 

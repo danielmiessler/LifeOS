@@ -12,7 +12,7 @@
 
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
-import { homedir } from "os";
+import { getClaudeDir } from '../../../PAI/lib/paths';
 
 interface AgentContext {
   agentType: string;
@@ -25,7 +25,7 @@ export class AgentContextLoader {
   private agentsDir: string;
 
   constructor() {
-    this.claudeHome = join(homedir(), ".claude");
+    this.claudeHome = getClaudeDir();
     this.agentsDir = join(this.claudeHome, "Skills", "Agents");
   }
 

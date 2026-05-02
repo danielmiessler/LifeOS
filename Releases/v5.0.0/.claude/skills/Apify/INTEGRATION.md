@@ -8,24 +8,23 @@
 
 ### Social Skill Integration
 
-
 **Updated Section:** "Fetching Tweet Content"
 
 The social skill now uses code-based Apify scripts instead of `mcp__apify` MCP tool.
 
 **Trigger → Script Mapping:**
 
-| User Says | Script to Run |
-|-----------|---------------|
-| "my latest tweet" | `get-latest-tweet.ts` |
-| "my latest thread" | `get-latest-thread.ts` |
-| "get tweets from @user" | `get-user-tweets.ts user 5` |
+| User Says                           | Script to Run                |
+| ----------------------------------- | ---------------------------- |
+| "my latest tweet"                   | `get-latest-tweet.ts`        |
+| "my latest thread"                  | `get-latest-thread.ts`       |
+| "get tweets from @user"             | `get-user-tweets.ts user 5`  |
 | "what has @user been talking about" | `get-user-tweets.ts user 10` |
 
 **Example Workflow:**
 
 1. User: "Turn my latest tweet into a LinkedIn post"
-2. System runs: `bun ~/.claude/filesystem-mcps/apify/get-latest-tweet.ts`
+2. System runs: `bun ${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/get-latest-tweet.ts`
 3. Script returns: Tweet text + metadata (~500 tokens)
 4. System transforms tweet into LinkedIn format
 5. **Token savings: 98%** (vs fetching unfiltered profile data)
@@ -36,16 +35,17 @@ The social skill now uses code-based Apify scripts instead of `mcp__apify` MCP t
 
 ```bash
 # Research what ThePrimeagen is discussing
-bun ~/.claude/filesystem-mcps/apify/get-user-tweets.ts ThePrimeagen 10
+bun ${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/get-user-tweets.ts ThePrimeagen 10
 
 # Analyze Paul Graham's recent thoughts
-bun ~/.claude/filesystem-mcps/apify/get-user-tweets.ts paulg 20
+bun ${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/get-user-tweets.ts paulg 20
 
 # Track Simon Willison's posts
-bun ~/.claude/filesystem-mcps/apify/get-user-tweets.ts simonw 15
+bun ${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/get-user-tweets.ts simonw 15
 ```
 
 **Token Efficiency:**
+
 - 10 tweets unfiltered: ~80,000 tokens
 - 10 tweets filtered: ~8,000 tokens
 - **Savings: 90%**
@@ -56,7 +56,7 @@ bun ~/.claude/filesystem-mcps/apify/get-user-tweets.ts simonw 15
 
 ```bash
 # Get user's thread about AI topic
-bun ~/.claude/filesystem-mcps/apify/get-latest-thread.ts
+bun ${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/get-latest-thread.ts
 
 # Expand thread into blog post format
 # Token efficient: only thread content in context
@@ -65,12 +65,14 @@ bun ~/.claude/filesystem-mcps/apify/get-latest-thread.ts
 ## Available Scripts Summary
 
 ### 1. get-latest-tweet.ts
+
 **Purpose:** User's most recent single tweet
 **Usage:** `bun get-latest-tweet.ts`
 **Returns:** Text, date, URL, engagement stats
 **Tokens:** ~500
 
 ### 2. get-latest-thread.ts
+
 **Purpose:** User's most recent Twitter thread
 **Usage:** `bun get-latest-thread.ts`
 **Returns:** All thread tweets chronologically
@@ -78,6 +80,7 @@ bun ~/.claude/filesystem-mcps/apify/get-latest-thread.ts
 **Savings:** 87-90% vs unfiltered
 
 ### 3. get-user-tweets.ts
+
 **Purpose:** Any user's recent tweets
 **Usage:** `bun get-user-tweets.ts <username> <limit>`
 **Returns:** Recent tweets with metadata
@@ -85,6 +88,7 @@ bun ~/.claude/filesystem-mcps/apify/get-latest-thread.ts
 **Savings:** 90-95% vs unfiltered
 
 ### 4. debug-tweet-structure.ts
+
 **Purpose:** Inspect raw API response
 **Usage:** `bun debug-tweet-structure.ts`
 **Returns:** Full JSON structure + available fields
@@ -96,13 +100,13 @@ bun ~/.claude/filesystem-mcps/apify/get-latest-thread.ts
 
 ```typescript
 // Step 1: Search for actors (~1,000 tokens)
-mcp__Apify__search-actors("twitter scraper")
+mcp__Apify__search - actors("twitter scraper");
 
 // Step 2: Call actor (~1,000 tokens)
-mcp__Apify__call-actor(actorId, input)
+mcp__Apify__call - actor(actorId, input);
 
 // Step 3: Get output (~50,000 tokens unfiltered!)
-mcp__Apify__get-actor-output(runId)
+mcp__Apify__get - actor - output(runId);
 
 // Total: ~57,000 tokens
 ```
@@ -111,7 +115,7 @@ mcp__Apify__get-actor-output(runId)
 
 ```typescript
 // All in one script, filtering in code
-bun ~/.claude/filesystem-mcps/apify/get-latest-tweet.ts
+bun ${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/get-latest-tweet.ts
 
 // Returns only filtered result: ~500 tokens
 // Savings: 98.2%
@@ -120,13 +124,15 @@ bun ~/.claude/filesystem-mcps/apify/get-latest-tweet.ts
 ## Best Practices
 
 ### DO:
+
 ✅ Use appropriate script for the task
 ✅ Let script filter data before returning
 ✅ Trust token savings calculations
-✅ Run from `~/.claude/filesystem-mcps/apify/` directory or use full path
+✅ Run from `${CLAUDE_CONFIG_DIR}/filesystem-mcps/apify/` directory or use full path
 ✅ Check execution time (~10 seconds expected)
 
 ### DON'T:
+
 ❌ Fall back to MCP tools for Twitter operations
 ❌ Fetch unfiltered data into model context
 ❌ Re-implement filtering logic (use existing scripts)
@@ -136,17 +142,20 @@ bun ~/.claude/filesystem-mcps/apify/get-latest-tweet.ts
 ## Performance Expectations
 
 **Execution Time:**
+
 - Actor search: Eliminated (hardcoded actor ID)
 - Actor execution: ~10 seconds (Apify platform time)
 - Data processing: <1 second (TypeScript filtering)
 - **Total: ~10 seconds**
 
 **Token Usage:**
+
 - Single tweet: 500 tokens (vs 57,000 MCP)
 - Thread (5 tweets): 5,500 tokens (vs 60,000 unfiltered)
 - User tweets (10): 8,000 tokens (vs 80,000 unfiltered)
 
 **Rate Limits:**
+
 - Apify free tier: 100 actor runs/day
 - Apify paid tier: Unlimited
 - Current usage: Well within limits
@@ -188,6 +197,7 @@ Scripts handle common errors automatically:
 ### Migration Candidates:
 
 Other Apify actors worth implementing:
+
 - Instagram scraping
 - LinkedIn scraping
 - YouTube data extraction
@@ -198,13 +208,15 @@ Other Apify actors worth implementing:
 ## Documentation
 
 **For Users:**
-- Quick reference: `~/.claude/`
-- Social skill: `~/.claude/`
+
+- Quick reference: `${CLAUDE_CONFIG_DIR}/`
+- Social skill: `${CLAUDE_CONFIG_DIR}/`
 
 **For Developers:**
-- Implementation: `~/.claude/`
-- Standards: `~/.claude/`
-- Parent guide: `~/.claude/`
+
+- Implementation: `${CLAUDE_CONFIG_DIR}/`
+- Standards: `${CLAUDE_CONFIG_DIR}/`
+- Parent guide: `${CLAUDE_CONFIG_DIR}/`
 
 ## Support
 
@@ -225,6 +237,7 @@ A: Use `debug-tweet-structure.ts` to inspect raw data, check console output.
 ## Success Metrics
 
 **Achieved:**
+
 - ✅ 90-98% token reduction vs MCP
 - ✅ ~10 second execution time
 - ✅ Production integration in social skill
