@@ -66,8 +66,12 @@ echo "  Installed $APP_DEST"
 # Step 6: Install and load launchd plist
 echo "[6/6] Installing LaunchAgent..."
 
-# Substitute __HOME__ placeholder with actual home directory
-sed "s|__HOME__|$HOME_DIR|g" "$PLIST_SRC" > "$PLIST_DST"
+# Substitute placeholders with resolved env-rooted paths
+sed -e "s|__HOME__|$HOME_DIR|g" \
+    -e "s|__CLAUDE_CONFIG_DIR__|$CLAUDE_CONFIG_DIR|g" \
+    -e "s|__PAI_DIR__|$PAI_DIR|g" \
+    -e "s|__PULSE_DIR__|$PAI_DIR/PULSE|g" \
+    "$PLIST_SRC" > "$PLIST_DST"
 echo "  Installed $PLIST_DST"
 
 # Ensure logs directory exists

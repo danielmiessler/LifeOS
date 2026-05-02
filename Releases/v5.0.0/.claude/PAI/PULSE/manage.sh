@@ -35,7 +35,12 @@ case "$1" in
     if [ ! -f "$PLIST_DST" ]; then
       # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
       # no-op on plists that already have literal paths.
-      sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
+      sed -e "s|__HOME__|$HOME|g" \
+          -e "s|__BUN_PATH__|$BUN_PATH|g" \
+          -e "s|__CLAUDE_CONFIG_DIR__|$CLAUDE_CONFIG_DIR|g" \
+          -e "s|__PAI_DIR__|$PAI_DIR|g" \
+          -e "s|__PULSE_DIR__|$PULSE_DIR|g" \
+          "$PLIST_SRC" > "$PLIST_DST"
     fi
     launchctl load "$PLIST_DST" 2>/dev/null
     echo "PAI Pulse started"
