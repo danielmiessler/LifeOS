@@ -36,13 +36,19 @@ export function getPaiDir(): string {
     return expandPath(envPaiDir);
   }
 
-  return join(homedir(), '.claude', 'PAI');
+  return join(getClaudeDir(), 'PAI');
 }
 
 /**
  * Get the Claude Code home directory (~/.claude)
  */
 export function getClaudeDir(): string {
+  const envClaudeConfigDir = process.env.CLAUDE_CONFIG_DIR;
+
+  if (envClaudeConfigDir) {
+    return expandPath(envClaudeConfigDir);
+  }
+
   return join(homedir(), '.claude');
 }
 
