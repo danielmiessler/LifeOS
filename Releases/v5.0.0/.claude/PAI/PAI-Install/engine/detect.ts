@@ -9,6 +9,7 @@ import { existsSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import type { DetectionResult, ExistingUserContentDetection } from "./types";
+import { resolveInstallPaths, type ResolveOptions } from "./paths";
 
 function tryExec(cmd: string): string | null {
   try {
@@ -334,10 +335,14 @@ function detectVoice(): DetectionResult["voice"] {
 
 /**
  * Run full system detection. Safe, read-only, non-destructive.
+ *
+ * `opts` carries CLI-flag overrides for the install location; env vars and
+ * defaults are resolved by `resolveInstallPaths`. Pass `{}` (or omit) for
+ * env+default behavior.
  */
-export function detectSystem(): DetectionResult {
+export function detectSystem(opts: ResolveOptions = {}): DetectionResult {
   const home = homedir();
-  const paiDir = join(home, ".claude");
+  const { claudeConfigDir, paiDir } = resolveInstallPaths(opts);
   const configDir = process.env.PAI_CONFIG_DIR || join(home, ".config", "PAI");
 
   return {
@@ -353,11 +358,12 @@ export function detectSystem(): DetectionResult {
         path: tryExec("which brew") || undefined,
       },
     },
-    existing: detectExisting(home, paiDir, configDir),
+    existing: detectExisting(home, claudeConfigDir, configDir),
     principal: detectPrincipal(),
     voice: detectVoice(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     homeDir: home,
+    claudeConfigDir,
     paiDir,
     configDir,
   };

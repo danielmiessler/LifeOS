@@ -12,7 +12,7 @@ import type { InstallState, EngineEventHandler, DetectionResult, ExistingUserCon
 import { PAI_VERSION, ALGORITHM_VERSION, DEFAULT_VOICES } from "./types";
 import { detectSystem, detectExistingUserContent, scanApiKeys, validateElevenLabsKey } from "./detect";
 import { generateSettingsJson } from "./config-gen";
-import { getClaudeDir } from "../../lib/paths";
+import { getClaudeDir, getPaiDir } from "../../lib/paths";
 
 type ChoiceOption = {
   label: string;
@@ -475,14 +475,15 @@ function copyOverwriteTemplates(src: string, dst: string): { copied: number; fai
  */
 async function migrateUserContext(
   paiDir: string,
+  claudeDir: string,
   emit: EngineEventHandler
 ): Promise<void> {
-  const newUserDir = join(paiDir, "PAI", "USER");
+  const newUserDir = join(paiDir, "USER");
   if (!existsSync(newUserDir)) return; // PAI/USER/ not set up yet
 
   const legacyPaths = [
-    join(paiDir, "skills", "PAI", "USER"),   // v2.5–v3.0
-    join(paiDir, "skills", "CORE", "USER"),  // v2.4 and earlier
+    join(claudeDir, "skills", "PAI", "USER"),   // v2.5–v3.0
+    join(claudeDir, "skills", "CORE", "USER"),  // v2.4 and earlier
   ];
 
   for (const legacyDir of legacyPaths) {
@@ -554,7 +555,7 @@ export async function migrateUserContentFromBackup(
     return;
   }
 
-  const targetUserDir = join(state.detection?.paiDir || getClaudeDir(), "PAI", "USER");
+  const targetUserDir = join(state.detection?.paiDir || getPaiDir(), "USER");
   if (!existsSync(targetUserDir)) mkdirSync(targetUserDir, { recursive: true });
 
   const entries =
@@ -609,7 +610,7 @@ export async function moveExistingClaudeToBackup(
 ): Promise<void> {
   if (!state.backupPath) return;
 
-  const claudeDir = state.detection?.paiDir || getClaudeDir();
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
   if (!existsSync(claudeDir) || !pathLooksLikeExistingClaudeRoot(claudeDir)) return;
 
   try {
@@ -1161,7 +1162,8 @@ export async function runRepository(
     "Laying down a fresh ~/.claude tree and restoring any consented content",
     5
   );
-  const paiDir = state.detection?.paiDir || getClaudeDir();
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
 
   await moveExistingClaudeToBackup(state, emit);
 
@@ -1242,21 +1244,29 @@ export async function runRepository(
   }
 
   // Create required directories regardless of clone result
-  const requiredDirs = [
+  const requiredPaiDirs = [
     "MEMORY",
     "MEMORY/STATE",
     "MEMORY/LEARNING",
     "MEMORY/WORK",
     "MEMORY/RELATIONSHIP",
     "MEMORY/VOICE",
+  ];
+  const requiredClaudeDirs = [
     "Plans",
     "hooks",
     "skills",
     "tasks",
   ];
 
-  for (const dir of requiredDirs) {
+  for (const dir of requiredPaiDirs) {
     const fullPath = join(paiDir, dir);
+    if (!existsSync(fullPath)) {
+      mkdirSync(fullPath, { recursive: true });
+    }
+  }
+  for (const dir of requiredClaudeDirs) {
+    const fullPath = join(claudeDir, dir);
     if (!existsSync(fullPath)) {
       mkdirSync(fullPath, { recursive: true });
     }
@@ -1272,7 +1282,7 @@ export async function runRepository(
     await migrateUserContentFromBackup(state, emit);
   }
 
-  await migrateUserContext(paiDir, emit);
+  await migrateUserContext(paiDir, claudeDir, emit);
 
   await emit({ event: "progress", step: "repository", percent: 100, detail: "Repository ready" });
   await emit({ event: "step_complete", step: "repository" });
@@ -1292,7 +1302,8 @@ export async function runConfiguration(
     "Writing settings, env files, aliases, and identity templates",
     6
   );
-  const paiDir = state.detection?.paiDir || getClaudeDir();
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
   const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
 
   // Generate settings.json
@@ -1311,7 +1322,7 @@ export async function runConfiguration(
     configDir,
   });
 
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = join(claudeDir, "settings.json");
 
   // The release ships a complete settings.json with hooks, statusLine, spinnerVerbs, etc.
   // We only update user-specific fields — never overwrite the whole file.
@@ -1351,7 +1362,7 @@ export async function runConfiguration(
   // lacked PAI/ALGORITHM/) with no LATEST file at all, and the statusline
   // displayed `ALG: —` forever. Always ensure both directory and a non-empty
   // LATEST exist by the time configuration completes.
-  const latestDir = join(paiDir, "PAI", "ALGORITHM");
+  const latestDir = join(paiDir, "ALGORITHM");
   const latestPath = join(latestDir, "LATEST");
   let latestExisting = "";
   try { latestExisting = readFileSync(latestPath, "utf-8").trim(); } catch {}
@@ -1391,14 +1402,14 @@ export async function runConfiguration(
       } catch { return 0; }
     };
 
-    const skillCount = countDirs(join(paiDir, "skills"), (name) =>
-      existsSync(join(paiDir, "skills", name, "SKILL.md")));
-    const hookCount = countFiles(join(paiDir, "hooks"), ".ts");
+    const skillCount = countDirs(join(claudeDir, "skills"), (name) =>
+      existsSync(join(claudeDir, "skills", name, "SKILL.md")));
+    const hookCount = countFiles(join(claudeDir, "hooks"), ".ts");
     const signalCount = countFiles(join(paiDir, "MEMORY", "LEARNING"), ".md");
-    const fileCount = countFiles(join(paiDir, "skills", "PAI", "USER"));
+    const fileCount = countFiles(join(claudeDir, "skills", "PAI", "USER"));
     // Count workflows by scanning skill Tools directories for .ts files
     let workflowCount = 0;
-    const skillsDir = join(paiDir, "skills");
+    const skillsDir = join(claudeDir, "skills");
     if (existsSync(skillsDir)) {
       try {
         for (const s of readdirSync(skillsDir, { withFileTypes: true })) {
@@ -1437,7 +1448,7 @@ export async function runConfiguration(
   const aiName = state.collected.aiName || "PAI";
   const principalName = state.collected.principalName || "User";
 
-  const claudeMdPath = join(paiDir, "CLAUDE.md");
+  const claudeMdPath = join(claudeDir, "CLAUDE.md");
   if (existsSync(claudeMdPath)) {
     try {
       const content = readFileSync(claudeMdPath, "utf-8")
@@ -1447,7 +1458,7 @@ export async function runConfiguration(
     } catch {}
   }
 
-  const daIdentityPath = join(paiDir, "PAI", "USER", "DA_IDENTITY.md");
+  const daIdentityPath = join(paiDir, "USER", "DA_IDENTITY.md");
   if (existsSync(daIdentityPath)) {
     try {
       const content = readFileSync(daIdentityPath, "utf-8")
@@ -1467,7 +1478,7 @@ export async function runConfiguration(
     } catch {}
   }
 
-  const principalIdPath = join(paiDir, "PAI", "USER", "PRINCIPAL_IDENTITY.md");
+  const principalIdPath = join(paiDir, "USER", "PRINCIPAL_IDENTITY.md");
   if (existsSync(principalIdPath)) {
     try {
       const content = readFileSync(principalIdPath, "utf-8")
@@ -1499,7 +1510,7 @@ export async function runConfiguration(
   // Voice server reads ~/.env, hooks read ~/.claude/.env
   if (existsSync(envPath)) {
     const symlinkPaths = [
-      join(paiDir, ".env"),         // ~/.claude/.env
+      join(claudeDir, ".env"),      // ~/.claude/.env
       join(homedir(), ".env"),      // ~/.env (voice server reads this)
     ];
     for (const symlinkPath of symlinkPaths) {
@@ -1526,7 +1537,7 @@ export async function runConfiguration(
   const userShell = process.env.SHELL || "/bin/zsh";
   const rcFile = userShell.includes("bash") ? ".bashrc" : userShell.includes("fish") ? ".config/fish/config.fish" : ".zshrc";
   const rcPath = join(homedir(), rcFile);
-  const aliasLine = `alias pai='bun ${join(paiDir, "PAI", "Tools", "pai.ts")}'`;
+  const aliasLine = `alias pai='bun ${join(paiDir, "TOOLS", "pai.ts")}'`;
   const marker = "# PAI alias";
 
   if (existsSync(rcPath)) {
@@ -1578,7 +1589,7 @@ async function isPulseRunning(): Promise<boolean> {
 // Manage.sh substitutes __HOME__ in the public plist template, copies it to
 // ~/Library/LaunchAgents/com.pai.pulse.plist, and `launchctl load`s it.
 async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<boolean> {
-  const pulseDir = join(paiDir, "PAI", "PULSE");
+  const pulseDir = join(paiDir, "PULSE");
   const manageScript = join(pulseDir, "manage.sh");
 
   if (!existsSync(manageScript)) {
@@ -1633,7 +1644,7 @@ async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<b
 // `manage.sh restart` is idempotent: unloads the launchd plist, kills any
 // stale `bun pulse.ts`, reloads, waits up to 10s for :31337 to bind.
 async function reloadPulse(paiDir: string, emit: EngineEventHandler): Promise<void> {
-  const manageScript = join(paiDir, "PAI", "PULSE", "manage.sh");
+  const manageScript = join(paiDir, "PULSE", "manage.sh");
   if (!existsSync(manageScript)) return;
   const homeLaunchAgent = join(homedir(), "Library", "LaunchAgents", "com.pai.pulse.plist");
   if (!existsSync(homeLaunchAgent)) return;
@@ -1651,7 +1662,7 @@ async function reloadPulse(paiDir: string, emit: EngineEventHandler): Promise<vo
 
 // Optional menu bar app — separate launchd plist + macOS .app bundle.
 async function installPulseMenuBar(paiDir: string, emit: EngineEventHandler): Promise<boolean> {
-  const menuBarInstall = join(paiDir, "PAI", "PULSE", "MenuBar", "install.sh");
+  const menuBarInstall = join(paiDir, "PULSE", "MenuBar", "install.sh");
   if (!existsSync(menuBarInstall)) {
     await emit({ event: "message", content: "Menu bar installer not found — skipping." });
     return false;
@@ -1827,7 +1838,8 @@ export async function runVoiceSetup(
     await emit({ event: "message", content: "No ElevenLabs key — voice will fall back to macOS text-to-speech. You can add a key later in ~/.claude/.env" });
   }
 
-  const paiDir = state.detection?.paiDir || getClaudeDir();
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
 
   // ── Write ELEVENLABS_API_KEY to ~/.claude/.env BEFORE Pulse starts ──
   // Pulse loads .env at boot. If we install Pulse before writing the key,
@@ -1836,7 +1848,7 @@ export async function runVoiceSetup(
   // writes .env later. The fix: write the key now, then start Pulse.
   if (hasElevenLabsKey) {
     try {
-      const envPath = join(paiDir, ".env");
+      const envPath = join(claudeDir, ".env");
       let envContent = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
       if (envContent.includes("ELEVENLABS_API_KEY=")) {
         envContent = envContent.replace(/ELEVENLABS_API_KEY=.*/, `ELEVENLABS_API_KEY=${state.collected.elevenLabsKey}`);
@@ -1986,7 +1998,7 @@ export async function runVoiceSetup(
 
   // ── Update settings.json with voice ID ──
   await emit({ event: "progress", step: "voice", percent: 60, detail: "Saving voice configuration..." });
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = join(claudeDir, "settings.json");
 
   if (existsSync(settingsPath)) {
     try {
@@ -2032,7 +2044,7 @@ export async function runVoiceSetup(
 
     // Ensure symlinks exist at both ~/.claude/.env and ~/.env
     const symlinkTargets = [
-      join(paiDir, ".env"),
+      join(claudeDir, ".env"),
       join(homedir(), ".env"),
     ];
     for (const sp of symlinkTargets) {
@@ -2162,7 +2174,7 @@ async function validateTelegramBotToken(token: string): Promise<TelegramValidati
 }
 
 async function restartPulse(paiDir: string): Promise<boolean> {
-  const manage = join(paiDir, "PAI", "PULSE", "manage.sh");
+  const manage = join(paiDir, "PULSE", "manage.sh");
   if (!existsSync(manage)) return false;
   return new Promise<boolean>((resolve) => {
     const child = spawn("bash", [manage, "restart"], { cwd: dirname(manage), stdio: ["ignore", "pipe", "pipe"] });
@@ -2217,7 +2229,8 @@ export async function runTelegramSetup(
     return;
   }
 
-  const paiDir = state.detection?.paiDir || getClaudeDir();
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
 
   // ── Step 1: Check primary .env locations (no permission needed) ──
   let token = findExistingEnvKey("TELEGRAM_BOT_TOKEN");
@@ -2308,7 +2321,7 @@ export async function runTelegramSetup(
   state.collected.telegramBotUsername = validation.username;
 
   try {
-    const envPath = join(paiDir, ".env");
+    const envPath = join(claudeDir, ".env");
     writeEnvKey(envPath, "TELEGRAM_BOT_TOKEN", token);
     writeEnvKey(envPath, "TELEGRAM_ALLOWED_USERS", allowedUsers);
     await emit({ event: "message", content: "Telegram credentials written to ~/.claude/.env." });

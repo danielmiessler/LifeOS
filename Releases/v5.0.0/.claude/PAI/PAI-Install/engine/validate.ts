@@ -9,7 +9,7 @@ import { spawnSync } from "child_process";
 import type { InstallState, ValidationCheck, InstallSummary, EngineEventHandler } from "./types";
 import { PAI_VERSION } from "./types";
 import { homedir } from "os";
-import { getClaudeDir } from "../../lib/paths";
+import { getClaudeDir, getPaiDir } from "../../lib/paths";
 
 /**
  * Check if Pulse is running. PAI 5.0 absorbed the standalone voice server
@@ -41,12 +41,12 @@ async function checkPulseHealth(): Promise<boolean> {
  * Returns { passed, detail }. `passed=false` is CRITICAL: every Bash call
  * the user makes will be denied until this is fixed.
  */
-function checkSecurityHookSmoke(paiDir: string): { passed: boolean; detail: string } {
-  const hookPath = join(paiDir, "hooks", "SecurityPipeline.hook.ts");
+function checkSecurityHookSmoke(claudeDir: string, paiDir: string): { passed: boolean; detail: string } {
+  const hookPath = join(claudeDir, "hooks", "SecurityPipeline.hook.ts");
   if (!existsSync(hookPath)) {
     return { passed: false, detail: "Hook not found at hooks/SecurityPipeline.hook.ts" };
   }
-  const patternsPath = join(paiDir, "PAI", "USER", "SECURITY", "PATTERNS.yaml");
+  const patternsPath = join(paiDir, "USER", "SECURITY", "PATTERNS.yaml");
   if (!existsSync(patternsPath)) {
     return { passed: false, detail: `PATTERNS.yaml not found at ${patternsPath} — hook will fail-close on every Bash call` };
   }
@@ -93,12 +93,13 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     });
   }
 
-  const paiDir = state.detection?.paiDir || getClaudeDir();
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir = state.detection?.paiDir || getPaiDir();
   const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
   const checks: ValidationCheck[] = [];
 
   // 1. settings.json exists and is valid JSON
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = join(claudeDir, "settings.json");
   const settingsExists = existsSync(settingsPath);
   let settingsValid = false;
   let settings: any = null;
@@ -154,28 +155,39 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     });
   }
 
-  // 3. Directory structure
-  const requiredDirs = [
-    { path: "skills", name: "Skills directory" },
-    { path: "MEMORY", name: "Memory directory" },
-    { path: "MEMORY/STATE", name: "State directory" },
-    { path: "MEMORY/WORK", name: "Work directory" },
-    { path: "hooks", name: "Hooks directory" },
-    { path: "Plans", name: "Plans directory" },
+  // 3. Directory structure (split: claude-home vs PAI-data dirs)
+  const claudeRequiredDirs = [
+    { path: "skills", name: "Skills directory", critical: true },
+    { path: "hooks", name: "Hooks directory", critical: false },
+    { path: "Plans", name: "Plans directory", critical: false },
+  ];
+  const paiRequiredDirs = [
+    { path: "MEMORY", name: "Memory directory", critical: true },
+    { path: "MEMORY/STATE", name: "State directory", critical: false },
+    { path: "MEMORY/WORK", name: "Work directory", critical: false },
   ];
 
-  for (const dir of requiredDirs) {
+  for (const dir of claudeRequiredDirs) {
+    const fullPath = join(claudeDir, dir.path);
+    checks.push({
+      name: dir.name,
+      passed: existsSync(fullPath),
+      detail: existsSync(fullPath) ? "Present" : "Missing",
+      critical: dir.critical,
+    });
+  }
+  for (const dir of paiRequiredDirs) {
     const fullPath = join(paiDir, dir.path);
     checks.push({
       name: dir.name,
       passed: existsSync(fullPath),
       detail: existsSync(fullPath) ? "Present" : "Missing",
-      critical: dir.path === "skills" || dir.path === "MEMORY",
+      critical: dir.critical,
     });
   }
 
   // 4. PAI skill present
-  const skillPath = join(paiDir, "skills", "PAI", "SKILL.md");
+  const skillPath = join(claudeDir, "skills", "PAI", "SKILL.md");
   checks.push({
     name: "PAI core skill",
     passed: existsSync(skillPath),
@@ -186,7 +198,7 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
   // 5. ElevenLabs key stored — check all three possible locations
   const envPaths = [
     join(configDir, ".env"),
-    join(paiDir, ".env"),
+    join(claudeDir, ".env"),
     join(homedir(), ".env"),
   ];
   let elevenLabsKeyStored = false;
@@ -268,7 +280,7 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
   // payload. Catches the v5.0 fail-closed regression where PATTERNS.yaml was
   // missing from the public template, leaving every fresh install unable to
   // execute Bash commands. CRITICAL — if this fails, the install is broken.
-  const securitySmoke = checkSecurityHookSmoke(paiDir);
+  const securitySmoke = checkSecurityHookSmoke(claudeDir, paiDir);
   checks.push({
     name: "SecurityPipeline hook (smoke test)",
     passed: securitySmoke.passed,

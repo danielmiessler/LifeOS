@@ -60,8 +60,12 @@ export interface DetectionResult {
   };
   timezone: string;
   homeDir: string;
-  paiDir: string; // resolved ~/.claude
-  configDir: string; // resolved ~/.claude/PAI
+  /** Claude Code config root: $CLAUDE_CONFIG_DIR or ~/.claude (resolved). */
+  claudeConfigDir: string;
+  /** PAI data root: $PAI_DIR or ${claudeConfigDir}/PAI (resolved). */
+  paiDir: string;
+  /** Third-domain credentials store: $PAI_CONFIG_DIR or ~/.config/PAI (resolved). */
+  configDir: string;
 }
 
 export interface ExistingUserContentDetection {
