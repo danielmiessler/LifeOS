@@ -1553,10 +1553,13 @@ function parseCurrencyCell(cell: string): number {
 
 function parseGoals(content: string): { id: string, text: string }[] {
   return content.split("\n")
-    .filter(l => /^[-*]\s*\*{0,2}G\d+\*{0,2}:/.test(l))
+    .filter(l => /^[-*]\s*\*{0,2}G\d+\*{0,2}:/.test(l) || /^[-*]\s*Goal\s+\d+:/.test(l))
     .map(l => {
-      const m = l.match(/\*{0,2}(G\d+)\*{0,2}:\s*(.+)/)
-      return m ? { id: m[1], text: m[2].trim() } : null
+      const m1 = l.match(/\*{0,2}(G\d+)\*{0,2}:\s*(.+)/)
+      if (m1) return { id: m1[1], text: m1[2].trim() }
+      const m2 = l.match(/Goal\s+(\d+):\s*(.+)/)
+      if (m2) return { id: `G${m2[1]}`, text: m2[2].trim() }
+      return null
     })
     .filter(Boolean) as { id: string, text: string }[]
 }
@@ -1566,6 +1569,13 @@ function parseSections(content: string): { heading: string, body: string }[] {
   const sections: { heading: string, body: string }[] = []
 
   const parts = content.split(/^## /m)
+  // Also scan preamble (parts[0]) for ID-bullet items (e.g. "- **P2:** description")
+  const preamble = parts[0] ?? ""
+  for (const line of preamble.split("\n")) {
+    const mb = (line.match(/^-\s+\*{0,2}([A-Z]{1,3}\d+[a-z]?):\*{0,2}\s*(.+)/) ??
+                line.match(/^-\s+\*{0,2}([A-Z]{1,3}\d+[a-z]?)\*{0,2}:\s*(.+)$/))
+    if (mb) sections.push({ heading: `${mb[1]}: ${mb[2].slice(0, 70).trim()}`, body: mb[2].trim() })
+  }
   for (const part of parts.slice(1)) {
     const newline = part.indexOf("\n")
     if (newline === -1) continue
@@ -1594,7 +1604,7 @@ function parseSections(content: string): { heading: string, body: string }[] {
   }
 
   for (const line of lines) {
-    const idBullet = line.match(/^-\s+\*{0,2}([A-Z]{1,3}\d+[a-z]?)\*{0,2}:\s*(.+)$/)
+    const idBullet = line.match(/^-\s+\*{0,2}([A-Z]{1,3}\d+[a-z]?):\*{0,2}\s*(.+)/) ?? line.match(/^-\s+\*{0,2}([A-Z]{1,3}\d+[a-z]?)\*{0,2}:\s*(.+)$/)
     const plainBullet = line.match(/^-\s+(.+)$/)
     const indented = line.match(/^\s+(\S.*)$/)
     const isBlank = line.trim() === ""
@@ -1603,7 +1613,7 @@ function parseSections(content: string): { heading: string, body: string }[] {
     if (idBullet) {
       commitPara()
       commitBullet()
-      currentBullet = { heading: idBullet[1], body: idBullet[2].trim() }
+      currentBullet = { heading: `${idBullet[1]}: ${idBullet[2].slice(0, 70).trim()}`, body: idBullet[2].trim() }
     } else if (plainBullet) {
       commitPara()
       commitBullet()
@@ -2227,8 +2237,11 @@ function firstParagraph(value: string): string {
 
 function parseHeadingText(heading: string, prefix: string, body: string): ParsedHeading | null {
   const match = heading.match(new RegExp(`^(${prefix}\\d+[a-z]?)\\s*:\\s*(.+)$`, "i"))
-  if (!match) return null
-  return { id: match[1], title: cleanInlineMarkdown(match[2]), body }
+  if (match) return { id: match[1], title: cleanInlineMarkdown(match[2]), body }
+  // Fallback: "Word N: title" where Word starts with prefix letter (e.g. "Challenge 1: title" for prefix "C")
+  const wordMatch = heading.match(new RegExp(`^${prefix}\\w+\\s+(\\d+[a-z]?):\\s*(.+)$`, "i"))
+  if (wordMatch) return { id: `${prefix.toUpperCase()}${wordMatch[1]}`, title: cleanInlineMarkdown(wordMatch[2]), body }
+  return null
 }
 
 function parseNestedHeadings(body: string, prefix: string): ParsedHeading[] {
@@ -2244,9 +2257,15 @@ function parseNestedHeadings(body: string, prefix: string): ParsedHeading[] {
 
   for (const line of body.split("\n")) {
     const match = line.match(new RegExp(`^#{2,4}\\s+(${prefix}\\d+[a-z]?)\\s*:\\s*(.+)$`, "i"))
+    // Fallback: match "## Word N: title" where Word starts with prefix letter (e.g. "Challenge 1:" → C1)
+    const wordMatch = !match ? line.match(new RegExp(`^#{2,4}\\s+${prefix}\\w+\\s+(\\d+[a-z]?):\\s*(.+)$`, "i")) : null
     if (match) {
       commit()
       current = { id: match[1], title: cleanInlineMarkdown(match[2]), body: "" }
+      currentBody = []
+    } else if (wordMatch) {
+      commit()
+      current = { id: `${prefix.toUpperCase()}${wordMatch[1]}`, title: cleanInlineMarkdown(wordMatch[2]), body: "" }
       currentBody = []
     } else if (current) {
       currentBody.push(line)
@@ -2325,10 +2344,22 @@ async function handleTelosOverview(): Promise<Response> {
       return Response.json({ error: `life goals returned ${lifeResponse.status}` }, { status: 500 })
     }
     const life = await lifeResponse.json() as LifeGoalsPayload
-    const missions = parseSourceHeadings(asLifeSections(life.mission), "M").map((m) => ({
+    let missions = parseSourceHeadings(asLifeSections(life.mission), "M").map((m) => ({
       id: m.id,
       title: m.title,
     }))
+    // Fallback: parse MISSION.md prose using bold-labeled sections (e.g. **Current Mission Statement:**)
+    if (missions.length === 0) {
+      const missionRaw = readMd(join(TELOS_DIR, "MISSION.md"))
+      const boldSections = missionRaw.match(/\*\*([^*]+):\*\*\s*\n+([^\n*]+(?:\n(?!\n\*\*)[^\n]+)*)/g) || []
+      missions = boldSections.slice(0, 4).map((block, i) => {
+        const headerMatch = block.match(/\*\*([^*]+):\*\*\s*\n+(.+)/s)
+        return {
+          id: `M${i}`,
+          title: headerMatch ? cleanInlineMarkdown(headerMatch[2]).slice(0, 100).replace(/\s+/g, " ").trim() : `Mission ${i + 1}`,
+        }
+      }).filter((m) => m.title.length > 5)
+    }
     const goals = asLifeGoals(life.goals).map((g) => ({
       id: g.id,
       title: cleanInlineMarkdown(g.title ?? g.text ?? g.id),
@@ -2349,11 +2380,14 @@ async function handleTelosOverview(): Promise<Response> {
     const strategies = parseSourceHeadings(asLifeSections(life.strategies), "S").map((s) => ({
       id: s.id,
       title: s.title,
+      overcomes: [],
       implements: [],
     }))
     const challenges = parseSourceHeadings(asLifeSections(life.challenges), "C").map((c) => ({
       id: c.id,
       title: c.title,
+      note: firstParagraph(c.body),
+      blocks: [],
     }))
 
     return Response.json({
