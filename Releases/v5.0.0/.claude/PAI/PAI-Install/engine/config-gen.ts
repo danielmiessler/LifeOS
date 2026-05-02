@@ -24,7 +24,7 @@ export function generateSettingsJson(config: PAIConfig): Record<string, any> {
       // suffix; if we write just `~/.claude` here the statusline can't find
       // ALGORITHM/LATEST and falls back to "—". The variable name `config.paiDir`
       // is misleading — it's actually the INSTALL ROOT.
-      PAI_DIR: `${config.paiDir}/PAI`,
+      PAI_DIR: `${config.paiDir}`,
       ...(config.projectsDir ? { PROJECTS_DIR: config.projectsDir } : {}),
       PAI_CONFIG_DIR: config.configDir,
     },

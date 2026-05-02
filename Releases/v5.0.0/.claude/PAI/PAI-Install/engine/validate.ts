@@ -9,6 +9,7 @@ import { spawnSync } from "child_process";
 import type { InstallState, ValidationCheck, InstallSummary, EngineEventHandler } from "./types";
 import { PAI_VERSION } from "./types";
 import { homedir } from "os";
+import { getClaudeDir } from "../../../hooks/lib/paths";
 
 /**
  * Check if Pulse is running. PAI 5.0 absorbed the standalone voice server
@@ -92,7 +93,7 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     });
   }
 
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
+  const paiDir = state.detection?.paiDir || getClaudeDir();
   const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
   const checks: ValidationCheck[] = [];
 

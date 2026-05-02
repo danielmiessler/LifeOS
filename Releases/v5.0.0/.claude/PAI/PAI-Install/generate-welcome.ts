@@ -12,6 +12,7 @@
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
+import { getSettingsPath } from "../../hooks/lib/paths";
 
 const OUTPUT_PATH = join(import.meta.dir, "public", "assets", "welcome.mp3");
 
@@ -20,7 +21,7 @@ function getVoiceId(): string {
   // Environment variable takes priority
   if (process.env.ELEVENLABS_VOICE_ID) return process.env.ELEVENLABS_VOICE_ID;
 
-  const settingsPath = join(homedir(), ".claude", "settings.json");
+  const settingsPath = getSettingsPath();
   if (existsSync(settingsPath)) {
     try {
       const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
