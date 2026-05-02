@@ -12,7 +12,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
-import { getPaiDir } from './lib/paths';
+import { getPaiDir } from '../PAI/lib/paths';
 import { setTabState, readTabState, persistKittySession } from './lib/tab-setter';
 import { getDAName } from './lib/identity';
 

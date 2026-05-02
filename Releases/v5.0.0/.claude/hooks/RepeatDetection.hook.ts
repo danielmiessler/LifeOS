@@ -11,11 +11,9 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
+import { getStateDir } from "../PAI/lib/paths";
 
-const STATE_FILE = join(
-  process.env.HOME || "",
-  ".claude/PAI/MEMORY/STATE/last-prompt.json",
-);
+const STATE_FILE = join(getStateDir(), "last-prompt.json");
 
 interface HookInput {
   session_id: string;

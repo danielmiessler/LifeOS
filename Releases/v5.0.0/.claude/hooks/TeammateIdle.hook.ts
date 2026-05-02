@@ -17,7 +17,7 @@
 
 import { existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
-import { paiPath } from './lib/paths';
+import { paiPath } from '../PAI/lib/paths';
 import { getISOTimestamp } from './lib/time';
 
 interface TeammateIdleInput {

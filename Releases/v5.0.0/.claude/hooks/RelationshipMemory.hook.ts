@@ -30,7 +30,7 @@
 
 import { writeFileSync, existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
-import { getPaiDir } from './lib/paths';
+import { getPaiDir } from '../PAI/lib/paths';
 import { getPSTComponents } from './lib/time';
 import { getDAName, getPrincipalName } from './lib/identity';
 import { parseTranscript } from '../PAI/TOOLS/TranscriptParser';

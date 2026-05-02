@@ -19,7 +19,7 @@
 
 import { existsSync, mkdirSync, appendFileSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { paiPath } from './lib/paths';
+import { paiPath } from '../PAI/lib/paths';
 import { getISOTimestamp } from './lib/time';
 
 interface AgentToolInput {

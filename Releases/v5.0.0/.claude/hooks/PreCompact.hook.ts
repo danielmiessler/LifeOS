@@ -27,11 +27,11 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import { findArtifactPath } from './lib/isa-utils';
+import { getMemoryDir, getStateDir, getWorkDir } from '../PAI/lib/paths';
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude', 'PAI');
-const MEMORY_DIR = join(BASE_DIR, 'MEMORY');
-const STATE_DIR = join(MEMORY_DIR, 'STATE');
-const WORK_DIR = join(MEMORY_DIR, 'WORK');
+const MEMORY_DIR = getMemoryDir();
+const STATE_DIR = getStateDir();
+const WORK_DIR = getWorkDir();
 
 interface HookInput {
   session_id?: string;

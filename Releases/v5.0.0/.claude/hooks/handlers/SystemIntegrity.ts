@@ -18,7 +18,7 @@
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { spawn } from 'child_process';
 import { join } from 'path';
-import { paiPath } from '../lib/paths';
+import { paiPath } from '../../PAI/lib/paths';
 
 import {
   parseToolUseBlocks,

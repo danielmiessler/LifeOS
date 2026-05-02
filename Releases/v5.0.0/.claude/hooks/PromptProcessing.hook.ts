@@ -31,7 +31,7 @@ import { inference } from '../PAI/TOOLS/Inference';
 import { getIdentity, getPrincipal } from './lib/identity';
 import { isValidWorkingTitle, getWorkingFallback, trimToValidTitle } from './lib/output-validators';
 import { setTabState, getSessionOneWord } from './lib/tab-setter';
-import { paiPath } from './lib/paths';
+import { paiPath } from '../PAI/lib/paths';
 import { updateSessionNameInWorkJson, upsertSession } from './lib/isa-utils';
 import { pushStateToTargets } from './lib/observability-transport';
 
@@ -75,7 +75,6 @@ function appendPromptProcessingTelemetry(entry: Record<string, unknown>): void {
 
 // ── Constants ──
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude', 'PAI');
 const SESSION_NAMES_PATH = paiPath('MEMORY', 'STATE', 'session-names.json');
 const LOCK_PATH = SESSION_NAMES_PATH + '.lock';
 const MIN_PROMPT_LENGTH = 3;

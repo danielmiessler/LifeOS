@@ -28,7 +28,8 @@
 import { readFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { join } from 'path';
-import { getPaiDir, getSettingsPath, paiPath } from './lib/paths';
+import { getPaiDir, paiPath } from '../PAI/lib/paths';
+import { getSettingsPath } from './lib/paths';
 
 interface PostCompactConfig {
   _docs?: string;

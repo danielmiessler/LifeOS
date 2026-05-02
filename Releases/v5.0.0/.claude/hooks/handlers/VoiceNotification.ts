@@ -11,7 +11,7 @@
 
 import { existsSync, readFileSync, appendFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { paiPath } from '../lib/paths';
+import { paiPath } from '../../PAI/lib/paths';
 import { getIdentity, type VoicePersonality } from '../lib/identity';
 import { getISOTimestamp } from '../lib/time';
 import { isValidVoiceCompletion, getVoiceFallback } from '../lib/output-validators';

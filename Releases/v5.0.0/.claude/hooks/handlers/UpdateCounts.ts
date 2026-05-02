@@ -19,7 +19,8 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
-import { getPaiDir, getSettingsPath, getClaudeDir } from '../lib/paths';
+import { getPaiDir } from '../../PAI/lib/paths';
+import { getSettingsPath, getClaudeDir } from '../lib/paths';
 
 
 interface Counts {
@@ -197,7 +198,7 @@ async function refreshUsageCache(paiDir: string): Promise<void> {
         { encoding: 'utf-8', timeout: 3000 }
       ).trim();
     } else {
-      const credPath = join(process.env.HOME || '', '.claude', '.credentials.json');
+      const credPath = join(getClaudeDir(), '.credentials.json');
       credJson = readFileSync(credPath, 'utf-8').trim();
     }
 

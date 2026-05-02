@@ -24,21 +24,22 @@
 
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
+import { getPaiDir } from '../PAI/lib/paths';
+import { getClaudeDir } from './lib/paths';
 
 // ========================================
 // Configuration
 // ========================================
 
-const HOME = homedir();
-const PAI_DIR = process.env.PAI_DIR || join(HOME, '.claude', 'PAI');
+const PAI_DIR = getPaiDir();
+const CLAUDE_DIR = getClaudeDir();
 const STATE_DIR = join(PAI_DIR, 'MEMORY', 'STATE');
 const HASHES_FILE = join(STATE_DIR, 'instruction-hashes.json');
 const INTEGRITY_LOG = join(STATE_DIR, 'instruction-integrity.jsonl');
 
 /** Critical PAI instruction files to monitor */
 const CRITICAL_FILES: Record<string, string> = {
-  'CLAUDE.md': join(HOME, '.claude', 'CLAUDE.md'),
+  'CLAUDE.md': join(CLAUDE_DIR, 'CLAUDE.md'),
   'SYSTEM-PROMPT': join(PAI_DIR, 'PAI_SYSTEM_PROMPT.md'),
   'DA_IDENTITY': join(PAI_DIR, 'USER', 'DA_IDENTITY.md'),
   'PRINCIPAL_IDENTITY': join(PAI_DIR, 'USER', 'PRINCIPAL_IDENTITY.md'),

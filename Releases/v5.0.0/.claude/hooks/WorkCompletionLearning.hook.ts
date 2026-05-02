@@ -51,15 +51,15 @@
 
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
+import { getMemoryDir, getStateDir, getWorkDir, getLearningDir } from '../PAI/lib/paths';
 import { getISOTimestamp, getPSTDate } from './lib/time';
 import { getLearningCategory } from './lib/learning-utils';
 import { findArtifactPath } from './lib/isa-utils';
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude', 'PAI');
-const MEMORY_DIR = join(BASE_DIR, 'MEMORY');
-const STATE_DIR = join(MEMORY_DIR, 'STATE');
-const WORK_DIR = join(MEMORY_DIR, 'WORK');
-const LEARNING_DIR = join(MEMORY_DIR, 'LEARNING');
+const MEMORY_DIR = getMemoryDir();
+const STATE_DIR = getStateDir();
+const WORK_DIR = getWorkDir();
+const LEARNING_DIR = getLearningDir();
 
 // Session-scoped state file lookup with legacy fallback
 function findStateFile(sessionId?: string): string | null {

@@ -24,6 +24,7 @@
 
 import { appendFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { getLearningDir, getStateDir } from '../PAI/lib/paths';
 
 import { inference } from '../PAI/TOOLS/Inference';
 import { getIdentity, getPrincipal, getPrincipalName } from './lib/identity';
@@ -63,10 +64,9 @@ interface SentimentResult {
 
 // ── Constants ──
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude', 'PAI');
-const SIGNALS_DIR = join(BASE_DIR, 'MEMORY', 'LEARNING', 'SIGNALS');
+const SIGNALS_DIR = join(getLearningDir(), 'SIGNALS');
 const RATINGS_FILE = join(SIGNALS_DIR, 'ratings.jsonl');
-const LAST_RESPONSE_CACHE = join(BASE_DIR, 'MEMORY', 'STATE', 'last-response.txt');
+const LAST_RESPONSE_CACHE = join(getStateDir(), 'last-response.txt');
 const MIN_PROMPT_LENGTH = 3;
 
 // ── Stdin Reader ──

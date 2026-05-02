@@ -27,7 +27,7 @@
 
 import { readFileSync, appendFileSync, mkdirSync } from "fs";
 import { join } from "path";
-import { getPaiDir } from './lib/paths';
+import { getPaiDir } from '../PAI/lib/paths';
 
 const input = JSON.parse(readFileSync("/dev/stdin", "utf-8"));
 

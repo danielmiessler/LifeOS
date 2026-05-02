@@ -10,7 +10,7 @@
  */
 
 import { existsSync, mkdirSync, appendFileSync, readFileSync } from 'fs';
-import { paiPath } from './lib/paths';
+import { paiPath } from '../PAI/lib/paths';
 import { getISOTimestamp, getPSTDate, getYearMonth } from './lib/time';
 import { getVoiceId } from './lib/identity';
 

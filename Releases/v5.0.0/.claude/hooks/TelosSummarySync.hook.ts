@@ -15,7 +15,7 @@
 
 import { readFileSync } from 'fs';
 import { execSync } from 'child_process';
-import { paiPath } from './lib/paths';
+import { paiPath } from '../PAI/lib/paths';
 
 const TELOS_DIR = paiPath('USER', 'TELOS');
 const GENERATOR = paiPath("TOOLS", 'GenerateTelosSummary.ts');

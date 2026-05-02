@@ -35,14 +35,14 @@
 
 import { writeFileSync, existsSync, readFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
+import { getMemoryDir, getStateDir, getWorkDir } from '../PAI/lib/paths';
 import { getISOTimestamp } from './lib/time';
 import { setTabState, cleanupKittySession } from './lib/tab-setter';
 import { readRegistry, writeRegistry, findArtifactPath } from './lib/isa-utils';
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude', 'PAI');
-const MEMORY_DIR = join(BASE_DIR, 'MEMORY');
-const STATE_DIR = join(MEMORY_DIR, 'STATE');
-const WORK_DIR = join(MEMORY_DIR, 'WORK');
+const MEMORY_DIR = getMemoryDir();
+const STATE_DIR = getStateDir();
+const WORK_DIR = getWorkDir();
 
 // Session-scoped state file lookup with legacy fallback
 function findStateFile(sessionId?: string): string | null {

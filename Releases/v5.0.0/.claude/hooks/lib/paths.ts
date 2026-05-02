@@ -1,5 +1,5 @@
 /**
- * Centralized Path Resolution
+ * Centralized Path Resolution — Claude domain
  *
  * Two root directories per architecture L18-34
  * (PAI/DOCUMENTATION/PAISystemArchitecture.md):
@@ -9,10 +9,12 @@
  * The two domains are orthogonal once both are resolved. Cross-domain access
  * uses absolute paths via these helpers — never relative paths.
  *
- * This file owns Claude-domain primitives. PAI-domain helpers live in
- * PAI/lib/paths.ts (one-way dependency PAI → Claude). PAI helpers exported
- * from this file are compat re-exports kept until consumers migrate; the
- * authoritative implementations live in PAI/lib/paths.ts.
+ * This file owns Claude-domain primitives only: getClaudeDir, claudePath,
+ * getSettingsPath, getEnvPath, getHooksDir, getSkillsDir, getAgentsDir,
+ * getCommandsDir, getPluginsDir, expandPath, assertAbsolute.
+ *
+ * PAI-domain helpers (getPaiDir, paiPath, getMemoryDir, getStateDir, etc.)
+ * live exclusively in PAI/lib/paths.ts. One-way dependency: PAI → Claude.
  */
 
 import { homedir } from 'os';
@@ -62,21 +64,6 @@ export function getClaudeDir(): string {
     return assertAbsolute(expandPath(env), 'CLAUDE_CONFIG_DIR');
   }
   return join(homedir(), '.claude');
-}
-
-/**
- * Resolve the PAI data directory.
- * Priority: PAI_DIR env (trimmed, must be absolute) → ${getClaudeDir()}/PAI
- *
- * @deprecated Import from PAI/lib/paths.ts instead. Kept for compat until
- * consumers migrate (commit 8).
- */
-export function getPaiDir(): string {
-  const env = readEnv('PAI_DIR');
-  if (env !== null) {
-    return assertAbsolute(expandPath(env), 'PAI_DIR');
-  }
-  return join(getClaudeDir(), 'PAI');
 }
 
 /**
@@ -136,22 +123,3 @@ export function getPluginsDir(): string {
   return join(getClaudeDir(), 'plugins');
 }
 
-/**
- * Get a path relative to PAI_DIR.
- *
- * @deprecated Import paiPath from PAI/lib/paths.ts instead. Kept for compat
- * until consumers migrate (commit 8).
- */
-export function paiPath(...segments: string[]): string {
-  return join(getPaiDir(), ...segments);
-}
-
-/**
- * Get the MEMORY directory.
- *
- * @deprecated Import getMemoryDir from PAI/lib/paths.ts instead. Kept for
- * compat until consumers migrate (commit 8).
- */
-export function getMemoryDir(): string {
-  return paiPath('MEMORY');
-}

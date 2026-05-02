@@ -14,12 +14,13 @@
 import { resolve } from 'path';
 import { homedir } from 'os';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { paiPath } from './lib/paths';
+import { paiPath } from '../PAI/lib/paths';
+import { getClaudeDir } from './lib/paths';
 
 const HOME = homedir();
 
 const TRUSTED_PREFIXES = [
-  resolve(HOME, '.claude') + '/',
+  getClaudeDir() + '/',
   resolve(HOME, 'Projects') + '/',
   resolve(HOME, 'LocalProjects') + '/',
   resolve(HOME, 'Downloads') + '/',
