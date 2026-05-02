@@ -14,18 +14,20 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { homedir } from "os";
+import { getPaiDir, getClaudeDir } from '../lib/paths';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || path.join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
+const CLAUDE_DIR = getClaudeDir();
 const ARCH_SOURCE = path.join(PAI_DIR, "DOCUMENTATION", "PAISystemArchitecture.md");
 const SUMMARY_OUTPUT = path.join(PAI_DIR, "DOCUMENTATION", "ARCHITECTURE_SUMMARY.md");
 const ALGORITHM_DIR = path.join(PAI_DIR, "ALGORITHM");
 const MEMORY_SYSTEM_DOC = path.join(PAI_DIR, "DOCUMENTATION", "Memory", "MemorySystem.md");
-const CLAUDE_MD = path.join(HOME, ".claude", "CLAUDE.md");
+const CLAUDE_MD = path.join(CLAUDE_DIR, "CLAUDE.md");
 
 // ============================================================================
 // Version detection (source-of-truth lookups — no hardcoded versions)
@@ -117,7 +119,7 @@ function extractSections(content: string): Array<{ heading: string; level: numbe
  * PAI/DOCUMENTATION/. The downstream `USER/` filter then correctly drops them.
  */
 function extractSubsystems(): Array<{ name: string; description: string; docPath: string }> {
-  const claudeMdPath = path.join(HOME, ".claude", "CLAUDE.md");
+  const claudeMdPath = path.join(CLAUDE_DIR, "CLAUDE.md");
   if (!fs.existsSync(claudeMdPath)) return [];
 
   const content = fs.readFileSync(claudeMdPath, "utf-8");
@@ -245,8 +247,8 @@ function generate(): string {
     const resolved = sub.docPath.startsWith("/")
       ? sub.docPath
       : sub.docPath.startsWith("~")
-        ? sub.docPath.replace(/^~/, HOME)
-        : path.join(HOME, ".claude", sub.docPath);
+        ? sub.docPath.replace(/^~/, homedir())
+        : path.join(CLAUDE_DIR, sub.docPath);
     const shortPath = sub.docPath.replace("~/.claude/", "");
     if (!fs.existsSync(resolved)) missing.push(shortPath);
     tableRows.push(`| ${sub.name} | ${shortPath} |`);
@@ -334,7 +336,7 @@ function cmdCheck(): void {
 
   const sourceMtime = getMtime(ARCH_SOURCE);
   const summaryMtime = getMtime(SUMMARY_OUTPUT);
-  const claudeMdMtime = getMtime(path.join(HOME, ".claude", "CLAUDE.md"));
+  const claudeMdMtime = getMtime(path.join(CLAUDE_DIR, "CLAUDE.md"));
 
   if (sourceMtime > summaryMtime || claudeMdMtime > summaryMtime) {
     console.log("STALE: Source files are newer than summary");

@@ -16,12 +16,11 @@ import { resolve, extname } from "node:path";
 import { existsSync } from "node:fs";
 import { unlink, stat } from "node:fs/promises";
 import { spawn } from "node:child_process";
+import { homedir } from "node:os";
 
 function resolveRembgBin(): string {
   if (process.env.REMBG_BIN) return process.env.REMBG_BIN;
-  const home = process.env.HOME;
-  if (!home) throw new Error("HOME not set; cannot resolve rembg binary");
-  return resolve(home, ".local/bin/rembg");
+  return resolve(homedir(), ".local/bin/rembg");
 }
 
 function showHelp(): void {

@@ -17,8 +17,9 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { paiPath } from '../lib/paths';
 
-const TELOS_DIR = join(process.env.HOME || '', '.claude/PAI/USER/TELOS');
+const TELOS_DIR = paiPath('USER', 'TELOS');
 const OUTPUT_PATH = join(TELOS_DIR, 'PRINCIPAL_TELOS.md');
 
 interface ParsedItem {

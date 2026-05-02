@@ -22,9 +22,9 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, appendFileSync } from "fs";
 import { join, basename, dirname, extname } from "path";
 import { randomUUID } from "crypto";
+import { getPaiDir } from '../lib/paths';
 
-const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const QUEUE_FILE = join(PAI_DIR, "MEMORY", "MIGRATION", "migration-proposals.jsonl");
 
 type Target =

@@ -253,9 +253,9 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
 export async function synthesizeAdvisorState(): Promise<string> {
   const fs = await import("fs/promises");
   const path = await import("path");
-  const home = process.env.HOME || process.env.USERPROFILE || "";
-  const workDir = path.join(home, ".claude", "PAI", "MEMORY", "WORK");
-  const stateFile = path.join(home, ".claude", "PAI", "MEMORY", "STATE", "work.json");
+  const { getWorkDir, getStateDir } = await import("../lib/paths");
+  const workDir = getWorkDir();
+  const stateFile = path.join(getStateDir(), "work.json");
 
   // Try to read active session from work.json
   let activeSlug: string | undefined;

@@ -21,15 +21,14 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { getMemoryDir, getKnowledgeDir } from '../lib/paths';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || path.join(HOME, ".claude", "PAI");
-const MEMORY_DIR = path.join(PAI_DIR, "MEMORY");
-const KNOWLEDGE_DIR = path.join(MEMORY_DIR, "KNOWLEDGE");
+const MEMORY_DIR = getMemoryDir();
+const KNOWLEDGE_DIR = getKnowledgeDir();
 const WORK_DIR = path.join(MEMORY_DIR, "WORK");
 const LEARNING_DIR = path.join(MEMORY_DIR, "LEARNING");
 const RESEARCH_DIR = path.join(MEMORY_DIR, "RESEARCH");

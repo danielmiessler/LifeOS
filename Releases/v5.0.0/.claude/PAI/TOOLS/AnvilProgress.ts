@@ -3,6 +3,7 @@ import { createWriteStream, type WriteStream } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
+import { getWorkDir, getEnvPath } from '../lib/paths';
 
 type Args = { slug: string; prompt?: string; model: string; timeoutMs: number; pulseUrl: string; temperature: number; maxTokens: number };
 type JsonRecord = Record<string, unknown>;
@@ -61,9 +62,8 @@ function validUrl(flag: string, value: string): string {
   try { return new URL(nonEmpty(flag, value)).toString(); }
   catch (error: unknown) { throw new Error(`${flag} must be a valid URL: ${String(error)}`); }
 }
-function homeDir(): string { const home = process.env.HOME; if (!home) throw new Error("HOME is not set"); return home; }
-async function ensureSlugDir(home: string, slug: string): Promise<Paths> {
-  const slugDir = join(home, ".claude", "PAI", "MEMORY", "WORK", slug);
+async function ensureSlugDir(slug: string): Promise<Paths> {
+  const slugDir = join(getWorkDir(), slug);
   await mkdir(slugDir, { recursive: true }); // Local artifact I/O is unbounded so errors can surface naturally.
   return { eventsFile: join(slugDir, "anvil-events.jsonl"), finalFile: join(slugDir, "anvil-final.txt") };
 }
@@ -76,10 +76,10 @@ async function readPrompt(prompt: string | undefined): Promise<string> {
   for await (const chunk of stdin) text += typeof chunk === "string" ? chunk : Buffer.from(chunk).toString("utf8");
   return text;
 }
-async function readMoonshotApiKey(home: string): Promise<string | null> {
+async function readMoonshotApiKey(): Promise<string | null> {
   const envKey = process.env.MOONSHOT_API_KEY;
   if (typeof envKey === "string" && envKey.trim().length > 0) return envKey.trim();
-  try { return parseMoonshotApiKey(await readFile(join(home, ".claude", ".env"), "utf8")); } // Local env read is intentionally unbounded.
+  try { return parseMoonshotApiKey(await readFile(getEnvPath(), "utf8")); } // Local env read is intentionally unbounded.
   catch (error: unknown) {
     if (errorCode(error) === "ENOENT") return null;
     throw new Error(`failed to read Moonshot env file: ${errorMessage(error)}`);
@@ -287,9 +287,9 @@ export default async function main(argv: string[]): Promise<number> {
   const startMs = Date.now();
   let paths: Paths | null = null, finalMessage = "";
   try {
-    const args = parseArgs(argv), home = homeDir(), apiKey = await readMoonshotApiKey(home);
+    const args = parseArgs(argv), apiKey = await readMoonshotApiKey();
     if (!apiKey) { process.stdout.write('{"verdict":"unavailable","reason":"MOONSHOT_API_KEY not set"}\n'); return 2; }
-    paths = await ensureSlugDir(home, args.slug);
+    paths = await ensureSlugDir(args.slug);
     const prompt = await readPrompt(args.prompt);
     if (prompt.length === 0) throw new Error("no prompt provided; pass --prompt or pipe stdin data");
     const result = await runMoonshot(args, paths, apiKey, prompt);

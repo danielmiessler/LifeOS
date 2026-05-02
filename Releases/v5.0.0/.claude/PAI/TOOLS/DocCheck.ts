@@ -19,9 +19,10 @@ import { readFileSync, statSync, existsSync, readdirSync } from 'fs';
 import { join, resolve, dirname, relative } from 'path';
 import { execSync } from 'child_process';
 
-const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
-const PAI_DIR = join(CLAUDE_DIR, 'PAI');
+import { getPaiDir, getClaudeDir } from '../lib/paths';
+
+const CLAUDE_DIR = getClaudeDir();
+const PAI_DIR = getPaiDir();
 const HOOKS_DIR = join(CLAUDE_DIR, 'hooks');
 
 const args = process.argv.slice(2);

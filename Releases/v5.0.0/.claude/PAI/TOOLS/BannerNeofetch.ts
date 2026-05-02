@@ -13,9 +13,10 @@
 import { readdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
+import { getClaudeDir, getPaiDir } from '../lib/paths';
 
-const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const CLAUDE_DIR = getClaudeDir();
+const PAI_DIR = getPaiDir();
 
 // ═══════════════════════════════════════════════════════════════════════
 // Terminal Width Detection
@@ -273,7 +274,7 @@ function countHooks(): number {
 }
 
 function countWorkItems(): number {
-  const workDir = join(CLAUDE_DIR, "PAI/MEMORY/WORK");
+  const workDir = join(PAI_DIR, "MEMORY/WORK");
   if (!existsSync(workDir)) return 100;
   let count = 0;
   try {

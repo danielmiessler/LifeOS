@@ -35,9 +35,10 @@
 
 import { readdirSync, existsSync, statSync } from "fs";
 import { join } from "path";
+import { getPaiDir, getClaudeDir, getSettingsPath } from '../lib/paths';
 
-const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude");
+const PAI_DIR = getPaiDir();
+const CLAUDE_DIR = getClaudeDir();
 
 interface Counts {
   skills: number;
@@ -101,7 +102,7 @@ function countWorkflowFiles(dir: string): number {
  */
 function countSkills(): number {
   let count = 0;
-  const skillsDir = join(PAI_DIR, "skills");
+  const skillsDir = join(CLAUDE_DIR, "skills");
   try {
     for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
       // Handle both real directories and symlinks to directories
@@ -126,7 +127,7 @@ function countSkills(): number {
  * count — only what Claude Code will actually fire.
  */
 function countHooks(): number {
-  const settingsPath = join(HOME, ".claude", "settings.json");
+  const settingsPath = getSettingsPath();
   try {
     const fs = require('fs');
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
@@ -172,7 +173,7 @@ function getCounts(): Counts {
     workflows: countWorkflowFiles(join(PAI_DIR, "skills")),
     hooks: countHooks(),
     signals: countFilesRecursive(join(PAI_DIR, "MEMORY/LEARNING"), ".md"),
-    files: countFilesRecursive(join(PAI_DIR, "PAI/USER")),
+    files: countFilesRecursive(join(PAI_DIR, "USER")),
     work: (() => {
       let count = 0;
       try {

@@ -18,9 +18,10 @@
 
 import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
+import { paiPath } from '../lib/paths';
 
 const CREDS_PATH = process.env.GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE?.replace(/^\$HOME/, homedir())
-  ?? `${homedir()}/.claude/PAI/USER/CREDENTIALS/google/credentials.json`;
+  ?? paiPath('USER', 'CREDENTIALS', 'google', 'credentials.json');
 type Creds = { client_id: string; client_secret: string; refresh_token: string };
 const creds: Creds = JSON.parse(readFileSync(CREDS_PATH, "utf8"));
 

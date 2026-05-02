@@ -17,9 +17,9 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join, basename } from 'path';
 import { parseArgs } from 'util';
+import { getPaiDir } from '../lib/paths';
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude');
-const WISDOM_DIR = join(BASE_DIR, 'MEMORY', 'WISDOM');
+const WISDOM_DIR = join(getPaiDir(), 'MEMORY', 'WISDOM');
 const FRAMES_DIR = join(WISDOM_DIR, 'FRAMES');
 const PRINCIPLES_DIR = join(WISDOM_DIR, 'PRINCIPLES');
 const META_DIR = join(WISDOM_DIR, 'META');

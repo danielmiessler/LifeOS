@@ -23,6 +23,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { inference } from './Inference';
 import { getIdentity } from '../../../.claude/hooks/lib/identity';
+import { getPaiDir } from '../lib/paths';
 
 // ============================================================================
 // Types
@@ -108,7 +109,7 @@ interface UpdateData {
 // Constants
 // ============================================================================
 
-const PAI_DIR = process.env.HOME + '/.claude/PAI';
+const PAI_DIR = getPaiDir();
 const CREATE_UPDATE_SCRIPT = join(PAI_DIR, 'skills/_PAI/TOOLS/CreateUpdate.ts');
 
 // Words that indicate generic/bad titles - reject these

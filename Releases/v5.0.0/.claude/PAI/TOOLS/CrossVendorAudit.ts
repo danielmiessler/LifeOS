@@ -17,13 +17,13 @@ import { readFile, writeFile, readdir, appendFile, mkdir, stat } from "node:fs/p
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { getPaiDir } from '../lib/paths';
 
-const HOME = homedir();
-const PAI_DIR = join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const WORK_DIR = join(PAI_DIR, "MEMORY", "WORK");
 const FINDINGS_LOG = join(PAI_DIR, "MEMORY", "VERIFICATION", "cato-findings.jsonl");
 const TOOL_ACTIVITY_LOG = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "tool-activity.jsonl");
-const CODEX_BIN = join(HOME, ".bun", "bin", "codex");
+const CODEX_BIN = join(homedir(), ".bun", "bin", "codex");
 
 const BUNDLE_TOKEN_CAP = 80_000;
 const CHARS_PER_TOKEN = 4; // rough estimate for bundle sizing
@@ -94,7 +94,7 @@ async function readArtifacts(slug: string, isa: string): Promise<string> {
   let match;
   while ((match = pathPattern.exec(decisions))) {
     let p = match[1];
-    if (p.startsWith("~/")) p = join(HOME, p.slice(2));
+    if (p.startsWith("~/")) p = join(homedir(), p.slice(2));
     paths.add(resolve(p));
   }
 

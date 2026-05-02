@@ -11,17 +11,18 @@
 import { parseArgs } from "node:util";
 import * as fs from "fs";
 import * as path from "path";
+import { homedir } from "os";
 import { inference } from "./Inference";
+import { getPaiDir } from '../lib/paths';
 
-const HOME = process.env.HOME!;
-const PAI_DIR = path.join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const MEMORY_DIR = path.join(PAI_DIR, "MEMORY");
 const KNOWLEDGE_DIR = path.join(MEMORY_DIR, "KNOWLEDGE");
 const LEARNING_DIR = path.join(MEMORY_DIR, "LEARNING");
 const STATE_DIR = path.join(MEMORY_DIR, "STATE");
 const SIDECAR_PATH = path.join(STATE_DIR, "harvest-executor-state.json");
 const LEARNING_QUEUE_PATH = path.join(LEARNING_DIR, "queue.md");
-const ARBOL_CONFIG_PATH = path.join(HOME, ".config", "arbol", "config.yaml");
+const ARBOL_CONFIG_PATH = path.join(homedir(), ".config", "arbol", "config.yaml");
 const HARVEST_API_BASE = "https://arbol-f-harvest.danielmiessler.workers.dev";
 const HTTP_TIMEOUT_MS = 20000;
 const KNOWLEDGE_TYPE_DIRS = ["Ideas", "People", "Companies", "Research", "Blogs"] as const;

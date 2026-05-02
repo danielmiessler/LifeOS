@@ -35,14 +35,13 @@ import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import { spawnSync } from "child_process";
+import { getKnowledgeDir, getToolsDir } from '../lib/paths';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || path.join(HOME, ".claude", "PAI");
-const KNOWLEDGE_DIR = path.join(PAI_DIR, "MEMORY", "KNOWLEDGE");
+const KNOWLEDGE_DIR = getKnowledgeDir();
 const DOMAINS = ["People", "Companies", "Ideas", "Research"];
 
 // BM25 parameters
@@ -283,7 +282,7 @@ function extractExcerpt(note: KnowledgeNote, queryTerms: string[]): string {
 // ============================================================================
 
 function compress(text: string, budget: number): string {
-  const inferPath = path.join(PAI_DIR, "Tools", "Inference.ts");
+  const inferPath = path.join(getToolsDir(), "Inference.ts");
 
   if (!fs.existsSync(inferPath)) {
     // Fallback: truncate to approximate token count

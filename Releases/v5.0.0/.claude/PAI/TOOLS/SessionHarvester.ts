@@ -23,18 +23,19 @@ import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import { getLearningCategory, isLearningCapture } from "../../../.claude/hooks/lib/learning-utils";
+import { getClaudeDir, getLearningDir } from '../lib/paths';
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = getClaudeDir();
 // Derive the project slug dynamically from CLAUDE_DIR (works on macOS and Linux)
 // macOS: /Users/daniel/.claude → -Users-daniel--claude
 // Linux: /home/daniel/.claude → -home-daniel--claude
 const CWD_SLUG = CLAUDE_DIR.replace(/[\/\.]/g, "-");
 const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", CWD_SLUG);
-const LEARNING_DIR = path.join(CLAUDE_DIR, "PAI", "MEMORY", "LEARNING");
+const LEARNING_DIR = getLearningDir();
 
 // Patterns indicating learning moments in conversations
 const CORRECTION_PATTERNS = [

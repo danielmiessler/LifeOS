@@ -27,10 +27,10 @@
 import { readFileSync, statSync, existsSync, readdirSync, realpathSync } from 'fs';
 import { join, resolve, dirname, relative, extname, sep } from 'path';
 import { execSync } from 'child_process';
+import { getClaudeDir, getPaiDir } from '../lib/paths';
 
-const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
-const PAI_DIR = join(CLAUDE_DIR, 'PAI');
+const CLAUDE_DIR = getClaudeDir();
+const PAI_DIR = getPaiDir();
 
 // ── Arg parsing (manual, zero deps) ──
 

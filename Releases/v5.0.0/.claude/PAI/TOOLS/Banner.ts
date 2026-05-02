@@ -11,9 +11,10 @@
 import { readdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
+import { getClaudeDir, getPaiDir } from '../lib/paths';
 
-const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const CLAUDE_DIR = getClaudeDir();
+const PAI_DIR = getPaiDir();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Terminal Width Detection
@@ -123,7 +124,7 @@ function getStats(): SystemStats {
     paiVersion = settings.pai?.version || "2.0";
     // v6.2.0+: LATEST is the single source of truth. settings.pai.algorithmVersion was removed.
     try {
-      const latestPath = join(CLAUDE_DIR, "PAI", "ALGORITHM", "LATEST");
+      const latestPath = join(PAI_DIR, "ALGORITHM", "LATEST");
       if (existsSync(latestPath)) {
         algorithmVersion = readFileSync(latestPath, "utf-8").trim().replace(/^v/i, "") || algorithmVersion;
       }

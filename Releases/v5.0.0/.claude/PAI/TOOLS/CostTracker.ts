@@ -30,10 +30,12 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "fs";
 import { join } from "path";
+import { homedir } from "os";
 import { execSync } from "child_process";
+import { getPaiDir, getClaudeDir } from '../lib/paths';
 
-const HOME = process.env.HOME ?? "";
-const PAI_DIR = join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
+const CLAUDE_DIR = getClaudeDir();
 const OBS_DIR = join(PAI_DIR, "MEMORY", "OBSERVABILITY");
 const LEDGER_PATH = join(OBS_DIR, "anthropic-cost.jsonl");
 const CALL_SITES_PATH = join(OBS_DIR, "anthropic-call-sites.json");
@@ -129,11 +131,11 @@ async function fetchApiSpend(): Promise<{ month_used_usd: number | null; source:
 
 // Paths we scan (source-of-truth for PAI-local billing risk)
 const SCAN_ROOTS = [
-  join(HOME, ".claude", "PAI", "PULSE"),
-  join(HOME, ".claude", "PAI", "TOOLS"),
-  join(HOME, ".claude", "PAI", "USER"),
-  join(HOME, ".claude", "skills"),
-  join(HOME, ".claude", "hooks"),
+  join(PAI_DIR, "PULSE"),
+  join(PAI_DIR, "TOOLS"),
+  join(PAI_DIR, "USER"),
+  join(CLAUDE_DIR, "skills"),
+  join(CLAUDE_DIR, "hooks"),
 ];
 
 // Paths to exclude from scan
@@ -225,7 +227,7 @@ function scanCallSites(): CallSite[] {
           const lineNum = parseInt(lineNumStr, 10);
           const { classification, note } = classifyCallSite(file, reason);
           hits.push({
-            file: file.replace(HOME, "~"),
+            file: file.replace(homedir(), "~"),
             line: lineNum,
             match: matched.trim().slice(0, 120),
             classification,
@@ -389,7 +391,7 @@ async function main(): Promise<void> {
     case "log": {
       const { snapshot } = await takeSnapshot();
       appendFileSync(LEDGER_PATH, JSON.stringify(snapshot) + "\n");
-      console.log(`Logged snapshot to ${LEDGER_PATH.replace(HOME, "~")}`);
+      console.log(`Logged snapshot to ${LEDGER_PATH.replace(homedir(), "~")}`);
       if (snapshot.alerts.length > 0) {
         for (const a of snapshot.alerts) console.log(`  🚨 ${a}`);
       }
@@ -409,7 +411,7 @@ async function main(): Promise<void> {
     case "baseline": {
       const sites = scanCallSites();
       writeBaseline(sites);
-      console.log(`Baseline written: ${sites.length} call site(s) at ${CALL_SITES_PATH.replace(HOME, "~")}`);
+      console.log(`Baseline written: ${sites.length} call site(s) at ${CALL_SITES_PATH.replace(homedir(), "~")}`);
       console.log(`  bypass: ${sites.filter((s) => s.classification === "bypass").length}`);
       console.log(`  legit:  ${sites.filter((s) => s.classification === "legit").length}`);
       console.log(`  unknown:${sites.filter((s) => s.classification === "unknown").length}`);

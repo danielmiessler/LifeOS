@@ -13,9 +13,9 @@
  */
 
 import { join } from "path"
+import { getPaiDir } from '../lib/paths'
 
-const HOME = process.env.HOME ?? "~"
-const PAI = join(HOME, ".claude", "PAI")
+const PAI = getPaiDir()
 const REGISTRY_PATH = join(PAI, "USER", "DA", "_registry.yaml")
 
 // ── Types ──
