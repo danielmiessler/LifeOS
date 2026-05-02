@@ -626,11 +626,11 @@ export async function moveExistingClaudeToBackup(
     cpSync(claudeDir, state.backupPath, { recursive: true });
     await emit({
       event: "message",
-      content: `Copied existing ~/.claude to ${state.backupPath.replace(homedir(), "~")} before installing the fresh tree.`,
+      content: `Copied existing ${claudeDir.replace(homedir(), "~")} to ${state.backupPath.replace(homedir(), "~")} before installing the fresh tree.`,
     });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    await emit({ event: "message", content: `Could not back up ~/.claude before reinstall: ${reason}` });
+    await emit({ event: "message", content: `Could not back up ${claudeDir.replace(homedir(), "~")} before reinstall: ${reason}` });
     throw err instanceof Error ? err : new Error(reason);
   }
 
@@ -668,8 +668,47 @@ export async function moveExistingClaudeToBackup(
       }
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      await emit({ event: "message", content: `Could not fully clear ~/.claude/PAI before reinstall: ${reason}` });
+      await emit({ event: "message", content: `Could not fully clear ${paiRoot.replace(homedir(), "~")} before reinstall: ${reason}` });
     }
+  }
+}
+
+/**
+ * Mirror of moveExistingClaudeToBackup for the PAI domain. Only fires when
+ * cross-domain split is configured (state.paiBackupPath set in
+ * runSystemDetect). Backs up the existing paiDir to a sibling
+ * `${paiDir}.backup-<ts>` then clears its contents so the relocation in
+ * runRepository can write fresh content.
+ */
+export async function moveExistingPaiToBackup(
+  state: InstallState,
+  emit: EngineEventHandler
+): Promise<void> {
+  if (!state.paiBackupPath) return;
+
+  const paiDir = state.detection?.paiDir || getPaiDir();
+  if (!existsSync(paiDir)) return;
+
+  try {
+    mkdirSync(dirname(state.paiBackupPath), { recursive: true });
+    cpSync(paiDir, state.paiBackupPath, { recursive: true });
+    await emit({
+      event: "message",
+      content: `Copied existing PAI data to ${state.paiBackupPath.replace(homedir(), "~")} before installing the fresh tree.`,
+    });
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    await emit({ event: "message", content: `Could not back up PAI data before reinstall: ${reason}` });
+    throw err instanceof Error ? err : new Error(reason);
+  }
+
+  // Clear the configured paiDir so the relocation step in runRepository
+  // writes fresh content. The backup we just made preserves the prior data.
+  try {
+    rmSync(paiDir, { recursive: true, force: true });
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
+    await emit({ event: "message", content: `Could not fully clear ${paiDir.replace(homedir(), "~")} before reinstall: ${reason}` });
   }
 }
 
@@ -699,17 +738,26 @@ export async function runSystemDetect(
   if (detection.existing.paiInstalled) {
     state.installType = "upgrade";
     state.backupPath = computeBackupPath(detection.claudeConfigDir);
+    // Cross-domain split: also schedule a separate backup for paiDir so
+    // existing PAI data isn't lost when the relocation step in
+    // runRepository wipes the configured paiDir.
+    const defaultPaiUnderClaude = join(detection.claudeConfigDir, "PAI");
+    if (detection.paiDir !== defaultPaiUnderClaude && existsSync(detection.paiDir)) {
+      state.paiBackupPath = computeBackupPath(detection.paiDir);
+    }
     await emitSectionHeader(
       emit,
       "EXISTING-INSTALLATION-FOUND",
       "EXISTING INSTALLATION FOUND",
-      `Will copy ${detection.claudeConfigDir.replace(detection.homeDir, "~")} → ${state.backupPath.replace(detection.homeDir, "~")} before installing fresh`
+      state.paiBackupPath
+        ? `Will copy ${detection.claudeConfigDir.replace(detection.homeDir, "~")} → ${state.backupPath.replace(detection.homeDir, "~")} and ${detection.paiDir.replace(detection.homeDir, "~")} → ${state.paiBackupPath.replace(detection.homeDir, "~")} before installing fresh`
+        : `Will copy ${detection.claudeConfigDir.replace(detection.homeDir, "~")} → ${state.backupPath.replace(detection.homeDir, "~")} before installing fresh`
     );
 
     const consent = getChoice
       ? await getChoice(
           "backup-and-scan-consent",
-          `Found existing PAI installation (v${detection.existing.paiVersion || "unknown"}). I'll copy ~/.claude to ${state.backupPath.replace(detection.homeDir, "~")} (your old install stays there until you remove it manually), then install a fresh tree.\n\nHow much of the old install should I read for pre-fill and migration?`,
+          `Found existing PAI installation (v${detection.existing.paiVersion || "unknown"}). I'll copy ${detection.claudeConfigDir.replace(detection.homeDir, "~")} to ${state.backupPath.replace(detection.homeDir, "~")}${state.paiBackupPath ? ` and ${detection.paiDir.replace(detection.homeDir, "~")} to ${state.paiBackupPath.replace(detection.homeDir, "~")}` : ""} (your old install stays there until you remove it manually), then install a fresh tree.\n\nHow much of the old install should I read for pre-fill and migration?`,
           [
             {
               label: "Yes — full scan and migrate USER content",
@@ -1162,21 +1210,27 @@ export async function runRepository(
   state: InstallState,
   emit: EngineEventHandler
 ): Promise<void> {
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
+  const claudeDisplay = claudeDir.replace(homedir(), "~");
+  const paiDisplay = paiDir.replace(homedir(), "~");
+  const treeDescription = paiDir === join(claudeDir, "PAI")
+    ? `Laying down a fresh ${claudeDisplay} tree and restoring any consented content`
+    : `Laying down a fresh ${claudeDisplay} tree (PAI data at ${paiDisplay}) and restoring any consented content`;
   await emit({ event: "step_start", step: "repository" });
   await emitSectionHeader(
     emit,
     "INSTALLING-THE-PAI-TREE",
     "INSTALLING THE PAI TREE",
-    "Laying down a fresh ~/.claude tree and restoring any consented content",
+    treeDescription,
     5
   );
-  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
-  const paiDir   = state.detection?.paiDir || getPaiDir();
 
   await moveExistingClaudeToBackup(state, emit);
+  await moveExistingPaiToBackup(state, emit);
 
-  if (!existsSync(paiDir)) {
-    mkdirSync(paiDir, { recursive: true });
+  if (!existsSync(claudeDir)) {
+    mkdirSync(claudeDir, { recursive: true });
   }
 
   // The backup we just created IS a complete v5 bundle (it's a copy of the
@@ -1200,13 +1254,17 @@ export async function runRepository(
   const localBundle = detectLocalBundle();
   let bundleInstalled = false;
 
+  // The bundle is a claude-home layout (top-level CLAUDE.md, settings.json,
+  // hooks/, skills/, agents/, plus a PAI/ subdirectory). Install at
+  // claudeDir; the PAI subtree is relocated below if the user configured
+  // paiDir to a non-default location (cross-domain split).
   if (localBundle) {
     await emit({
       event: "message",
       content: `Local v5 bundle detected at ${localBundle}. Installing from bundle (skipping git clone).`,
     });
     try {
-      const stats = await installFromLocalBundle(localBundle, paiDir, emit);
+      const stats = await installFromLocalBundle(localBundle, claudeDir, emit);
       await emit({
         event: "message",
         content: `Installed ${stats.files} files from local bundle (${(stats.bytes / 1024 / 1024).toFixed(1)} MB).`,
@@ -1230,7 +1288,7 @@ export async function runRepository(
     await emit({ event: "progress", step: "repository", percent: 20, detail: "Cloning PAI repository..." });
 
     const cloneResult = tryExec(
-      `git clone https://github.com/danielmiessler/PAI.git "${paiDir}" 2>&1`,
+      `git clone https://github.com/danielmiessler/PAI.git "${claudeDir}" 2>&1`,
       120000
     );
 
@@ -1239,16 +1297,33 @@ export async function runRepository(
     } else {
       await emit({ event: "progress", step: "repository", percent: 50, detail: "Directory exists, trying alternative approach..." });
 
-      const initResult = tryExec(`cd "${paiDir}" && git init && git remote add origin https://github.com/danielmiessler/PAI.git && git fetch origin && git checkout -b main origin/main 2>&1`, 120000);
+      const initResult = tryExec(`cd "${claudeDir}" && git init && git remote add origin https://github.com/danielmiessler/PAI.git && git fetch origin && git checkout -b main origin/main 2>&1`, 120000);
       if (initResult !== null) {
         await emit({ event: "message", content: "PAI repository initialized and synced." });
       } else {
         await emit({
           event: "message",
-          content: "Could not clone PAI repo automatically. You can clone it manually later: git clone https://github.com/danielmiessler/PAI.git ~/.claude",
+          content: `Could not clone PAI repo automatically. You can clone it manually later: git clone https://github.com/danielmiessler/PAI.git ${claudeDir}`,
         });
       }
     }
+  }
+
+  // Cross-domain split: if paiDir was set to a location outside the default
+  // ${claudeDir}/PAI, relocate the bundle's PAI subtree there. The runtime
+  // lib resolves PAI_DIR via env so consumers find it at the new location.
+  // Any prior content at paiDir was already backed up + cleared by
+  // moveExistingPaiToBackup above, so the destination is clean.
+  const bundlePaiDir = join(claudeDir, "PAI");
+  if (paiDir !== bundlePaiDir && existsSync(bundlePaiDir)) {
+    await emit({
+      event: "message",
+      content: `Relocating PAI data: ${bundlePaiDir} → ${paiDir}`,
+    });
+    const paiParent = dirname(paiDir);
+    if (!existsSync(paiParent)) mkdirSync(paiParent, { recursive: true });
+    cpSync(bundlePaiDir, paiDir, { recursive: true });
+    rmSync(bundlePaiDir, { recursive: true, force: true });
   }
 
   // Create required directories regardless of clone result
@@ -1332,6 +1407,29 @@ export async function runConfiguration(
 
   const settingsPath = join(claudeDir, "settings.json");
 
+  // Recursively rewrite string values that hardcode the default install
+  // location ($HOME/.claude or ${HOME}/.claude) to the actual configured
+  // claudeDir / paiDir. Bundle templates use these literals because they
+  // expect the default install location; under custom CLAUDE_CONFIG_DIR
+  // or PAI_DIR the daemons would otherwise read the wrong place.
+  // Order: PAI-prefixed first (more specific), then bare Claude.
+  const rewriteHomeRefs = (val: unknown): unknown => {
+    if (typeof val === "string") {
+      return val
+        .replace(/\$\{HOME\}\/\.claude\/PAI/g, paiDir)
+        .replace(/\$HOME\/\.claude\/PAI/g, paiDir)
+        .replace(/\$\{HOME\}\/\.claude/g, claudeDir)
+        .replace(/\$HOME\/\.claude/g, claudeDir);
+    }
+    if (Array.isArray(val)) return val.map(rewriteHomeRefs);
+    if (val && typeof val === "object") {
+      return Object.fromEntries(
+        Object.entries(val).map(([k, v]) => [k, rewriteHomeRefs(v)])
+      );
+    }
+    return val;
+  };
+
   // The release ships a complete settings.json with hooks, statusLine, spinnerVerbs, etc.
   // We only update user-specific fields — never overwrite the whole file.
   if (existsSync(settingsPath)) {
@@ -1352,13 +1450,14 @@ export async function runConfiguration(
       if (!existing.contextFiles) existing.contextFiles = config.contextFiles;
       if (!existing.plansDirectory) existing.plansDirectory = config.plansDirectory;
       // Never touch: hooks, statusLine, spinnerVerbs, contextFiles (if present)
-      writeFileSync(settingsPath, JSON.stringify(existing, null, 2));
+      const rewritten = rewriteHomeRefs(existing);
+      writeFileSync(settingsPath, JSON.stringify(rewritten, null, 2));
     } catch {
       // Existing file is corrupt — write fresh as fallback
-      writeFileSync(settingsPath, JSON.stringify(config, null, 2));
+      writeFileSync(settingsPath, JSON.stringify(rewriteHomeRefs(config), null, 2));
     }
   } else {
-    writeFileSync(settingsPath, JSON.stringify(config, null, 2));
+    writeFileSync(settingsPath, JSON.stringify(rewriteHomeRefs(config), null, 2));
   }
   await emit({ event: "message", content: "settings.json generated." });
 
@@ -1633,7 +1732,7 @@ async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<b
     // Pulse plist installed but never bound :31337. Surface this as an install
     // failure rather than silently reporting success — the user will hit
     // mysterious 'voice not working' / 'pulse not starting' otherwise.
-    await emit({ event: "message", content: "Pulse plist installed but port 31337 did not bind within 10s. Check ~/.claude/PAI/PULSE/logs/pulse-stderr.log. Voice and dashboard will not work until this is resolved." });
+    await emit({ event: "message", content: `Pulse plist installed but port 31337 did not bind within 10s. Check ${join(paiDir, "PULSE", "logs", "pulse-stderr.log").replace(homedir(), "~")}. Voice and dashboard will not work until this is resolved.` });
     return false;
   } catch {
     await emit({ event: "message", content: "Could not install Pulse. Voice notifications will not be available." });
@@ -1693,7 +1792,7 @@ async function installPulseMenuBar(paiDir: string, emit: EngineEventHandler): Pr
       await emit({ event: "message", content: "Menu bar app installed — look for the Pulse icon in your menu bar." });
       return true;
     }
-    await emit({ event: "message", content: "Menu bar install did not complete. You can run it later: bash ~/.claude/PAI/PULSE/MenuBar/install.sh" });
+    await emit({ event: "message", content: `Menu bar install did not complete. You can run it later: bash ${join(paiDir, "PULSE", "MenuBar", "install.sh").replace(homedir(), "~")}` });
     return false;
   } catch {
     return false;
@@ -1709,6 +1808,12 @@ export async function runVoiceSetup(
   getInput: InputPrompt,
   getChoiceWithPreview?: ChoicePreviewPrompt
 ): Promise<void> {
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
+  const claudeEnvDisplay = join(claudeDir, ".env").replace(homedir(), "~");
+  const pulseManageDisplay = join(paiDir, "PULSE", "manage.sh").replace(homedir(), "~");
+  const menuBarInstallDisplay = join(paiDir, "PULSE", "MenuBar", "install.sh").replace(homedir(), "~");
+
   await emit({ event: "step_start", step: "voice" });
   await emitSectionHeader(
     emit,
@@ -1735,7 +1840,7 @@ export async function runVoiceSetup(
     "scan-prior-config",
     "Look in backup directories and your prior PAI config for existing ElevenLabs voice IDs and API keys?",
     [
-      { label: "Yes — scan and let me confirm anything found", value: "yes", description: "Reads ~/.config/PAI/.env and any ~/.claude.bak / ~/.claude-bak / ~/.claude.backup.* / ~/.claude.previous etc. Per-item confirmation before anything is imported." },
+      { label: "Yes — scan and let me confirm anything found", value: "yes", description: `Reads ~/.config/PAI/.env and any backup sibling of ${claudeDir.replace(homedir(), "~")} (.bak / -bak / .backup.* / .previous etc.). Per-item confirmation before anything is imported.` },
       { label: "No — start completely fresh", value: "no", description: "Skip the scan. I'll either enter a new ElevenLabs key or skip voice entirely." },
     ],
     daName
@@ -1770,7 +1875,7 @@ export async function runVoiceSetup(
       await emit({ event: "progress", step: "voice", percent: 5, detail: "Checking existing ElevenLabs key locations..." });
       const candidate = findExistingEnvKey("ELEVENLABS_API_KEY");
       if (candidate) {
-        const useIt = await getChoice("confirm-active-key", `Found ElevenLabs API key in ~/.claude/.env or ~/.config/PAI/.env. Use it?`, [
+        const useIt = await getChoice("confirm-active-key", `Found ElevenLabs API key in ${claudeEnvDisplay} or ~/.config/PAI/.env. Use it?`, [
           { label: "Yes — validate and use", value: "yes" },
           { label: "No — skip this one", value: "no" },
         ], daName);
@@ -1843,11 +1948,8 @@ export async function runVoiceSetup(
 
   const hasElevenLabsKey = !!state.collected.elevenLabsKey;
   if (!hasElevenLabsKey) {
-    await emit({ event: "message", content: "No ElevenLabs key — voice will fall back to macOS text-to-speech. You can add a key later in ~/.claude/.env" });
+    await emit({ event: "message", content: `No ElevenLabs key — voice will fall back to macOS text-to-speech. You can add a key later in ${claudeEnvDisplay}` });
   }
-
-  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
-  const paiDir   = state.detection?.paiDir || getPaiDir();
 
   // ── Write ELEVENLABS_API_KEY to ~/.claude/.env BEFORE Pulse starts ──
   // Pulse loads .env at boot. If we install Pulse before writing the key,
@@ -1864,7 +1966,7 @@ export async function runVoiceSetup(
         envContent = (envContent.trimEnd() + `\nELEVENLABS_API_KEY=${state.collected.elevenLabsKey}\n`).trimStart();
       }
       writeFileSync(envPath, envContent, { mode: 0o600 });
-      await emit({ event: "message", content: "ElevenLabs key written to ~/.claude/.env (Pulse will read it on boot)." });
+      await emit({ event: "message", content: `ElevenLabs key written to ${claudeEnvDisplay} (Pulse will read it on boot).` });
     } catch (err: any) {
       await emit({ event: "message", content: `Could not write .env: ${err?.message || err}. Voice may fall back to macOS say.` });
     }
@@ -1882,14 +1984,14 @@ export async function runVoiceSetup(
 
   const installPulseChoice = await getChoice("install-pulse", "Install Pulse as a system launchd service?", [
     { label: "Yes — install Pulse (recommended)", value: "yes", description: "Auto-starts on login. Voice + Dashboard + Observability." },
-    { label: "Skip — don't install Pulse now", value: "skip", description: "Voice notifications will not work until you run: bash ~/.claude/PAI/PULSE/manage.sh install" },
+    { label: "Skip — don't install Pulse now", value: "skip", description: `Voice notifications will not work until you run: bash ${pulseManageDisplay} install` },
   ], daName);
 
   let voiceServerReady = false;
   if (installPulseChoice === "yes") {
     voiceServerReady = await installPulse(paiDir, emit);
   } else {
-    await emit({ event: "message", content: "Pulse skipped. Voice not enabled — install later via: bash ~/.claude/PAI/PULSE/manage.sh install" });
+    await emit({ event: "message", content: `Pulse skipped. Voice not enabled — install later via: bash ${pulseManageDisplay} install` });
   }
 
   // ── Optional menu bar app (Y/n) — separate launchd plist + .app bundle ──
@@ -1903,13 +2005,13 @@ export async function runVoiceSetup(
     });
     const installMenuBarChoice = await getChoice("install-menubar", "Install the Pulse menu bar app?", [
       { label: "Yes — install menu bar app", value: "yes", description: "Adds an icon to your menu bar. Auto-starts on login." },
-      { label: "Skip — Pulse runs without menu bar", value: "skip", description: "Pulse keeps running. You can install the menu bar later: bash ~/.claude/PAI/PULSE/MenuBar/install.sh" },
+      { label: "Skip — Pulse runs without menu bar", value: "skip", description: `Pulse keeps running. You can install the menu bar later: bash ${menuBarInstallDisplay}` },
     ], daName);
 
     if (installMenuBarChoice === "yes") {
       await installPulseMenuBar(paiDir, emit);
     } else {
-      await emit({ event: "message", content: "Menu bar skipped. Install later: bash ~/.claude/PAI/PULSE/MenuBar/install.sh" });
+      await emit({ event: "message", content: `Menu bar skipped. Install later: bash ${menuBarInstallDisplay}` });
     }
   }
 
@@ -2209,6 +2311,11 @@ export async function runTelegramSetup(
   getChoice: (id: string, prompt: string, choices: { label: string; value: string; description?: string }[]) => Promise<string>,
   getInput: (id: string, prompt: string, type: "text" | "password" | "key", placeholder?: string) => Promise<string>
 ): Promise<void> {
+  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
+  const paiDir   = state.detection?.paiDir || getPaiDir();
+  const claudeEnvDisplay = join(claudeDir, ".env").replace(homedir(), "~");
+  const pulseManageDisplay = join(paiDir, "PULSE", "manage.sh").replace(homedir(), "~");
+
   await emit({ event: "step_start", step: "telegram" });
   await emitSectionHeader(
     emit,
@@ -2228,17 +2335,14 @@ export async function runTelegramSetup(
 
   const wantsTelegram = await getChoice("telegram-enable", "Set up Telegram now?", [
     { label: "Yes — I have a bot token from BotFather", value: "yes" },
-    { label: "Skip — I'll set this up later (or never)", value: "skip", description: "Pulse runs fine without Telegram. Add later via ~/.claude/.env" },
+    { label: "Skip — I'll set this up later (or never)", value: "skip", description: `Pulse runs fine without Telegram. Add later via ${claudeEnvDisplay}` },
   ]);
 
   if (wantsTelegram !== "yes") {
-    await emit({ event: "message", content: "Skipped Telegram setup. Add later: TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in ~/.claude/.env, then bash ~/.claude/PAI/PULSE/manage.sh restart" });
+    await emit({ event: "message", content: `Skipped Telegram setup. Add later: TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in ${claudeEnvDisplay}, then bash ${pulseManageDisplay} restart` });
     skipStep(state, "telegram", "user-skipped");
     return;
   }
-
-  const claudeDir = state.detection?.claudeConfigDir || getClaudeDir();
-  const paiDir   = state.detection?.paiDir || getPaiDir();
 
   // ── Step 1: Check primary .env locations (no permission needed) ──
   let token = findExistingEnvKey("TELEGRAM_BOT_TOKEN");
@@ -2332,7 +2436,7 @@ export async function runTelegramSetup(
     const envPath = join(claudeDir, ".env");
     writeEnvKey(envPath, "TELEGRAM_BOT_TOKEN", token);
     writeEnvKey(envPath, "TELEGRAM_ALLOWED_USERS", allowedUsers);
-    await emit({ event: "message", content: "Telegram credentials written to ~/.claude/.env." });
+    await emit({ event: "message", content: `Telegram credentials written to ${claudeEnvDisplay}.` });
   } catch (err: any) {
     await emit({ event: "message", content: `Could not write .env: ${err?.message || err}. Telegram bot will not start.` });
     skipStep(state, "telegram", "env-write-failed");
@@ -2346,7 +2450,7 @@ export async function runTelegramSetup(
     event: "message",
     content: restarted
       ? `Pulse restarted. Telegram bot @${validation.username} is now polling.`
-      : `Pulse not restarted automatically — run: bash ~/.claude/PAI/PULSE/manage.sh restart`,
+      : `Pulse not restarted automatically — run: bash ${pulseManageDisplay} restart`,
   });
 
   await emit({ event: "step_complete", step: "telegram" });

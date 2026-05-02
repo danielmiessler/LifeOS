@@ -154,7 +154,15 @@ export interface InstallState {
 
   // Detection cache
   detection: DetectionResult | null;
+  /** Backup of the existing claudeConfigDir (sibling, e.g. ~/.claude.backup-<ts>). */
   backupPath?: string;
+  /**
+   * Backup of the existing paiDir when cross-domain split is configured
+   * (paiDir != ${claudeConfigDir}/PAI). Sibling of paiDir, e.g.
+   * /a/PAI.backup-<ts>. Unset under default config — backupPath then
+   * already covers PAI data via the claude-home backup.
+   */
+  paiBackupPath?: string;
 
   // Collected data
   collected: {

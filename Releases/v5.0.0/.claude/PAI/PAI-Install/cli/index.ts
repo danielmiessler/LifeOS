@@ -24,6 +24,9 @@ import {
   runTelegramSetup,
 } from "../engine/actions";
 import { runValidation, generateSummary } from "../engine/validate";
+import { homedir } from "os";
+import { join } from "path";
+import { getPaiDir } from "../../lib/paths";
 import {
   printBanner,
   printStep,
@@ -300,15 +303,16 @@ export async function runCLI(): Promise<void> {
     print(`  ${c.gray}2.${c.reset} Type ${c.bold}/interview${c.reset}${c.gray} — the DA walks through TELOS, identity, projects, preferences. Pause and resume anytime.${c.reset}`);
     print(`     ${c.gray}(Already have goals/journals/notes in Obsidian, Notion, etc.? Run the ${c.bold}Migrate${c.reset}${c.gray} skill first so the interview fills gaps instead of asking you to re-type.)${c.reset}`);
     print("");
+    const paiUserDisplay = join(getPaiDir(), "USER").replace(homedir(), "~");
     print(`  ${c.lightBlue}${c.bold}Manual path — edit the files yourself:${c.reset}`);
-    print(`  ${c.gray}Each subdirectory under ~/.claude/PAI/USER/ has a README.md explaining what goes inside and how to customize it.${c.reset}`);
+    print(`  ${c.gray}Each subdirectory under ${paiUserDisplay}/ has a README.md explaining what goes inside and how to customize it.${c.reset}`);
     print(`  ${c.gray}Start with:${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/README.md${c.reset}             ${c.gray}— full layout map${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/TELOS/README.md${c.reset}       ${c.gray}— missions, goals, problems, strategies${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/DA/README.md${c.reset}          ${c.gray}— your DA's identity, voice, personality${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/PROJECTS/README.md${c.reset}    ${c.gray}— project registry + routing aliases${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/SECURITY/README.md${c.reset}    ${c.gray}— bash/path rules (already has working defaults)${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/Config/README.md${c.reset}      ${c.gray}— credentials and PAI config${c.reset}`);
+    print(`     ${c.bold}${paiUserDisplay}/README.md${c.reset}             ${c.gray}— full layout map${c.reset}`);
+    print(`     ${c.bold}${paiUserDisplay}/TELOS/README.md${c.reset}       ${c.gray}— missions, goals, problems, strategies${c.reset}`);
+    print(`     ${c.bold}${paiUserDisplay}/DA/README.md${c.reset}          ${c.gray}— your DA's identity, voice, personality${c.reset}`);
+    print(`     ${c.bold}${paiUserDisplay}/PROJECTS/README.md${c.reset}    ${c.gray}— project registry + routing aliases${c.reset}`);
+    print(`     ${c.bold}${paiUserDisplay}/SECURITY/README.md${c.reset}    ${c.gray}— bash/path rules (already has working defaults)${c.reset}`);
+    print(`     ${c.bold}${paiUserDisplay}/Config/README.md${c.reset}      ${c.gray}— credentials and PAI config${c.reset}`);
     print("");
     print(`  ${c.lightBlue}${c.bold}While you're here:${c.reset}`);
     print(`  ${c.gray}•${c.reset} Visit the Life Dashboard at ${c.bold}http://localhost:31337${c.reset}${c.gray} (Pulse).${c.reset}`);

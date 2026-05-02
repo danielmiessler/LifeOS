@@ -243,7 +243,7 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     passed: pulseHealthy,
     detail: pulseHealthy
       ? "Running on localhost:31337"
-      : "Not reachable — install via: bash ~/.claude/PAI/PULSE/manage.sh install",
+      : `Not reachable — install via: bash ${join(paiDir, "PULSE", "manage.sh").replace(homedir(), "~")} install`,
     critical: false,
   });
 
