@@ -1,0 +1,38 @@
+# Task: Installer Path Resolution Precedence
+# Verifies the PAI installer honors CLAUDE_CONFIG_DIR / PAI_DIR env vars
+# and --claude-config-dir / --pai-dir CLI flags with precedence
+# CLI flag > env var > default. Locks the contract symmetry between
+# the installer and the runtime path lib.
+#
+# Architecture reference:
+# PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
+#
+# Auto-deprecate signal: if the architecture's directory-structure block
+# (L18-34) changes to introduce/remove domains, this task must be revised.
+
+id: task_paths_installer_precedence
+description: "Installer resolves CLAUDE_CONFIG_DIR + PAI_DIR + CLI flags with correct precedence"
+type: regression
+domain: coding
+source: refactor
+
+graders:
+  - type: binary_tests
+    weight: 1.0
+    params:
+      test_files:
+        - /Users/neil/src/Personal_AI_Infrastructure/Releases/v5.0.0/.claude/PAI/PAI-Install/engine/paths.test.ts
+      test_command: bun test
+      timeout_ms: 30000
+
+trials: 1
+pass_threshold: 1.0
+
+tags:
+  - paths
+  - configurability
+  - regression
+  - installer
+  - architecture-L18-34
+
+created_at: "2026-05-02"

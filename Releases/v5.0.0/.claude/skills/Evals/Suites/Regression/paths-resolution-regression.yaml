@@ -16,6 +16,7 @@ domain: coding
 tasks:
   - task_paths_resolution_ts
   - task_paths_resolution_sh
+  - task_paths_installer_precedence
 
 pass_threshold: 0.99
 saturation_threshold: 0.99
