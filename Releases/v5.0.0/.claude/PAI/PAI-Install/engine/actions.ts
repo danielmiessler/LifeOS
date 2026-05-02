@@ -81,9 +81,11 @@ function isPlaceholderValue(value: string): boolean {
   return /^\{.+\}$/.test(value) || /^e\.g\./i.test(value.trim()) || PLACEHOLDER_LITERALS.has(value.trim());
 }
 
-function computeBackupPath(home: string): string {
+function computeBackupPath(claudeConfigDir: string): string {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  return join(home, `.claude.backup-${ts}`);
+  // Sibling of the configured Claude home, preserving locality so the
+  // backup-scanner finds it under the same parent directory.
+  return `${claudeConfigDir}.backup-${ts}`;
 }
 
 async function emitSectionHeader(
@@ -283,24 +285,30 @@ function findKeyInBackupDirs(keyName: string): { path: string; value: string }[]
  */
 function inventoryExistingConfig(): { signals: string[] } {
   const home = homedir();
+  const claudeDir = getClaudeDir();
+  const claudeParent = dirname(claudeDir);
+  const claudeBase = basename(claudeDir);
   const signals: string[] = [];
-  // (1) `~/.config/PAI/.env` — outside `~/.claude/`, often holds the prior key.
+  // (1) `~/.config/PAI/.env` — outside the Claude home, often holds the prior key.
   const configEnv = join(home, ".config", "PAI", ".env");
   if (readKeyFromFile(configEnv, "ELEVENLABS_API_KEY")) {
     signals.push(`ElevenLabs key in ${configEnv.replace(home, "~")}`);
   }
-  // (2) Every `.claude*` directory in $HOME EXCEPT `~/.claude/` itself.
-  //     Pattern matches `.claude.bak`, `.claude-bak`, `.claude.backup.20260101`,
-  //     `.claude.previous`, `.claude_old`, `.claude20251215`, etc.
+  // (2) Every sibling of the Claude home with a name extending the Claude
+  //     base name. Default config: walk $HOME for `.claude*` entries other
+  //     than `.claude`. Custom CLAUDE_CONFIG_DIR=/opt/claude: walk /opt for
+  //     `claude*` entries other than `claude`. Pattern matches `.bak`,
+  //     `-bak`, `.backup.<ts>`, `.previous`, `_old`, etc. as suffixes.
   try {
-    for (const entry of readdirSync(home)) {
-      if (!entry.startsWith(".claude") || entry === ".claude") continue;
-      for (const candidate of [join(home, entry, ".env"), join(home, entry, ".config", "PAI", ".env")]) {
+    for (const entry of readdirSync(claudeParent)) {
+      if (!entry.startsWith(claudeBase) || entry === claudeBase) continue;
+      const entryDir = join(claudeParent, entry);
+      for (const candidate of [join(entryDir, ".env"), join(entryDir, ".config", "PAI", ".env")]) {
         if (readKeyFromFile(candidate, "ELEVENLABS_API_KEY")) {
           signals.push(`ElevenLabs key in ${candidate.replace(home, "~")}`);
         }
       }
-      const settingsPath = join(home, entry, "settings.json");
+      const settingsPath = join(entryDir, "settings.json");
       if (existsSync(settingsPath)) {
         try {
           const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
@@ -311,7 +319,7 @@ function inventoryExistingConfig(): { signals: string[] } {
         } catch { /* malformed settings.json — skip */ }
       }
     }
-  } catch { /* permission errors on home listing — return what we have */ }
+  } catch { /* permission errors on parent listing — return what we have */ }
   return { signals };
 }
 
@@ -690,12 +698,12 @@ export async function runSystemDetect(
   // Determine install type
   if (detection.existing.paiInstalled) {
     state.installType = "upgrade";
-    state.backupPath = computeBackupPath(detection.homeDir);
+    state.backupPath = computeBackupPath(detection.claudeConfigDir);
     await emitSectionHeader(
       emit,
       "EXISTING-INSTALLATION-FOUND",
       "EXISTING INSTALLATION FOUND",
-      `Will copy ~/.claude → ${state.backupPath.replace(detection.homeDir, "~")} before installing fresh`
+      `Will copy ${detection.claudeConfigDir.replace(detection.homeDir, "~")} → ${state.backupPath.replace(detection.homeDir, "~")} before installing fresh`
     );
 
     const consent = getChoice

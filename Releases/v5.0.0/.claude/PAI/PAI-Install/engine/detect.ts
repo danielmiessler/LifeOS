@@ -7,7 +7,7 @@
 import { execSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { homedir } from "os";
-import { join } from "path";
+import { basename, dirname, join } from "path";
 import type { DetectionResult, ExistingUserContentDetection } from "./types";
 import { resolveInstallPaths, type ResolveOptions } from "./paths";
 
@@ -89,12 +89,16 @@ function detectExisting(
     result.paiInstalled = true;
   }
 
-  // Check for backup directories
+  // Check for backup directories — siblings of the configured Claude home.
+  // Default ~/.claude → ~/.claude-backup etc.; CLAUDE_CONFIG_DIR=/opt/claude
+  // → /opt/claude-backup etc.
+  const claudeParent = dirname(paiDir);
+  const claudeBase = basename(paiDir);
   const backupPatterns = [
-    join(home, ".claude-backup"),
-    join(home, ".claude-old"),
-    join(home, ".claude-BACKUP"),
-    join(home, ".claude.bak"),
+    join(claudeParent, `${claudeBase}-backup`),
+    join(claudeParent, `${claudeBase}-old`),
+    join(claudeParent, `${claudeBase}-BACKUP`),
+    join(claudeParent, `${claudeBase}.bak`),
   ];
   for (const bp of backupPatterns) {
     if (existsSync(bp)) {
