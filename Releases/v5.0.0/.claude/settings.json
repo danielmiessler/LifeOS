@@ -82,6 +82,17 @@
     "defaultMode": "default"
   },
   "hooks": {
+    "PermissionRequest": [
+      {
+        "matcher": "Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/SmartApprover.hook.ts"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Bash",
