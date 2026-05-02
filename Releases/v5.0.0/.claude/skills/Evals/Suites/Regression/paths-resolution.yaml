@@ -1,0 +1,23 @@
+# Path Resolution Regression Suite
+# Locks the v5.0.0 two-domain config contract (CLAUDE_CONFIG_DIR + PAI_DIR).
+#
+# Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
+# Plan reference:         ~/.claude-vanilla/plans/kind-questing-kernighan.md
+#
+# Auto-deprecate signal: if architecture L18-34 (Directory Structure block)
+# changes to add/remove domains, this suite must be revised. The task YAMLs
+# carry the same `architecture-L18-34` tag for traceability.
+
+name: paths-resolution-regression
+description: "Two-domain path resolution (CLAUDE_CONFIG_DIR + PAI_DIR) per architecture L18-34"
+type: regression
+domain: coding
+
+tasks:
+  - task_paths_resolution_ts
+  - task_paths_resolution_sh
+
+pass_threshold: 0.99
+saturation_threshold: 0.99
+
+created_at: "2026-05-02"

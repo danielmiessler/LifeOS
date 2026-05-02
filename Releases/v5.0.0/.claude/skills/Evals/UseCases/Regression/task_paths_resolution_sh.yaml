@@ -1,0 +1,33 @@
+# Task: Path Resolution Semantics — Shell
+# Verifies PAI/lib/paths.sh resolution against the two-domain config contract
+# documented in PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34.
+#
+# Auto-deprecate signal: if the architecture doc's directory-structure block
+# (L18-34) changes to introduce/remove domains, this task must be revised.
+
+id: task_paths_resolution_sh
+description: "Shell path helper resolves CLAUDE_CONFIG_DIR + PAI_DIR per architecture L18-34"
+type: regression
+domain: coding
+source: refactor
+
+graders:
+  - type: binary_tests
+    weight: 1.0
+    params:
+      test_files:
+        - /Users/neil/src/Personal_AI_Infrastructure/Releases/v5.0.0/.claude/PAI/lib/paths.bats
+      test_command: bats
+      timeout_ms: 30000
+
+trials: 1
+pass_threshold: 1.0
+
+tags:
+  - paths
+  - configurability
+  - regression
+  - shell
+  - architecture-L18-34
+
+created_at: "2026-05-02"
