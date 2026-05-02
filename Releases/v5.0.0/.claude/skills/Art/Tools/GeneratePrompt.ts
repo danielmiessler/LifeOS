@@ -19,7 +19,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { paiPath } from "../../../PAI/lib/paths";
+import { paiPath } from "../../../hooks/lib/paths";
 
 // ============================================================================
 // Types

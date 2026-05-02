@@ -27,7 +27,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
-import { getClaudeDir } from '../../../PAI/lib/paths';
+import { getClaudeDir } from '../../../hooks/lib/paths';
 
 // Types
 interface Source {

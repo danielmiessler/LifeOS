@@ -1,0 +1,77 @@
+{
+  "id": "run_1777731135128_mel6rj",
+  "task_id": "task_paths_resolution_sh",
+  "trials": [
+    {
+      "id": "trial_1",
+      "task_id": "task_paths_resolution_sh",
+      "trial_number": 1,
+      "status": "failed",
+      "started_at": "2026-05-02T14:12:15.128Z",
+      "completed_at": "2026-05-02T14:12:15.128Z",
+      "transcript": {
+        "task_id": "task_paths_resolution_sh",
+        "trial_id": "trial_1",
+        "started_at": "2026-05-02T14:12:15.128Z",
+        "completed_at": "2026-05-02T14:12:15.128Z",
+        "turns": [
+          {
+            "index": 0,
+            "role": "system",
+            "content": "Shell path helper resolves CLAUDE_CONFIG_DIR + PAI_DIR per architecture L18-34",
+            "timestamp": "2026-05-02T14:12:15.128Z"
+          },
+          {
+            "index": 1,
+            "role": "assistant",
+            "content": "Task executed via ALGORITHM",
+            "timestamp": "2026-05-02T14:12:15.128Z"
+          }
+        ],
+        "tool_calls": [],
+        "metrics": {
+          "n_turns": 2,
+          "n_tool_calls": 0,
+          "total_tokens": 0,
+          "input_tokens": 0,
+          "output_tokens": 0,
+          "wall_time_ms": 0,
+          "time_to_first_token_ms": 0,
+          "time_to_last_token_ms": 0
+        }
+      },
+      "grader_results": [
+        {
+          "grader_type": "binary_tests",
+          "weight": 1,
+          "score": 0,
+          "passed": false,
+          "duration_ms": 0.18625000000000114,
+          "reasoning": "0/1 tests passed",
+          "details": {
+            "results": [
+              {
+                "file": "/Users/neil/src/Personal_AI_Infrastructure/Releases/v5.0.0/.claude/PAI/lib/paths.bats",
+                "passed": false,
+                "output": "",
+                "error": "bun: command not found: timeout\n"
+              }
+            ],
+            "working_dir": "/Users/neil/src/Personal_AI_Infrastructure/Releases/v5.0.0/.claude"
+          }
+        }
+      ],
+      "score": 0,
+      "passed": false
+    }
+  ],
+  "n_trials": 1,
+  "pass_rate": 0,
+  "mean_score": 0,
+  "std_dev": 0,
+  "pass_at_k": 0,
+  "pass_to_k": 0,
+  "started_at": "2026-05-02T14:12:15.128Z",
+  "completed_at": "2026-05-02T14:12:15.128Z",
+  "total_duration_ms": 0
+}

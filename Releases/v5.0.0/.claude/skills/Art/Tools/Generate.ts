@@ -18,7 +18,7 @@ import { GoogleGenAI } from "@google/genai";
 import { writeFile, readFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import { homedir } from "node:os";
-import { getEnvPath, getClaudeDir } from "../../../PAI/lib/paths";
+import { getEnvPath, getClaudeDir } from "../../../hooks/lib/paths";
 
 // ============================================================================
 // Environment Loading
@@ -206,8 +206,7 @@ async function detectMimeType(filePath: string): Promise<string> {
 // Help Text
 // ============================================================================
 
-// Claude home for documentation paths
-const PAI_DIR = getClaudeDir();
+const CLAUDE_DIR = getClaudeDir();
 
 function showHelp(): void {
   console.log(`
@@ -309,8 +308,8 @@ ERROR CODES:
   1  General error (invalid arguments, API error, file write error)
 
 MORE INFO:
-  Documentation: ${PAI_DIR}/skills/Art/README.md
-  Source: ${PAI_DIR}/skills/Art/Tools/Generate.ts
+  Documentation: ${CLAUDE_DIR}/skills/Art/README.md
+  Source: ${CLAUDE_DIR}/skills/Art/Tools/Generate.ts
 `);
   process.exit(0);
 }
@@ -864,7 +863,7 @@ async function generateWithNanoBananaPro(
 
 async function main(): Promise<void> {
   try {
-    // Load API keys from ${PAI_DIR}/.env
+    // Load API keys from ${CLAUDE_DIR}/.env
     await loadEnv();
 
     const args = parseArgs(process.argv);

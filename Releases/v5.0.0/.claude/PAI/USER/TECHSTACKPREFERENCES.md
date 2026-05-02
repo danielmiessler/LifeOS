@@ -20,10 +20,11 @@ Three layers — pick the right one for the context:
 
 ## Conventions
 
-- **Paths:** Use `$HOME`, `${PAI_DIR}`, relative paths — never hardcode user paths
+- **Paths:** Use `$HOME`, `${CLAUDE_CONFIG_DIR}`, `${PAI_DIR}`, relative paths — never hardcode user paths
 - **Comments:** Minimal — code should explain itself via naming
 - **Error handling:** Explicit. Never silently swallow errors.
 - **Config:** (interview — env var / config file / CLI flag preference)
 
 ---
-*These preferences shape every code suggestion, refactor, and tool selection. The DA consults this file before invoking any code-writing capability.*
+
+_These preferences shape every code suggestion, refactor, and tool selection. The DA consults this file before invoking any code-writing capability._

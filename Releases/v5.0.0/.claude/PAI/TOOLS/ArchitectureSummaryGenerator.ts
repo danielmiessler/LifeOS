@@ -15,7 +15,7 @@ import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "os";
-import { getPaiDir, getClaudeDir } from '../lib/paths';
+import { expandPath, getPaiDir, getClaudeDir } from '../lib/paths';
 
 // ============================================================================
 // Configuration
@@ -247,7 +247,7 @@ function generate(): string {
     const resolved = sub.docPath.startsWith("/")
       ? sub.docPath
       : sub.docPath.startsWith("~")
-        ? sub.docPath.replace(/^~/, homedir())
+        ? expandPath(sub.docPath)
         : path.join(CLAUDE_DIR, sub.docPath);
     const shortPath = sub.docPath.replace("~/.claude/", "");
     if (!fs.existsSync(resolved)) missing.push(shortPath);

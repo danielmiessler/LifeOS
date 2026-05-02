@@ -13,7 +13,7 @@
 import { join, resolve } from "path"
 import { homedir } from "os"
 import { existsSync, mkdirSync } from "fs"
-import { getPaiDir, paiPath, getEnvPath } from "../lib/paths"
+import { expandPath, getPaiDir, paiPath, getEnvPath } from "../lib/paths"
 
 const PAI_DIR = getPaiDir()
 const PULSE_DIR = join(PAI_DIR, "Pulse")
@@ -101,7 +101,7 @@ async function setupGitHubApp(workerName: string): Promise<{
 
   const appId = await prompt("GitHub App ID:")
   const privateKeyPath = await prompt("Path to private key (.pem file):")
-  const resolvedKey = resolve(privateKeyPath.replace(/^~/, homedir()))
+  const resolvedKey = resolve(expandPath(privateKeyPath))
 
   if (!existsSync(resolvedKey)) {
     warn(`Private key not found at: ${resolvedKey}`)

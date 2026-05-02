@@ -12,7 +12,7 @@
 import { writeFileSync, readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { homedir } from "os";
-import { getSettingsPath } from "../../hooks/lib/paths";
+import { getSettingsPath } from "../lib/paths";
 
 const OUTPUT_PATH = join(import.meta.dir, "public", "assets", "welcome.mp3");
 

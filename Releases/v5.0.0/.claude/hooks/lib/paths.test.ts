@@ -2,21 +2,20 @@
  * Path resolution semantics — regression tests for two-domain config.
  *
  * Architecture reference: PAI/DOCUMENTATION/PAISystemArchitecture.md L18-34
- * Plan reference: ~/.claude-vanilla/plans/kind-questing-kernighan.md
  *
  * Run: bun test hooks/lib/paths.test.ts
  *
  * Each test sets env, calls the lib, asserts. No fixtures, no helpers.
- * PAI section is conditionally enabled — the PAI lib is created in a later
- * commit; until then those rows skip cleanly without blocking Claude tests.
+ * Both libs are tested — they implement the same env-var contract as
+ * mirror duplicates per architecture C1 (no cross-domain relative imports).
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { homedir } from 'os';
 import { join, isAbsolute } from 'path';
-import { existsSync } from 'fs';
 
 import * as claude from './paths';
+import * as pai from '../../PAI/lib/paths';
 
 const HOME = homedir();
 
@@ -93,96 +92,75 @@ describe('Claude domain — derived helpers', () => {
     process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
     expect(claude.getEnvPath()).toBe('/opt/claude/.env');
   });
+});
 
-  test('getHooksDir() → ${CLAUDE_CONFIG_DIR}/hooks', () => {
-    process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-    expect(claude.getHooksDir()).toBe('/opt/claude/hooks');
+describe('PAI domain — getPaiDir()', () => {
+  test('both unset → ~/.claude/PAI', () => {
+    expect(pai.getPaiDir()).toBe(join(HOME, '.claude', 'PAI'));
   });
 
-  test('getSkillsDir() → ${CLAUDE_CONFIG_DIR}/skills', () => {
+  test('CLAUDE_CONFIG_DIR=/opt/claude, PAI_DIR unset → /opt/claude/PAI', () => {
     process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-    expect(claude.getSkillsDir()).toBe('/opt/claude/skills');
+    expect(pai.getPaiDir()).toBe('/opt/claude/PAI');
+  });
+
+  test('PAI_DIR=/data/pai → /data/pai (PAI_DIR wins)', () => {
+    process.env.PAI_DIR = '/data/pai';
+    expect(pai.getPaiDir()).toBe('/data/pai');
+  });
+
+  test('cross-domain split: CLAUDE_CONFIG_DIR=/b/.claude, PAI_DIR=/a/PAI → both honored', () => {
+    process.env.CLAUDE_CONFIG_DIR = '/b/.claude';
+    process.env.PAI_DIR = '/a/PAI';
+    expect(claude.getClaudeDir()).toBe('/b/.claude');
+    expect(pai.getPaiDir()).toBe('/a/PAI');
+  });
+
+  test('PAI_DIR=relative/path → throws', () => {
+    process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
+    process.env.PAI_DIR = 'relative/path';
+    expect(() => pai.getPaiDir()).toThrow(/PAI_DIR/);
+  });
+
+  test('PAI_DIR="" + CLAUDE_CONFIG_DIR=/opt/claude → /opt/claude/PAI (empty = unset)', () => {
+    process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
+    process.env.PAI_DIR = '';
+    expect(pai.getPaiDir()).toBe('/opt/claude/PAI');
+  });
+
+  test('PAI_DIR="   " + CLAUDE_CONFIG_DIR=/opt/claude → /opt/claude/PAI (whitespace = unset)', () => {
+    process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
+    process.env.PAI_DIR = '   ';
+    expect(pai.getPaiDir()).toBe('/opt/claude/PAI');
+  });
+
+  test('PAI_DIR=$HOME/custom-pai → expanded', () => {
+    process.env.PAI_DIR = '$HOME/custom-pai';
+    expect(pai.getPaiDir()).toBe(join(HOME, 'custom-pai'));
   });
 });
 
-const PAI_LIB_PATH = join(import.meta.dir, '../../PAI/lib/paths.ts');
-const HAS_PAI_LIB = existsSync(PAI_LIB_PATH);
-
-if (HAS_PAI_LIB) {
-  const pai = await import('../../PAI/lib/paths');
-
-  describe('PAI domain — getPaiDir()', () => {
-    test('both unset → ~/.claude/PAI', () => {
-      expect(pai.getPaiDir()).toBe(join(HOME, '.claude', 'PAI'));
-    });
-
-    test('CLAUDE_CONFIG_DIR=/opt/claude, PAI_DIR unset → /opt/claude/PAI', () => {
-      process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-      expect(pai.getPaiDir()).toBe('/opt/claude/PAI');
-    });
-
-    test('PAI_DIR=/data/pai → /data/pai (PAI_DIR wins)', () => {
-      process.env.PAI_DIR = '/data/pai';
-      expect(pai.getPaiDir()).toBe('/data/pai');
-    });
-
-    test('cross-domain split: CLAUDE_CONFIG_DIR=/b/.claude, PAI_DIR=/a/PAI → both honored', () => {
-      process.env.CLAUDE_CONFIG_DIR = '/b/.claude';
-      process.env.PAI_DIR = '/a/PAI';
-      expect(claude.getClaudeDir()).toBe('/b/.claude');
-      expect(pai.getPaiDir()).toBe('/a/PAI');
-    });
-
-    test('PAI_DIR=relative/path → throws', () => {
-      process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-      process.env.PAI_DIR = 'relative/path';
-      expect(() => pai.getPaiDir()).toThrow(/PAI_DIR/);
-    });
-
-    test('PAI_DIR="" + CLAUDE_CONFIG_DIR=/opt/claude → /opt/claude/PAI (empty = unset)', () => {
-      process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-      process.env.PAI_DIR = '';
-      expect(pai.getPaiDir()).toBe('/opt/claude/PAI');
-    });
-
-    test('PAI_DIR="   " + CLAUDE_CONFIG_DIR=/opt/claude → /opt/claude/PAI (whitespace = unset)', () => {
-      process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-      process.env.PAI_DIR = '   ';
-      expect(pai.getPaiDir()).toBe('/opt/claude/PAI');
-    });
-
-    test('PAI_DIR=$HOME/custom-pai → expanded', () => {
-      process.env.PAI_DIR = '$HOME/custom-pai';
-      expect(pai.getPaiDir()).toBe(join(HOME, 'custom-pai'));
-    });
+describe('PAI domain — derived helpers', () => {
+  test('getMemoryDir() → ${PAI_DIR}/MEMORY', () => {
+    process.env.PAI_DIR = '/data/pai';
+    expect(pai.getMemoryDir()).toBe('/data/pai/MEMORY');
   });
 
-  describe('PAI domain — derived helpers', () => {
-    test('getMemoryDir() → ${PAI_DIR}/MEMORY', () => {
-      process.env.PAI_DIR = '/data/pai';
+  test('paiPath(a, b) → ${PAI_DIR}/a/b', () => {
+    process.env.PAI_DIR = '/data/pai';
+    expect(pai.paiPath('TOOLS', 'foo.ts')).toBe('/data/pai/TOOLS/foo.ts');
+  });
+
+  test('cross-domain rule: paths from PAI lib are absolute regardless of cwd', () => {
+    process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
+    process.env.PAI_DIR = '/data/pai';
+    const cwd = process.cwd();
+    try {
+      process.chdir('/tmp');
+      expect(isAbsolute(pai.getMemoryDir())).toBe(true);
       expect(pai.getMemoryDir()).toBe('/data/pai/MEMORY');
-    });
-
-    test('paiPath(a, b) → ${PAI_DIR}/a/b', () => {
-      process.env.PAI_DIR = '/data/pai';
-      expect(pai.paiPath('TOOLS', 'foo.ts')).toBe('/data/pai/TOOLS/foo.ts');
-    });
-
-    test('cross-domain rule: paths from PAI lib are absolute regardless of cwd', () => {
-      process.env.CLAUDE_CONFIG_DIR = '/opt/claude';
-      process.env.PAI_DIR = '/data/pai';
-      const cwd = process.cwd();
-      try {
-        process.chdir('/tmp');
-        expect(isAbsolute(pai.getMemoryDir())).toBe(true);
-        expect(pai.getMemoryDir()).toBe('/data/pai/MEMORY');
-      } finally {
-        process.chdir(cwd);
-      }
-    });
+    } finally {
+      process.chdir(cwd);
+    }
   });
-} else {
-  describe.skip('PAI domain (PAI/lib/paths.ts not yet created — RED state)', () => {
-    test('placeholder', () => {});
-  });
-}
+});

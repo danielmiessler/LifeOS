@@ -28,8 +28,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { execSync } from 'child_process';
 import { join } from 'path';
-import { getPaiDir, paiPath } from '../PAI/lib/paths';
-import { getSettingsPath } from './lib/paths';
+import { getPaiDir, getSettingsPath, getWorkDir, paiPath } from './lib/paths';
 
 interface PostCompactConfig {
   _docs?: string;
@@ -157,7 +156,7 @@ function main() {
   // Active ISA if one exists in current session.
   // We look for ISA.md first (v4.1+ canonical) and fall back to PRD.md (legacy).
   try {
-    const workDir = paiPath('MEMORY', 'WORK');
+    const workDir = getWorkDir();
     const probe = (filename: string): string =>
       execSync(
         `fd -t f -n "${filename}" --changed-within 60min "${workDir}" 2>/dev/null | head -1`,

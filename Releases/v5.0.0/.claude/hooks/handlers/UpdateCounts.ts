@@ -19,8 +19,7 @@
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
-import { getPaiDir } from '../../PAI/lib/paths';
-import { getSettingsPath, getClaudeDir } from '../lib/paths';
+import { getPaiDir, getSettingsPath, getClaudeDir } from '../lib/paths';
 
 
 interface Counts {

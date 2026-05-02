@@ -22,9 +22,8 @@
 import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
-import { homedir } from 'node:os';
 import { parseFrontmatter, parseCriteriaList, ARTIFACT_FILENAME, LEGACY_ARTIFACT_FILENAME } from './lib/isa-utils';
-import { getClaudeDir } from './lib/paths';
+import { expandPath, getClaudeDir } from './lib/paths';
 
 // Allowlist path: top of ~/.claude per spec. We only READ this file (never
 // write to it), so ContainmentGuard's write restriction on bare ~/.claude
@@ -37,15 +36,6 @@ const GIT_TIMEOUT_MS = 5000;
 interface CheckpointState {
   committed_iscs: string[];
   last_commit_sha: Record<string, string>;
-}
-
-function expandPath(p: string): string {
-  let s = p.trim();
-  if (!s) return s;
-  if (s.startsWith('~/')) s = join(homedir(), s.slice(2));
-  else if (s === '~') s = homedir();
-  s = s.replace(/^\$HOME(\/|$)/, homedir() + '$1');
-  return s;
 }
 
 function loadAllowlist(): string[] {

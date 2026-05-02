@@ -6,7 +6,7 @@
  */
 
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { paiPath } from '../../PAI/lib/paths';
+import { paiPath } from '../lib/paths';
 import type { SecurityEvent } from './types';
 
 function slugify(text: string, maxWords = 5): string {

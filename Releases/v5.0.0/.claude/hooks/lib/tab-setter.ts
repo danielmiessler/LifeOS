@@ -88,10 +88,10 @@ const GENERIC_PHASE_GERUNDS = new Set([
   'Executing the planned work.', 'Verifying ideal state criteria.',
   'Recording the session learnings.',
 ]);
-import { paiPath } from './paths';
+import { getStateDir } from './paths';
 
-const TAB_TITLES_DIR = paiPath('MEMORY', 'STATE', 'tab-titles');
-const KITTY_SESSIONS_DIR = paiPath('MEMORY', 'STATE', 'kitty-sessions');
+const TAB_TITLES_DIR = join(getStateDir(), 'tab-titles');
+const KITTY_SESSIONS_DIR = join(getStateDir(), 'kitty-sessions');
 
 /**
  * Resolve the `kitten` binary path. When tab-setter runs from the Claude Code
@@ -358,7 +358,7 @@ const SESSION_NOISE = new Set([
  */
 export function getSessionOneWord(sessionId: string): string | null {
   try {
-    const namesPath = paiPath('MEMORY', 'STATE', 'session-names.json');
+    const namesPath = join(getStateDir(), 'session-names.json');
     if (!existsSync(namesPath)) return null;
     const names = JSON.parse(readFileSync(namesPath, 'utf-8'));
     const fullName = names[sessionId];

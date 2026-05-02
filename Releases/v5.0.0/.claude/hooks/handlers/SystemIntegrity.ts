@@ -18,7 +18,7 @@
 import { writeFileSync, mkdirSync, existsSync } from 'fs';
 import { spawn } from 'child_process';
 import { join } from 'path';
-import { paiPath } from '../../PAI/lib/paths';
+import { getStateDir, paiPath } from '../lib/paths';
 
 import {
   parseToolUseBlocks,
@@ -40,7 +40,7 @@ interface HookInput {
   hook_event_name: string;
 }
 
-const STATE_DIR = paiPath('MEMORY', 'STATE');
+const STATE_DIR = getStateDir();
 const STATE_FILE = join(STATE_DIR, 'integrity-state.json');
 const INTEGRITY_SCRIPT = paiPath("TOOLS", 'IntegrityMaintenance.ts');
 

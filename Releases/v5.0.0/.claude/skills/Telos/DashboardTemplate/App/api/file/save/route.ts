@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import fs from 'fs'
 import path from 'path'
-import { getClaudeDir } from '../../../../../../PAI/lib/paths'
+import { getClaudeDir } from '../../../../../../hooks/lib/paths'
 
 const TELOS_DIR = path.join(getClaudeDir(), 'skills', 'Telos')
 

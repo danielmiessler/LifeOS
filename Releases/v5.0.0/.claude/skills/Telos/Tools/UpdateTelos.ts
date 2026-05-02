@@ -37,7 +37,7 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { getPrincipal } from '../../../hooks/lib/identity';
-import { getUserDir } from '../../../PAI/lib/paths';
+import { getUserDir } from '../../../hooks/lib/paths';
 
 const TELOS_DIR = join(getUserDir(), 'TELOS');
 const BACKUPS_DIR = join(TELOS_DIR, 'Backups');

@@ -27,7 +27,7 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import { findArtifactPath } from './lib/isa-utils';
-import { getMemoryDir, getStateDir, getWorkDir } from '../PAI/lib/paths';
+import { getMemoryDir, getStateDir, getWorkDir } from './lib/paths';
 
 const MEMORY_DIR = getMemoryDir();
 const STATE_DIR = getStateDir();

@@ -35,7 +35,7 @@
 
 import { writeFileSync, existsSync, readFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { getMemoryDir, getStateDir, getWorkDir } from '../PAI/lib/paths';
+import { getMemoryDir, getStateDir, getWorkDir } from './lib/paths';
 import { getISOTimestamp } from './lib/time';
 import { setTabState, cleanupKittySession } from './lib/tab-setter';
 import { readRegistry, writeRegistry, findArtifactPath } from './lib/isa-utils';

@@ -19,10 +19,10 @@
 
 import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync, renameSync } from 'fs';
 import { join } from 'path';
-import { paiPath } from './paths';
+import { getObservabilityDir, getPaiDir, getStateDir, getWorkDir } from './paths';
 
-export const WORK_DIR = paiPath('MEMORY', 'WORK');
-export const WORK_JSON = paiPath('MEMORY', 'STATE', 'work.json');
+export const WORK_DIR = getWorkDir();
+export const WORK_JSON = join(getStateDir(), 'work.json');
 
 // Canonical artifact filename (v4.1.0+) and the legacy fallback we still read.
 export const ARTIFACT_FILENAME = 'ISA.md';
@@ -385,7 +385,7 @@ export function parseCapabilities(content: string): string[] {
  */
 export function getSessionAgents(sessionUUID: string): AgentEntry[] {
   try {
-    const eventsPath = paiPath('MEMORY', 'OBSERVABILITY', 'subagent-events.jsonl');
+    const eventsPath = join(getObservabilityDir(), 'subagent-events.jsonl');
     if (!existsSync(eventsPath)) return [];
 
     // Use execSync with tail for performance — only read last 200 lines
@@ -454,7 +454,7 @@ export function readRegistry(): { sessions: Record<string, any> } {
 }
 
 export function writeRegistry(reg: { sessions: Record<string, any> }): void {
-  mkdirSync(join(paiPath('MEMORY'), 'STATE'), { recursive: true });
+  mkdirSync(getStateDir(), { recursive: true });
   const tmp = WORK_JSON + '.tmp';
   writeFileSync(tmp, JSON.stringify(reg, null, 2));
   renameSync(tmp, WORK_JSON);
@@ -535,7 +535,7 @@ export function appendPhase(
 
 export function syncToWorkJson(fm: Record<string, string>, isaPath: string, content?: string, sessionId?: string): void {
   if (!fm.slug) return;
-  const paiDir = paiPath();
+  const paiDir = getPaiDir();
   const relativeIsa = isaPath.replace(paiDir + '/', '');
   const registry = readRegistry();
 
@@ -560,7 +560,7 @@ export function syncToWorkJson(fm: Record<string, string>, isaPath: string, cont
   let sessionName = existing.sessionName || '';
   if (sessionId) {
     try {
-      const namesPath = paiPath('MEMORY', 'STATE', 'session-names.json');
+      const namesPath = join(getStateDir(), 'session-names.json');
       if (existsSync(namesPath)) {
         const names = JSON.parse(readFileSync(namesPath, 'utf-8'));
         if (names[sessionId]) sessionName = names[sessionId];

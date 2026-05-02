@@ -17,7 +17,7 @@ import { readFile, writeFile, readdir, appendFile, mkdir, stat } from "node:fs/p
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import { getPaiDir } from '../lib/paths';
+import { expandPath, getPaiDir } from "../lib/paths";
 
 const PAI_DIR = getPaiDir();
 const WORK_DIR = join(PAI_DIR, "MEMORY", "WORK");
@@ -93,9 +93,7 @@ async function readArtifacts(slug: string, isa: string): Promise<string> {
   const paths = new Set<string>();
   let match;
   while ((match = pathPattern.exec(decisions))) {
-    let p = match[1];
-    if (p.startsWith("~/")) p = join(homedir(), p.slice(2));
-    paths.add(resolve(p));
+    paths.add(resolve(expandPath(match[1])));
   }
 
   if (paths.size === 0) return "(no file references found in ## Decisions)";

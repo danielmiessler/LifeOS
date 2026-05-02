@@ -32,8 +32,7 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
-import { paiPath, getPaiDir } from '../../PAI/lib/paths';
-import { getClaudeDir } from '../lib/paths';
+import { paiPath, getPaiDir, getClaudeDir } from '../lib/paths';
 import { getIdentity } from '../lib/identity';
 import { inference } from '../../PAI/TOOLS/Inference';
 import type { ParsedTranscript } from '../../PAI/TOOLS/TranscriptParser';

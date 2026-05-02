@@ -1,20 +1,21 @@
 /**
- * Centralized Path Resolution — Claude domain
+ * Claude Path Resolution — self-contained.
  *
- * Two root directories per architecture L18-34
- * (PAI/DOCUMENTATION/PAISystemArchitecture.md):
- * - CLAUDE_CONFIG_DIR (~/.claude)        — Claude Code: settings, skills, hooks, agents
+ * Architecture L18-34 (PAI/DOCUMENTATION/PAISystemArchitecture.md):
+ * - CLAUDE_CONFIG_DIR (~/.claude)        — Claude Code: settings, hooks, skills, agents
  * - PAI_DIR           (~/.claude/PAI)    — PAI data: MEMORY, ALGORITHM, TOOLS, USER
  *
- * The two domains are orthogonal once both are resolved. Cross-domain access
- * uses absolute paths via these helpers — never relative paths.
+ * The two domains are orthogonal once both are resolved. PAI_DIR may live
+ * outside CLAUDE_CONFIG_DIR. Cross-domain access uses absolute paths via
+ * env vars — never relative filesystem paths.
  *
- * This file owns Claude-domain primitives only: getClaudeDir, claudePath,
- * getSettingsPath, getEnvPath, getHooksDir, getSkillsDir, getAgentsDir,
- * getCommandsDir, getPluginsDir, expandPath, assertAbsolute.
+ * This file is the lib for code in the Claude domain (hooks/, skills/,
+ * agents/, etc.). It carries the full API (Claude helpers + PAI-domain
+ * helpers consumers commonly need) so Claude code never has to reach
+ * across the filesystem to import PAI code.
  *
- * PAI-domain helpers (getPaiDir, paiPath, getMemoryDir, getStateDir, etc.)
- * live exclusively in PAI/lib/paths.ts. One-way dependency: PAI → Claude.
+ * The PAI domain has a mirror lib at PAI/lib/paths.ts. Both files
+ * implement the same env-var contract. Bug fixes apply to both.
  */
 
 import { homedir } from 'os';
@@ -54,6 +55,8 @@ export function expandPath(path: string): string {
     .replace(/^~(?=\/|$)/, home);
 }
 
+// ─── Claude domain ────────────────────────────────────────────────────────
+
 /**
  * Resolve the Claude Code home directory.
  * Priority: CLAUDE_CONFIG_DIR env (trimmed, must be absolute) → ~/.claude
@@ -66,60 +69,75 @@ export function getClaudeDir(): string {
   return join(homedir(), '.claude');
 }
 
-/**
- * Get a path joined under getClaudeDir().
- */
 export function claudePath(...segments: string[]): string {
   return join(getClaudeDir(), ...segments);
 }
 
-/**
- * Get the settings.json path (lives in Claude home).
- */
 export function getSettingsPath(): string {
   return join(getClaudeDir(), 'settings.json');
 }
 
-/**
- * Get the authoritative .env path (~/.claude/.env).
- * All credentials live here; PAI/.env is deprecated.
- */
 export function getEnvPath(): string {
   return join(getClaudeDir(), '.env');
 }
 
-/**
- * Get the hooks directory (lives in Claude home).
- */
-export function getHooksDir(): string {
-  return join(getClaudeDir(), 'hooks');
-}
+// ─── PAI domain ───────────────────────────────────────────────────────────
 
 /**
- * Get the skills directory (lives in Claude home).
+ * Resolve the PAI data directory.
+ * Priority: PAI_DIR env (trimmed, must be absolute) → ${getClaudeDir()}/PAI
+ *
+ * Note: the fallback chain through Claude is the *default location* only.
+ * Once both vars resolve, the two domains are independent.
  */
-export function getSkillsDir(): string {
-  return join(getClaudeDir(), 'skills');
+export function getPaiDir(): string {
+  const env = readEnv('PAI_DIR');
+  if (env !== null) {
+    return assertAbsolute(expandPath(env), 'PAI_DIR');
+  }
+  return join(getClaudeDir(), 'PAI');
 }
 
-/**
- * Get the agents directory (lives in Claude home).
- */
-export function getAgentsDir(): string {
-  return join(getClaudeDir(), 'agents');
+export function paiPath(...segments: string[]): string {
+  return join(getPaiDir(), ...segments);
 }
 
-/**
- * Get the commands directory (lives in Claude home).
- */
-export function getCommandsDir(): string {
-  return join(getClaudeDir(), 'commands');
+export function getMemoryDir(): string {
+  return paiPath('MEMORY');
 }
 
-/**
- * Get the plugins directory (lives in Claude home).
- */
-export function getPluginsDir(): string {
-  return join(getClaudeDir(), 'plugins');
+export function getStateDir(): string {
+  return paiPath('MEMORY', 'STATE');
 }
 
+export function getLearningDir(): string {
+  return paiPath('MEMORY', 'LEARNING');
+}
+
+export function getKnowledgeDir(): string {
+  return paiPath('MEMORY', 'KNOWLEDGE');
+}
+
+export function getWorkDir(): string {
+  return paiPath('MEMORY', 'WORK');
+}
+
+export function getObservabilityDir(): string {
+  return paiPath('MEMORY', 'OBSERVABILITY');
+}
+
+export function getUserDir(): string {
+  return paiPath('USER');
+}
+
+export function getAlgorithmDir(): string {
+  return paiPath('ALGORITHM');
+}
+
+export function getToolsDir(): string {
+  return paiPath('TOOLS');
+}
+
+export function getDocumentationDir(): string {
+  return paiPath('DOCUMENTATION');
+}

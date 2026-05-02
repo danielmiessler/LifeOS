@@ -68,18 +68,21 @@ for _algo_path in \
         [ -n "$ALGO_VERSION" ] && break
     fi
 done
-# Diagnostic log so we can see WHAT is happening in claude-code spawn context
-{
-    printf '[%s] ALGO_VERSION=%q HOME=%q PAI_DIR=%q USER=%q paths_tried:' \
-        "$(date '+%H:%M:%S')" "$ALGO_VERSION" "${HOME:-UNSET}" "${PAI_DIR:-UNSET}" "${USER:-UNSET}"
-    for _algo_path in \
-        "$PAI_ALGORITHM_DIR/LATEST" \
-        "$CLAUDE_CONFIG_DIR/PAI/ALGORITHM/LATEST" \
-        "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST"; do
-        printf ' %s=%s' "$_algo_path" "$([ -f "$_algo_path" ] && echo OK || echo MISS)"
-    done
-    printf '\n'
-} >> /tmp/pai-statusline-debug.log 2>/dev/null
+# Diagnostic log for hook-spawn context troubleshooting. Off by default —
+# set PAI_STATUSLINE_DEBUG=1 to enable; writes to /tmp/pai-statusline-debug.log.
+if [ -n "${PAI_STATUSLINE_DEBUG:-}" ]; then
+    {
+        printf '[%s] ALGO_VERSION=%q HOME=%q PAI_DIR=%q USER=%q paths_tried:' \
+            "$(date '+%H:%M:%S')" "$ALGO_VERSION" "${HOME:-UNSET}" "${PAI_DIR:-UNSET}" "${USER:-UNSET}"
+        for _algo_path in \
+            "$PAI_ALGORITHM_DIR/LATEST" \
+            "$CLAUDE_CONFIG_DIR/PAI/ALGORITHM/LATEST" \
+            "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST"; do
+            printf ' %s=%s' "$_algo_path" "$([ -f "$_algo_path" ] && echo OK || echo MISS)"
+        done
+        printf '\n'
+    } >> /tmp/pai-statusline-debug.log 2>/dev/null
+fi
 ALGO_VERSION="${ALGO_VERSION:-—}"
 settings_has_counts="${settings_has_counts:-false}"
 

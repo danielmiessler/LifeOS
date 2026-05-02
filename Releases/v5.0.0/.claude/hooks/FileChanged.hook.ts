@@ -5,7 +5,7 @@
  */
 
 import { readFileSync } from "fs";
-import { paiPath } from '../PAI/lib/paths';
+import { paiPath } from './lib/paths';
 
 const input = JSON.parse(readFileSync("/dev/stdin", "utf-8"));
 const filePath: string = input?.toolInput?.file_path ?? input?.filePath ?? "";

@@ -7,14 +7,14 @@
 # Schema: see PAI/DOCUMENTATION/Config/ConfigSystem.md
 
 principal:
-  name: "User"            # Your display name
-  pronunciation: ""        # Phonetic spelling if needed
+  name: "User" # Your display name
+  pronunciation: "" # Phonetic spelling if needed
   timezone: "America/Los_Angeles"
-  email: ""                # Primary contact email
+  email: "" # Primary contact email
 
 da:
-  name: "PAI"              # Your DA's name (e.g. {{DA_NAME}}, Aria, etc.)
-  voice_id: ""             # ElevenLabs voice_id for TTS
+  name: "PAI" # Your DA's name (e.g. {{DA_NAME}}, Aria, etc.)
+  voice_id: "" # ElevenLabs voice_id for TTS
 
 services:
   # API key NAMES referenced from ~/.claude/.env — do NOT store keys here.

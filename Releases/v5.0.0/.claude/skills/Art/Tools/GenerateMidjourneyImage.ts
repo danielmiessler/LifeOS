@@ -16,7 +16,7 @@ import { DiscordBotClient } from '../lib/discord-bot.js';
 import { MidjourneyClient, MidjourneyError } from '../lib/midjourney-client.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { getEnvPath } from '../../../PAI/lib/paths';
+import { getEnvPath } from '../../../hooks/lib/paths';
 
 // ============================================================================
 // Environment Loading

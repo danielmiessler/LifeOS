@@ -11,7 +11,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import { getStateDir } from "../PAI/lib/paths";
+import { getStateDir } from "./lib/paths";
 
 const STATE_FILE = join(getStateDir(), "last-prompt.json");
 

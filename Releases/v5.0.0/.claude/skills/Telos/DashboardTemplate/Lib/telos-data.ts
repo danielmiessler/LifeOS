@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { getUserDir } from '../../../../PAI/lib/paths'
+import { getUserDir } from '../../../../hooks/lib/paths'
 
 export interface TelosFile {
   name: string

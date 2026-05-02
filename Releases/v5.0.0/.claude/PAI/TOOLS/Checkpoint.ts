@@ -14,9 +14,8 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { parseCriteriaList } from '../../hooks/lib/isa-utils';
-import { getClaudeDir, getWorkDir } from '../lib/paths';
+import { expandPath, getClaudeDir, getWorkDir } from '../lib/paths';
 
 // Allowlist path: top of ~/.claude per spec. We only READ it (never write),
 // so the ContainmentGuard write restriction does not apply. Parser must match
@@ -24,15 +23,6 @@ import { getClaudeDir, getWorkDir } from '../lib/paths';
 // prefixes, treat the rest as absolute repo paths.
 const ALLOWLIST_PATH = join(getClaudeDir(), 'checkpoint-repos.txt');
 const WORK_DIR = getWorkDir();
-
-function expandPath(p: string): string {
-  let s = p.trim();
-  if (!s) return s;
-  if (s.startsWith('~/')) s = join(homedir(), s.slice(2));
-  else if (s === '~') s = homedir();
-  s = s.replace(/^\$HOME(\/|$)/, homedir() + '$1');
-  return s;
-}
 
 function loadAllowlist(): string[] {
   if (!existsSync(ALLOWLIST_PATH)) return [];

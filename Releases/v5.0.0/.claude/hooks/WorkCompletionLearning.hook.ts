@@ -51,7 +51,7 @@
 
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
-import { getMemoryDir, getStateDir, getWorkDir, getLearningDir } from '../PAI/lib/paths';
+import { getMemoryDir, getStateDir, getWorkDir, getLearningDir } from './lib/paths';
 import { getISOTimestamp, getPSTDate } from './lib/time';
 import { getLearningCategory } from './lib/learning-utils';
 import { findArtifactPath } from './lib/isa-utils';

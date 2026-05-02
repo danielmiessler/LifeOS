@@ -14,7 +14,7 @@
 import { readHookInput, parseTranscriptFromInput } from './lib/hook-io';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-import { getStateDir } from '../PAI/lib/paths';
+import { getStateDir } from './lib/paths';
 
 async function main() {
   const input = await readHookInput();

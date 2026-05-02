@@ -24,8 +24,7 @@
 
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { getPaiDir } from '../PAI/lib/paths';
-import { getClaudeDir } from './lib/paths';
+import { getPaiDir, getClaudeDir } from './lib/paths';
 
 // ========================================
 // Configuration

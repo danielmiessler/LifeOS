@@ -17,7 +17,7 @@
 import { existsSync, mkdirSync, appendFileSync } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
-import { paiPath } from '../PAI/lib/paths';
+import { paiPath } from './lib/paths';
 import { getISOTimestamp } from './lib/time';
 import { pushEventsToTargets, pushStateToTargets } from './lib/observability-transport';
 import { bumpLastToolActivity } from './lib/isa-utils';

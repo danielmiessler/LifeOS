@@ -18,7 +18,7 @@
 import { readFileSync, existsSync, writeFileSync, readdirSync, statSync } from "fs";
 import { join, resolve } from "path";
 import { filterContent, filterDaemonData, loadSecurityOverrides } from "./SecurityFilter.ts";
-import { getPaiDir, getClaudeDir } from "../../../PAI/lib/paths";
+import { getPaiDir, getClaudeDir } from "../../../hooks/lib/paths";
 
 // ─── Path Resolution ───
 

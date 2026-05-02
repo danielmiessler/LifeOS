@@ -12,7 +12,7 @@
 
 import { readFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
-import { getClaudeDir } from '../../../PAI/lib/paths';
+import { getClaudeDir } from '../../../hooks/lib/paths';
 
 interface AgentContext {
   agentType: string;

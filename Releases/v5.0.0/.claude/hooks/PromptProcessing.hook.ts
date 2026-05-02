@@ -31,7 +31,7 @@ import { inference } from '../PAI/TOOLS/Inference';
 import { getIdentity, getPrincipal } from './lib/identity';
 import { isValidWorkingTitle, getWorkingFallback, trimToValidTitle } from './lib/output-validators';
 import { setTabState, getSessionOneWord } from './lib/tab-setter';
-import { paiPath } from '../PAI/lib/paths';
+import { getObservabilityDir, getStateDir, paiPath } from './lib/paths';
 import { updateSessionNameInWorkJson, upsertSession } from './lib/isa-utils';
 import { pushStateToTargets } from './lib/observability-transport';
 
@@ -66,7 +66,7 @@ function emitAdditionalContext(mode: Mode, tier: number | null, reason: string):
 
 function appendPromptProcessingTelemetry(entry: Record<string, unknown>): void {
   try {
-    const logPath = paiPath('MEMORY', 'OBSERVABILITY', 'prompt-processing.jsonl');
+    const logPath = join(getObservabilityDir(), 'prompt-processing.jsonl');
     const serialized = JSON.stringify(entry);
     if (serialized.includes('\n')) return;
     appendFileSync(logPath, `${serialized}\n`, 'utf-8');
@@ -75,7 +75,7 @@ function appendPromptProcessingTelemetry(entry: Record<string, unknown>): void {
 
 // ── Constants ──
 
-const SESSION_NAMES_PATH = paiPath('MEMORY', 'STATE', 'session-names.json');
+const SESSION_NAMES_PATH = join(getStateDir(), 'session-names.json');
 const LOCK_PATH = SESSION_NAMES_PATH + '.lock';
 const MIN_PROMPT_LENGTH = 3;
 const LOCK_TIMEOUT = 3000;
@@ -613,7 +613,7 @@ function storeName(sessionId: string, label: string, source: string): void {
     if (locked) releaseLock();
   }
   const cacheContent = `cached_session_id='${sessionId}'\ncached_session_label='${finalLabel}'\n`;
-  writeFileSync(paiPath('MEMORY', 'STATE', 'session-name-cache.sh'), cacheContent, 'utf-8');
+  writeFileSync(join(getStateDir(), 'session-name-cache.sh'), cacheContent, 'utf-8');
   updateSessionNameInWorkJson(sessionId, finalLabel);
   syncNameToJsonl(sessionId, finalLabel);
   console.error(`[PromptProcessing] Named session: "${finalLabel}" (${source})`);

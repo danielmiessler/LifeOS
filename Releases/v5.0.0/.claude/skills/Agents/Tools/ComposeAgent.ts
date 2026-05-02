@@ -31,7 +31,7 @@ import { parseArgs } from "util";
 import { readFileSync, existsSync, readdirSync, unlinkSync, mkdirSync, writeFileSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import Handlebars from "handlebars";
-import { getClaudeDir, getPaiDir } from "../../../PAI/lib/paths";
+import { getClaudeDir, getPaiDir } from "../../../hooks/lib/paths";
 
 // Paths
 const BASE_TRAITS_PATH = `${getClaudeDir()}/skills/Agents/Data/Traits.yaml`;

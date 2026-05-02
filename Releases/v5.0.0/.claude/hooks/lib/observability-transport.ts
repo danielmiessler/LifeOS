@@ -13,7 +13,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { ObservabilityTarget } from './identity';
 import { getEnvPath } from './paths';
-import { getMemoryDir } from '../../PAI/lib/paths';
+import { getMemoryDir } from './paths';
 
 function readEnvOrPaiEnv(keys: readonly string[]): string {
   for (const k of keys) {

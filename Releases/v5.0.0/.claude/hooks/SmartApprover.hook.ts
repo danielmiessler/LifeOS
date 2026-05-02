@@ -14,8 +14,7 @@
 import { resolve } from 'path';
 import { homedir } from 'os';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { paiPath } from '../PAI/lib/paths';
-import { getClaudeDir } from './lib/paths';
+import { paiPath, getClaudeDir } from './lib/paths';
 
 const HOME = homedir();
 

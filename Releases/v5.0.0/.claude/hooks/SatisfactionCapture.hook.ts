@@ -24,7 +24,7 @@
 
 import { appendFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { getLearningDir, getStateDir } from '../PAI/lib/paths';
+import { getLearningDir, getStateDir } from './lib/paths';
 
 import { inference } from '../PAI/TOOLS/Inference';
 import { getIdentity, getPrincipal, getPrincipalName } from './lib/identity';

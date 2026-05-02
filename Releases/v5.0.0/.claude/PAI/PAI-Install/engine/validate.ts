@@ -9,7 +9,7 @@ import { spawnSync } from "child_process";
 import type { InstallState, ValidationCheck, InstallSummary, EngineEventHandler } from "./types";
 import { PAI_VERSION } from "./types";
 import { homedir } from "os";
-import { getClaudeDir } from "../../../hooks/lib/paths";
+import { getClaudeDir } from "../../lib/paths";
 
 /**
  * Check if Pulse is running. PAI 5.0 absorbed the standalone voice server

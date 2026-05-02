@@ -40,8 +40,7 @@
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { getPaiDir } from '../PAI/lib/paths';
-import { getSettingsPath } from './lib/paths';
+import { getPaiDir, getSettingsPath } from './lib/paths';
 import { recordSessionStart } from './lib/notifications';
 import { loadLearningDigest, loadWisdomFrames, loadFailurePatterns, loadSignalTrends, loadSynthesisPatterns } from './lib/learning-readback';
 import { findArtifactPath } from './lib/isa-utils';

@@ -21,14 +21,14 @@ There is no magic number of zones. PAI evolves — new sensitive surfaces appear
 
 Today's zones:
 
-| Name | Pattern(s) | What lives here |
-|------|-----------|-----------------|
-| `user-data` | `PAI/USER/**` | Principal identity, TELOS, credentials, personal infra, contacts, finances, health, business |
-| `config-secrets` | `settings.json`, `settings.local.json`, `.vscode/settings.json`, `.env`, `.env.*`, `PAI/.env`, `PAI/.env.*` | API tokens, allowed command lists, MCP auth |
-| `runtime-memory` | `PAI/MEMORY/**` | Work sessions, learnings, observability, research, raw data, bookmarks, relationship notes |
-| `private-skills` | `skills/_*/**` (underscore prefix) | Principal-specific and proprietary skills |
-| `install-state` | `history.jsonl`, `Plugins/**`, `plugins/installed_plugins.json`, `plugins/known_marketplaces.json` | Claude Code runtime install state written by the harness |
-| `private-infra` | `PAI/ARBOL/**`, `PAI/PULSE/Assistant/**`, `PAI/PULSE/Plans/**`, `PAI/PULSE/logs/**`, `PAI/PULSE/state/**`, `PAI/PULSE/Observability/out/**`, `PAI/PULSE/.playwright-cli/**`, `PAI/ScheduledTasks/**` | Top-level private infrastructure: cloud worker source, DA-specific assistant, planning docs, runtime logs/state, rendered HTML, scheduled tasks |
+| Name             | Pattern(s)                                                                                                                                                                                           | What lives here                                                                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `user-data`      | `PAI/USER/**`                                                                                                                                                                                        | Principal identity, TELOS, credentials, personal infra, contacts, finances, health, business                                                    |
+| `config-secrets` | `settings.json`, `settings.local.json`, `.vscode/settings.json`, `.env`, `.env.*`, `PAI/.env`, `PAI/.env.*`                                                                                          | API tokens, allowed command lists, MCP auth                                                                                                     |
+| `runtime-memory` | `PAI/MEMORY/**`                                                                                                                                                                                      | Work sessions, learnings, observability, research, raw data, bookmarks, relationship notes                                                      |
+| `private-skills` | `skills/_*/**` (underscore prefix)                                                                                                                                                                   | Principal-specific and proprietary skills                                                                                                       |
+| `install-state`  | `history.jsonl`, `Plugins/**`, `plugins/installed_plugins.json`, `plugins/known_marketplaces.json`                                                                                                   | Claude Code runtime install state written by the harness                                                                                        |
+| `private-infra`  | `PAI/ARBOL/**`, `PAI/PULSE/Assistant/**`, `PAI/PULSE/Plans/**`, `PAI/PULSE/logs/**`, `PAI/PULSE/state/**`, `PAI/PULSE/Observability/out/**`, `PAI/PULSE/.playwright-cli/**`, `PAI/ScheduledTasks/**` | Top-level private infrastructure: cloud worker source, DA-specific assistant, planning docs, runtime logs/state, rendered HTML, scheduled tasks |
 
 The underscore-prefix rule for `private-skills` is the interface contract. If a skill name does NOT start with `_`, that skill directory must be clean enough to ship to strangers.
 
@@ -39,11 +39,11 @@ The underscore-prefix rule for `private-skills` is the interface contract. If a 
 Zones drift. Before running `ShadowRelease --create <version>`:
 
 1. Open `hooks/lib/containment-zones.ts`.
-2. Walk `~/.claude/` at depth 1-2 (e.g. `ls -la && ls -la PAI/ && ls -la skills/`) and compare against the zone list.
+2. Walk `${CLAUDE_CONFIG_DIR}/` at depth 1-2 (e.g. `ls -la && ls -la PAI/ && ls -la skills/`) and compare against the zone list.
 3. Ask, for every new top-level or first-nested dir since the last release:
-    - Does it contain anything principal-specific? → **Add a zone or extend an existing one.**
-    - Is it runtime state the harness writes? → **Add it to `install-state` or the RSYNC_EXCLUDES in `ShadowRelease.ts`.**
-    - Is it clean-by-construction and intended for public? → **Leave it; document via README if its purpose is ambiguous.**
+   - Does it contain anything principal-specific? → **Add a zone or extend an existing one.**
+   - Is it runtime state the harness writes? → **Add it to `install-state` or the RSYNC_EXCLUDES in `ShadowRelease.ts`.**
+   - Is it clean-by-construction and intended for public? → **Leave it; document via README if its purpose is ambiguous.**
 4. Update `CONTAINMENT_ZONES` and/or `PATTERN_ALLOWLIST_FILES` in `hooks/lib/containment-zones.ts` accordingly.
 5. Commit the zone change BEFORE the shadow-release commit. The zone file is the contract; the release gates verify against it. Releasing against a stale contract is the failure mode this step exists to prevent.
 
@@ -75,7 +75,7 @@ Use `${HOME}`, `${PAI_DIR}`, `${CLAUDE_PROJECT_DIR}`, or a configurable placehol
 
 1. Load from `process.env.X` at runtime.
 2. Document the var name in the file itself, no default value that contains the secret.
-3. Fallback path: read from `~/.claude/.env` via the shared `readEnvOrPaiEnv()` helper (see `hooks/lib/observability-transport.ts`). Legacy `PAI/.env` symlink has been retired; the authoritative file is `~/.claude/.env`.
+3. Fallback path: read from `${CLAUDE_CONFIG_DIR}/.env` via the shared `readEnvOrPaiEnv()` helper (see `hooks/lib/observability-transport.ts`). Legacy `PAI/.env` symlink has been retired; the authoritative file is `${CLAUDE_CONFIG_DIR}/.env`.
 4. If the secret lookup misses, emit a single stderr warning and degrade gracefully — never silently continue with an empty string.
 
 ### I am adding personal notes, work sessions, or memory
@@ -114,11 +114,11 @@ Record them in `PATTERN_ALLOWLIST_FILES` in `hooks/lib/containment-zones.ts` (si
 2. **Source audit** — grep the live tree against the identity plus CF-ID pattern list. Every hit outside the configured zones is a policy violation; fix at source (sanitize, relocate, or allowlist with justification).
 3. **Staging build** — `bun run skills/_PAI/TOOLS/ShadowRelease.ts --create <version>` clones the live tree with hard rsync exclusions, deletes zone contents (preserving only top-level READMEs as scaffold), overlays the public `settings.json`, `CLAUDE.md`, and `PAI_CONFIG.yaml` templates.
 4. **Five gates run against the staging tree:**
-    - **G1 — Zone deletion:** required public READMEs survive; forbidden personal files and persona dirs do not.
-    - **G2 — Identity grep:** no identity patterns in the staging tree (except allowlisted files).
-    - **G3 — CF ID grep:** no hardcoded CF account or KV namespace IDs (except allowlisted files).
-    - **G4 — trufflehog:** no live secrets detected.
-    - **G5 — .env strays:** no `.env*` files survived rsync exclusion.
+   - **G1 — Zone deletion:** required public READMEs survive; forbidden personal files and persona dirs do not.
+   - **G2 — Identity grep:** no identity patterns in the staging tree (except allowlisted files).
+   - **G3 — CF ID grep:** no hardcoded CF account or KV namespace IDs (except allowlisted files).
+   - **G4 — trufflehog:** no live secrets detected.
+   - **G5 — .env strays:** no `.env*` files survived rsync exclusion.
 5. **Pass all five → READY FOR RELEASE.** Any fail → fix source or refine exclusions; never hide with allowlist unless the file legitimately needs the pattern.
 6. **Public publish is a separate step.** The shadow release stays under `PAI/PAI_RELEASES/PAI_Release_v{VERSION}/.claude/` until a deliberate publish action ships it to the public repo.
 
@@ -136,20 +136,20 @@ Every other entry should be removed by sanitizing the source file (preferred) or
 
 Populated by the audit. Updated as files are sanitized or relocated.
 
-| File | Reason listed | Disposition |
-|------|---------------|-------------|
-| `hooks/ContainmentGuard.hook.ts` | Must embed every pattern to detect it | **KEEP** — legitimate exception |
-| `hooks/lib/containment-zones.ts` | Single source of truth module both enforcers import from | **KEEP** — legitimate exception |
-| `hooks/security/inspectors/PatternInspector.ts` | Pattern detector embeds patterns | **KEEP** — legitimate exception |
-| `skills/_PAI/TOOLS/ShadowRelease.ts` | Release tool must embed patterns for G2/G3 gates | **KEEP** — legitimate exception |
-| `PAI/DOCUMENTATION/Tools/Containment.md` | Policy doc describes zones and references patterns categorically | **KEEP** — legitimate exception |
-| `skills/Daemon/Docs/SecurityClassification.md` | Documents the exact path patterns the Daemon filter should scrub | **KEEP** — legitimate exception |
-| `skills/Daemon/Tools/SecurityFilter.ts` | Pattern inspector test cases embed the patterns they filter | **KEEP** — legitimate exception |
-| `skills/CreateSkill/Workflows/ValidateSkill.md` | Lists example patterns a skill author should NOT hardcode | **KEEP** — legitimate exception |
-| `PAI/TOOLS/SessionHarvester.ts` | Comment references derivation, not literal path | **KEEP** — uses `CLAUDE_DIR.replace(...)` dynamically |
-| `PAI/TOOLS/gmail.ts` | Uses `homedir()` at runtime, not a literal path | **KEEP** — dynamic resolution |
-| `PAI/PULSE/checks/health.ts` | Hardcoded site list for health monitoring | **TODO-REFACTOR** — move site list to `PAI_CONFIG.yaml`, read at startup |
-| `agents/<agent>.md` | Write-permission path literals in agent definitions | **TODO-REFACTOR** — verify env-expansion support in Claude Code agent spec, then replace with `${HOME}/.claude/...` |
+| File                                            | Reason listed                                                    | Disposition                                                                                                         |
+| ----------------------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `hooks/ContainmentGuard.hook.ts`                | Must embed every pattern to detect it                            | **KEEP** — legitimate exception                                                                                     |
+| `hooks/lib/containment-zones.ts`                | Single source of truth module both enforcers import from         | **KEEP** — legitimate exception                                                                                     |
+| `hooks/security/inspectors/PatternInspector.ts` | Pattern detector embeds patterns                                 | **KEEP** — legitimate exception                                                                                     |
+| `skills/_PAI/TOOLS/ShadowRelease.ts`            | Release tool must embed patterns for G2/G3 gates                 | **KEEP** — legitimate exception                                                                                     |
+| `PAI/DOCUMENTATION/Tools/Containment.md`        | Policy doc describes zones and references patterns categorically | **KEEP** — legitimate exception                                                                                     |
+| `skills/Daemon/Docs/SecurityClassification.md`  | Documents the exact path patterns the Daemon filter should scrub | **KEEP** — legitimate exception                                                                                     |
+| `skills/Daemon/Tools/SecurityFilter.ts`         | Pattern inspector test cases embed the patterns they filter      | **KEEP** — legitimate exception                                                                                     |
+| `skills/CreateSkill/Workflows/ValidateSkill.md` | Lists example patterns a skill author should NOT hardcode        | **KEEP** — legitimate exception                                                                                     |
+| `PAI/TOOLS/SessionHarvester.ts`                 | Comment references derivation, not literal path                  | **KEEP** — uses `CLAUDE_DIR.replace(...)` dynamically                                                               |
+| `PAI/TOOLS/gmail.ts`                            | Uses `homedir()` at runtime, not a literal path                  | **KEEP** — dynamic resolution                                                                                       |
+| `PAI/PULSE/checks/health.ts`                    | Hardcoded site list for health monitoring                        | **TODO-REFACTOR** — move site list to `PAI_CONFIG.yaml`, read at startup                                            |
+| `agents/<agent>.md`                             | Write-permission path literals in agent definitions              | **TODO-REFACTOR** — verify env-expansion support in Claude Code agent spec, then replace with `${HOME}/.claude/...` |
 
 ---
 

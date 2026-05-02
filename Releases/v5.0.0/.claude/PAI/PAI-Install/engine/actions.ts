@@ -12,7 +12,7 @@ import type { InstallState, EngineEventHandler, DetectionResult, ExistingUserCon
 import { PAI_VERSION, ALGORITHM_VERSION, DEFAULT_VOICES } from "./types";
 import { detectSystem, detectExistingUserContent, scanApiKeys, validateElevenLabsKey } from "./detect";
 import { generateSettingsJson } from "./config-gen";
-import { getClaudeDir } from "../../../hooks/lib/paths";
+import { getClaudeDir } from "../../lib/paths";
 
 type ChoiceOption = {
   label: string;

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { getTelosContext } from "@/lib/telos-data"
 import { spawn } from "child_process"
-import { paiPath } from '../../../../../PAI/lib/paths'
+import { paiPath } from '../../../../../hooks/lib/paths'
 
 export async function POST(request: Request) {
   try {

@@ -20,18 +20,12 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { join } from "path";
+import { getPaiDir, getUserDir } from "../lib/paths";
 
 // ── Paths ────────────────────────────────────────────────────────────────────
-// Resolve relative to this script's own location. The script ships at
-// PAI/TOOLS/DAInterview.ts, so PAI/USER/DA/_presets.yaml is two levels up.
-// This works whether the script runs from a fresh clone (~/PAI-fresh/...) or
-// from an installed location (~/.claude/PAI/...) — no $HOME assumption.
-
-const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
-const PAI_DIR = join(SCRIPT_DIR, "..");
-const DA_DIR = join(PAI_DIR, "USER/DA");
+const PAI_DIR = getPaiDir();
+const DA_DIR = join(getUserDir(), "DA");
 const PRESETS_PATH = join(DA_DIR, "_presets.yaml");
 const REGISTRY_PATH = join(DA_DIR, "_registry.yaml");
 

@@ -16,7 +16,7 @@
 
 import { existsSync, readFileSync } from "fs";
 import { basename, dirname, extname, join, resolve } from "path";
-import { getEnvPath } from "../../../PAI/lib/paths";
+import { getEnvPath } from "../../../hooks/lib/paths";
 
 // ============================================================================
 // Environment Loading — keys from ~/.claude/.env
