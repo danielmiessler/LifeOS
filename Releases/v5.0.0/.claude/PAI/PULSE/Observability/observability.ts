@@ -2319,6 +2319,71 @@ async function handleTelosFilePut(req: Request): Promise<Response> {
   }
 }
 
+function readPrincipalName(): string {
+  try {
+    const cfg = readMd(join(PAI_DIR, "USER", "Config", "PAI_CONFIG.yaml"))
+    const m = cfg.match(/^\s*name:\s*"([^"]+)"/m)
+    return m ? m[1].trim() : "Principal"
+  } catch { return "Principal" }
+}
+
+function buildOwner(): { name: string; day: string; streak: number } {
+  const now = new Date()
+  const day = now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })
+  return { name: readPrincipalName(), day, streak: 0 }
+}
+
+const DIM_COLORS: Record<string, string> = {
+  health: "--health", money: "--money", freedom: "--freedom",
+  creative: "--creative", relationships: "--relationships", rhythms: "--rhythms",
+}
+const DIM_LABELS: Record<string, string> = {
+  health: "Health", money: "Money", freedom: "Freedom",
+  creative: "Creative", relationships: "Relationships", rhythms: "Rhythms",
+}
+
+function buildDimensions(): { id: string; label: string; cur: number; ideal: number; velo: number; color: string }[] {
+  const IDEAL_DIR = join(TELOS_DIR, "IDEAL_STATE")
+  return Object.keys(DIM_COLORS).map((id) => {
+    const content = readMd(join(IDEAL_DIR, id.toUpperCase() + ".md"))
+    const curM = content.match(/\*\*(?:Current Score|Score|Cur):\*\*\s*(\d+)/i)
+    const idealM = content.match(/\*\*(?:Ideal Score|Target Score|Ideal):\*\*\s*(\d+)/i)
+    return {
+      id,
+      label: DIM_LABELS[id],
+      cur: curM ? parseInt(curM[1]) : 0,
+      ideal: idealM ? parseInt(idealM[1]) : 0,
+      velo: 0,
+      color: DIM_COLORS[id],
+    }
+  })
+}
+
+function firstBodyParagraph(content: string): string {
+  const paras = content.split(/\n\s*\n/)
+  for (const p of paras) {
+    const t = p.trim()
+    if (!t || t.startsWith("#") || t.startsWith("---") || t.startsWith(">") || t.length < 20) continue
+    return cleanInlineMarkdown(t).replace(/\s+/g, " ").trim()
+  }
+  return ""
+}
+
+function buildIdealState(): { horizon: string; note: string } {
+  const IDEAL_DIR = join(TELOS_DIR, "IDEAL_STATE")
+  let horizon = "2036"
+  let note = ""
+  for (const id of Object.keys(DIM_COLORS)) {
+    const content = readMd(join(IDEAL_DIR, id.toUpperCase() + ".md"))
+    if (!content) continue
+    const hM = content.match(/\*\*(?:Horizon|Target Date|By|Timeline):\*\*\s*(.+)/i)
+    if (hM && horizon === "2036") horizon = hM[1].trim()
+    if (!note) note = firstBodyParagraph(content)
+  }
+  if (!note) note = "Target state across " + Object.keys(DIM_COLORS).length + " life dimensions."
+  return { horizon, note }
+}
+
 async function handleTelosOverview(): Promise<Response> {
   try {
     const lifeResponse = handleLifeGoals()
@@ -2384,9 +2449,9 @@ async function handleTelosOverview(): Promise<Response> {
     }))
 
     return Response.json({
-      owner: null,
-      idealState: null,
-      dimensions: null,
+      owner: buildOwner(),
+      idealState: buildIdealState(),
+      dimensions: buildDimensions(),
       snapshot: null,
       problems,
       missions,
