@@ -86,7 +86,7 @@ interface MissionGoalsProps extends CommonSectionProps {
 }
 
 export function MissionGoals({ telos, missionId, onMission, onTrace, onOpenGoal, showIds, openFile }: MissionGoalsProps) {
-  const active = telos.missions.find((m) => m.id === missionId) ?? telos.missions[1];
+  const active = telos.missions.find((m) => m.id === missionId) ?? telos.missions[0];
   const metricMap: Record<string, Telos["metrics"][number]> = Object.fromEntries(
     telos.metrics.map((m) => [m.id, m]),
   );
