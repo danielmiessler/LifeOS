@@ -42,48 +42,80 @@ function readTelosFile(filename: string): string {
 }
 
 /**
- * Parse items in format "- **ID**: text" or "- ID: text"
+ * Parse items in format "- **ID**: text", "- ID: text", or "## ID: Title" / "### ID: Title"
  */
 function parseItems(content: string): ParsedItem[] {
   const items: ParsedItem[] = [];
   const lines = content.split('\n');
 
   for (const line of lines) {
-    // Match "- **M0**: text" or "- M0: text" or "- **G0**: text" patterns
-    const match = line.match(/^-\s+\*?\*?(\w+)\*?\*?:\s*(.+)/);
-    if (match) {
-      items.push({ id: match[1], text: match[2].trim() });
+    // Match "- **M0**: text" or "- M0: text" or "- **G0**: text" patterns (list items)
+    const listMatch = line.match(/^-\s+\*?\*?(\w+)\*?\*?:\s*(.+)/);
+    if (listMatch) {
+      items.push({ id: listMatch[1], text: listMatch[2].trim() });
+      continue;
+    }
+    // Match "## M0: Title" or "### G0: Title" patterns (heading-based format)
+    const headingMatch = line.match(/^#{2,4}\s+(\w+):\s*(.+)/);
+    if (headingMatch) {
+      items.push({ id: headingMatch[1], text: headingMatch[2].trim() });
     }
   }
   return items;
 }
 
 /**
- * Parse mission items from MISSION.md
+ * Parse mission items from MISSION.md — extract first body line after each ## ID: heading
  */
 function parseMissions(): string[] {
   const content = readTelosFile('MISSION.md');
-  const items = parseItems(content);
-  return items.map(i => `- **${i.id}**: ${truncate(i.text, 75)}`);
+  const lines = content.split('\n');
+  const results: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const headingMatch = lines[i].match(/^#{2,4}\s+(M\d+):\s*(.+)/);
+    if (headingMatch) {
+      // Look for first non-empty, non-heading body line after this heading
+      let body = '';
+      for (let j = i + 1; j < lines.length && j < i + 5; j++) {
+        const candidate = lines[j].trim();
+        if (candidate && !candidate.startsWith('#') && !candidate.startsWith('**')) {
+          body = candidate;
+          break;
+        }
+      }
+      const text = body || headingMatch[2]; // fallback to heading title
+      results.push(`- **${headingMatch[1]}**: ${truncate(text, 75)}`);
+    }
+  }
+
+  // Fallback to parseItems if no headings found
+  if (results.length === 0) {
+    const items = parseItems(content);
+    return items.map(i => `- **${i.id}**: ${truncate(i.text, 75)}`);
+  }
+  return results;
 }
 
 /**
- * Parse goals from GOALS.md, separating 2026 goals from older ones
+ * Parse goals from GOALS.md — all G# items before "## Completed Goals" are active
  */
 function parseGoals(): { active: string[]; deferred: string[] } {
   const content = readTelosFile('GOALS.md');
-  const items = parseItems(content);
 
-  // Goals with IDs G9+ are 2026 goals based on the file structure
+  // Determine active section boundary: items before "## Completed Goals" are active
+  const completedIdx = content.indexOf('## Completed Goals');
+  const activeContent = completedIdx > -1 ? content.substring(0, completedIdx) : content;
+  const activeItems = parseItems(activeContent);
+  const activeIds = new Set(activeItems.map(i => i.id));
+
+  const allItems = parseItems(content);
   const active: string[] = [];
   const deferred: string[] = [];
 
-  for (const item of items) {
-    const num = parseInt(item.id.replace(/\D/g, ''), 10);
-    // Split on " — " (em-dash with spaces) or sentence-ending period (not in URLs)
+  for (const item of allItems) {
     const firstSentence = item.text.split(/\s—\s|(?<!\w\.\w)(?<=\w)\.\s/)[0].trim();
-
-    if (num >= 9 || [0, 1].includes(num)) {
+    if (activeIds.has(item.id)) {
       active.push(`- **${item.id}**: ${truncate(firstSentence, 70)}`);
     } else {
       deferred.push(`- **${item.id}**: ${truncate(firstSentence, 50)}`);
@@ -138,22 +170,45 @@ function parseStrategies(): string[] {
 }
 
 /**
- * Parse narratives from NARRATIVES.md
+ * Parse narratives from NARRATIVES.md — extract first body line after each ## N#: heading
  */
 function parseNarratives(): { primary: string[]; secondary: string[] } {
   const content = readTelosFile('NARRATIVES.md');
-  const items = parseItems(content);
-
+  const lines = content.split('\n');
   const primary: string[] = [];
   const secondary: string[] = [];
 
-  for (const item of items) {
-    const num = parseInt(item.id.replace(/\D/g, ''), 10);
+  for (let i = 0; i < lines.length; i++) {
+    const headingMatch = lines[i].match(/^#{2,4}\s+(N\d+):\s*(.+)/);
+    if (headingMatch) {
+      let body = '';
+      for (let j = i + 1; j < lines.length && j < i + 5; j++) {
+        const candidate = lines[j].trim();
+        if (candidate && !candidate.startsWith('#') && !candidate.startsWith('**') && !candidate.startsWith('>')) {
+          body = candidate;
+          break;
+        }
+      }
+      const text = body || headingMatch[2];
+      const num = parseInt(headingMatch[1].replace(/\D/g, ''), 10);
+      if ([0, 1, 7].includes(num)) {
+        primary.push(`- **${headingMatch[1]}**: ${truncate(text, 75)}`);
+      } else {
+        secondary.push(`${headingMatch[1]}: ${truncate(text, 60)}`);
+      }
+    }
+  }
 
-    if ([0, 1, 7].includes(num)) {
-      primary.push(`- **${item.id}**: ${truncate(item.text, 75)}`);
-    } else {
-      secondary.push(`${item.id}: ${truncate(item.text, 60)}`);
+  // Fallback to parseItems if no headings found
+  if (primary.length === 0 && secondary.length === 0) {
+    const items = parseItems(content);
+    for (const item of items) {
+      const num = parseInt(item.id.replace(/\D/g, ''), 10);
+      if ([0, 1, 7].includes(num)) {
+        primary.push(`- **${item.id}**: ${truncate(item.text, 75)}`);
+      } else {
+        secondary.push(`${item.id}: ${truncate(item.text, 60)}`);
+      }
     }
   }
 
