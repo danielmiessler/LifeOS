@@ -30,18 +30,20 @@ else
   BUN_PATH="$(command -v bun || echo "$HOME/.bun/bin/bun")"
 fi
 
+# Substitute public-template placeholders into the launchd plist. No-op
+# on plists that already have literal paths.
+render_plist() {
+  sed -e "s|__HOME__|$HOME|g" \
+      -e "s|__BUN_PATH__|$BUN_PATH|g" \
+      -e "s|__CLAUDE_CONFIG_DIR__|$CLAUDE_CONFIG_DIR|g" \
+      -e "s|__PAI_DIR__|$PAI_DIR|g" \
+      -e "s|__PULSE_DIR__|$PULSE_DIR|g" \
+      "$PLIST_SRC" > "$PLIST_DST"
+}
+
 case "$1" in
   start)
-    if [ ! -f "$PLIST_DST" ]; then
-      # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
-      # no-op on plists that already have literal paths.
-      sed -e "s|__HOME__|$HOME|g" \
-          -e "s|__BUN_PATH__|$BUN_PATH|g" \
-          -e "s|__CLAUDE_CONFIG_DIR__|$CLAUDE_CONFIG_DIR|g" \
-          -e "s|__PAI_DIR__|$PAI_DIR|g" \
-          -e "s|__PULSE_DIR__|$PULSE_DIR|g" \
-          "$PLIST_SRC" > "$PLIST_DST"
-    fi
+    [ -f "$PLIST_DST" ] || render_plist
     launchctl load "$PLIST_DST" 2>/dev/null
     echo "PAI Pulse started"
     ;;
@@ -102,14 +104,7 @@ case "$1" in
     pkill -9 -f "bun.*pulse.ts" 2>/dev/null || true
     sleep 1
 
-    # Substitute placeholders (public template); no-op on plists that
-    # already have literal paths.
-    sed -e "s|__HOME__|$HOME|g" \
-        -e "s|__BUN_PATH__|$BUN_PATH|g" \
-        -e "s|__CLAUDE_CONFIG_DIR__|$CLAUDE_CONFIG_DIR|g" \
-        -e "s|__PAI_DIR__|$PAI_DIR|g" \
-        -e "s|__PULSE_DIR__|$PULSE_DIR|g" \
-        "$PLIST_SRC" > "$PLIST_DST"
+    render_plist
     launchctl load "$PLIST_DST"
 
     # Verify pulse actually binds :31337 within 10s. Fail loud if not — prior

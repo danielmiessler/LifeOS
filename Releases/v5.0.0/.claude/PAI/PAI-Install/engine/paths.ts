@@ -9,7 +9,6 @@
  * Architecture: PAI/DOCUMENTATION/PAISystemArchitecture.md "## Directory Structure"
  */
 
-import { homedir } from 'os';
 import { join } from 'path';
 import { assertAbsolute, expandPath, getClaudeDir, getPaiDir } from '../../lib/paths';
 
@@ -25,19 +24,12 @@ export interface ResolvedInstallPaths {
   paiDir: string;
 }
 
-/** Trim and treat empty/whitespace as undefined. */
-function clean(value: string | undefined): string | undefined {
-  if (value === undefined) return undefined;
-  const trimmed = value.trim();
-  return trimmed.length === 0 ? undefined : trimmed;
-}
+const clean = (v: string | undefined): string | undefined => v?.trim() || undefined;
 
 /**
  * Resolve install locations with CLI > env > default precedence.
- *
- * For env-only resolution this delegates to the runtime lib so installer
- * and runtime cannot drift. CLI flags short-circuit ahead of env so the
- * runtime lib is never consulted when an explicit override is given.
+ * Env-only resolution delegates to the runtime lib so installer and
+ * runtime can never drift on path semantics.
  */
 export function resolveInstallPaths(opts: ResolveOptions): ResolvedInstallPaths {
   const cliClaude = clean(opts.cliClaudeConfigDir);
@@ -48,18 +40,14 @@ export function resolveInstallPaths(opts: ResolveOptions): ResolvedInstallPaths 
     ? assertAbsolute(expandPath(cliClaude), '--claude-config-dir')
     : getClaudeDir();
 
-  let paiDir: string;
-  if (cliPai) {
-    paiDir = assertAbsolute(expandPath(cliPai), '--pai-dir');
-  } else if (cliClaude && !envPai) {
-    // CLI gave a Claude override and no explicit PAI override → PAI defaults
-    // under the CLI-supplied Claude root (rather than the runtime lib's
-    // env-resolved getPaiDir, which would honor a non-CLI CLAUDE_CONFIG_DIR
-    // env var the user did not intend to use).
-    paiDir = join(claudeConfigDir, 'PAI');
-  } else {
-    paiDir = getPaiDir();
-  }
+  // When --claude-config-dir is given without --pai-dir and no PAI_DIR env,
+  // anchor PAI under the CLI-supplied Claude root rather than letting
+  // getPaiDir() resolve from a CLAUDE_CONFIG_DIR env the user didn't pass.
+  const paiDir = cliPai
+    ? assertAbsolute(expandPath(cliPai), '--pai-dir')
+    : cliClaude && !envPai
+      ? join(claudeConfigDir, 'PAI')
+      : getPaiDir();
 
   return { claudeConfigDir, paiDir };
 }

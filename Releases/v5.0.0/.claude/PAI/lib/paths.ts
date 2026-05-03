@@ -68,10 +68,6 @@ export function getClaudeDir(): string {
   return join(homedir(), '.claude');
 }
 
-export function claudePath(...segments: string[]): string {
-  return join(getClaudeDir(), ...segments);
-}
-
 export function getSettingsPath(): string {
   return join(getClaudeDir(), 'settings.json');
 }

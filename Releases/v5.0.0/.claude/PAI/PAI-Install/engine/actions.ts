@@ -83,8 +83,6 @@ function isPlaceholderValue(value: string): boolean {
 
 function computeBackupPath(claudeConfigDir: string): string {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  // Sibling of the configured Claude home, preserving locality so the
-  // backup-scanner finds it under the same parent directory.
   return `${claudeConfigDir}.backup-${ts}`;
 }
 
@@ -1456,19 +1454,15 @@ export async function runConfiguration(
 
   const settingsPath = join(claudeDir, "settings.json");
 
-  // Recursively rewrite string values that hardcode the default install
-  // location ($HOME/.claude or ${HOME}/.claude) to the actual configured
-  // claudeDir / paiDir. Bundle templates use these literals because they
-  // expect the default install location; under custom CLAUDE_CONFIG_DIR
-  // or PAI_DIR the daemons would otherwise read the wrong place.
-  // Order: PAI-prefixed first (more specific), then bare Claude.
+  // Bundle templates hardcode $HOME/.claude (and /PAI) for the default
+  // install. Under custom CLAUDE_CONFIG_DIR / PAI_DIR, daemons would read
+  // the wrong path unless we rewrite to the resolved dirs at install time.
   const rewriteHomeRefs = (val: unknown): unknown => {
     if (typeof val === "string") {
-      return val
-        .replace(/\$\{HOME\}\/\.claude\/PAI/g, paiDir)
-        .replace(/\$HOME\/\.claude\/PAI/g, paiDir)
-        .replace(/\$\{HOME\}\/\.claude/g, claudeDir)
-        .replace(/\$HOME\/\.claude/g, claudeDir);
+      return val.replace(
+        /\$(?:\{HOME\}|HOME)\/\.claude(\/PAI)?/g,
+        (_m, pai) => (pai ? paiDir : claudeDir)
+      );
     }
     if (Array.isArray(val)) return val.map(rewriteHomeRefs);
     if (val && typeof val === "object") {
