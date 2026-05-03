@@ -66,7 +66,7 @@ const SECURITY_LOG_DIR = join(MEMORY_DIR, "SECURITY")
 const SETTINGS_PATH = join(HOME, ".claude", "settings.json")
 const LADDER_DIR = join(HOME, "Projects", "Ladder")
 
-const DEFAULT_DASHBOARD_DIR = join(PAI_DIR, "Pulse", "Observability", "out")
+const DEFAULT_DASHBOARD_DIR = join(PAI_DIR, "PULSE", "Observability", "out")
 
 // ── In-Memory Store (hook-pushed state/events) ──
 
@@ -149,7 +149,7 @@ function getDashboardDir(): string {
   const dir = config.dashboard_dir ?? DEFAULT_DASHBOARD_DIR
   // Resolve relative paths against Pulse directory
   if (!dir.startsWith("/")) {
-    return join(HOME, ".claude", "PAI", "Pulse", dir)
+    return join(HOME, ".claude", "PAI", "PULSE", dir)
   }
   return dir
 }
@@ -1647,7 +1647,7 @@ function readDirMdFiles(dir: string): { name: string, content: string, sections:
 function handleUserIndexApi(filter: string | null): Response {
   try {
     const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME || "", ".claude", "PAI")
-    const indexPath = join(PAI_DIR, "Pulse", "state", "user-index.json")
+    const indexPath = join(PAI_DIR, "PULSE", "state", "user-index.json")
     const raw = Bun.file(indexPath)
     if (!raw.size) {
       return Response.json(
@@ -2346,6 +2346,7 @@ function buildDimensions(): { id: string; label: string; cur: number; ideal: num
   const IDEAL_DIR = join(TELOS_DIR, "IDEAL_STATE")
   return Object.keys(DIM_COLORS).map((id) => {
     const content = readMd(join(IDEAL_DIR, id.toUpperCase() + ".md"))
+    // Extract a numeric score if present e.g. "**Score:** 65"
     const curM = content.match(/\*\*(?:Current Score|Score|Cur):\*\*\s*(\d+)/i)
     const idealM = content.match(/\*\*(?:Ideal Score|Target Score|Ideal):\*\*\s*(\d+)/i)
     return {
@@ -2418,6 +2419,38 @@ function buildSubtabs(): { id: string; label: string; dim: string; cur: number; 
         top,
       }
     })
+}
+
+function buildPreferences(): Record<string, string[]> {
+  const books  = readMd(join(TELOS_DIR, "BOOKS.md"))
+  const movies = readMd(join(TELOS_DIR, "MOVIES.md"))
+  const bands  = readMd(join(TELOS_DIR, "BANDS.md"))
+  const authors = readMd(join(TELOS_DIR, "AUTHORS.md"))
+  const wisdom  = readMd(join(TELOS_DIR, "WISDOM.md"))
+
+  const clean = (s: string) => cleanInlineMarkdown(s.replace(/\(.*?\)/g, "").replace(/⭐/g, "")).trim()
+
+  const parsedBooks = parseBullets(books).slice(0, 14).map(clean).filter(Boolean)
+  const parsedFilms = parseBullets(movies).slice(0, 14).map(clean).filter(Boolean)
+  const parsedMusic = parseBullets(bands).slice(0, 20).filter(Boolean)
+  const parsedLiterature = parseBullets(authors).slice(0, 12).filter(Boolean)
+
+  const parsedAphorisms = wisdom
+    .split("\n")
+    .filter(l => l.trim().startsWith("> **") && l.trim().endsWith("**"))
+    .map(l => l.trim().replace(/^> \*\*/, "").replace(/\*\*$/, "").trim())
+    .filter(Boolean)
+
+  return {
+    books: parsedBooks,
+    films: parsedFilms,
+    anime: [],
+    characters: [],
+    aphorisms: parsedAphorisms,
+    hobbies: [],
+    literature: parsedLiterature,
+    music: parsedMusic,
+  }
 }
 
 async function handleTelosOverview(): Promise<Response> {
@@ -2501,7 +2534,7 @@ async function handleTelosOverview(): Promise<Response> {
       recommendations: null,
       stranded: null,
       subtabs: buildSubtabs(),
-      preferences: null,
+      preferences: buildPreferences(),
       narrativeSeed: null,
     })
   } catch (err) {

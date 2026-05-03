@@ -175,6 +175,7 @@ export interface PreferenceContext {
   aphorisms: readonly string[];
   hobbies: readonly string[];
   literature: readonly string[];
+  music: readonly string[];
 }
 
 export interface NarrativeSeed {
@@ -439,6 +440,7 @@ export const TELOS = {
     aphorisms:  ['Sample Aphorism — replace via /interview', 'Sample Aphorism B — replace via /interview', 'Sample Aphorism C — replace via /interview'],
     hobbies:    ['Sample Hobby A', 'Sample Hobby B', 'Sample Hobby C', 'Sample Hobby D'],
     literature: ['Sample Author A', 'Sample Author B', 'Sample Author C', 'Sample Author D'],
+    music:      ['Sample Artist A', 'Sample Artist B', 'Sample Artist C', 'Sample Artist D'],
   },
 
   narrativeSeed: {

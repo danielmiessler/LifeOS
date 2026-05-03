@@ -649,6 +649,7 @@ export function Preferences({ telos, openFile }: PreferencesProps) {
         <div className="prefs-body">
           {list({ label: "Books", items: p.books, file: "BOOKS.md" })}
           {list({ label: "Films", items: p.films, file: "MOVIES.md" })}
+          {list({ label: "Music", items: p.music ?? [], file: "BANDS.md" })}
           {list({ label: "Anime", items: p.anime, file: "MOVIES.md" })}
           {list({ label: "Characters", items: p.characters, file: "AUTHORS.md" })}
           {list({ label: "Aphorisms", items: p.aphorisms, tone: "aph", file: "WISDOM.md" })}
