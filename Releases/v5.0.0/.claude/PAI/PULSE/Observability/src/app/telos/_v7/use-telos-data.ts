@@ -27,12 +27,38 @@ export function useTelosData(): { telos: Telos; refetch: () => void; error: stri
           ...(data.idealState != null && { idealState: data.idealState }),
           ...(data.dimensions != null && { dimensions: data.dimensions }),
           ...(data.snapshot != null && { snapshot: data.snapshot }),
-          ...(data.problems != null && data.problems.length > 0 && { problems: data.problems }),
-          ...(data.missions != null && data.missions.length > 0 && { missions: data.missions }),
-          ...(data.goals != null && data.goals.length > 0 && { goals: data.goals }),
+          ...(data.problems != null && data.problems.length > 0 && {
+            problems: data.problems.map((p: any) => ({ solved: false, solvedBy: [], ...p })),
+          }),
+          ...(data.missions != null && data.missions.length > 0 && {
+            missions: data.missions.map((m: any) => ({
+              horizon: "",
+              active: true,
+              addresses: [],
+              ...m,
+            })),
+          }),
+          ...(data.goals != null && data.goals.length > 0 && {
+            goals: data.goals.map((g: any) => ({
+              horizon: "",
+              active: true,
+              status: "active",
+              supportedBy: [],
+              ...g,
+            })),
+          }),
           ...(data.metrics != null && { metrics: data.metrics }),
-          ...(data.challenges != null && data.challenges.length > 0 && { challenges: data.challenges }),
-          ...(data.strategies != null && data.strategies.length > 0 && { strategies: data.strategies }),
+          ...(data.challenges != null && data.challenges.length > 0 && {
+            challenges: data.challenges.map((c: any) => ({ active: true, addressedBy: [], ...c })),
+          }),
+          ...(data.strategies != null && data.strategies.length > 0 && {
+            strategies: data.strategies.map((s: any) => ({
+              overcomes: [],
+              implements: [],
+              active: true,
+              ...s,
+            })),
+          }),
           ...(data.projects != null && { projects: data.projects }),
           ...(data.team != null && { team: data.team }),
           ...(data.budget != null && { budget: data.budget }),
