@@ -2135,7 +2135,7 @@ function handleLifeGoals(): Response {
 
     return Response.json({
       mission: parseSections(mission),
-      goals: parseGoals(goalsRaw),
+      goals: parseNestedHeadings(goalsRaw, "G"),
       problems: parseSections(problems),
       strategies: parseSections(strategies),
       narratives: parseSections(narratives),
