@@ -96,6 +96,8 @@ output = "log"
 enabled = true
 
 # ── DA Subsystem Jobs ──
+# Disabled until Assistant/checks/*.ts ships. Leaving these enabled causes
+# repeated Module not found failures and auto-disable noise in fresh v5 installs.
 
 [[job]]
 name = "assistant-heartbeat"
@@ -103,7 +105,7 @@ schedule = "*/30 * * * *"
 type = "script"
 command = "bun run Assistant/checks/heartbeat.ts"
 output = "voice"
-enabled = true
+enabled = false
 
 [[job]]
 name = "assistant-tasks"
@@ -111,7 +113,7 @@ schedule = "* * * * *"
 type = "script"
 command = "bun run Assistant/checks/tasks.ts"
 output = "voice"
-enabled = true
+enabled = false
 
 [[job]]
 name = "assistant-diary"
@@ -119,7 +121,7 @@ schedule = "0 23 * * *"
 type = "script"
 command = "bun run Assistant/checks/diary.ts"
 output = "log"
-enabled = true
+enabled = false
 
 [[job]]
 name = "assistant-growth"
@@ -127,7 +129,7 @@ schedule = "0 4 * * 0"
 type = "script"
 command = "bun run Assistant/checks/growth.ts"
 output = "log"
-enabled = true
+enabled = false
 
 # ── Life Dashboard (Phase 0) ──
 
