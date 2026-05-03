@@ -28,7 +28,11 @@ export function useTelosData(): { telos: Telos; refetch: () => void; error: stri
           ...(data.dimensions != null && { dimensions: data.dimensions }),
           ...(data.snapshot != null && { snapshot: data.snapshot }),
           ...(data.problems != null && data.problems.length > 0 && {
-            problems: data.problems.map((p: any) => ({ solved: false, solvedBy: [], ...p })),
+            problems: data.problems.map((p: any) => ({
+              severity: "med" as const,
+              affects: [],
+              ...p,
+            })),
           }),
           ...(data.missions != null && data.missions.length > 0 && {
             missions: data.missions.map((m: any) => ({
@@ -40,16 +44,22 @@ export function useTelosData(): { telos: Telos; refetch: () => void; error: stri
           }),
           ...(data.goals != null && data.goals.length > 0 && {
             goals: data.goals.map((g: any) => ({
-              horizon: "",
-              active: true,
-              status: "active",
-              supportedBy: [],
+              kpi: "",
+              target: "",
+              pct: 0,
+              delta: 0,
+              dims: [],
+              metrics: [],
               ...g,
             })),
           }),
           ...(data.metrics != null && { metrics: data.metrics }),
           ...(data.challenges != null && data.challenges.length > 0 && {
-            challenges: data.challenges.map((c: any) => ({ active: true, addressedBy: [], ...c })),
+            challenges: data.challenges.map((c: any) => ({
+              note: "",
+              blocks: [],
+              ...c,
+            })),
           }),
           ...(data.strategies != null && data.strategies.length > 0 && {
             strategies: data.strategies.map((s: any) => ({
