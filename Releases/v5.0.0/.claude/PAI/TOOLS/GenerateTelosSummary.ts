@@ -18,6 +18,18 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
+function readPrincipalName(): string {
+  try {
+    const configPath = join(process.env.HOME || '', '.claude/PAI/USER/Config/PAI_CONFIG.yaml');
+    if (!existsSync(configPath)) return '{{PRINCIPAL_FULL_NAME}}';
+    const content = readFileSync(configPath, 'utf-8');
+    const match = content.match(/^\s*name:\s*"([^"]+)"/m);
+    return match ? match[1].trim() : '{{PRINCIPAL_FULL_NAME}}';
+  } catch {
+    return '{{PRINCIPAL_FULL_NAME}}';
+  }
+}
+
 const TELOS_DIR = join(process.env.HOME || '', '.claude/PAI/USER/TELOS');
 const OUTPUT_PATH = join(TELOS_DIR, 'PRINCIPAL_TELOS.md');
 
@@ -261,6 +273,7 @@ function parseModels(): string[] {
 
 function generate(): string {
   const now = new Date().toISOString();
+  const principalName = readPrincipalName();
   const missions = parseMissions();
   const goals = parseGoals();
   const problems = parseProblems();
@@ -272,7 +285,7 @@ function generate(): string {
   const models = parseModels();
 
   const lines: string[] = [
-    '# Principal TELOS — {{PRINCIPAL_FULL_NAME}}',
+    `# Principal TELOS — ${principalName}`,
     '',
     '> Auto-generated from TELOS source files. Do not edit manually.',
     `> Generated: ${now} | Sources: MISSION, GOALS, PROBLEMS, STRATEGIES, NARRATIVES, CHALLENGES, WRONG, TRAUMAS, MODELS`,
