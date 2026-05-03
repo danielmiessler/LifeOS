@@ -12,9 +12,17 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 
-const STATE_FILE = join(
+// Read from last-prompt.json (the prompt Claude actually responded to).
+// Write current submission to pending-prompt.json (staged; promoted to last-prompt
+// only when the Stop hook runs, i.e., after Claude responds). This way cancelled
+// or blocked prompts never become the comparison baseline.
+const RESPONDED_PROMPT_FILE = join(
   process.env.HOME || "",
   ".claude/PAI/MEMORY/STATE/last-prompt.json",
+);
+const PENDING_PROMPT_FILE = join(
+  process.env.HOME || "",
+  ".claude/PAI/MEMORY/STATE/pending-prompt.json",
 );
 
 interface HookInput {
@@ -69,16 +77,16 @@ function main(): void {
 
   // Skip very short messages (ratings, acknowledgments, greetings)
   if (currentPrompt.length < 20) {
-    saveCurrentPrompt(currentPrompt, input.session_id);
+    stagePendingPrompt(currentPrompt, input.session_id);
     process.exit(0);
   }
 
-  // Load previous prompt
+  // Load the last prompt Claude actually responded to (promoted by Stop hook).
   let previousPrompt = "";
   let previousSessionId = "";
-  if (existsSync(STATE_FILE)) {
+  if (existsSync(RESPONDED_PROMPT_FILE)) {
     try {
-      const state = JSON.parse(readFileSync(STATE_FILE, "utf-8"));
+      const state = JSON.parse(readFileSync(RESPONDED_PROMPT_FILE, "utf-8"));
       previousPrompt = state.prompt || "";
       previousSessionId = state.session_id || "";
     } catch {
@@ -88,11 +96,11 @@ function main(): void {
 
   // Only compare within the same session
   if (previousSessionId !== input.session_id || !previousPrompt) {
-    saveCurrentPrompt(currentPrompt, input.session_id);
+    stagePendingPrompt(currentPrompt, input.session_id);
     process.exit(0);
   }
 
-  // Compare current to previous
+  // Compare current to previous (last responded-to prompt)
   const currentTokens = tokenize(currentPrompt);
   const previousTokens = tokenize(previousPrompt);
 
@@ -101,8 +109,10 @@ function main(): void {
 
   const similarity = jaccardSimilarity(currentGrams, previousGrams);
 
-  // Save current prompt as the new "previous"
-  saveCurrentPrompt(currentPrompt, input.session_id);
+  // Stage current prompt for promotion. Only promoted to last-prompt by the Stop
+  // hook after Claude responds, so cancelled / blocked prompts never poison the
+  // comparison baseline.
+  stagePendingPrompt(currentPrompt, input.session_id);
 
   // Threshold: 0.6 (60%) similarity triggers warning
   if (similarity >= 0.6) {
@@ -120,10 +130,10 @@ function main(): void {
   process.exit(0);
 }
 
-function saveCurrentPrompt(prompt: string, sessionId: string): void {
+function stagePendingPrompt(prompt: string, sessionId: string): void {
   try {
     writeFileSync(
-      STATE_FILE,
+      PENDING_PROMPT_FILE,
       JSON.stringify({
         prompt,
         session_id: sessionId,

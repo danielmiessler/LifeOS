@@ -353,6 +353,10 @@
           {
             "type": "command",
             "command": "$HOME/.claude/hooks/DocIntegrity.hook.ts"
+          },
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/RepeatDetectionPromote.hook.ts"
           }
         ]
       }
