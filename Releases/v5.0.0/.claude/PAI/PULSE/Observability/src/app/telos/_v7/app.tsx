@@ -299,7 +299,7 @@ function isViewKind(v: string | null): v is ViewKind {
 
 function App() {
   const { telos, refetch } = useTelosData();
-  const [mission, setMission] = useState<string>("M1");
+  const [mission, setMission] = useState<string>("M0");
   const [openGoal, setOpenGoal] = useState<Goal | null>(null);
   const [traceId, setTraceId] = useState<string | null>(null);
   const [editingFile, setEditingFile] = useState<string | null>(null);
@@ -318,6 +318,14 @@ function App() {
     if (typeof window === "undefined") return;
     window.localStorage.setItem(STORAGE_KEY, view);
   }, [view]);
+
+  // Reset active mission when live data loads with different IDs than the default.
+  useEffect(() => {
+    if (telos && !telos.missions.find(m => m.id === mission)) {
+      const firstId = telos.missions[0]?.id;
+      if (firstId) setMission(firstId);
+    }
+  }, [telos?.missions]);
 
   const trace = (id: string | null) => {
     if (id) setTraceId(id);

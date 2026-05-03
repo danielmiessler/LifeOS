@@ -12,7 +12,7 @@ interface HorizonProps {
 }
 
 export function Horizon({ telos, activeId, onChange, showIds }: HorizonProps) {
-  const active = telos.missions.find(m=>m.id===activeId) || telos.missions[1];
+  const active = telos.missions.find(m=>m.id===activeId) || telos.missions[0];
   return (
     <section className="horizon">
       <div className="h-tabs">
