@@ -41,7 +41,7 @@ const SPARK_SEEDS = {
 type SubtabId = keyof typeof SPARK_SEEDS;
 
 export function SubTabs({ telos }: SubTabsProps) {
-  const [active, setActive] = useState<SubtabId>('business');
+  const [active, setActive] = useState<string>(telos.subtabs[0]?.id ?? 'business');
   const tab = telos.subtabs.find(t=>t.id===active);
   const dim = telos.dimensions.find(d=>d.id===tab?.dim);
   if (!tab || !dim) return null;

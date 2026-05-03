@@ -2384,6 +2384,42 @@ function buildIdealState(): { horizon: string; note: string } {
   return { horizon, note }
 }
 
+function extractSnapshotSection(snapshot: string, heading: string): string {
+  const re = new RegExp(`^##\\s+${heading}\\s*$`, "im")
+  const start = snapshot.search(re)
+  if (start === -1) return ""
+  const after = snapshot.slice(start).split(/^---$/m)[1] ?? snapshot.slice(start)
+  return firstBodyParagraph(after.split(/^##\s/m)[0])
+}
+
+function buildSubtabs(): { id: string; label: string; dim: string; cur: number; ideal: number; velo: number; target: string; top: string }[] {
+  const IDEAL_DIR = join(TELOS_DIR, "IDEAL_STATE")
+  const snapshot = readMd(join(TELOS_DIR, "CURRENT_STATE", "SNAPSHOT.md"))
+  const SNAPSHOT_SECTION: Record<string, string> = {
+    health: "Health", money: "Work", freedom: "Emotional Bandwidth",
+    relationships: "Marriage", creative: "Overall",
+  }
+  return Object.keys(DIM_COLORS)
+    .filter(id => id !== "rhythms")
+    .map(id => {
+      const idealContent = readMd(join(IDEAL_DIR, id.toUpperCase() + ".md"))
+      const snapshotText = extractSnapshotSection(snapshot, SNAPSHOT_SECTION[id] ?? "")
+      const top = snapshotText || firstBodyParagraph(idealContent) || ""
+      const curM = idealContent.match(/\*\*(?:Current Score|Score|Cur):\*\*\s*(\d+)/i)
+      const idealM = idealContent.match(/\*\*(?:Ideal Score|Target Score|Ideal):\*\*\s*(\d+)/i)
+      return {
+        id,
+        label: DIM_LABELS[id],
+        dim: id,
+        cur: curM ? parseInt(curM[1]) : 0,
+        ideal: idealM ? parseInt(idealM[1]) : 0,
+        velo: 0,
+        target: "ongoing",
+        top,
+      }
+    })
+}
+
 async function handleTelosOverview(): Promise<Response> {
   try {
     const lifeResponse = handleLifeGoals()
@@ -2464,7 +2500,7 @@ async function handleTelosOverview(): Promise<Response> {
       budget: null,
       recommendations: null,
       stranded: null,
-      subtabs: null,
+      subtabs: buildSubtabs(),
       preferences: null,
       narrativeSeed: null,
     })
