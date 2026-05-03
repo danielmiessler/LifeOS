@@ -2327,7 +2327,8 @@ async function handleTelosOverview(): Promise<Response> {
     const life = await lifeResponse.json() as LifeGoalsPayload
     const missions = parseSourceHeadings(asLifeSections(life.mission), "M").map((m) => ({
       id: m.id,
-      title: m.title,
+      horizon: m.title,
+      title: firstParagraph(m.body) || m.title,
     }))
     const goals = asLifeGoals(life.goals).map((g) => ({
       id: g.id,
