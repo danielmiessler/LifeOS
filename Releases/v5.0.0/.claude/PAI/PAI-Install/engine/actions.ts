@@ -1687,25 +1687,43 @@ export async function runConfiguration(
     }
   }
 
-  // Set up shell alias (detect bash/zsh/fish)
+  // Set up shell alias + PAI_DIR export (detect bash/zsh/fish).
   await emit({ event: "progress", step: "configuration", percent: 80, detail: "Setting up shell alias..." });
 
   const userShell = process.env.SHELL || "/bin/zsh";
-  const rcFile = userShell.includes("bash") ? ".bashrc" : userShell.includes("fish") ? ".config/fish/config.fish" : ".zshrc";
+  const isFish = userShell.includes("fish");
+  const rcFile = userShell.includes("bash") ? ".bashrc" : isFish ? ".config/fish/config.fish" : ".zshrc";
   const rcPath = join(homedir(), rcFile);
-  const aliasLine = `alias pai='bun ${join(paiDir, "TOOLS", "pai.ts")}'`;
+  // PAI_DIR is exported globally — it's a PAI-specific concept that
+  // direct TOOLS invocations need. CLAUDE_CONFIG_DIR is scoped to the
+  // `pai` alias only because exporting it globally would hijack
+  // vanilla `claude` invocations to PAI's config.
+  const paiTs = join(paiDir, "TOOLS", "pai.ts");
+  const block = isFish
+    ? [
+        `set -gx PAI_DIR ${paiDir}`,
+        `alias pai 'env CLAUDE_CONFIG_DIR=${claudeDir} bun ${paiTs}'`,
+      ].join("\n")
+    : [
+        `export PAI_DIR="${paiDir}"`,
+        `alias pai='CLAUDE_CONFIG_DIR="${claudeDir}" bun ${paiTs}'`,
+      ].join("\n");
   const marker = "# PAI alias";
 
   if (existsSync(rcPath)) {
     let content = readFileSync(rcPath, "utf-8");
-    // Remove any existing pai alias (old CORE or PAI paths, any marker variant)
-    content = content.replace(/^#\s*(?:PAI|CORE)\s*alias.*\n.*alias pai=.*\n?/gm, "");
-    content = content.replace(/^alias pai=.*\n?/gm, "");
-    // Add fresh alias
-    content = content.trimEnd() + `\n\n${marker}\n${aliasLine}\n`;
+    // Remove any existing PAI block (marker + optional exports + alias),
+    // covering all prior shapes the installer has shipped.
+    content = content.replace(/\n*# PAI alias\n(?:(?:export|set -gx) (?:CLAUDE_CONFIG_DIR|PAI_DIR)[^\n]*\n)*alias pai[ =][^\n]*\n?/g, "");
+    content = content.replace(/^#\s*(?:PAI|CORE)\s*alias.*\n.*alias pai[ =].*\n?/gm, "");
+    content = content.replace(/^alias pai[ =].*\n?/gm, "");
+    // Strip orphan PAI_DIR exports left from prior pai blocks (just in case).
+    content = content.replace(/^(?:export|set -gx) PAI_DIR[^\n]*\n?/gm, "");
+    // Add fresh block
+    content = content.trimEnd() + `\n\n${marker}\n${block}\n`;
     writeFileSync(rcPath, content);
   } else {
-    writeFileSync(rcPath, `${marker}\n${aliasLine}\n`);
+    writeFileSync(rcPath, `${marker}\n${block}\n`);
   }
 
   // Fix permissions
