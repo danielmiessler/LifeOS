@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { TELOS as FALLBACK, type Telos } from "./data";
 
-export function useTelosData(): { telos: Telos | null; refetch: () => void; error: string | null } {
-  const [telos, setTelos] = useState<Telos | null>(null);
+export function useTelosData(): { telos: Telos; refetch: () => void; error: string | null } {
+  const [telos, setTelos] = useState<Telos>(FALLBACK);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState<number>(0);
 
