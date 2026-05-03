@@ -629,7 +629,7 @@ export default function LoopsDashboard() {
         <div className="text-center">
           <p className="text-sm font-medium text-zinc-400">No ISAs found</p>
           <p className="text-[14px] text-zinc-600 mt-1">
-            ISAs are created by the Algorithm and stored in ~/.claude/plans/
+            ISAs are created by the Algorithm and stored in {process.env.NEXT_PUBLIC_CLAUDE_PLANS_DIR || "~/.claude/plans"}/
           </p>
         </div>
       </div>

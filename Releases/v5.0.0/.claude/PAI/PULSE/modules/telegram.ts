@@ -17,7 +17,7 @@ import { appendFile, mkdir } from "fs/promises"
 import { getClaudeDir, paiPath } from "../../lib/paths"
 
 // BILLING: Strip ANTHROPIC_API_KEY before any SDK query() call. Bun auto-loads
-// ~/.claude/.env into this process; if the key is present, @anthropic-ai/claude-agent-sdk
+// $CLAUDE_CONFIG_DIR/.env into this process; if the key is present, @anthropic-ai/claude-agent-sdk
 // bills the API key directly instead of the CLAUDE_CODE_OAUTH_TOKEN subscription.
 // This was the root cause of the April 2026 Sonnet 4.5 $353.89 + Web Search $72.48
 // invoice — every Telegram message was a 25-turn SDK session billed to the API.

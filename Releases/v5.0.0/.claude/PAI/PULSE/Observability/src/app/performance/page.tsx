@@ -88,6 +88,8 @@ const dimTints: Record<Dimension, string> = {
   relationships: "rgba(183,148,244,0.16)",
 };
 
+const TOOLS_DIR = process.env.NEXT_PUBLIC_PAI_TOOLS_DIR || "~/.claude/PAI/TOOLS";
+
 function formatCost(n: number): string {
   if (n >= 1000) return `$${(n / 1000).toFixed(1)}K`;
   if (n >= 1) return `$${n.toFixed(2)}`;
@@ -395,7 +397,7 @@ function AnthropicTab({ data }: { data: AnthropicData | null }) {
     return (
       <div className="p-8 muted">
         No ledger entries yet. CostTracker cron runs hourly — next entry at :00.
-        Run manually: <code>bun ~/.claude/PAI/TOOLS/CostTracker.ts log</code>
+        Run manually: <code>bun {TOOLS_DIR}/CostTracker.ts log</code>
       </div>
     );
 
@@ -547,19 +549,19 @@ function AnthropicTab({ data }: { data: AnthropicData | null }) {
         <div className="text-xs muted space-y-1">
           <div>
             <span className="mono" style={{ color: "var(--money)" }}>
-              bun ~/.claude/PAI/TOOLS/CostTracker.ts status
+              bun {TOOLS_DIR}/CostTracker.ts status
             </span>{" "}
             — human-readable snapshot
           </div>
           <div>
             <span className="mono" style={{ color: "var(--money)" }}>
-              bun ~/.claude/PAI/TOOLS/CostTracker.ts scan
+              bun {TOOLS_DIR}/CostTracker.ts scan
             </span>{" "}
             — re-run static scan
           </div>
           <div>
             <span className="mono" style={{ color: "var(--money)" }}>
-              bun ~/.claude/PAI/TOOLS/CostTracker.ts baseline
+              bun {TOOLS_DIR}/CostTracker.ts baseline
             </span>{" "}
             — lock a new known-good snapshot
           </div>

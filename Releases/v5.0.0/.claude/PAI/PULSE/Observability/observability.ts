@@ -28,7 +28,7 @@ import { join, extname } from "path"
 import { homedir } from "os"
 import { readFileSync, readdirSync, existsSync, realpathSync } from "fs"
 import YAML from "yaml"
-import { getPaiDir, paiPath, getClaudeDir, getSettingsPath, getMemoryDir, getObservabilityDir } from "../../lib/paths"
+import { getPaiDir, paiPath, getClaudeDir, getSettingsPath, getMemoryDir, getObservabilityDir, getUserDir } from "../../lib/paths"
 
 // Bun is always the runtime here (Pulse launches this via `bun`). The Next
 // tsconfig's DOM+esnext lib doesn't include bun-types, so declare the minimal
@@ -836,7 +836,7 @@ function handleSecurityHooksDetail(): Response {
         description:
           "Auto-approves file operations in trusted workspaces to prevent permission prompts during normal development.",
         behavior:
-          "Fires when Claude Code would show a permission dialog. Checks if target path is in ~/.claude/, ~/Projects/, or ~/LocalProjects/. Returns allow decision to skip the dialog. SecurityPipeline has already run first. Non-trusted paths: classifies read vs write, auto-approves reads.",
+          "Fires when Claude Code would show a permission dialog. Checks if target path is in $CLAUDE_CONFIG_DIR/, ~/Projects/, or ~/LocalProjects/. Returns allow decision to skip the dialog. SecurityPipeline has already run first. Non-trusted paths: classifies read vs write, auto-approves reads.",
         event: "PermissionRequest",
         canBlock: false,
       },
@@ -2467,13 +2467,14 @@ function handleLifeCardApi(): Response {
 //   1. Build-time env flag — `PAI_TEMPLATE_MODE=1` set during ShadowRelease
 //      build. The flag is baked into the static export via Next.js, so
 //      releases ship banner-on regardless of runtime state.
-//   2. Runtime marker file — `~/.claude/PAI/USER/.template-mode`. Written by
+//   2. Runtime marker file — `$PAI_DIR/USER/.template-mode`. Written by
 //      `install.sh` on fresh install; deleted by `/interview` on completion.
 // Either signal flips templateMode → banner renders. DA name pulled from
 // USER/DA_IDENTITY.md so the copy reads in the user's voice.
 function handleOnboardingState(): Response {
-  const markerPath = join(PAI_DIR, "USER", ".template-mode")
-  const daIdentityPath = join(PAI_DIR, "USER", "DA_IDENTITY.md")
+  const userDir = getUserDir()
+  const markerPath = join(userDir, ".template-mode")
+  const daIdentityPath = join(userDir, "DA_IDENTITY.md")
 
   const buildTimeFlag = process.env.PAI_TEMPLATE_MODE === "1"
   const markerExists = existsSafe(markerPath)

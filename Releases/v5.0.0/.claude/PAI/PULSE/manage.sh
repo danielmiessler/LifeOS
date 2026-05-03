@@ -104,6 +104,26 @@ case "$1" in
     pkill -9 -f "bun.*pulse.ts" 2>/dev/null || true
     sleep 1
 
+    # Build the dashboard with the user's resolved paths baked in. Next.js
+    # inlines NEXT_PUBLIC_* literals at build time, so React display strings
+    # reflect this install's CLAUDE_CONFIG_DIR / PAI_DIR — not the
+    # maintainer's defaults. Tildify with bash prefix-substitution.
+    PAI_TILDE="${PAI_DIR/#$HOME/~}"
+    CLAUDE_TILDE="${CLAUDE_CONFIG_DIR/#$HOME/~}"
+    (
+      set -e
+      cd "$PULSE_DIR/Observability"
+      "$BUN_PATH" install --silent
+      NEXT_PUBLIC_PAI_DIR="$PAI_TILDE" \
+      NEXT_PUBLIC_PAI_USER_DIR="$PAI_TILDE/USER" \
+      NEXT_PUBLIC_PAI_MEMORY_DIR="$PAI_TILDE/MEMORY" \
+      NEXT_PUBLIC_PAI_KNOWLEDGE_DIR="$PAI_TILDE/MEMORY/KNOWLEDGE" \
+      NEXT_PUBLIC_PAI_TOOLS_DIR="$PAI_TILDE/TOOLS" \
+      NEXT_PUBLIC_CLAUDE_DIR="$CLAUDE_TILDE" \
+      NEXT_PUBLIC_CLAUDE_PLANS_DIR="$CLAUDE_TILDE/plans" \
+        "$BUN_PATH" run build
+    ) || { echo "ERROR: Pulse dashboard build failed." >&2; exit 1; }
+
     render_plist
     launchctl load "$PLIST_DST"
 

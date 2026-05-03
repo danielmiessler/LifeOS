@@ -9,6 +9,8 @@ interface OnboardingState {
   interviewCommand: string;
 }
 
+const USER_DIR = process.env.NEXT_PUBLIC_PAI_USER_DIR || "~/.claude/PAI/USER";
+
 const DISMISSED_KEY = "pai:template-onboarding:dismissed";
 
 export default function TemplateOnboarding() {
@@ -64,7 +66,7 @@ export default function TemplateOnboarding() {
                 <FolderOpen className="w-3.5 h-3.5 text-blue-300 shrink-0" />
                 Or edit
                 <code className="px-1.5 py-0.5 rounded bg-slate-800/80 text-blue-200 text-xs font-mono">
-                  ~/.claude/PAI/USER/
+                  {USER_DIR}/
                 </code>
                 directly.
               </span>

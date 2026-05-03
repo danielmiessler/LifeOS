@@ -1,18 +1,8 @@
 /**
  * UserIndex — Life OS USER/ indexer and Pulse module.
- *
- * Walks ~/.claude/PAI/USER/, parses frontmatter + body of every .md file,
- * computes derived fields (staleness, completeness, item_count, preview),
- * and writes a typed JSON index at Pulse/state/user-index.json.
- *
- * Consumed by Pulse dashboard (/life, /health, /finances, ...), Daemon
- * aggregator (via publish_feed), and Interview skill (via interview_gaps).
- *
  * Spec: PAI/DOCUMENTATION/LifeOs/LifeOsSchema.md
  *
- * Usage:
- *   # As a Pulse module: registered in PULSE.toml, start()/stop() lifecycle
- *   # Standalone CLI:
+ * Standalone CLI:
  *   bun run Pulse/modules/user-index.ts              # full scan + write
  *   bun run Pulse/modules/user-index.ts --stats      # summary only
  *   bun run Pulse/modules/user-index.ts --query <p>  # inspect single file

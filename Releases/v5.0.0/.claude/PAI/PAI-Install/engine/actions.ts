@@ -1454,14 +1454,23 @@ export async function runConfiguration(
 
   const settingsPath = join(claudeDir, "settings.json");
 
-  // Bundle templates hardcode $HOME/.claude (and /PAI) for the default
-  // install. Under custom CLAUDE_CONFIG_DIR / PAI_DIR, daemons would read
-  // the wrong path unless we rewrite to the resolved dirs at install time.
+  // Bundle templates hardcode $HOME/.claude, ${HOME}/.claude, and ~/.claude
+  // (and /PAI) for the default install. Under custom CLAUDE_CONFIG_DIR /
+  // PAI_DIR, daemons and permission-rule globs would read the wrong path
+  // unless we rewrite to the resolved dirs at install time.
+  //
+  // $HOME / ${HOME} are executable forms — rewrite to absolute paths so the
+  // shell doesn't need to expand again. ~ is a display form (used in
+  // permission rules and security guidance prose) — rewrite to the
+  // tildified resolved path so the output stays human-readable.
   const rewriteHomeRefs = (val: unknown): unknown => {
     if (typeof val === "string") {
       return val.replace(
-        /\$(?:\{HOME\}|HOME)\/\.claude(\/PAI)?/g,
-        (_m, pai) => (pai ? paiDir : claudeDir)
+        /(\$\{HOME\}|\$HOME|~)\/\.claude(\/PAI)?/g,
+        (_m, prefix, pai) => {
+          const target = pai ? paiDir : claudeDir;
+          return prefix === "~" ? target.replace(homedir(), "~") : target;
+        }
       );
     }
     if (Array.isArray(val)) return val.map(rewriteHomeRefs);

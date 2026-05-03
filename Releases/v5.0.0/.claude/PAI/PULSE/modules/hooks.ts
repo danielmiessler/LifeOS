@@ -5,6 +5,8 @@
  * Validates skill and agent tool calls via HTTP hooks.
  */
 
+import { paiPath } from "../../lib/paths"
+
 // ── Types ──
 
 export interface HooksConfig {
@@ -115,7 +117,7 @@ function handleAgentGuard(body: {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "allow",
-        additionalContext: `WATCHDOG: Background agent "${name}" launching. If not already running, start an agent watchdog Monitor:\nMonitor({ description: "Agent watchdog", persistent: true, timeout_ms: 3600000, command: "bun $HOME/.claude/PAI/TOOLS/AgentWatchdog.ts" })`,
+        additionalContext: `WATCHDOG: Background agent "${name}" launching. If not already running, start an agent watchdog Monitor:\nMonitor({ description: "Agent watchdog", persistent: true, timeout_ms: 3600000, command: "bun ${paiPath("TOOLS", "AgentWatchdog.ts")}" })`,
       },
     })
   }
