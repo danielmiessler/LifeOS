@@ -2175,6 +2175,7 @@ interface LifeGoalEntry {
   id: string
   text?: string
   title?: string
+  body?: string
   kpi?: string
   target?: string
   pct?: number
@@ -2330,16 +2331,41 @@ async function handleTelosOverview(): Promise<Response> {
       horizon: m.title,
       title: firstParagraph(m.body) || m.title,
     }))
-    const goals = asLifeGoals(life.goals).map((g) => ({
-      id: g.id,
-      title: cleanInlineMarkdown(g.title ?? g.text ?? g.id),
-      kpi: typeof g.kpi === "string" ? g.kpi : "",
-      target: typeof g.target === "string" ? g.target : "",
-      pct: typeof g.pct === "number" ? g.pct : 0,
-      delta: null,
-      dims: [],
-      metrics: [],
-    }))
+    const goals = asLifeGoals(life.goals).map((g) => {
+      const body = g.body ?? ""
+      const bodyField = (name: string): string => {
+        const m = body.match(new RegExp(`\\*\\*${name}:\\*\\*\\s*(.+)`, "i"))
+        return m ? cleanInlineMarkdown(m[1].trim()) : ""
+      }
+      const status = bodyField("Status") || (typeof g.kpi === "string" ? g.kpi : "")
+      const target = bodyField("Target") || bodyField("Signal of progress") || (typeof g.target === "string" ? g.target : "")
+      const area = bodyField("Area")
+      const AREA_TO_DIM: Record<string, string> = {
+        health: "health", money: "money", financial: "money", finance: "money",
+        freedom: "freedom", personal: "freedom", identity: "freedom", autonomy: "freedom",
+        relationships: "relationships", relationship: "relationships", social: "relationships", family: "relationships",
+        creative: "creative", creativity: "creative", art: "creative",
+        career: "money", work: "money", professional: "money",
+        rhythms: "rhythms", routine: "rhythms", habits: "rhythms",
+      }
+      const TELOS_DIMS = new Set(Object.values(AREA_TO_DIM))
+      const dims = area
+        ? [...new Set(area.split(/[/,]/).map(s => {
+            const word = s.trim().toLowerCase().split(/\s+/)[0]
+            return AREA_TO_DIM[word] ?? (TELOS_DIMS.has(word) ? word : null)
+          }).filter(Boolean) as string[])]
+        : []
+      return {
+        id: g.id,
+        title: cleanInlineMarkdown(g.title ?? g.text ?? g.id),
+        kpi: status,
+        target,
+        pct: typeof g.pct === "number" ? g.pct : 0,
+        delta: null,
+        dims,
+        metrics: [],
+      }
+    })
     const problems = parseSourceHeadings(asLifeSections(life.problems), "P").map((p) => ({
       id: p.id,
       title: p.title,
