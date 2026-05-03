@@ -1139,13 +1139,35 @@ const BUNDLE_COPY_EXCLUDES = new Set([
   ".quote-cache",
 ]);
 
-function detectLocalBundle(): string | null {
-  const bundleRoot = process.env.PAI_BUNDLE_DIR;
-  if (!bundleRoot || !existsSync(bundleRoot)) return null;
+function bundleRootHasMarkers(root: string): boolean {
+  if (!existsSync(root)) return false;
   for (const marker of BUNDLE_MARKERS) {
-    if (!existsSync(join(bundleRoot, marker))) return null;
+    if (!existsSync(join(root, marker))) return false;
   }
-  return bundleRoot;
+  return true;
+}
+
+function detectLocalBundle(): string | null {
+  // 1. Explicit env override always wins.
+  const fromEnv = process.env.PAI_BUNDLE_DIR;
+  if (fromEnv && bundleRootHasMarkers(fromEnv)) {
+    return fromEnv;
+  }
+  // 2. Auto-detect: walk up from this script's directory looking for a
+  //    parent that has all bundle markers. This catches the common case
+  //    where users run `bun PAI/PAI-Install/main.ts` from a checked-out
+  //    bundle without setting PAI_BUNDLE_DIR. Capped at 12 levels to
+  //    prevent runaway scans on systems with deeply-nested checkouts.
+  let current = import.meta.dir;
+  for (let i = 0; i < 12; i++) {
+    if (bundleRootHasMarkers(current)) {
+      return current;
+    }
+    const parent = dirname(current);
+    if (parent === current) break; // filesystem root
+    current = parent;
+  }
+  return null;
 }
 
 function copyBundleTree(
@@ -1251,7 +1273,11 @@ export async function runRepository(
     }
   }
 
-  const localBundle = detectLocalBundle();
+  // Safety: if the auto-detected bundle equals the install destination,
+  // ignore it — copying claudeDir to itself would either loop or wipe
+  // the in-progress install. Falls through to git clone in that case.
+  const detectedBundle = detectLocalBundle();
+  const localBundle = detectedBundle && detectedBundle !== claudeDir ? detectedBundle : null;
   let bundleInstalled = false;
 
   // The bundle is a claude-home layout (top-level CLAUDE.md, settings.json,
