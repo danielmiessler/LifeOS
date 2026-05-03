@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Telos } from "./data";
 
 // Subordinate tabs — warm, sentence-led.
@@ -42,6 +42,11 @@ type SubtabId = keyof typeof SPARK_SEEDS;
 
 export function SubTabs({ telos }: SubTabsProps) {
   const [active, setActive] = useState<string>(telos.subtabs[0]?.id ?? 'business');
+  useEffect(() => {
+    if (!telos.subtabs.find(t => t.id === active)) {
+      setActive(telos.subtabs[0]?.id ?? 'business');
+    }
+  }, [telos.subtabs, active]);
   const tab = telos.subtabs.find(t=>t.id===active);
   const dim = telos.dimensions.find(d=>d.id===tab?.dim);
   if (!tab || !dim) return null;
