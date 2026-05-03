@@ -1408,7 +1408,7 @@ function parseNumberedList(content: string, heading: string): string[] {
     .slice(0, 10)
 }
 
-function parseBullets(content: string): string[] {
+export function parseBullets(content: string): string[] {
   return content.split("\n")
     .filter(l => /^[-*]\s/.test(l.trim()))
     .map(l => l.trim().replace(/^[-*]\s*/, ""))
@@ -2217,11 +2217,11 @@ function asLifeGoals(value: unknown): LifeGoalEntry[] {
   ))
 }
 
-function cleanInlineMarkdown(value: string): string {
+export function cleanInlineMarkdown(value: string): string {
   return value.replace(/\*\*/g, "").replace(/\*/g, "").trim()
 }
 
-function firstParagraph(value: string): string {
+export function firstParagraph(value: string): string {
   const para = value.split(/\n\s*\n/).find((part) => part.trim().length > 0)
   return cleanInlineMarkdown(para ?? value).replace(/\s+/g, " ").trim()
 }
@@ -2232,7 +2232,7 @@ function parseHeadingText(heading: string, prefix: string, body: string): Parsed
   return { id: match[1], title: cleanInlineMarkdown(match[2]), body }
 }
 
-function parseNestedHeadings(body: string, prefix: string): ParsedHeading[] {
+export function parseNestedHeadings(body: string, prefix: string): ParsedHeading[] {
   const out: ParsedHeading[] = []
   let current: ParsedHeading | null = null
   let currentBody: string[] = []
@@ -2360,7 +2360,7 @@ function buildDimensions(): { id: string; label: string; cur: number; ideal: num
   })
 }
 
-function firstBodyParagraph(content: string): string {
+export function firstBodyParagraph(content: string): string {
   const paras = content.split(/\n\s*\n/)
   for (const p of paras) {
     const t = p.trim()
@@ -2385,7 +2385,7 @@ function buildIdealState(): { horizon: string; note: string } {
   return { horizon, note }
 }
 
-function extractSnapshotSection(snapshot: string, heading: string): string {
+export function extractSnapshotSection(snapshot: string, heading: string): string {
   const re = new RegExp(`^##\\s+${heading}\\s*$`, "im")
   const start = snapshot.search(re)
   if (start === -1) return ""

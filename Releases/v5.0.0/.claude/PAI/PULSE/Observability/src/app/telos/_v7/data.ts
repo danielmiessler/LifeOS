@@ -419,15 +419,15 @@ export const TELOS = {
   },
 
   subtabs: [
-    { id:'business',  label:'Business',  dim:'money',         cur:62, ideal:95, velo:+2.8, target:'2027',
-      top:'Sample subtab summary — operating margin and client mix placeholder' },
-    { id:'finances',  label:'Finances',  dim:'money',         cur:62, ideal:95, velo:+3.0, target:'2027',
-      top:'Sample subtab summary — reserve progress and savings cadence placeholder' },
-    { id:'health',    label:'Health',    dim:'health',        cur:71, ideal:90, velo:+1.2, target:'Dec',
+    { id:'health',        label:'Health',        dim:'health',        cur:71, ideal:90, velo:+1.2, target:'Dec',
       top:'Sample subtab summary — recovery and sleep indicators placeholder' },
-    { id:'work',      label:'Work',      dim:'creative',      cur:48, ideal:85, velo:+2.4, target:'Dec',
+    { id:'money',         label:'Money',         dim:'money',         cur:62, ideal:95, velo:+2.8, target:'2027',
+      top:'Sample subtab summary — operating margin and reserve progress placeholder' },
+    { id:'freedom',       label:'Freedom',       dim:'freedom',       cur:54, ideal:90, velo:+3.1, target:'2027',
+      top:'Sample subtab summary — runway and autonomy indicators placeholder' },
+    { id:'creative',      label:'Creative',      dim:'creative',      cur:48, ideal:85, velo:+2.4, target:'Dec',
       top:'Sample subtab summary — active work, focus protection, and blockers placeholder' },
-    { id:'life',      label:'Life',      dim:'relationships', cur:77, ideal:90, velo:-0.4, target:'ongoing',
+    { id:'relationships', label:'Relationships', dim:'relationships', cur:77, ideal:90, velo:-0.4, target:'ongoing',
       top:'Sample subtab summary — relationship cadence and outreach placeholder' },
   ],
 

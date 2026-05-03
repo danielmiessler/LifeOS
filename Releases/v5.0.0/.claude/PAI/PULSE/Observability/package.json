@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev --port 3333",
     "build": "next build",
-    "export": "next build"
+    "export": "next build",
+    "test": "bun test tests/"
   },
   "dependencies": {
     "@radix-ui/react-progress": "^1.1.8",
