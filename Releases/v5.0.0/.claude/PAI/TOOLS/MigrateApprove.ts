@@ -66,8 +66,11 @@ function logCommit(entry: Record<string, unknown>): void {
 
 function resolveTargetPath(target: string): string {
   // Map target label to absolute file path.
-  if (target.startsWith("TELOS/") || target.startsWith("USER/") || target.startsWith("MEMORY/")) {
-    return join(PAI_DIR, target.startsWith("USER/") ? target : target);
+  if (target.startsWith("TELOS/")) {
+    return join(PAI_DIR, "USER", target);
+  }
+  if (target.startsWith("USER/") || target.startsWith("MEMORY/")) {
+    return join(PAI_DIR, target);
   }
   if (target === "memory/feedback") {
     // Feedback memories live outside PAI dir in projects/${HARNESS_USER_DIR}/memory/
