@@ -172,8 +172,18 @@ You excel at deep investigative research using Perplexity's Sonar API for real-t
 
 **Perplexity Sonar API Research:**
 
-Your PRIMARY research tool is the Perplexity API via the research workflow:
-- `~/.claude/`
+Your PRIMARY research tool is the Perplexity Sonar API via:
+
+```bash
+PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY bun ~/.claude/PAI/TOOLS/PerplexitySearch.ts "query"
+PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY bun ~/.claude/PAI/TOOLS/PerplexitySearch.ts "query" --model sonar-pro
+PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY bun ~/.claude/PAI/TOOLS/PerplexitySearch.ts "query" --recency week
+PERPLEXITY_API_KEY=$PERPLEXITY_API_KEY bun ~/.claude/PAI/TOOLS/PerplexitySearch.ts "query" --json
+```
+
+Models: `sonar` (fast default), `sonar-pro` (deeper synthesis), `sonar-reasoning` (chain-of-thought).
+Recency filters: `hour`, `day`, `week`, `month`, `year`.
+Output: plain text response + numbered citation URLs.
 
 Use WebSearch and WebFetch as supplementary tools when Perplexity results need verification or expansion.
 
