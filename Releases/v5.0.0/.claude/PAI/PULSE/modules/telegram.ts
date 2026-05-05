@@ -39,6 +39,8 @@ const HOME = process.env.HOME ?? ""
 const CWD = join(HOME, ".claude")
 const STATE_DIR = join(HOME, ".claude", "PAI", "PULSE", "state", "telegram")
 const LOGS_DIR = join(HOME, ".claude", "PAI", "PULSE", "logs", "telegram")
+const CALLBACKS_LOG = join(STATE_DIR, "callbacks.jsonl")
+const CALLBACKS_MAX_BYTES = 4096
 const MAX_TELEGRAM_LENGTH = 4096
 const CURSOR = " ▌"
 
@@ -335,6 +337,51 @@ CRITICAL RULES FOR TELEGRAM MODE:
     } finally {
       processing = false
     }
+  })
+
+  // ── Callback bridge ──
+  //
+  // Inline-keyboard `callback_query` updates have no other handler in this
+  // module — grammY's polling loop drains them anyway, so without a bridge any
+  // *second* worker on the same bot token gets `Conflict: terminated by other
+  // getUpdates request` from Telegram. We forward each press to a JSONL
+  // side-channel that other PAI workers (cron-driven pollers, batch jobs,
+  // approval gates) can tail.
+  //
+  // Trust boundary: JSONL entries are local-trusted. STATE_DIR is owner-only
+  // (any process running as the user can read/write); a malicious local
+  // process is already in scope of "anyone with write access here can do
+  // worse." Consumers MUST treat `data` as untrusted user input — never
+  // shell-exec it, never SQL-concat it. Acks here mean "received," not
+  // "committed"; the consumer is responsible for editing the message after
+  // taking action and for using namespaced callback_data (e.g.
+  // `<workflow>:<uuid>:<action>`) to avoid confused-deputy collisions.
+  //
+  // POSIX guarantees writes ≤ PIPE_BUF (4096 B) on `O_APPEND` files are
+  // atomic; we cap each line accordingly.
+  bot.on("callback_query:data", async (ctx) => {
+    const cb = ctx.callbackQuery
+    const entry = {
+      update_id: ctx.update.update_id,
+      ts: Date.now(),
+      callback_query_id: cb.id,
+      from_id: cb.from?.id,
+      from_username: cb.from?.username,
+      message_id: cb.message?.message_id,
+      chat_id: cb.message?.chat?.id,
+      data: cb.data,
+    }
+    const line = JSON.stringify(entry) + "\n"
+    if (Buffer.byteLength(line, "utf8") > CALLBACKS_MAX_BYTES) {
+      log("warn", "Dropping oversized callback entry", { update_id: entry.update_id, len: line.length })
+    } else {
+      try {
+        await appendFile(CALLBACKS_LOG, line, { mode: 0o600 })
+      } catch (e) {
+        log("error", "Failed to log callback", { error: String(e) })
+      }
+    }
+    await ctx.answerCallbackQuery().catch(() => {})
   })
 
   // Start polling — await keeps startTelegram() alive until bot.stop() is called.

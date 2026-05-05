@@ -8,6 +8,8 @@ This system provides:
 - Voice feedback when workflows start
 - Consistent user experience across all skills
 
+> See also: [TelegramCallbacks.md](./TelegramCallbacks.md) — inline-keyboard buttons on `@<DA>_bot` for any PAI worker (approval gates, alert triage, multi-stage workflows).
+
 ---
 
 ## Task Start Announcements
