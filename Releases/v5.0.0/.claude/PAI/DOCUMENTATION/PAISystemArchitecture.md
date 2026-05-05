@@ -4,7 +4,7 @@
 
 **PAI is the Life Operating System.** It is the framework that turns AI from a chatbot you talk to into a system that runs your life — it knows your goals, people, workflows, current state, and ideal state, and continuously hill-climbs you from one to the other. The DA (your Digital Assistant) is the primary interface to this OS. **Pulse** is the Life Dashboard — the visible surface onto the Life OS.
 
-PAI targets **AS3** on the [PAI Maturity Model](https://example.com/blog/personal-ai-maturity-model), with lineage from [The Real Internet of Things](https://example.com/blog/the-real-internet-of-things) (2016).
+PAI targets **AS3** on the [PAI Maturity Model](https://danielmiessler.com/blog/personal-ai-maturity-model), with lineage from [The Real Internet of Things](https://danielmiessler.com/blog/the-real-internet-of-things) (2016).
 
 **Canonical thesis:** `PAI/DOCUMENTATION/LifeOs/LifeOsThesis.md` — read this first when any framing question comes up. This architecture doc describes *how* the OS is built; the thesis doc describes *what* the OS is for.
 
