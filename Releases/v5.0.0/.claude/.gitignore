@@ -186,6 +186,9 @@ Plugins/marketplaces/.chrome-profile/
 # Pulse Observability lockfile — ship for reproducible installs
 !PAI/PULSE/Observability/bun.lock
 
+# Pulse daemon lockfile — ship for reproducible installs
+!PAI/PULSE/bun.lock
+
 # Python virtual environments
 .venv/
 
