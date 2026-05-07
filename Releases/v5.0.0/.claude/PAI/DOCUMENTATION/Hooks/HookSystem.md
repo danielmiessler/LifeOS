@@ -342,14 +342,16 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
       "matcher": "Write",
       "hooks": [
         { "type": "command", "command": "$HOME/.claude/hooks/ISASync.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/TelosSummarySync.hook.ts" }
+        { "type": "command", "command": "$HOME/.claude/hooks/TelosSummarySync.hook.ts" },
+        { "type": "command", "command": "$HOME/.claude/hooks/CheckpointPerISC.hook.ts" }
       ]
     },
     {
       "matcher": "Edit",
       "hooks": [
         { "type": "command", "command": "$HOME/.claude/hooks/ISASync.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/TelosSummarySync.hook.ts" }
+        { "type": "command", "command": "$HOME/.claude/hooks/TelosSummarySync.hook.ts" },
+        { "type": "command", "command": "$HOME/.claude/hooks/CheckpointPerISC.hook.ts" }
       ]
     },
     {
@@ -384,6 +386,15 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 **TelosSummarySync.hook.ts** - Principal TELOS Sync
 - Fires after Write/Edit alongside ISASync
 - Regenerates PRINCIPAL_TELOS.md when TELOS source files are modified
+
+**CheckpointPerISC.hook.ts** - Auto-commit on ISC Completion
+- Fires after Write/Edit to ISA files in `MEMORY/WORK/<slug>/`
+- Detects `[ ]` → `[x]` ISC transitions and creates a git commit per opted-in repo with uncommitted changes
+- Commit subject format: `<ISC-id> (<slug>): <sanitized description>`
+- **Opt-in via allowlist:** `~/.claude/checkpoint-repos.txt` (one absolute repo path per line; `#` comments and blank lines ignored; `~/` and `$HOME` expanded). Hook is a no-op when the file is missing or empty.
+- Idempotent via sidecar state file: `MEMORY/WORK/<slug>/.checkpoint-state.json`
+- Uses `--no-verify --no-gpg-sign` to avoid blocking on pre-commit hooks or GPG passphrase prompts
+- Fails closed: any error path logs to stderr and returns `{continue:true}` with exit 0 — never crashes the session, never commits without an allowlist, never executes destructive git ops (no reset/revert/checkout/branch -D/clean -fd/push --force)
 
 **ToolActivityTracker.hook.ts** - Tool Activity Tracking + Ground-Truth Audit
 - Fires after any tool use (global matcher)
