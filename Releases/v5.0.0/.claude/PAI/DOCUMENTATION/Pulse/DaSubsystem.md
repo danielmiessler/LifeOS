@@ -2,9 +2,19 @@
 
 **The DA subsystem formalizes how PAI instantiates, manages, and evolves a Digital Assistant. It turns DA_IDENTITY from a flat markdown file into a living schema with interview-based creation, heartbeat-driven proactivity, natural-language scheduling, identity growth, and multi-DA awareness.**
 
-**Version:** 1.0 (Design)
-**Location:** Integrated into Pulse (`modules/da.ts`) + PAI/USER/DA/
-**Status:** Architecture complete, pending implementation
+**Version:** 1.0 (Design) / 1.1 (Implementation)
+**Location:** Integrated into Pulse (`PULSE/Assistant/`) + PAI/USER/DA/
+**Status:** Phases 1-4 implemented; Phase 5 (multi-DA) is design-only
+
+> **Implementation note:** The original design targeted `PULSE/modules/da.ts`
+> and `PULSE/checks/da-{heartbeat,tasks,diary,growth}.ts`. The shipped
+> implementation lives at `PULSE/Assistant/module.ts` and
+> `PULSE/Assistant/checks/{heartbeat,tasks,diary,growth}.ts`, matching the
+> pre-existing `pulse.ts` import lines (`./Assistant/module`) and the
+> `assistant-*` cron job names declared in PULSE.toml. HTTP routes are
+> exposed under `/assistant/*` rather than `/da/*`. Read this doc as the
+> design intent; consult `PULSE/Assistant/module.ts` for the as-built
+> reality.
 
 ---
 
@@ -1197,8 +1207,8 @@ The `autonomy.must_ask` list in DA_IDENTITY.yaml is enforced at the module level
 
 ## Related Documentation
 
-- **Pulse System:** `THEPULSESYSTEM.md` -- parent daemon architecture
-- **Memory System:** `MEMORYSYSTEM.md` -- where DA reads/writes knowledge
-- **Agent System:** `PAIAGENTSYSTEM.md` -- named agents vs DA vs workers
-- **Config System:** `CONFIGSYSTEM.md` -- how DA identity feeds into CLAUDE.md
-- **Notification System:** `THENOTIFICATIONSYSTEM.md` -- dispatch targets for heartbeat
+- **Pulse System:** `PAI/DOCUMENTATION/Pulse/PulseSystem.md` -- parent daemon architecture
+- **Memory System:** `PAI/DOCUMENTATION/Memory/MemorySystem.md` -- where DA reads/writes knowledge
+- **Agent System:** `PAI/DOCUMENTATION/Agents/AgentSystem.md` -- named agents vs DA vs workers
+- **Config System:** `PAI/DOCUMENTATION/Config/ConfigSystem.md` -- how DA identity feeds into CLAUDE.md
+- **Notification System:** `PAI/DOCUMENTATION/Notifications/NotificationSystem.md` -- dispatch targets for heartbeat

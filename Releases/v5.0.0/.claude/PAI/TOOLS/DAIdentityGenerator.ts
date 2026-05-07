@@ -41,7 +41,7 @@ interface Identity {
   voice: {
     provider: string;
     main: { voice_id: string; stability: number; similarity_boost: number; style?: number; speed?: number; volume?: number };
-    algorithm?: { voice_id: string; stability: number; similarity_boost: number; style?: number; speed?: number; volume?: number };
+    algorithm?: { voice_id: string; name?: string; stability: number; similarity_boost: number; style?: number; speed?: number; volume?: number };
   };
   backstory?: string;
   personality: {
@@ -54,9 +54,17 @@ interface Identity {
     avoid: string[];
     prefer: string[];
     examples?: string[];
+    first_person_voice?: {
+      description: string;
+      right: string[];
+      wrong: string[];
+      exception?: string;
+    };
   };
   relationship: {
     principal: string;
+    principal_pronunciation?: string;
+    principal_contacts?: { linkedin?: string; discord?: string; email?: string };
     dynamic: string;
     history_file?: string;
     interaction_style: string;
@@ -124,6 +132,26 @@ function generateMarkdown(identity: Identity, registry: Registry, daName: string
     lines.push("");
   }
 
+  // First-Person Voice — how the DA refers to itself
+  if (w.first_person_voice) {
+    const fpv = w.first_person_voice;
+    lines.push("## First-Person Voice");
+    lines.push("");
+    lines.push(fpv.description.trim());
+    lines.push("");
+    if (fpv.right?.length > 0) {
+      lines.push("- RIGHT: " + fpv.right.map(s => `"${s}"`).join(" / "));
+    }
+    if (fpv.wrong?.length > 0) {
+      lines.push("- WRONG: " + fpv.wrong.map(s => `"${s}"`).join(" / "));
+    }
+    lines.push("");
+    if (fpv.exception) {
+      lines.push(`Exception: ${fpv.exception.trim()}`);
+      lines.push("");
+    }
+  }
+
   // Relationship — how to interact
   lines.push("## Relationship");
   lines.push("");
@@ -131,6 +159,15 @@ function generateMarkdown(identity: Identity, registry: Registry, daName: string
   lines.push("");
   lines.push(r.interaction_style.trim());
   lines.push("");
+  if (r.principal_pronunciation || r.principal_contacts) {
+    const parts: string[] = [`**${r.principal}:** ${r.principal_pronunciation ?? ""}`.trim()];
+    const c = r.principal_contacts;
+    if (c?.linkedin) parts.push(c.linkedin);
+    if (c?.discord) parts.push(`Discord: ${c.discord}`);
+    if (c?.email) parts.push(c.email);
+    lines.push(parts.filter(Boolean).join(" | "));
+    lines.push("");
+  }
   if (r.devi_dynamic) {
     lines.push(`**Devi:** ${r.devi_dynamic.trim()}`);
     lines.push("");
