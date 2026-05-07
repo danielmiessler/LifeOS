@@ -9,6 +9,7 @@ host = "localhost"
 # Enable/disable modules by setting to true/false
 hooks = true
 observability = true
+user_index = true   # auto-builds Pulse/state/user-index.json + fs.watch USER/
 
 # Example custom module — create your own in modules/
 # my_module = true

@@ -76,6 +76,7 @@ let imessageModule: any = null
 let assistantModule: any = null
 let performanceModule: any = null
 let syslogModule: any = null
+let userIndexModule: any = null
 
 async function loadModules(config: PulseConfig) {
   if (config.voice?.enabled !== false) {
@@ -97,6 +98,13 @@ async function loadModules(config: PulseConfig) {
     wikiModule = await import("./modules/wiki")
   } catch (err) {
     log("warn", "Wiki module not available", { error: String(err) })
+  }
+  // User-index module — always load (no config gate). Builds
+  // Pulse/state/user-index.json on startup and keeps it fresh via fs.watch.
+  try {
+    userIndexModule = await import("./modules/user-index")
+  } catch (err) {
+    log("warn", "User-index module not available", { error: String(err) })
   }
   if (config.telegram?.enabled) {
     try {
@@ -356,6 +364,16 @@ async function main() {
   if (wikiModule) {
     wikiModule.startWiki()
     log("info", "Wiki module loaded")
+  }
+
+  if (userIndexModule) {
+    try {
+      await userIndexModule.start()
+      log("info", "User-index module loaded")
+    } catch (err) {
+      log("error", "User-index module failed to start", { error: String(err) })
+      userIndexModule = null
+    }
   }
 
   if (assistantModule && config.da?.enabled) {
