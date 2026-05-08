@@ -14,7 +14,7 @@ Generate a fresh ISA from a prompt at a specified effort tier. The output is a p
 |-------|----------|-------------|
 | prompt | yes | The user's request — verbatim or distilled |
 | tier | yes | E1 / E2 / E3 / E4 / E5 |
-| project | no | If task targets a known project from PROJECTS.md, the project ISA path is used; otherwise a task ISA at `MEMORY/WORK/{slug}/ISA.md` |
+| project | no | If task targets a known project from PROJECTS.md, the project ISA path is used; otherwise a task ISA at `~/.claude/PAI/MEMORY/WORK/{slug}/ISA.md` (always absolute — never relative to cwd) |
 | ephemeral_feature | no | If set, scaffold a feature-file excerpt instead of a full ISA |
 
 ## Output
@@ -118,7 +118,7 @@ When `ephemeral_feature` is set:
    - `## Test Strategy` entries matching those ISCs
    - `## Decisions` filtered to entries mentioning this feature's ISC IDs (optional)
    - Empty `## Verification` section ready to populate
-4. Write to `MEMORY/WORK/{slug}/_ephemeral/<feature>.md`.
+4. Write to `~/.claude/PAI/MEMORY/WORK/{slug}/_ephemeral/<feature>.md`.
 5. Add a header comment: `<!-- EPHEMERAL FEATURE FILE — derived from <master-isa-path>. Reconcile via Skill("ISA", "reconcile <this-path> → <master-path>"). Do not hand-edit master from this file. -->`
 
 ## Failure modes
