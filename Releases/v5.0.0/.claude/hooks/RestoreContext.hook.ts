@@ -127,16 +127,31 @@ function main() {
   }
 
   // --- Tier 2: Identity anchors (critical sections only) ---
+  //
+  // Resolve the active DA via USER/DA/_registry.yaml (schema-v1). Fall back to
+  // the legacy flat USER/DA_IDENTITY.md path for fresh installs that haven't
+  // run /interview yet (registry doesn't exist until then).
+  // See PAI/DOCUMENTATION/Pulse/DaSubsystem.md for the registry schema.
 
-  const identityPath = paiPath('USER', 'DA_IDENTITY.md');
+  const registryContent = safeRead(paiPath('USER', 'DA', '_registry.yaml'));
+  const primaryMatch = registryContent.match(/^primary:\s*(.+?)\s*$/m);
+  const primaryDa = primaryMatch ? primaryMatch[1].trim() : null;
+  const identityPath = primaryDa
+    ? paiPath('USER', 'DA', primaryDa, 'DA_IDENTITY.md')
+    : paiPath('USER', 'DA_IDENTITY.md');
+
   const identitySections = extractSections(identityPath, [
-    'My Identity',
+    // schema-v1 sections (current)
     'First-Person Voice',
+    'Personality',
+    'Writing',
+    'Relationship',
+    'Autonomy',
+    // legacy sections (pre-schema-v1, kept for backward compat)
+    'My Identity',
     'Core Values',
-    'Personality & Behavior',
-    'Cussing & Frustration Protocol',
-    'Relationship Model',
-    'Pronoun Convention',
+    'Cussing',
+    'Pronoun',
   ]);
 
   if (identitySections) {
