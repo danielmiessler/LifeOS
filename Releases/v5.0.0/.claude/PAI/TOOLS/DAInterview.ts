@@ -1,14 +1,32 @@
 #!/usr/bin/env bun
 
 /**
- * DAInterview.ts -- Interactive CLI wizard for creating DA identities
+ * DAInterview.ts -- CLI wizard for creating DA identities
  *
- * Usage:
+ * INTERACTIVE MODE (default — TTY required):
  *   bun PAI/TOOLS/DAInterview.ts                    # Quick mode (default)
  *   bun PAI/TOOLS/DAInterview.ts --depth standard   # Quick + Standard
  *   bun PAI/TOOLS/DAInterview.ts --depth deep       # All phases
  *   bun PAI/TOOLS/DAInterview.ts --update           # Update existing primary DA
  *   bun PAI/TOOLS/DAInterview.ts --update --da devi # Update specific DA
+ *
+ * NON-INTERACTIVE MODE (no TTY needed — for installers, CI, scripts):
+ *   bun PAI/TOOLS/DAInterview.ts --non-interactive \
+ *     --name aria --principal Alex \
+ *     [--display-name ARIA] [--preset friendly] [--dynamic peers] \
+ *     [--main-voice-id <elevenlabs-id>] [--algorithm-voice-id <elevenlabs-id>]
+ *
+ *   Required flags: --name, --principal
+ *   Optional flags: --display-name (defaults to upper(name)),
+ *                   --preset (must match a key in _presets.yaml; default "friendly"),
+ *                   --dynamic (peers|commander|mentor; default "peers"),
+ *                   --main-voice-id, --algorithm-voice-id (both default empty),
+ *                   --force (overwrite an existing DA at the same slug).
+ *
+ *   By default --non-interactive refuses to overwrite an existing
+ *   DA_IDENTITY.yaml — pass --force or run --update interactively instead.
+ *   --non-interactive does not currently combine with --update; use one or the
+ *   other. Update support can be added in a follow-up.
  *
  * Creates:
  *   PAI/USER/DA/{name}/DA_IDENTITY.yaml
@@ -75,6 +93,9 @@ interface InterviewData {
   companionPersonality?: string;
   relationshipDynamic?: string;
   initialBeliefs?: Array<{ topic: string; position: string }>;
+  // Non-interactive overrides (set by --main-voice-id / --algorithm-voice-id)
+  mainVoiceId?: string;
+  algorithmVoiceId?: string;
 }
 
 type Depth = "quick" | "standard" | "deep";
@@ -445,12 +466,16 @@ core:
 voice:
   provider: elevenlabs
   main:
-    voice_id: ""
+    voice_id: "${escYaml(data.mainVoiceId ?? "")}"
     stability: 0.85
     similarity_boost: 0.7
     style: 0.3
     speed: 1.1
-    volume: 1.2
+    volume: 1.2${data.algorithmVoiceId ? `
+  algorithm:
+    voice_id: "${escYaml(data.algorithmVoiceId)}"
+    stability: 0.5
+    similarity_boost: 0.75` : ""}
 
 # -- Personality ---------------------------------------------------------
 personality:
@@ -715,32 +740,147 @@ function loadExistingIdentity(daDir: string): Partial<InterviewData> | null {
 
 // ── Main ─────────────────────────────────────────────────────────────────────
 
-function parseArgs(): { depth: Depth; update: boolean; daName?: string } {
+interface ParsedArgs {
+  depth: Depth;
+  update: boolean;
+  daName?: string;
+  // Non-interactive mode
+  nonInteractive: boolean;
+  force: boolean;
+  niName?: string;
+  niDisplayName?: string;
+  niPrincipal?: string;
+  niPreset?: string;
+  niDynamic?: string;
+  niMainVoiceId?: string;
+  niAlgorithmVoiceId?: string;
+}
+
+const DEFAULT_PRESET = "friendly";
+
+// Reject "--prefixed" tokens as values for value-taking flags so a missing
+// value doesn't silently consume the next flag (e.g. `--name --principal X`
+// would otherwise set niName to "--principal" and leave niPrincipal undefined).
+function valueOrExit(flag: string, value: string | undefined): string {
+  if (value === undefined || value.startsWith("--")) {
+    errorExit(`${flag} requires a value (got: ${value === undefined ? "<end of args>" : value})`);
+  }
+  return value;
+}
+
+function parseArgs(): ParsedArgs {
   const args = process.argv.slice(2);
-  let depth: Depth = "quick";
-  let update = false;
-  let daName: string | undefined;
+  const out: ParsedArgs = {
+    depth: "quick",
+    update: false,
+    nonInteractive: false,
+    force: false,
+  };
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--depth" && args[i + 1]) {
-      const d = args[i + 1] as Depth;
-      if (["quick", "standard", "deep"].includes(d)) {
-        depth = d;
-      }
+    const a = args[i];
+    const next = args[i + 1];
+    if (a === "--depth") {
+      const v = valueOrExit("--depth", next);
+      if (["quick", "standard", "deep"].includes(v)) out.depth = v as Depth;
       i++;
-    } else if (args[i] === "--update") {
-      update = true;
-    } else if (args[i] === "--da" && args[i + 1]) {
-      daName = args[i + 1];
+    } else if (a === "--update") {
+      out.update = true;
+    } else if (a === "--non-interactive") {
+      out.nonInteractive = true;
+    } else if (a === "--force") {
+      out.force = true;
+    } else if (a === "--da") {
+      out.daName = valueOrExit("--da", next);
+      i++;
+    } else if (a === "--name") {
+      out.niName = valueOrExit("--name", next);
+      i++;
+    } else if (a === "--display-name") {
+      out.niDisplayName = valueOrExit("--display-name", next);
+      i++;
+    } else if (a === "--principal") {
+      out.niPrincipal = valueOrExit("--principal", next);
+      i++;
+    } else if (a === "--preset") {
+      out.niPreset = valueOrExit("--preset", next);
+      i++;
+    } else if (a === "--dynamic") {
+      out.niDynamic = valueOrExit("--dynamic", next);
+      i++;
+    } else if (a === "--main-voice-id") {
+      out.niMainVoiceId = valueOrExit("--main-voice-id", next);
+      i++;
+    } else if (a === "--algorithm-voice-id") {
+      out.niAlgorithmVoiceId = valueOrExit("--algorithm-voice-id", next);
       i++;
     }
   }
 
-  return { depth, update, daName };
+  return out;
+}
+
+// ── Non-interactive helpers ──────────────────────────────────────────────────
+
+function errorExit(msg: string): never {
+  process.stderr.write(`DAInterview: ${msg}\n`);
+  process.exit(2);
+}
+
+function buildDataFromArgs(
+  args: ParsedArgs,
+  presets: Record<string, Preset>,
+): InterviewData {
+  if (!args.niName) errorExit("--non-interactive requires --name <da-name>");
+  if (!args.niPrincipal) errorExit("--non-interactive requires --principal <principal-name>");
+
+  // Slug derivation must produce at least one alphanumeric character; otherwise
+  // the DA dir collapses to DA_DIR/ and writes corrupt the parent.
+  const slugProbe = args.niName!.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!slugProbe) {
+    errorExit(
+      `--name "${args.niName}" produces an empty slug. Provide a name with at least one alphanumeric character.`,
+    );
+  }
+
+  const presetKey = args.niPreset ?? DEFAULT_PRESET;
+  if (!presets[presetKey]) {
+    errorExit(
+      `unknown --preset "${presetKey}". Available: ${Object.keys(presets).join(", ")}`,
+    );
+  }
+
+  const dynamic = args.niDynamic ?? "peers";
+  if (!["peers", "commander", "mentor"].includes(dynamic)) {
+    errorExit(`unknown --dynamic "${dynamic}". Valid: peers, commander, mentor`);
+  }
+
+  const traits = { ...presets[presetKey].traits };
+  const formality = Math.round(traits.formality / 20) || 2;
+
+  return {
+    principalName: args.niPrincipal!,
+    daName: args.niName!,
+    daFullName: args.niName!,
+    displayName: args.niDisplayName ?? args.niName!.toUpperCase(),
+    presetKey,
+    traits,
+    formality,
+    relationshipDynamic: dynamic,
+    mainVoiceId: args.niMainVoiceId,
+    algorithmVoiceId: args.niAlgorithmVoiceId,
+  };
 }
 
 function main(): void {
-  const { depth, update, daName: targetDa } = parseArgs();
+  const parsed = parseArgs();
+  const { depth, update, daName: targetDa, nonInteractive } = parsed;
+
+  if (nonInteractive && update) {
+    errorExit(
+      "--non-interactive cannot be combined with --update yet. Run without --update to create, or omit --non-interactive to update interactively.",
+    );
+  }
 
   // Load presets
   if (!existsSync(PRESETS_PATH)) {
@@ -757,68 +897,89 @@ function main(): void {
     process.exit(1);
   }
 
-  printBanner();
-
-  // Determine depth label
-  const depthLabels: Record<Depth, string> = {
-    quick: "Quick Setup (under 2 minutes)",
-    standard: "Standard Setup (under 5 minutes)",
-    deep: "Deep Setup (under 7 minutes)",
-  };
-  println(`  Mode: ${depthLabels[depth]}`);
-  if (update) println("  Updating existing DA identity");
-  println();
-
   let data: InterviewData;
 
-  if (update) {
-    // Load existing identity
-    const registry = readRegistry();
-    const daToUpdate = targetDa ?? registry.primary;
+  if (nonInteractive) {
+    // Non-interactive path: build from flags + preset defaults, skip phases.
+    // No banner — caller is a script/installer; stdout stays clean.
+    data = buildDataFromArgs(parsed, presets);
+  } else {
+    printBanner();
 
-    if (!daToUpdate) {
-      println("  No DA specified and no primary DA in registry.");
-      println("  Run without --update to create a new DA first.");
-      process.exit(1);
-    }
-
-    const daDir = join(DA_DIR, daToUpdate);
-    const existing = loadExistingIdentity(daDir);
-
-    if (!existing) {
-      println(`  No DA_IDENTITY.yaml found for DA "${daToUpdate}".`);
-      println("  Run without --update to create a new DA.");
-      process.exit(1);
-    }
-
-    println(`  Updating DA: ${existing.daName ?? daToUpdate}`);
-    println("  (Press Enter to keep current value)");
+    // Determine depth label
+    const depthLabels: Record<Depth, string> = {
+      quick: "Quick Setup (under 2 minutes)",
+      standard: "Standard Setup (under 5 minutes)",
+      deep: "Deep Setup (under 7 minutes)",
+    };
+    println(`  Mode: ${depthLabels[depth]}`);
+    if (update) println("  Updating existing DA identity");
     println();
 
-    // Run phases but with defaults from existing data
-    data = runPhase1WithDefaults(presets, existing);
+    if (update) {
+      // Load existing identity
+      const registry = readRegistry();
+      const daToUpdate = targetDa ?? registry.primary;
 
-    if (depth === "standard" || depth === "deep") {
-      data = runPhase2(data);
-    }
-    if (depth === "deep") {
-      data = runPhase3(data);
-    }
-  } else {
-    // Fresh creation
-    data = runPhase1(presets);
+      if (!daToUpdate) {
+        println("  No DA specified and no primary DA in registry.");
+        println("  Run without --update to create a new DA first.");
+        process.exit(1);
+      }
 
-    if (depth === "standard" || depth === "deep") {
-      data = runPhase2(data);
-    }
-    if (depth === "deep") {
-      data = runPhase3(data);
+      const daDir = join(DA_DIR, daToUpdate);
+      const existing = loadExistingIdentity(daDir);
+
+      if (!existing) {
+        println(`  No DA_IDENTITY.yaml found for DA "${daToUpdate}".`);
+        println("  Run without --update to create a new DA.");
+        process.exit(1);
+      }
+
+      println(`  Updating DA: ${existing.daName ?? daToUpdate}`);
+      println("  (Press Enter to keep current value)");
+      println();
+
+      // Run phases but with defaults from existing data
+      data = runPhase1WithDefaults(presets, existing);
+
+      if (depth === "standard" || depth === "deep") {
+        data = runPhase2(data);
+      }
+      if (depth === "deep") {
+        data = runPhase3(data);
+      }
+    } else {
+      // Fresh creation
+      data = runPhase1(presets);
+
+      if (depth === "standard" || depth === "deep") {
+        data = runPhase2(data);
+      }
+      if (depth === "deep") {
+        data = runPhase3(data);
+      }
     }
   }
 
   // Generate files
   const slug = data.daName.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (!slug) {
+    errorExit(
+      `DA name "${data.daName}" produces an empty slug. Use a name with at least one alphanumeric character.`,
+    );
+  }
   const daDir = join(DA_DIR, slug);
+
+  // Non-interactive mode refuses to clobber an existing DA without --force.
+  // Interactive mode keeps its previous behavior (the wizard surfaces the
+  // existing values via runPhase1WithDefaults during --update).
+  const yamlPath = join(daDir, "DA_IDENTITY.yaml");
+  if (nonInteractive && existsSync(yamlPath) && !parsed.force) {
+    errorExit(
+      `DA "${slug}" already exists at ${daDir}. Pass --force to overwrite, or run --update interactively.`,
+    );
+  }
 
   // Create directory
   if (!existsSync(daDir)) {
@@ -827,7 +988,7 @@ function main(): void {
 
   // Write DA_IDENTITY.yaml
   const yamlContent = generateIdentityYaml(data);
-  writeFileSync(join(daDir, "DA_IDENTITY.yaml"), yamlContent);
+  writeFileSync(yamlPath, yamlContent);
 
   // Write DA_IDENTITY.md
   const mdContent = generateIdentityMd(data);
@@ -871,27 +1032,32 @@ function main(): void {
   writeRegistry(registry);
 
   // Print summary
-  println();
-  println("  ╔══════════════════════════════════════════╗");
-  println("  ║              Setup Complete               ║");
-  println("  ╚══════════════════════════════════════════╝");
-  println();
-  println(`  DA Name:        ${data.daName}`);
-  println(`  Display Name:   ${data.displayName}`);
-  println(`  Personality:    ${data.presetKey}`);
-  println(`  Principal:      ${data.principalName}`);
-  println(`  Dynamic:        ${data.relationshipDynamic ?? "peers"}`);
-  println();
-  println("  Files created:");
-  println(`    ${join(daDir, "DA_IDENTITY.yaml")}`);
-  println(`    ${join(daDir, "DA_IDENTITY.md")}`);
-  println(`    ${join(daDir, "growth.jsonl")}`);
-  println(`    ${join(daDir, "opinions.yaml")}`);
-  println(`    ${join(daDir, "diary.jsonl")}`);
-  println(`    ${REGISTRY_PATH} (updated)`);
-  println();
-  println(`  Your DA "${data.daName}" is ready. Welcome to PAI.`);
-  println();
+  if (nonInteractive) {
+    // One-line, machine-friendly. Easy to grep / parse from a wrapping script.
+    println(`DAInterview: created DA "${data.daName}" (slug=${slug}) at ${daDir}`);
+  } else {
+    println();
+    println("  ╔══════════════════════════════════════════╗");
+    println("  ║              Setup Complete               ║");
+    println("  ╚══════════════════════════════════════════╝");
+    println();
+    println(`  DA Name:        ${data.daName}`);
+    println(`  Display Name:   ${data.displayName}`);
+    println(`  Personality:    ${data.presetKey}`);
+    println(`  Principal:      ${data.principalName}`);
+    println(`  Dynamic:        ${data.relationshipDynamic ?? "peers"}`);
+    println();
+    println("  Files created:");
+    println(`    ${join(daDir, "DA_IDENTITY.yaml")}`);
+    println(`    ${join(daDir, "DA_IDENTITY.md")}`);
+    println(`    ${join(daDir, "growth.jsonl")}`);
+    println(`    ${join(daDir, "opinions.yaml")}`);
+    println(`    ${join(daDir, "diary.jsonl")}`);
+    println(`    ${REGISTRY_PATH} (updated)`);
+    println();
+    println(`  Your DA "${data.daName}" is ready. Welcome to PAI.`);
+    println();
+  }
 }
 
 // ── Phase 1 with existing defaults (for --update) ────────────────────────────
