@@ -1,0 +1,116 @@
+# Claude Code runtime directories (session-specific, machine-specific)
+projects/
+file-history/
+debug/
+todos/
+session-env/
+shell-snapshots/
+paste-cache/
+chrome/
+
+# Claude Code command history
+history.jsonl
+
+# Node/Bun
+node_modules/
+**/node_modules/
+
+# Statsig analytics (Claude Code creates this)
+[Ss]tatsig/
+
+# Bun build cache
+*.bun-build
+
+# Environment files (may contain API keys)
+.env
+.env.local
+.env.*.local
+
+# macOS
+.DS_Store
+
+# System state caches (regenerated automatically)
+*.cache
+*.log
+
+# Accidental npm/bun debris
+/package.json
+/package-lock.json
+/bun.lock
+
+# McCullonas three-layer architecture — personal data exclusions
+# These are managed by the marvin (config) repo and symlinked at runtime.
+# Note: no trailing slash — git won't match symlinks with trailing-slash patterns.
+settings.json
+statusline-command.sh
+PAI/USER
+.credentials.json
+MEMORY/LEARNING
+MEMORY/WORK
+MEMORY/VOICE
+MEMORY/STATE
+MEMORY/RELATIONSHIP
+MEMORY/SECURITY
+custom-agents/
+.claude.json
+plans
+.claude
+
+# Runtime directories not in upstream gitignore
+backups/
+cache/
+plugins/
+
+# MCP servers and config — symlinked from marvin (config repo)
+# Note: .mcp.json lives at ~/.mcp.json (home root), not inside ~/.claude
+mcp-servers
+
+# Personal skills symlinked from marvin (config repo)
+skills/Analyse
+skills/BabysitPR
+skills/EngineerAgent
+skills/FeatureOrchestrator
+skills/IdeasCapture
+skills/OperationsAdvisor
+skills/PAIMigrate
+skills/ProductManager
+skills/RailAdvisor
+skills/SecurityAdvisor
+skills/SolutionShaper
+skills/StoryCrafter
+skills/TechnicalDesigner
+skills/VoiceServer
+commands
+
+# Claude Code IDE/remote session files (machine-specific)
+ide/
+remote/
+
+# Claude Code task tracking (session-local)
+tasks/
+
+# Telemetry and history logs (auto-generated)
+telemetry/
+history/
+
+# Backup files
+*.bak
+
+# Personal skills symlinked from marvin
+skills/QualityAdvisor
+
+# Advisor hooks symlinked from marvin (config repo)
+hooks/AdvisorConversationFileGuard.hook.ts
+hooks/AdvisorIdentityLock.hook.ts
+hooks/AdvisorStatePreserver.hook.ts
+hooks/FluxBashGuard.hook.ts
+hooks/PipelineGateGuard.hook.ts
+
+# Additional hooks symlinked from marvin (config repo)
+hooks/ContextCompression.hook.ts
+hooks/EventCapture.hook.ts
+hooks/MCPGuard.hook.ts
+hooks/SymlinkIntegrity.hook.ts
+
+# PAIMigrate vanilla baselines (per-machine, kept alongside customised files)
+*.vanilla-*

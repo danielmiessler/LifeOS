@@ -1,4 +1,6 @@
 #!/usr/bin/env bun
+// Paperclip agent isolation: skip PAI hooks in Paperclip child processes
+if (process.env.PAPERCLIP_AGENT_ID) process.exit(0);
 /**
  * LoadContext.hook.ts - Inject PAI dynamic context into Claude's Context (SessionStart)
  *

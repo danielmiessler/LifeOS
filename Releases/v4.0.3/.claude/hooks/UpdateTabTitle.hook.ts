@@ -1,4 +1,6 @@
 #!/usr/bin/env bun
+// Paperclip agent isolation: skip PAI hooks in Paperclip child processes
+if (process.env.PAPERCLIP_AGENT_ID) process.exit(0);
 /**
  * UpdateTabTitle.hook.ts - Tab Title on Prompt Receipt (UserPromptSubmit)
  *
@@ -213,31 +215,7 @@ async function main() {
     const finalTitle = inferredTitle || (quickTitle && isValidWorkingTitle(quickTitle) ? quickTitle : getWorkingFallback());
     setTabState({ title: `⚙️ ${prefix}${finalTitle}`, state: 'working', sessionId: data.session_id });
 
-    // Voice feedback — announce what's being worked on (only when we have a CLEAN summary).
-    // Voice uses inference result even if contamination filter rejected it for tab title.
-    // NO raw prompt fallback — promptToVoiceFallback sends garbage (task IDs, user anger,
-    // system-reminder content). Only speak validated working titles.
-    const voiceContent = voiceSummary || (quickTitle && isValidWorkingTitle(quickTitle) ? quickTitle : null);
-    if (voiceContent) {
-      const identity = getIdentity();
-      try {
-        await fetch('http://localhost:8888/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: voiceContent.replace(/\.$/, ''),
-            voice_id: identity.mainDAVoiceID,
-            voice_enabled: true,
-          }),
-          signal: AbortSignal.timeout(5000),
-        });
-        console.error(`[UpdateTabTitle] Voice sent: "${voiceContent}"`);
-      } catch {
-        console.error(`[UpdateTabTitle] Voice failed (server down or timeout)`);
-      }
-    } else {
-      console.error(`[UpdateTabTitle] No meaningful voice content, skipping`);
-    }
+    // Voice disabled — voice server not in use
 
     console.error(`[UpdateTabTitle] "${finalTitle}"`);
     process.exit(0);

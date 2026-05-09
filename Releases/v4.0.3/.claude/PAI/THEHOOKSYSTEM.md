@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # Hook System
 
 > **PAI 4.0** — This system is under active development. APIs, configuration formats, and features may change without notice.
@@ -159,8 +160,7 @@ Claude Code supports the following hook events:
 **UpdateTabTitle.hook.ts** - Tab Title + Working State
 - Updates Kitty terminal tab title with task summary + `…` suffix
 - Sets tab to **orange background** (working state)
-- Announces via voice server with context-appropriate gerund
-- See `TERMINALTABS.md` for full state system documentation
+- See **Tab Title + Color State Architecture** section below for full state system documentation
 - **Inference:** `import { inference } from '../PAI/Tools/Inference'` → `inference({ level: 'fast' })`
 
 **SessionAutoName.hook.ts** - Automatic Session Naming
@@ -219,7 +219,7 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 - Calls `handlers/DocCrossRefIntegrity.ts` — deterministic + inference-powered doc updates
 - Self-gating: returns instantly when no system files were modified
 
-**Tab State System:** See `TERMINALTABS.md` for complete documentation
+**Tab State System:** See **Tab Title + Color State Architecture** section below
 
 ---
 
@@ -603,7 +603,7 @@ else if (hookData.cwd && hookData.cwd.includes('/agents/')) {
 - 🧠 Brain - AI inference in progress (Haiku/Sonnet thinking)
 - ⚙️ Gear - Processing/working state
 
-**Full Documentation:** See `~/.claude/PAI/TERMINALTABS.md`
+**Full Documentation:** See the Tab Title + Color State Architecture section above
 
 ---
 

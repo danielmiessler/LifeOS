@@ -1,3 +1,4 @@
+<!-- markdownlint-disable -->
 # SYSTEM/USER Two-Tier Architecture
 
 **The foundational pattern for PAI extensibility and personalization**
@@ -60,10 +61,7 @@ The SecurityValidator hook checks `PAI/USER/PAISECURITYSYSTEM/patterns.yaml` fir
 
 ### Response Format
 
-```
-PAI/RESPONSEFORMAT.md         # SYSTEM tier (base format rules)
-PAI/USER/RESPONSEFORMAT.md    # USER tier (personal overrides)
-```
+Response format is defined in `CLAUDE.md` (NATIVE, ALGORITHM, MINIMAL modes). Users can customise output format by editing their `CLAUDE.md`.
 
 ### Skills
 
@@ -88,7 +86,7 @@ Many configuration files follow this pattern implicitly:
 | SYSTEM Default | USER Override |
 |----------------|---------------|
 | `patterns.example.yaml` | `USER/.../patterns.yaml` |
-| `RESPONSEFORMAT.md` | `USER/RESPONSEFORMAT.md` |
+| `CLAUDE.md` format rules | `CLAUDE.md` user edits |
 | `settings.json` defaults | `settings.json` user values |
 
 ---
