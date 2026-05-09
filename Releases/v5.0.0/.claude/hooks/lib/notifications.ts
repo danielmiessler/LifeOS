@@ -88,3 +88,15 @@ export async function sendPush(
     return false;
   }
 }
+
+// ============================================================================
+// Convenience wrappers (used by hooks that report task outcomes)
+// ============================================================================
+
+export async function notifyTaskComplete(message: string): Promise<boolean> {
+  return sendPush(message || 'Task complete', { title: 'PAI', tags: ['white_check_mark'] });
+}
+
+export async function notifyError(message: string): Promise<boolean> {
+  return sendPush(message || 'Error occurred', { title: 'PAI Error', priority: 'high', tags: ['x'] });
+}
