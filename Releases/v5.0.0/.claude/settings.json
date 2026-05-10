@@ -133,6 +133,15 @@
         ]
       },
       {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/SecurityPipeline.hook.ts"
+          }
+        ]
+      },
+      {
         "matcher": "Skill",
         "hooks": [
           {

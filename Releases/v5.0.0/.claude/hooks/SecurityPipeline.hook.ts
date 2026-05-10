@@ -14,6 +14,7 @@ import { InspectorPipeline } from './security/pipeline';
 import { createPatternInspector } from './security/inspectors/PatternInspector';
 import { createEgressInspector } from './security/inspectors/EgressInspector';
 import { createRulesInspector } from './security/inspectors/RulesInspector';
+import { createMcpInspector } from './security/inspectors/McpInspector';
 
 interface HookInput {
   session_id: string;
@@ -25,6 +26,7 @@ const pipeline = new InspectorPipeline([
   createPatternInspector(),
   createEgressInspector(),
   createRulesInspector(),
+  createMcpInspector(),
 ]);
 
 async function main(): Promise<void> {
