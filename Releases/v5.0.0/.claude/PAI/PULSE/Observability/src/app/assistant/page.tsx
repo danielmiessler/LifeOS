@@ -560,32 +560,36 @@ export default function AssistantPage() {
             </Section>
 
             <Section title="Formed Opinions" dimension="creative">
-              {!opinionsData?.raw ? (
-                <div style={{ color: "#6B80AB", fontSize: 14 }}>No opinions yet</div>
-              ) : (
-                <div className="space-y-3">
-                  {opinionsData.raw.split(/^\s*- topic:/m).slice(1).slice(0, 10).map((block, i) => {
-                    const topic = block.match(/^\s*"?([^"\n]+)"?\s*$/m)?.[1]?.trim() ?? "";
-                    const position = block.match(/position:\s*"?([^"\n]+)"?/)?.[1]?.trim() ?? "";
-                    const confidence = parseFloat(block.match(/confidence:\s*([\d.]+)/)?.[1] ?? "0");
-                    return (
-                      <div key={i} className="flex items-start gap-3">
-                        <div
-                          className="w-2 h-2 rounded-full mt-2 shrink-0"
-                          style={{ backgroundColor: `rgba(248, 123, 123, ${Math.max(0.2, confidence)})` }}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm" style={{ color: "#E8EFFF" }}>{topic}</div>
-                          <div className="text-sm" style={{ color: "#9BB0D6" }}>{position}</div>
+              {(() => {
+                const blocks = opinionsData?.raw?.split(/^\s*- topic:/m).slice(1).slice(0, 10) ?? [];
+                if (blocks.length === 0) {
+                  return <div style={{ color: "#6B80AB", fontSize: 14 }}>No opinions yet</div>;
+                }
+                return (
+                  <div className="space-y-3">
+                    {blocks.map((block, i) => {
+                      const topic = block.match(/^\s*"?([^"\n]+)"?\s*$/m)?.[1]?.trim() ?? "";
+                      const belief = block.match(/belief:\s*"?([^"\n]+)"?/)?.[1]?.trim() ?? "";
+                      const confidence = parseFloat(block.match(/confidence:\s*([\d.]+)/)?.[1] ?? "0");
+                      return (
+                        <div key={i} className="flex items-start gap-3">
+                          <div
+                            className="w-2 h-2 rounded-full mt-2 shrink-0"
+                            style={{ backgroundColor: `rgba(248, 123, 123, ${Math.max(0.2, confidence)})` }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm" style={{ color: "#E8EFFF" }}>{topic}</div>
+                            <div className="text-sm" style={{ color: "#9BB0D6" }}>{belief}</div>
+                          </div>
+                          <span className="text-xs shrink-0 mono" style={{ color: "#6B80AB" }}>
+                            {(confidence * 100).toFixed(0)}%
+                          </span>
                         </div>
-                        <span className="text-xs shrink-0 mono" style={{ color: "#6B80AB" }}>
-                          {(confidence * 100).toFixed(0)}%
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </Section>
           </div>
         )}

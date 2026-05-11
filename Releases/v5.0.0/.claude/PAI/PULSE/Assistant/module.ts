@@ -166,12 +166,10 @@ export async function handleAssistantRequest(req: Request, pathname: string): Pr
   }
 
   if (pathname === "/assistant/opinions" && req.method === "GET") {
-    if (!state.daDir) return Response.json({ opinions: [] })
+    if (!state.daDir) return Response.json({ raw: "" })
     const opinionsPath = join(state.daDir, "opinions.yaml")
-    if (!existsSync(opinionsPath)) return Response.json({ opinions: [] })
-    return new Response(readFileSync(opinionsPath, "utf-8"), {
-      headers: { "Content-Type": "text/plain; charset=utf-8" },
-    })
+    if (!existsSync(opinionsPath)) return Response.json({ raw: "" })
+    return Response.json({ raw: readFileSync(opinionsPath, "utf-8") })
   }
 
   return null
