@@ -1561,6 +1561,15 @@ function parseGoals(content: string): { id: string, text: string }[] {
     .filter(Boolean) as { id: string, text: string }[]
 }
 
+function parseBulletIds(content: string, prefix: string): { id: string; text: string }[] {
+  const re = new RegExp(`^[-*]\\s*\\*{0,2}(${prefix}\\d+[a-z]?)\\*{0,2}:?\\*{0,2}\\s+(.+)`)
+  return content.split("\n")
+    .map(l => l.match(re))
+    .filter((m): m is RegExpMatchArray => m !== null)
+    .filter(m => !m[2].trim().startsWith("~~"))
+    .map(m => ({ id: m[1], text: m[2].trim() }))
+}
+
 function parseSections(content: string): { heading: string, body: string }[] {
   if (!content.trim()) return []
   const sections: { heading: string, body: string }[] = []
@@ -2325,35 +2334,46 @@ async function handleTelosOverview(): Promise<Response> {
       return Response.json({ error: `life goals returned ${lifeResponse.status}` }, { status: 500 })
     }
     const life = await lifeResponse.json() as LifeGoalsPayload
-    const missions = parseSourceHeadings(asLifeSections(life.mission), "M").map((m) => ({
-      id: m.id,
-      title: m.title,
-    }))
+
+    // goals: handled by parseGoals in handleLifeGoals (already supports bullet format)
     const goals = asLifeGoals(life.goals).map((g) => ({
       id: g.id,
       title: cleanInlineMarkdown(g.title ?? g.text ?? g.id),
       kpi: typeof g.kpi === "string" ? g.kpi : "",
       target: typeof g.target === "string" ? g.target : "",
       pct: typeof g.pct === "number" ? g.pct : 0,
-      delta: null,
-      dims: [],
-      metrics: [],
+      delta: 0,
+      dims: [] as string[],
+      metrics: [] as string[],
     }))
-    const problems = parseSourceHeadings(asLifeSections(life.problems), "P").map((p) => ({
-      id: p.id,
-      title: p.title,
-      note: firstParagraph(p.body),
-      severity: "med",
-      affects: [],
+
+    // missions/problems/strategies/challenges use "- **ID:** text" bullet format
+    const missions = parseBulletIds(readMd(join(TELOS_DIR, "MISSION.md")), "M").map(({ id, text }) => ({
+      id,
+      title: text,
+      horizon: "lifetime",
     }))
-    const strategies = parseSourceHeadings(asLifeSections(life.strategies), "S").map((s) => ({
-      id: s.id,
-      title: s.title,
-      implements: [],
+
+    const problems = parseBulletIds(readMd(join(TELOS_DIR, "PROBLEMS.md")), "P").map(({ id, text }) => ({
+      id,
+      title: text.split(/\s[—–]\s/)[0].slice(0, 80).trimEnd(),
+      note: text,
+      severity: "med" as const,
+      affects: [] as string[],
     }))
-    const challenges = parseSourceHeadings(asLifeSections(life.challenges), "C").map((c) => ({
-      id: c.id,
-      title: c.title,
+
+    const strategies = parseBulletIds(readMd(join(TELOS_DIR, "STRATEGIES.md")), "S").map(({ id, text }) => ({
+      id,
+      title: text,
+      overcomes: [] as string[],
+      implements: [] as string[],
+    }))
+
+    const challenges = parseBulletIds(readMd(join(TELOS_DIR, "CHALLENGES.md")), "C").map(({ id, text }) => ({
+      id,
+      title: text.split(/\s[—–]\s/)[0].slice(0, 80).trimEnd(),
+      note: text,
+      blocks: [] as string[],
     }))
 
     return Response.json({
