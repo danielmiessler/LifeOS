@@ -60,8 +60,8 @@ export interface IMessageHealth {
 
 const HOME = process.env.HOME ?? ""
 const CWD = join(HOME, ".claude")
-const STATE_DIR = join(HOME, ".claude", "PAI", "Pulse", "state", "imessage")
-const LOGS_DIR = join(HOME, ".claude", "PAI", "Pulse", "logs", "imessage")
+const STATE_DIR = join(HOME, ".claude", "PAI", "PULSE", "state", "imessage")
+const LOGS_DIR = join(HOME, ".claude", "PAI", "PULSE", "logs", "imessage")
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let running = false
