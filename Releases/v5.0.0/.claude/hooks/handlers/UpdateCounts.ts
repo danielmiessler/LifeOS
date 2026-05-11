@@ -171,7 +171,7 @@ function getCounts(paiDir: string): Counts {
     workflows: countWorkflowFiles(join(getClaudeDir(), 'skills')),
     hooks: countHooks(paiDir),
     signals: countFilesRecursive(join(paiDir, 'MEMORY/LEARNING'), '.md'),
-    files: countFilesRecursive(join(paiDir, 'PAI/USER')),
+    files: countFilesRecursive(join(paiDir, 'USER')),
     work: countSubdirs(join(paiDir, 'MEMORY/WORK')),
     sessions: countFilesRecursive(join(paiDir, 'MEMORY'), '.jsonl'),
     research: countFilesRecursive(join(paiDir, 'MEMORY/RESEARCH'), '.md') +
