@@ -79,6 +79,9 @@ async function main() {
     return
   }
 
+  const principalName = readFileSync(daIdentityPath, "utf-8")
+    .match(/^\s*principal:\s*["']?([^"'\n#]+)["']?/m)?.[1]?.trim() ?? "you"
+
   const recentRatings = getRecentRatings()
   const pendingTasks = getPendingTasks()
   const activeWork = getActiveWork()
@@ -96,9 +99,9 @@ async function main() {
     pending_tasks_due_soon: pendingTasks,
   }
 
-  const prompt = `You are ${primary}, an AI assistant for Bryce.
+  const prompt = `You are ${primary}, an AI assistant for ${principalName}.
 
-Review this context snapshot and decide if you should proactively notify Bryce.
+Review this context snapshot and decide if you should proactively notify ${principalName}.
 
 RULES:
 - Default to NO_ACTION. Only act when genuinely useful.

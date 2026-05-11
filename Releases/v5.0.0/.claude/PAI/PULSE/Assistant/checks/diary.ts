@@ -21,7 +21,7 @@ function parsePrimary(content: string): string | null {
 }
 
 function todayStr(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" })
+  return new Date().toLocaleDateString("en-CA", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone })
 }
 
 interface RatingSignal { timestamp: string; rating: number; comment?: string }

@@ -44,6 +44,10 @@ async function main() {
   const daDir = join(PAI_DIR, "USER", "DA", primary)
   const diaryPath = join(daDir, "diary.jsonl")
   const growthPath = join(daDir, "growth.jsonl")
+  const daIdentityPath = join(daDir, "DA_IDENTITY.yaml")
+  const principalName = existsSync(daIdentityPath)
+    ? (readFileSync(daIdentityPath, "utf-8").match(/^\s*principal:\s*["']?([^"'\n#]+)["']?/m)?.[1]?.trim() ?? "the principal")
+    : "the principal"
 
   const entries = readLastDiaryEntries(diaryPath, 7)
   if (entries.length === 0) { console.log("NO_ACTION"); return }
@@ -57,7 +61,7 @@ async function main() {
 Diary entries from the past week:
 ${summary}
 
-Identify 1-2 patterns or insights. What is Bryce working toward? What friction is repeating? What preference is becoming clear?
+Identify 1-2 patterns or insights. What is ${principalName} working toward? What friction is repeating? What preference is becoming clear?
 Output ONLY 2-3 concise sentences — no preamble, no JSON.`
 
   try {

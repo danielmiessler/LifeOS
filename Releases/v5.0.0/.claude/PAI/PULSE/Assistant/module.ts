@@ -12,6 +12,8 @@ import { parse as parseYaml } from "yaml"
 const HOME = process.env.HOME ?? ""
 const PAI_DIR = join(HOME, ".claude", "PAI")
 const REGISTRY_PATH = join(PAI_DIR, "USER", "DA", "_registry.yaml")
+const PRINCIPAL_IDENTITY_PATH = join(PAI_DIR, "USER", "PRINCIPAL_IDENTITY.md")
+const TASKS_PATH = join(PAI_DIR, "PULSE", "state", "da", "scheduled-tasks.jsonl")
 
 interface DAConfig {
   enabled: boolean
@@ -42,6 +44,12 @@ const state: AssistantState = {
 function parsePrimary(content: string): string | null {
   const m = content.match(/^primary:\s*(\S+)/m)
   return m?.[1] ?? null
+}
+
+function readPrincipalName(): string {
+  if (!existsSync(PRINCIPAL_IDENTITY_PATH)) return "Unknown"
+  return readFileSync(PRINCIPAL_IDENTITY_PATH, "utf-8")
+    .match(/\*\*Name:\*\*\s+([^\n]+)/)?.[1]?.split(" ")[0].trim() ?? "Unknown"
 }
 
 function pulseLog(level: string, msg: string, extra?: Record<string, unknown>): void {
@@ -102,7 +110,7 @@ export async function handleAssistantRequest(req: Request, pathname: string): Pr
         role: core.role ?? "Primary DA",
         origin_story: core.origin_story ?? "",
         has_avatar: hasAvatar,
-        principal: rel.principal ?? "Bryce",
+        principal: rel.principal ?? readPrincipalName(),
         uptime_ms: state.startedAt ? Date.now() - state.startedAt.getTime() : 0,
       })
     } catch {
@@ -137,7 +145,15 @@ export async function handleAssistantRequest(req: Request, pathname: string): Pr
   }
 
   if (pathname === "/assistant/tasks" && req.method === "GET") {
-    return Response.json({ tasks: [], count: 0, by_source: { da: 0, pulse: 0, "claude-code": 0 } })
+    if (!existsSync(TASKS_PATH)) {
+      return Response.json({ tasks: [], count: 0, by_source: { da: 0, pulse: 0, "claude-code": 0 } })
+    }
+    const tasks = readFileSync(TASKS_PATH, "utf-8")
+      .split("\n").filter(Boolean)
+      .map((l) => { try { return JSON.parse(l) } catch { return null } })
+      .filter(Boolean)
+    const active = tasks.filter((t: Record<string, unknown>) => t.status === "active")
+    return Response.json({ tasks: active, count: active.length, by_source: { da: active.length, pulse: 0, "claude-code": 0 } })
   }
 
   if (pathname === "/assistant/diary" && req.method === "GET") {

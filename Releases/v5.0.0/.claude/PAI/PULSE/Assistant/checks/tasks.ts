@@ -8,7 +8,7 @@
  */
 
 import { join } from "path"
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs"
+import { existsSync, readFileSync, writeFileSync, renameSync, mkdirSync } from "fs"
 
 const HOME = process.env.HOME ?? ""
 const PAI_DIR = join(HOME, ".claude", "PAI")
@@ -48,7 +48,9 @@ function readTasks(): ScheduledTask[] {
 
 function writeTasks(tasks: ScheduledTask[]): void {
   mkdirSync(TASKS_DIR, { recursive: true })
-  writeFileSync(TASKS_PATH, tasks.map((t) => JSON.stringify(t)).join("\n") + "\n")
+  const tmp = TASKS_PATH + ".tmp"
+  writeFileSync(tmp, tasks.map((t) => JSON.stringify(t)).join("\n") + "\n")
+  renameSync(tmp, TASKS_PATH)
 }
 
 // Minimal 5-field cron matcher: minute hour dom month dow
