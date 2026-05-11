@@ -172,7 +172,7 @@ function getCounts(): Counts {
     workflows: countWorkflowFiles(join(PAI_DIR, "skills")),
     hooks: countHooks(),
     signals: countFilesRecursive(join(PAI_DIR, "MEMORY/LEARNING"), ".md"),
-    files: countFilesRecursive(join(PAI_DIR, "PAI/USER")),
+    files: countFilesRecursive(join(PAI_DIR, "USER")),
     work: (() => {
       let count = 0;
       try {
