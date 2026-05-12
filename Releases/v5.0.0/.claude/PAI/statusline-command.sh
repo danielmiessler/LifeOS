@@ -1146,7 +1146,7 @@ printf "${SLATE_600}%s${RESET}\n" "$SEP_DASHED"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINE: STATE METER — dimension meters toward Ideal State
-# Reads PAI/USER/TELOS/PAI_STATE.json (written by ComputeGap.ts on a schedule).
+# Reads PAI/USER/TELOS/PAI_STATE.json (written by GeneratePaiState.ts, run daily at 6am via Pulse).
 # Falls back to placeholder values if the state file is missing.
 # Format: STATE: HEALTH 68%│CREATIVE 31%│FREEDOM 78%│RELATIONSHIPS 84%│FINANCIAL 42%
 # ═══════════════════════════════════════════════════════════════════════════════

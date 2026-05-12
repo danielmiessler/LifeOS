@@ -176,6 +176,14 @@ output = "log"
 enabled = false
 
 [[job]]
+name = "generate-pai-state"
+schedule = "0 6 * * *"
+type = "script"
+command = "bun run ~/.claude/PAI/TOOLS/GeneratePaiState.ts"
+output = "log"
+enabled = true
+
+[[job]]
 name = "monitor-toofless"
 schedule = "*/5 * * * *"
 type = "script"
