@@ -2369,16 +2369,58 @@ function parseTelosMetrics(): Array<{ id: string; label: string; value: string; 
     .filter((m): m is NonNullable<typeof m> => m !== null)
 }
 
-function parseTelosProjects(): Array<{ id: string; title: string; strategy: string; dims: string[]; status: string; work: string[] }> {
+function parseTelosProjects(): Array<{ id: string; title: string; strategy: string; dims: string[]; status: "green" | "amber" | "red"; work: Array<{ id: string; title: string; strategy: string; eta: string; status: "green" | "amber" | "red"; owner: string }> }> {
   const content = readMd(join(TELOS_DIR, "PROJECTS.md"))
-  return parseBulletIds(content, "PR").map(({ id, text }) => ({
-    id,
-    title: text.split(/\s[—–]\s/)[0].slice(0, 80).trimEnd(),
-    strategy: "",
-    dims: [],
-    status: "amber",
-    work: [],
-  }))
+  const validDims = new Set(parseDimensionsFile().map(d => d.id))
+  type Work = { id: string; title: string; strategy: string; eta: string; status: "green" | "amber" | "red"; owner: string }
+  type Project = { id: string; title: string; strategy: string; dims: string[]; status: "green" | "amber" | "red"; work: Work[] }
+  const projectRe = /^-\s+\*{0,2}(PR\d+[a-z]?)\*{0,2}:?\*{0,2}\s+(.+)/
+  const workRe = /^\s{2,}-\s+\*{0,2}(W\d+[a-z]?)\*{0,2}:?\*{0,2}\s+(.+)/
+  const toStatus = (v: string | undefined): "green" | "amber" | "red" =>
+    v === "green" ? "green" : v === "red" ? "red" : "amber"
+  const tokenize = (rest: string): Record<string, string> => {
+    const out: Record<string, string> = {}
+    for (const part of rest.split("|").slice(1).map(s => s.trim())) {
+      const m = part.match(/^(\w+)\s*:\s*(.+?)(?:\s*\([^)]*\))?$/)
+      if (m) out[m[1].toLowerCase()] = m[2].trim()
+    }
+    return out
+  }
+  const projects: Project[] = []
+  let current: Project | null = null
+  for (const line of content.split("\n")) {
+    const pm = line.match(projectRe)
+    if (pm) {
+      if (current) projects.push(current)
+      const rest = pm[2].trim()
+      if (rest.startsWith("~~")) { current = null; continue }
+      const title = rest.split(/\s+[—–|]\s+/)[0].trim().slice(0, 80)
+      const tokens = tokenize(rest)
+      const tiesMatch = rest.match(/\(ties\s+([^)]+)\)/i)
+      const strategyMatch = tiesMatch?.[1].match(/S\d+[a-z]?/i)
+      const strategy = strategyMatch ? strategyMatch[0].toUpperCase() : ""
+      const dims = (tokens.dims ?? "").split(",").map(s => s.trim()).filter(d => validDims.has(d))
+      current = { id: pm[1], title, strategy, dims, status: toStatus(tokens.status), work: [] }
+      continue
+    }
+    const wm = line.match(workRe)
+    if (wm && current) {
+      const rest = wm[2].trim()
+      if (rest.startsWith("~~")) continue
+      const title = rest.split(/\s+[—–|]\s+/)[0].trim().slice(0, 80)
+      const tokens = tokenize(rest)
+      current.work.push({
+        id: wm[1],
+        title,
+        strategy: (tokens.strategy ?? current.strategy).toUpperCase(),
+        eta: tokens.eta ?? "",
+        status: toStatus(tokens.status),
+        owner: tokens.owner ?? "",
+      })
+    }
+  }
+  if (current) projects.push(current)
+  return projects
 }
 
 function parseTelosTeam(): Array<{ id: string; name: string; role: string; kind: string; owns: string; avatar: string; note: string }> {
