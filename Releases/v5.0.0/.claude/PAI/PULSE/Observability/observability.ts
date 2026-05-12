@@ -2327,6 +2327,136 @@ async function handleTelosFilePut(req: Request): Promise<Response> {
   }
 }
 
+function parseOwner(): { name: string; day: string; streak: number } {
+  const identity = readMd(join(USER_DIR, "PRINCIPAL_IDENTITY.md"))
+  const nameLine = identity.split("\n").find(l => /^\*\*Name:\*\*/.test(l)) ?? ""
+  const name = nameLine.replace(/^\*\*Name:\*\*\s*/, "").trim() || "{{PRINCIPAL_NAME}}"
+  return { name, day: new Date().toISOString().slice(0, 10), streak: 0 }
+}
+
+function parseDimensionsFile(): Array<{ id: string; label: string; cur: number; ideal: number; velo: number; color: string }> {
+  const content = readMd(join(TELOS_DIR, "DIMENSIONS.md"))
+  return content.split("\n")
+    .filter(l => /^-\s+\w+\s+\|/.test(l))
+    .map(l => {
+      const parts = l.replace(/^-\s+/, "").split("|").map(s => s.trim())
+      if (parts.length < 6) return null
+      const [id, label, cur, ideal, velo, color] = parts
+      return { id, label, cur: parseFloat(cur) || 0, ideal: parseFloat(ideal) || 0, velo: parseFloat(velo) || 0, color }
+    })
+    .filter((d): d is NonNullable<typeof d> => d !== null)
+}
+
+function parseTelosMetrics(): Array<{ id: string; label: string; value: string; of: string; unit: string; trend: string; spark: number[]; feeds: string[]; color: string }> {
+  const content = readMd(join(TELOS_DIR, "METRICS.md"))
+  return content.split("\n")
+    .filter(l => /^-\s+\*\*(M[A-Z]?\d+):?\*\*:?\s+/.test(l))
+    .map(l => {
+      const idMatch = l.match(/^-\s+\*\*(M[A-Z]?\d+):?\*\*:?\s+([^|]+)/)
+      if (!idMatch) return null
+      const id = idMatch[1]
+      const rest = l.slice(l.indexOf(idMatch[2]))
+      const parts = rest.split("|").map(s => s.trim())
+      const label = parts[0]?.trim() ?? id
+      const valuePart = parts[1] ?? ""
+      const [value = "", of = ""] = valuePart.includes("/") ? valuePart.split("/").map(s => s.trim()) : [valuePart, ""]
+      const unit = parts[2]?.trim() ?? ""
+      const trend = parts[3]?.trim() ?? ""
+      const feedsPart = parts.find(p => /^feeds:/i.test(p)) ?? ""
+      const feeds = feedsPart ? feedsPart.replace(/^feeds:\s*/i, "").split(",").map(s => s.trim()).filter(Boolean) : []
+      return { id, label, value, of, unit, trend, spark: [], feeds, color: "" }
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null)
+}
+
+function parseTelosProjects(): Array<{ id: string; title: string; strategy: string; dims: string[]; status: string; work: string[] }> {
+  const content = readMd(join(TELOS_DIR, "PROJECTS.md"))
+  return parseBulletIds(content, "PR").map(({ id, text }) => ({
+    id,
+    title: text.split(/\s[—–]\s/)[0].slice(0, 80).trimEnd(),
+    strategy: "",
+    dims: [],
+    status: "amber",
+    work: [],
+  }))
+}
+
+function parseTelosTeam(): Array<{ id: string; name: string; role: string; kind: string; owns: string; avatar: string; note: string }> {
+  const content = readMd(join(TELOS_DIR, "TEAM.md"))
+  return content.split("\n")
+    .filter(l => /^-\s+\*\*(T\d+):?\*\*:?\s+/.test(l))
+    .map(l => {
+      const idMatch = l.match(/^-\s+\*\*(T\d+):?\*\*:?\s+([^|]+)/)
+      if (!idMatch) return null
+      const id = idMatch[1]
+      const parts = l.slice(l.indexOf(idMatch[2])).split("|").map(s => s.trim())
+      return {
+        id,
+        name: parts[0] ?? id,
+        kind: parts[1] ?? "",
+        role: parts[2] ?? "",
+        note: parts[3] ?? "",
+        owns: parts[4] ?? "",
+        avatar: "",
+      }
+    })
+    .filter((t): t is NonNullable<typeof t> => t !== null)
+}
+
+function parseTelosBudget(): Array<{ id: string; kind: string; label: string; value: string; of: string; pct: number; funds: string[]; note: string; warn?: boolean }> {
+  const content = readMd(join(TELOS_DIR, "BUDGET.md"))
+  return content.split("\n")
+    .filter(l => /^-\s+\*\*(B\d+):?\*\*:?\s+/.test(l))
+    .map(l => {
+      const idMatch = l.match(/^-\s+\*\*(B\d+):?\*\*:?\s+/)
+      if (!idMatch) return null
+      const id = idMatch[1]
+      const rest = l.slice(idMatch[0].length)
+      const kindMatch = rest.match(/\*\*B\d+:?\*\*:?\s+(money|time|attention)/i) ?? rest.match(/^(money|time|attention)/i)
+      const kind = kindMatch ? kindMatch[1].toLowerCase() : "money"
+      const parts = rest.split("|").map(s => s.trim())
+      const label = parts[0]?.replace(/^(money|time|attention)\s*/i, "").trim() ?? id
+      const valuePart = parts[1] ?? ""
+      const [value = "", of = ""] = valuePart.includes("/") ? valuePart.split("/").map(s => s.trim()) : [valuePart, ""]
+      const pctVal = of ? Math.round((parseFloat(value) / parseFloat(of)) * 100) : 0
+      const fundsPart = parts.find(p => /^funds:/i.test(p)) ?? ""
+      const funds = fundsPart ? fundsPart.replace(/^funds:\s*/i, "").split(",").map(s => s.trim()).filter(Boolean) : []
+      const note = parts.find(p => !/^funds:/i.test(p) && p !== parts[0] && p !== parts[1]) ?? ""
+      return { id, kind, label, value, of, pct: isNaN(pctVal) ? 0 : pctVal, funds, note, warn: pctVal >= 90 }
+    })
+    .filter((b): b is NonNullable<typeof b> => b !== null)
+}
+
+function parsePreferences(): { books: string[]; films: string[]; anime: string[]; characters: string[]; aphorisms: string[]; hobbies: string[]; literature: string[] } {
+  const booksContent = readMd(join(USER_DIR, "Books.md"))
+  const books = booksContent.split("\n")
+    .filter(l => /^-\s+\*\*/.test(l) && /★/.test(l))
+    .map(l => l.replace(/^-\s+\*\*/, "").replace(/\*\*.*$/, "").trim())
+    .slice(0, 8)
+  const moviesContent = readMd(join(USER_DIR, "Movies.md"))
+  const films = moviesContent.split("\n")
+    .filter(l => /^-\s+\*\*/.test(l) && /★/.test(l))
+    .map(l => l.replace(/^-\s+\*\*/, "").replace(/\*\*.*$/, "").trim())
+    .slice(0, 6)
+  const wisdomContent = readMd(join(USER_DIR, "Wisdom.md"))
+  const aphorisms = wisdomContent.split("\n")
+    .filter(l => /^-\s+\*\*/.test(l))
+    .map(l => l.replace(/^-\s+\*\*/, "").replace(/\*\*.*$/, "").trim())
+    .filter(s => s.length > 10)
+    .slice(0, 6)
+  const authorsContent = readMd(join(USER_DIR, "Authors.md"))
+  const literature = authorsContent.split("\n")
+    .filter(l => /^-\s+\*\*/.test(l))
+    .map(l => l.replace(/^-\s+\*\*/, "").replace(/\*\*.*$/, "").trim())
+    .slice(0, 8)
+  const sparksContent = readMd(join(USER_DIR, "Sparks.md"))
+  const hobbies = sparksContent.split("\n")
+    .filter(l => /^##\s+/.test(l) && !/Languages/i.test(l))
+    .map(l => l.replace(/^##\s+/, "").trim())
+    .slice(0, 6)
+  return { books, films, anime: [], characters: [], aphorisms, hobbies, literature }
+}
+
 async function handleTelosOverview(): Promise<Response> {
   try {
     const lifeResponse = handleLifeGoals()
@@ -2376,24 +2506,27 @@ async function handleTelosOverview(): Promise<Response> {
       blocks: [] as string[],
     }))
 
+    const dims = parseDimensionsFile()
+    const budget = parseTelosBudget()
+
     return Response.json({
-      owner: null,
-      idealState: null,
-      dimensions: null,
+      owner: parseOwner(),
+      idealState: dims.length > 0 ? { horizon: "by Dec 2027", note: "Target state across health, money, freedom, relationships, creative, and rhythms." } : null,
+      dimensions: dims.length > 0 ? dims : null,
       snapshot: null,
       problems,
       missions,
       goals,
-      metrics: null,
+      metrics: parseTelosMetrics(),
       challenges,
       strategies,
-      projects: null,
-      team: null,
-      budget: null,
+      projects: parseTelosProjects(),
+      team: parseTelosTeam(),
+      budget,
       recommendations: null,
-      stranded: null,
-      subtabs: null,
-      preferences: null,
+      stranded: { work_no_goal: [], goals_no_strategy: [], strategies_idle: [] },
+      subtabs: dims.length > 0 ? dims.map(d => ({ id: d.id, label: d.label, dim: d.id, cur: d.cur, ideal: d.ideal, velo: d.velo, target: `${d.ideal}/100` })) : null,
+      preferences: parsePreferences(),
       narrativeSeed: null,
     })
   } catch (err) {
