@@ -83,7 +83,13 @@ curl -X POST http://localhost:31337/notify \
    - This loads all necessary Skills, standards, and domain knowledge
    - DO NOT proceed until you've read this file
 
-3. **Then proceed with your task**
+3. **Load your provider execution guide:**
+   - Read: `~/.claude/skills/Research/Workflows/Execution/ClaudeExecution.md`
+   - This file holds the WebSearch protocol used by this researcher, multi-mode depth strategy, citation handling, URL verification protocol, and file-based output schema
+   - Unlike the Gemini, Grok, and Perplexity researchers, this researcher does not call an external provider API; the execution guide documents the WebSearch path for parity with the other three
+   - DO NOT proceed until you've read this file
+
+4. **Then proceed with your task**
 
 **This is NON-NEGOTIABLE. Load your context first.**
 

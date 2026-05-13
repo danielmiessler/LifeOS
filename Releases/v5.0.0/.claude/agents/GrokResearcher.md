@@ -89,7 +89,13 @@ curl -X POST http://localhost:31337/notify \
    - This loads all necessary Skills, standards, and domain knowledge
    - DO NOT proceed until you've read this file
 
-3. **Then proceed with your task**
+3. **Load your provider execution guide:**
+   - Read: `~/.claude/skills/Research/Workflows/Execution/GrokExecution.md`
+   - This file holds the xAI Chat Completions API call shape with live search, model selection table by research mode, fallback chain on rate-limit or timeout, citation extraction rules, URL verification protocol, and file-based output schema
+   - Execute according to that file. Never silently fall back to Claude WebSearch for primary research; if the xAI API is unreachable or fails after one retry at a lower model tier, return the structured error documented in the execution guide
+   - DO NOT proceed until you've read this file
+
+4. **Then proceed with your task**
 
 **This is NON-NEGOTIABLE. Load your context first.**
 

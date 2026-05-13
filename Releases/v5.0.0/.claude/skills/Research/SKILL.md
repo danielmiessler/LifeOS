@@ -94,6 +94,17 @@ Route to the appropriate workflow based on the request.
 - Enhance/improve content -> `Workflows/Enhance.md`
 - Extract knowledge from content -> `Workflows/ExtractKnowledge.md`
 
+### Agent Execution Guides
+
+The four Researcher agents (Claude, Gemini, Grok, Perplexity) load a sibling execution guide as the third step of their startup sequence. Each guide owns the provider-specific call shape (API endpoint or CLI), model selection table by research mode, fallback chain on rate-limit or timeout, citation extraction rules, URL verification protocol, and file-based output schema.
+
+- Claude (built-in WebSearch tool) -> `Workflows/Execution/ClaudeExecution.md`
+- Gemini (`gemini` CLI with Google Search grounding) -> `Workflows/Execution/GeminiExecution.md`
+- Grok (xAI Chat Completions API with live search) -> `Workflows/Execution/GrokExecution.md`
+- Perplexity (Sonar Chat Completions API) -> `Workflows/Execution/PerplexityExecution.md`
+
+These guides keep the agent files focused on persona, voice, and output format; the execution wire format lives with the skill that delegates to them. Each guide enforces a no-silent-fallback rule: a researcher whose provider fails returns a structured error rather than swapping to a different provider, so the skill orchestrator can decide whether to surface the gap or substitute a different researcher.
+
 ---
 
 ## Quick Reference
