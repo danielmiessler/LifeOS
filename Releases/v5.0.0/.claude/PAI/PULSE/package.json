@@ -1,0 +1,9 @@
+{
+  "name": "pai-pulse",
+  "private": true,
+  "type": "module",
+  "description": "PAI Pulse daemon — runtime dependencies for pulse.ts and its modules.",
+  "dependencies": {
+    "minisearch": "^7.2.0"
+  }
+}
