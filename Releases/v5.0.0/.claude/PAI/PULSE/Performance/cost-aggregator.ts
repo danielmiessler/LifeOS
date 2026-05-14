@@ -17,7 +17,7 @@ const HOME = process.env.HOME ?? ""
 const PAI_DIR = join(HOME, ".claude", "PAI")
 const PROJECTS_DIR = join(HOME, ".claude", "projects")
 const OUTPUT_FILE = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "session-costs.jsonl")
-const STATE_FILE = join(PAI_DIR, "Pulse", "Performance", "aggregator-state.json")
+const STATE_FILE = join(PAI_DIR, "PULSE", "Performance", "aggregator-state.json")
 
 // Model pricing per million tokens (as of 2026-04)
 const MODEL_PRICING: Record<string, { input: number; output: number; cacheWrite: number; cacheRead: number }> = {

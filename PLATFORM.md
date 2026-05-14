@@ -54,6 +54,15 @@ This document tracks all platform-specific code and dependencies across PAI, pro
    - **Fix:** Updated to reflect Linux is fully supported
    - **Status:** Documentation now accurate
 
+6a. ✅ `Pulse` vs `PULSE` directory casing mismatch
+   - **Files:** `Releases/v5.0.0/.claude/PAI/PULSE/{run-job,lib,setup,pulse-unified}.ts`,
+     `PULSE/modules/{imessage,user-index}.ts`, `PULSE/Performance/cost-aggregator.ts`,
+     `PULSE/checks/{notification-governor,poller-meta-monitor,github-work}.ts`,
+     `PULSE/Observability/observability.ts` (11 files, 14 occurrences)
+   - **Issue:** Source referenced `~/.claude/PAI/Pulse/...` but directory on disk is `PULSE`. Worked on macOS APFS (case-insensitive default) but broke on Linux ext4 and case-sensitive APFS — config and state lookups silently missed.
+   - **Fix:** Aligned all `path.join(...)` literals to `"PULSE"`.
+   - **Tested:** Linux (Ubuntu, runtime-verified). Behavior unchanged on case-insensitive filesystems (macOS default, NTFS).
+
 ---
 
 ### 📋 ALREADY HANDLED (No Action Needed)
