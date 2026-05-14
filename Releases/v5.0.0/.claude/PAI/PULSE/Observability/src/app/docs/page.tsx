@@ -312,31 +312,100 @@ function DocsLanding({ data }: { data: WikiIndex }) {
   );
 }
 
+function WikiErrorState({
+  title,
+  message,
+  hint,
+  onRetry,
+}: {
+  title: string;
+  message: string;
+  hint?: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-center h-full p-6">
+      <div className="max-w-md text-center space-y-3">
+        <div className="text-lg font-semibold" style={{ ...FONT_HEADING, color: "#F87171" }}>
+          {title}
+        </div>
+        <div className="text-sm text-slate-300" style={FONT_BODY}>
+          {message}
+        </div>
+        {hint && (
+          <div className="text-xs text-slate-500" style={FONT_BODY}>
+            {hint}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-2 px-4 py-1.5 text-sm rounded border border-slate-600 text-slate-200 hover:bg-slate-800"
+          style={FONT_BODY}
+        >
+          Retry
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function DocsPageInner() {
   const searchParams = useSearchParams();
   const docSlug = searchParams.get("doc");
   const isViewing = !!docSlug;
 
-  const { data: indexData } = useQuery<WikiIndex>({
+  const {
+    data: indexData,
+    isError: indexIsError,
+    error: indexError,
+    refetch: refetchIndex,
+  } = useQuery<WikiIndex>({
     queryKey: ["wiki-index"],
     queryFn: async () => {
       const res = await fetch("/api/wiki");
-      if (!res.ok) throw new Error("Failed to fetch wiki index");
+      if (!res.ok) throw new Error(`Failed to fetch wiki index (HTTP ${res.status})`);
       return res.json();
     },
     staleTime: 30_000,
     enabled: !isViewing,
   });
 
-  const { data: docDetail } = useQuery<PageDetail>({
+  const {
+    data: docDetail,
+    isError: docIsError,
+    error: docError,
+    refetch: refetchDoc,
+  } = useQuery<PageDetail>({
     queryKey: ["wiki-doc", docSlug],
     queryFn: async () => {
       const res = await fetch(`/api/wiki/doc/${docSlug}`);
-      if (!res.ok) throw new Error("Failed to fetch doc");
+      if (!res.ok) throw new Error(`Failed to fetch doc (HTTP ${res.status})`);
       return res.json();
     },
     enabled: isViewing,
   });
+
+  if (isViewing && docIsError) {
+    return (
+      <WikiErrorState
+        title="Couldn't load this doc"
+        message={docError instanceof Error ? docError.message : "Unknown error"}
+        onRetry={() => refetchDoc()}
+      />
+    );
+  }
+
+  if (!isViewing && indexIsError) {
+    return (
+      <WikiErrorState
+        title="Couldn't load the wiki"
+        message={indexError instanceof Error ? indexError.message : "Unknown error"}
+        onRetry={() => refetchIndex()}
+        hint="The Pulse wiki module may not be running. Check pulse.log for details."
+      />
+    );
+  }
 
   if (isViewing && docDetail) {
     return (
