@@ -42,17 +42,22 @@ function readTelosFile(filename: string): string {
 }
 
 /**
- * Parse items in format "- **ID**: text" or "- ID: text"
+ * Parse items in any of these bullet formats:
+ *   "- **ID:** text"   (colon inside bold — current TELOS file standard)
+ *   "- **ID**: text"   (colon outside bold)
+ *   "- ID: text"        (plain)
  */
 function parseItems(content: string): ParsedItem[] {
   const items: ParsedItem[] = [];
   const lines = content.split('\n');
 
   for (const line of lines) {
-    // Match "- **M0**: text" or "- M0: text" or "- **G0**: text" patterns
-    const match = line.match(/^-\s+\*?\*?(\w+)\*?\*?:\s*(.+)/);
+    // Match "- **M0:** text", "- **M0**: text", or "- M0: text"
+    const match = line.match(/^-\s+(?:\*\*)?(\w+)(?:\*\*:|:\*\*|:)\s*(.+)/);
     if (match) {
-      items.push({ id: match[1], text: match[2].trim() });
+      // Strip any leading bold close that survived (e.g., "** text" → "text")
+      const text = match[2].replace(/^\*+\s*/, '').trim();
+      items.push({ id: match[1], text });
     }
   }
   return items;
@@ -127,11 +132,20 @@ function parseStrategies(): string[] {
   const content = readTelosFile('STRATEGIES.md');
   const lines: string[] = [];
 
-  // Extract strategy headers: ## S0: name or ### S1: name
-  const headers = [...content.matchAll(/^#{2,3}\s+(S\d+):\s*(.+?)(?:\s*\(.*\))?\s*$/gm)];
-  for (const match of headers) {
-    const short = match[2].length > 60 ? match[2].substring(0, 57) + '...' : match[2];
-    lines.push(`- **${match[1]}**: ${short}`);
+  // Modern format: bullets `- **S0:** text`
+  const items = parseItems(content);
+  for (const item of items) {
+    if (!/^S\d+$/.test(item.id)) continue;
+    lines.push(`- **${item.id}**: ${truncate(item.text, 70)}`);
+  }
+
+  // Legacy fallback: header format `## S0: name`
+  if (lines.length === 0) {
+    const headers = [...content.matchAll(/^#{2,3}\s+(S\d+):\s*(.+?)(?:\s*\(.*\))?\s*$/gm)];
+    for (const match of headers) {
+      const short = match[2].length > 60 ? match[2].substring(0, 57) + '...' : match[2];
+      lines.push(`- **${match[1]}**: ${short}`);
+    }
   }
 
   return lines;
@@ -193,19 +207,42 @@ function parseTraumas(): string[] {
 }
 
 /**
- * Parse models from MODELS.md (first sentence only)
+ * Parse models from MODELS.md (first sentence only).
+ * MODELS.md uses `- **Name** — description` (no IDs), so parse directly.
  */
 function parseModels(): string[] {
   const content = readTelosFile('MODELS.md');
-  const items = parseItems(content);
-  return items.slice(0, 3).map(i => {
-    const first = i.text.split(/\.\s/)[0].trim();
-    return `- ${truncate(first, 65)}`;
-  });
+  const out: string[] = [];
+  const lines = content.split('\n');
+  for (const line of lines) {
+    const m = line.match(/^-\s+\*\*([^*]+)\*\*\s*[—–-]\s*(.+)$/);
+    if (!m) continue;
+    const name = m[1].trim();
+    const first = m[2].split(/\.\s/)[0].trim();
+    out.push(`- **${name}** — ${truncate(first, 65)}`);
+    if (out.length >= 4) break;
+  }
+  return out;
+}
+
+/**
+ * Read principal name from PRINCIPAL_IDENTITY.md (Quick Reference → **Name:** value).
+ * Falls back to placeholder if absent.
+ */
+function readPrincipalName(): string {
+  const path = join(process.env.HOME || '', '.claude/PAI/USER/PRINCIPAL_IDENTITY.md');
+  if (!existsSync(path)) return '{{PRINCIPAL_FULL_NAME}}';
+  const content = readFileSync(path, 'utf-8');
+  const m = content.match(/^-\s*\*\*Name:\*\*\s*([^\n|]+?)\s*$/m);
+  if (!m) return '{{PRINCIPAL_FULL_NAME}}';
+  const name = m[1].trim();
+  if (!name || /^User$/i.test(name)) return '{{PRINCIPAL_FULL_NAME}}';
+  return name;
 }
 
 function generate(): string {
   const now = new Date().toISOString();
+  const principalName = readPrincipalName();
   const missions = parseMissions();
   const goals = parseGoals();
   const problems = parseProblems();
@@ -217,7 +254,7 @@ function generate(): string {
   const models = parseModels();
 
   const lines: string[] = [
-    '# Principal TELOS — {{PRINCIPAL_FULL_NAME}}',
+    `# Principal TELOS — ${principalName}`,
     '',
     '> Auto-generated from TELOS source files. Do not edit manually.',
     `> Generated: ${now} | Sources: MISSION, GOALS, PROBLEMS, STRATEGIES, NARRATIVES, CHALLENGES, WRONG, TRAUMAS, MODELS`,
