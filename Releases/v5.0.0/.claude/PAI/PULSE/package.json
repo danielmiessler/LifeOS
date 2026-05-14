@@ -4,6 +4,7 @@
   "type": "module",
   "description": "PAI Pulse daemon — runtime dependencies for pulse.ts and its modules.",
   "dependencies": {
-    "minisearch": "^7.2.0"
+    "minisearch": "^7.2.0",
+    "smol-toml": "^1.6.1"
   }
 }
