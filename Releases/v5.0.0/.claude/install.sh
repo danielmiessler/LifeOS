@@ -45,7 +45,6 @@ else
 fi
 
 # ─── Banner ───────────────────────────────────────────────
-B='█'
 SEP="${STEEL}│${RESET}"
 BAR="${STEEL}────────────────────────${RESET}"
 
@@ -183,7 +182,10 @@ if [ -x "$HOME/.bun/bin/bun" ]; then
     # Create the file if it doesn't exist (touch is harmless).
     [ -f "$rc" ] || touch "$rc"
     if ! grep -q '\.bun/bin' "$rc" 2>/dev/null; then
-      echo "" >> "$rc"
+      {
+          echo ""
+          echo "$BUN_EXPORT"
+      } >> "$rc"
       echo "# Added by PAI installer — make bun reachable for hook subprocesses" >> "$rc"
       echo "$BUN_EXPORT" >> "$rc"
       success "Added bun PATH export to $(basename "$rc")"
@@ -222,23 +224,58 @@ echo ""
 info "Launching installer..."
 echo ""
 
-# Auto-detect environments where the GUI installer can't render and fall
-# back to CLI. Three triggers, any of which forces --mode cli:
-#   1. Linux/BSD with no $DISPLAY / $WAYLAND_DISPLAY → headless
-#   2. Any SSH session ($SSH_CONNECTION / $SSH_TTY set) → no console GUI
-#   3. PAI_TEST_AUTOMATED=1 → harness runs (Tart/CI/etc.)
-# `${VAR:-}` form survives `set -u` when the env var is unset.
-if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
-    INSTALL_MODE="cli"
-    info "Headless environment detected — using CLI installer."
-elif [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_TTY:-}" ]; then
-    INSTALL_MODE="cli"
-    info "SSH session detected — using CLI installer."
-elif [ "${PAI_TEST_AUTOMATED:-}" = "1" ]; then
-    INSTALL_MODE="cli"
-    info "Automated test mode — using CLI installer."
-else
-    INSTALL_MODE="gui"
+INSTALL_MODE=""
+
+# Check if the user manually asked for a specific install mode
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -m|--install-mode)
+            if [ -n "$2" ] && [ "${2#-}" = "$2" ]; then
+                case "$2" in
+                    cli|gui|web)
+                        INSTALL_MODE="$2"
+                        ;;
+                    *)
+                        echo "Error: Invalid mode '$2'. Use 'cli', 'gui', or 'web'." >&2
+                        exit 1
+                        ;;
+                esac
+                shift 2
+            else
+                echo "Error: Argument missing for $1" >&2
+                exit 1
+            fi
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+if [ -z "$INSTALL_MODE" ]; then
+    # Auto-detect environments where the GUI installer can't render and fall
+    # back to CLI. Three triggers, any of which forces --mode cli:
+    #   1. Linux/BSD with no $DISPLAY / $WAYLAND_DISPLAY → headless
+    #   2. Any SSH session ($SSH_CONNECTION / $SSH_TTY set) → no console GUI
+    #   3. PAI_TEST_AUTOMATED=1 → harness runs (Tart/CI/etc.)
+    # `${VAR:-}` form survives `set -u` when the env var is unset.
+    if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ] && [ "$(uname)" != "Darwin" ]; then
+        INSTALL_MODE="cli"
+        info "Headless environment detected — using CLI installer."
+    elif [ -n "${SSH_CONNECTION:-}" ] || [ -n "${SSH_TTY:-}" ]; then
+        INSTALL_MODE="cli"
+        info "SSH session detected — using CLI installer."
+    elif [ "${PAI_TEST_AUTOMATED:-}" = "1" ]; then
+        INSTALL_MODE="cli"
+        info "Automated test mode — using CLI installer."
+    else
+        INSTALL_MODE="gui"
+        info "Desktop environment detected — using GUI installer."
+    fi
 fi
 
 # Export the bundle directory so the wizard can install from local files
