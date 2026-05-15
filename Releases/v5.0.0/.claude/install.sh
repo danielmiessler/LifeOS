@@ -50,7 +50,7 @@ SEP="${STEEL}│${RESET}"
 BAR="${STEEL}────────────────────────${RESET}"
 
 echo ""
-echo -e "${STEEL}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓${RESET}"
+echo -e "${STEEL}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓${RESET}"
 echo ""
 echo -e "                      ${NAVY}P${RESET}${BLUE}A${RESET}${LIGHT_BLUE}I${RESET} ${STEEL}|${RESET} ${GRAY}Personal AI Infrastructure${RESET}"
 echo ""
@@ -71,7 +71,7 @@ echo ""
 echo ""
 echo -e "                       ${STEEL}→${RESET} ${BLUE}github.com/danielmiessler/PAI${RESET}"
 echo ""
-echo -e "${STEEL}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
+echo -e "${STEEL}┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛${RESET}"
 echo ""
 
 # ─── Reuse pre-banner script-dir resolution ─────────────
@@ -158,19 +158,30 @@ fi
 # (2) add the export to .zshenv (which IS sourced for non-interactive zsh)
 # and .zprofile (login shells).
 if [ -x "$HOME/.bun/bin/bun" ]; then
-  # System-wide symlink. Try writable target first; sudo only if needed.
   for target in /usr/local/bin /opt/homebrew/bin; do
     if [ -d "$target" ] && [ -w "$target" ] && [ ! -e "$target/bun" ]; then
       ln -sf "$HOME/.bun/bin/bun" "$target/bun" && success "Linked bun → $target/bun" && break
     fi
   done
-  if ! command -v /usr/local/bin/bun &>/dev/null && ! command -v /opt/homebrew/bin/bun &>/dev/null; then
-    # /usr/local/bin needs sudo — try non-fatally
-    if sudo -n ln -sf "$HOME/.bun/bin/bun" /usr/local/bin/bun 2>/dev/null; then
-      success "Linked bun → /usr/local/bin/bun (via sudo)"
-    else
-      warn "Could not symlink bun system-wide. Hooks may fail in non-interactive shells."
-      warn "  To fix manually: sudo ln -sf $HOME/.bun/bin/bun /usr/local/bin/bun"
+
+  BUN_SOURCE="$HOME/.bun/bin/bun"
+  BUN_TARGET="/usr/local/bin/bun"
+  BREW_BUN="/opt/homebrew/bin/bun"
+  if ! command -v "$BUN_TARGET" >/dev/null 2>&1 && ! command -v "$BREW_BUN" >/dev/null 2>&1; then
+    if [ -f "$BUN_SOURCE" ]; then
+      # Try non-interactive sudo first for a seamless experience
+      if ! sudo -n ln -sf "$BUN_SOURCE" "$BUN_TARGET" 2>/dev/null; then
+        # Since we are in an interactive terminal, prompt for the password
+        info "System-wide link requires sudo. Please enter password if prompted."
+        if ! sudo ln -sf "$BUN_SOURCE" "$BUN_TARGET"; then
+          warn "Could not symlink bun system-wide. Hooks may fail in non-interactive shells."
+          warn "  To fix manually: sudo ln -sf $BUN_SOURCE $BUN_TARGET"
+        else
+          success "Linked bun → $BUN_TARGET (via sudo)"
+        fi
+      else
+        success "Linked bun → $BUN_TARGET (via cached sudo)"
+      fi
     fi
   fi
 
