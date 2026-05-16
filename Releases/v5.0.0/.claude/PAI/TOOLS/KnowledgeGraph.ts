@@ -26,13 +26,13 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { getPaiDir } from "../../hooks/lib/paths";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || path.join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const KNOWLEDGE_DIR = path.join(PAI_DIR, "MEMORY", "KNOWLEDGE");
 const DOMAINS = ["People", "Companies", "Ideas", "Research"];
 const SKIP_FILES = new Set(["_index.md", "_schema.md", "_log.md"]);

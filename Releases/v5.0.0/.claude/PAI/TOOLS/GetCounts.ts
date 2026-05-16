@@ -35,9 +35,13 @@
 
 import { readdirSync, existsSync, statSync } from "fs";
 import { join } from "path";
+import { getPaiDir, getClaudeDir } from "../../hooks/lib/paths";
 
 const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude");
+// PAI data (MEMORY, USER) lives under getPaiDir() (~/.claude/PAI);
+// skills/ live under Claude home (getClaudeDir(), ~/.claude).
+const PAI_DIR = getPaiDir();
+const CLAUDE_DIR = getClaudeDir();
 
 interface Counts {
   skills: number;
@@ -101,7 +105,7 @@ function countWorkflowFiles(dir: string): number {
  */
 function countSkills(): number {
   let count = 0;
-  const skillsDir = join(PAI_DIR, "skills");
+  const skillsDir = join(CLAUDE_DIR, "skills");
   try {
     for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
       // Handle both real directories and symlinks to directories
@@ -169,10 +173,10 @@ function countRatings(): number {
 function getCounts(): Counts {
   return {
     skills: countSkills(),
-    workflows: countWorkflowFiles(join(PAI_DIR, "skills")),
+    workflows: countWorkflowFiles(join(CLAUDE_DIR, "skills")),
     hooks: countHooks(),
     signals: countFilesRecursive(join(PAI_DIR, "MEMORY/LEARNING"), ".md"),
-    files: countFilesRecursive(join(PAI_DIR, "PAI/USER")),
+    files: countFilesRecursive(join(PAI_DIR, "USER")),
     work: (() => {
       let count = 0;
       try {

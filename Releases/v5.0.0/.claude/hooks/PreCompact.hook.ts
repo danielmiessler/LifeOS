@@ -27,8 +27,9 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import { findArtifactPath } from './lib/isa-utils';
+import { getPaiDir } from './lib/paths';
 
-const BASE_DIR = process.env.PAI_DIR || join(process.env.HOME!, '.claude', 'PAI');
+const BASE_DIR = getPaiDir();
 const MEMORY_DIR = join(BASE_DIR, 'MEMORY');
 const STATE_DIR = join(MEMORY_DIR, 'STATE');
 const WORK_DIR = join(MEMORY_DIR, 'WORK');

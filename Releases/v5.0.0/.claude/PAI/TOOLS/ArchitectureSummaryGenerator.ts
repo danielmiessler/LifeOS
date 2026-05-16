@@ -14,13 +14,14 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { getPaiDir } from "../../hooks/lib/paths";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
 const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || path.join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const ARCH_SOURCE = path.join(PAI_DIR, "DOCUMENTATION", "PAISystemArchitecture.md");
 const SUMMARY_OUTPUT = path.join(PAI_DIR, "DOCUMENTATION", "ARCHITECTURE_SUMMARY.md");
 const ALGORITHM_DIR = path.join(PAI_DIR, "ALGORITHM");

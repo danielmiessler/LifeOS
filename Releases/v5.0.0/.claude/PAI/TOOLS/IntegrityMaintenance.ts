@@ -23,6 +23,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { inference } from './Inference';
 import { getIdentity } from '../../../.claude/hooks/lib/identity';
+import { getClaudeDir } from '../../../.claude/hooks/lib/paths';
 
 // ============================================================================
 // Types
@@ -108,8 +109,11 @@ interface UpdateData {
 // Constants
 // ============================================================================
 
-const PAI_DIR = process.env.HOME + '/.claude/PAI';
-const CREATE_UPDATE_SCRIPT = join(PAI_DIR, 'skills/_PAI/TOOLS/CreateUpdate.ts');
+// skills/ lives under Claude home, not PAI data dir. (Pre-existing: the
+// referenced skills/_PAI/TOOLS/CreateUpdate.ts does not exist in the tree —
+// see NOTE D in the fix spec; flagged separately, not resolved here.)
+const CLAUDE_DIR = getClaudeDir();
+const CREATE_UPDATE_SCRIPT = join(CLAUDE_DIR, 'skills/_PAI/TOOLS/CreateUpdate.ts');
 
 // Words that indicate generic/bad titles - reject these
 const GENERIC_TITLE_PATTERNS = [

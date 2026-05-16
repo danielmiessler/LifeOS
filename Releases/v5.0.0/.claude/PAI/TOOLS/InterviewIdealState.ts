@@ -17,9 +17,9 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
+import { getPaiDir } from "../../hooks/lib/paths";
 
-const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const TELOS_DIR = join(PAI_DIR, "USER", "TELOS");
 const IDEAL_DIR = join(TELOS_DIR, "IDEAL_STATE");
 const STATE_FILE = join(PAI_DIR, "USER", "TELOS", "CURRENT_STATE", "interview-state.json");

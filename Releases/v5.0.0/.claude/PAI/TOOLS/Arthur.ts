@@ -5,10 +5,10 @@
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { homedir } from "node:os";
 import YAML from "yaml";
+import { getPaiDir } from "../../hooks/lib/paths";
 
-const PAI_DIR = process.env.PAI_DIR ?? join(homedir(), ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const POLICIES_PATH = join(PAI_DIR, "USER", "ARTHUR", "policies.yaml");
 const GCP_PROJECT = process.env.PAI_GCP_PROJECT ?? "";
 

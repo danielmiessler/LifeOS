@@ -21,9 +21,9 @@
 
 import { readFileSync, writeFileSync, statSync, readdirSync, mkdirSync, existsSync, watch } from "fs"
 import { join, relative, basename, dirname } from "path"
+import { getPaiDir } from "../../../hooks/lib/paths"
 
-const HOME = process.env.HOME ?? ""
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir()
 const USER_DIR = join(PAI_DIR, "USER")
 const STATE_DIR = join(PAI_DIR, "Pulse", "state")
 const INDEX_PATH = join(STATE_DIR, "user-index.json")

@@ -17,9 +17,9 @@
 
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { getPaiDir } from "../../../hooks/lib/paths";
 
-const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const PULSE_STATE = join(PAI_DIR, "Pulse", "state", "state.json");
 const PULSE_TOML = join(PAI_DIR, "Pulse", "PULSE.toml");
 

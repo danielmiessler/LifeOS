@@ -27,6 +27,7 @@
 import { join, extname } from "path"
 import { readFileSync, readdirSync, existsSync, realpathSync } from "fs"
 import YAML from "yaml"
+import { getPaiDir } from "../../../hooks/lib/paths"
 
 // Bun is always the runtime here (Pulse launches this via `bun`). The Next
 // tsconfig's DOM+esnext lib doesn't include bun-types, so declare the minimal
@@ -1646,7 +1647,7 @@ function readDirMdFiles(dir: string): { name: string, content: string, sections:
 
 function handleUserIndexApi(filter: string | null): Response {
   try {
-    const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME || "", ".claude", "PAI")
+    const PAI_DIR = getPaiDir()
     const indexPath = join(PAI_DIR, "Pulse", "state", "user-index.json")
     const raw = Bun.file(indexPath)
     if (!raw.size) {

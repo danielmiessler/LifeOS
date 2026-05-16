@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
-    "PAI_DIR": "${HOME}/.claude/PAI",
+    "PAI_DIR": "PAI",
     "PROJECTS_DIR": "${HOME}/Projects",
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
     "API_TIMEOUT_MS": "1800000",
@@ -1299,7 +1299,7 @@
     },
     "_httpHooks": "Pulse HTTP routes on pai:31337 (managed by Pulse process). SecurityPipeline: command hook on Bash/Write/Edit/Read (exit(2) hard-block). SkillGuard + AgentGuard: HTTP hooks via Pulse routes (fail-open).",
     "_env": {
-      "PAI_DIR": "Root directory for PAI data (~/.claude/PAI). Memory, Algorithm, Tools, USER config. Hooks and skills stay in ~/.claude.",
+      "PAI_DIR": "PAI data subdirectory relative to the Claude home dir (default 'PAI' → ~/.claude/PAI, or $CLAUDE_CONFIG_DIR/PAI). A subpath, not an absolute path. Memory, Algorithm, Tools, USER config. Hooks and skills stay in Claude home.",
       "PROJECTS_DIR": "Base directory for projects. Use ${PROJECTS_DIR}/PAI for PAI repo, ${PROJECTS_DIR}/fabric for fabric, etc.",
       "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "Maximum tokens for Claude responses. Higher values allow longer outputs but cost more.",
       "BASH_DEFAULT_TIMEOUT_MS": "Default timeout for bash commands in milliseconds."

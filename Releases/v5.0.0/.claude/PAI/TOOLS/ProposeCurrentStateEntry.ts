@@ -20,9 +20,9 @@
 import { appendFileSync, mkdirSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { randomUUID } from "crypto";
+import { getPaiDir } from "../../hooks/lib/paths";
 
-const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const QUEUE_FILE = join(PAI_DIR, "USER", "TELOS", "CURRENT_STATE", "proposals.jsonl");
 
 const ALLOWED_SOURCES = ["lifelog", "calendar", "gmail", "homebridge", "manual", "amazon", "bills"];

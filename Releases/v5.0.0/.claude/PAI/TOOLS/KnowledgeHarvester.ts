@@ -21,13 +21,14 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { getPaiDir } from "../../hooks/lib/paths";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
 const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || path.join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir();
 const MEMORY_DIR = path.join(PAI_DIR, "MEMORY");
 const KNOWLEDGE_DIR = path.join(MEMORY_DIR, "KNOWLEDGE");
 const WORK_DIR = path.join(MEMORY_DIR, "WORK");
