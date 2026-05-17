@@ -65,6 +65,7 @@ const LOGS_DIR = join(HOME, ".claude", "PAI", "Pulse", "logs", "imessage")
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let running = false
+let stopResolve: (() => void) | null = null
 let startedAt = 0
 let messagesReceived = 0
 let messagesResponded = 0
@@ -399,6 +400,13 @@ export async function startIMessage(config: IMessageConfig): Promise<void> {
   pollTimer = setInterval(poll, pollIntervalMs)
 
   log("info", `iMessage module polling every ${pollIntervalMs}ms`)
+
+  // Block until stopIMessage() resolves this. Without this await the function
+  // returns immediately after setInterval and the supervisor restarts it every
+  // 10s — see modules/telegram.ts for the same pattern documented.
+  await new Promise<void>((resolve) => {
+    stopResolve = resolve
+  })
 }
 
 /**
@@ -430,6 +438,13 @@ export async function stopIMessage(): Promise<void> {
     messagesReceived,
     messagesResponded,
   })
+
+  // Release startIMessage() so it can return cleanly.
+  if (stopResolve) {
+    const resolve = stopResolve
+    stopResolve = null
+    resolve()
+  }
 }
 
 /**
