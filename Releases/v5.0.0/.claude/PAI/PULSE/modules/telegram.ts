@@ -12,6 +12,7 @@ import { Bot } from "grammy"
 import { query } from "@anthropic-ai/claude-agent-sdk"
 import { ConversationStore } from "../lib/conversation"
 import { sanitize, analyzeForInjection } from "../lib/sanitize"
+import { mdToHtml } from "./markdown-html"
 import { join } from "path"
 import { appendFile, mkdir } from "fs/promises"
 
@@ -31,6 +32,10 @@ export interface TelegramConfig {
   max_turns?: number
   sdk_timeout_ms?: number
   edit_interval_ms?: number
+  // Rendering mode for outgoing messages. "html" converts a useful subset of
+  // markdown to Telegram HTML (bold, italic, code, pre, links, headers,
+  // bullets, strikethrough); "plain" sends raw text. Defaults to "html".
+  markdown_mode?: "html" | "plain"
 }
 
 // ── Constants ──
@@ -114,6 +119,7 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
   const maxTurns = config.max_turns ?? 25
   const sdkTimeoutMs = config.sdk_timeout_ms ?? 120_000
   const editIntervalMs = config.edit_interval_ms ?? 800
+  const markdownMode = config.markdown_mode ?? "html"
 
   // Ensure directories
   await mkdir(STATE_DIR, { recursive: true })
@@ -204,14 +210,22 @@ You are {{DA_NAME}}, responding via Telegram. {{PRINCIPAL_NAME}} is messaging yo
 
 CRITICAL RULES FOR TELEGRAM MODE:
 - IGNORE all ALGORITHM/NATIVE/MINIMAL format templates from CLAUDE.md. Those are for terminal sessions only.
-- NO format headers (no ════, no 🗒️, no ━━━, no ISC criteria, no phase markers)
-- NO emoji prefixes, NO bullet formatting
-- Speak as {{DA_NAME}} — first person, natural, conversational, like talking to a friend
-- Keep responses under 200 words
-- No code blocks unless {{PRINCIPAL_NAME}} specifically asks for code
-- NEVER use voice notification curls (no http://localhost:31337/notify calls)
-- You have ALL PAI capabilities — skills, email, calendar, lights, everything
-- When doing tasks, do them and confirm briefly what you did`,
+- NO PAI box headers (no ════, no 🗒️, no ━━━, no ISC criteria, no phase markers) — those don't render in Telegram and look like noise.
+- USE MARKDOWN FREELY — it renders. Telegram converts your markdown to native formatting before display:
+  · **bold** → bold
+  · *italic* or _italic_ → italic
+  · \`inline code\` → monospace
+  · triple-backtick fenced blocks → preformatted code blocks
+  · [link text](https://url) → tappable link
+  · - bullet or * bullet → bullet list
+  · # / ## / ### headings → bold heading lines
+  · ~~strike~~ → strikethrough
+- Speak as {{DA_NAME}} — first person, natural, conversational, like talking to a friend.
+- Keep responses under 200 words unless {{PRINCIPAL_NAME}} explicitly asks for more.
+- Use code blocks when sharing commands, paths, JSON, or anything copy-paste; use bold for emphasis; use bullet lists when listing 3+ items.
+- NEVER use voice notification curls (no http://localhost:31337/notify calls).
+- You have ALL PAI capabilities — skills, email, calendar, lights, everything.
+- When doing tasks, do them and confirm briefly what you did.`,
         },
       }
 
@@ -295,29 +309,40 @@ CRITICAL RULES FOR TELEGRAM MODE:
         log("error", "Empty response from SDK")
       }
 
-      // Final clean message
+      // Final clean message — render markdown if configured, with plain-text
+      // fallback for any edge case where Telegram rejects the HTML.
+      const useHtml = markdownMode === "html"
+      const render = (s: string) => (useHtml ? mdToHtml(s) : s)
+      const sendOpts = useHtml ? { parse_mode: "HTML" as const } : undefined
+
       if (fullText.length <= MAX_TELEGRAM_LENGTH) {
+        const rendered = render(fullText)
         if (messageId) {
-          await ctx.api.editMessageText(chatId, messageId, fullText).catch(() => {})
+          await ctx.api.editMessageText(chatId, messageId, rendered, sendOpts)
+            .catch(() => ctx.api.editMessageText(chatId, messageId, fullText).catch(() => {}))
         } else {
-          await ctx.reply(fullText)
+          await ctx.reply(rendered, sendOpts).catch(() => ctx.reply(fullText))
         }
       } else {
-        // Split long messages
+        // Split long messages on 4096-char boundary. Splitting raw text before
+        // markdown conversion is safe: mdToHtml requires balanced markers, so
+        // a marker split across two chunks just renders as literal characters.
         const chunks: string[] = []
         let remaining = fullText
         while (remaining.length > 0) {
           chunks.push(remaining.slice(0, MAX_TELEGRAM_LENGTH))
           remaining = remaining.slice(MAX_TELEGRAM_LENGTH)
         }
+        const rendered = chunks.map(render)
         if (messageId) {
-          await ctx.api.editMessageText(chatId, messageId, chunks[0]!).catch(() => {})
-          for (const chunk of chunks.slice(1)) {
-            await ctx.reply(chunk)
+          await ctx.api.editMessageText(chatId, messageId, rendered[0]!, sendOpts)
+            .catch(() => ctx.api.editMessageText(chatId, messageId, chunks[0]!).catch(() => {}))
+          for (let i = 1; i < chunks.length; i++) {
+            await ctx.reply(rendered[i]!, sendOpts).catch(() => ctx.reply(chunks[i]!))
           }
         } else {
-          for (const chunk of chunks) {
-            await ctx.reply(chunk)
+          for (let i = 0; i < chunks.length; i++) {
+            await ctx.reply(rendered[i]!, sendOpts).catch(() => ctx.reply(chunks[i]!))
           }
         }
       }
