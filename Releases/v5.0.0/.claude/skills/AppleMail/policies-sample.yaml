@@ -1,0 +1,28 @@
+# Sample Arthur policies for the AppleMail skill.
+#
+# Copy these entries into ~/.claude/PAI/USER/ARTHUR/policies.yaml (merge with any
+# existing `version: 1` header and other keys). The apple-mail.ts tool reads
+# these through Arthur.evaluate() before staging outbound mail.
+#
+# Even without these entries the tool refuses to send without a token — the
+# default-gate (decision.rule === "default") path in gateAndStage() catches the
+# missing-policy case. These entries make the gate explicit, enable audit-trail
+# attribution, and pin the rate limit.
+
+version: 1
+
+# Outbound send / reply / forward — HIGH risk, requires human confirmation.
+apple_mail_send:
+  risk: high
+  require_confirmation: true
+  allowed_callers:
+    - any
+  rate_limit: "20/hour"
+
+# Read-state mutations (mark-read, move). Low-risk; audit-only.
+apple_mail_mutate:
+  risk: low
+  require_confirmation: false
+  allowed_callers:
+    - any
+  rate_limit: "200/hour"
