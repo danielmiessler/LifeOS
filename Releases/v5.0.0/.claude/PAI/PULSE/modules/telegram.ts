@@ -215,11 +215,13 @@ CRITICAL RULES FOR TELEGRAM MODE:
         },
       }
 
-      // Resume previous session for context continuity
-      if (lastSessionId) {
-        sdkOptions.resume = lastSessionId
-      }
-
+      // Intentionally NOT passing `resume: lastSessionId`. The in-prompt
+      // history block above already carries the last-10 exchanges of context;
+      // passing `resume` on top of that double-books conversation state and
+      // saturates the SDK session after a few turns — at which point query()
+      // short-circuits with numTurns:0 / cost:0 / empty result, producing the
+      // user-visible "Sorry, I wasn't able to generate a response" fallback.
+      // `lastSessionId` is still tracked below for log correlation only.
       const conversation = query({ prompt, options: sdkOptions as any })
 
       // Collect response with timeout
