@@ -103,7 +103,9 @@ schedule = "*/30 * * * *"
 type = "script"
 command = "bun run Assistant/checks/heartbeat.ts"
 output = "voice"
-enabled = true
+# Disabled in v5.0.0: Assistant/checks/heartbeat.ts is not shipped — see #1180.
+# Re-enable once the Assistant module lands.
+enabled = false
 
 [[job]]
 name = "assistant-tasks"
@@ -111,7 +113,9 @@ schedule = "* * * * *"
 type = "script"
 command = "bun run Assistant/checks/tasks.ts"
 output = "voice"
-enabled = true
+# Disabled in v5.0.0: Assistant/checks/tasks.ts is not shipped — see #1180.
+# Re-enable once the Assistant module lands.
+enabled = false
 
 [[job]]
 name = "assistant-diary"
@@ -119,7 +123,9 @@ schedule = "0 23 * * *"
 type = "script"
 command = "bun run Assistant/checks/diary.ts"
 output = "log"
-enabled = true
+# Disabled in v5.0.0: Assistant/checks/diary.ts is not shipped — see #1180.
+# Re-enable once the Assistant module lands.
+enabled = false
 
 [[job]]
 name = "assistant-growth"
@@ -127,7 +133,9 @@ schedule = "0 4 * * 0"
 type = "script"
 command = "bun run Assistant/checks/growth.ts"
 output = "log"
-enabled = true
+# Disabled in v5.0.0: Assistant/checks/growth.ts is not shipped — see #1180.
+# Re-enable once the Assistant module lands.
+enabled = false
 
 # ── Life Dashboard (Phase 0) ──
 
