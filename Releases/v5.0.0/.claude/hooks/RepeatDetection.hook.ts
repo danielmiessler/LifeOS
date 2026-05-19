@@ -106,15 +106,18 @@ function main(): void {
 
   // Threshold: 0.6 (60%) similarity triggers warning
   if (similarity >= 0.6) {
-    // Output warning to stderr — this gets injected into model context
-    process.stderr.write(
+    // Inject the warning into the model's context WITHOUT blocking the prompt.
+    // On a UserPromptSubmit hook, exit 0 + stdout is appended to the model's
+    // context and the user's message still goes through. Exit 2 would instead
+    // ERASE the prompt and route stderr to the user only — the model would
+    // never see the message, which defeats the purpose of this hook.
+    process.stdout.write(
       `⚠️ REPEAT DETECTION: This message is ${Math.round(similarity * 100)}% similar to the previous message. ` +
       `The user is likely REPEATING a request you missed. ` +
       `STOP. Re-read their message carefully. Do NOT proceed with what you were doing before. ` +
       `Address their ACTUAL request this time.`,
     );
-    // Exit 2 = blocking error, stderr fed to Claude
-    process.exit(2);
+    process.exit(0);
   }
 
   process.exit(0);
