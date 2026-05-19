@@ -148,6 +148,13 @@ Active reconnaissance MUST have:
 
 ## Available Workflows
 
+### 0. `CyberSleutRecon.md` - MCP-Powered Recon (Preferred when CyberSleuth is active)
+Full domain/IP recon using CyberSleuth MCP tools: WHOIS, DNS, certificate transparency, Shodan, VirusTotal, URLScan, BuiltWith, favicon hash, AS intelligence. Richer results than shell-based workflows; no manual parsing.
+
+**Input:** Domain or IP address
+**Output:** Structured recon report with reputation, infrastructure, and threat intel
+**Authorization:** Passive only (Shodan/VT queries on public data)
+
 ### 1. `PassiveRecon.md` - Safe Reconnaissance
 Non-intrusive intelligence gathering using public sources:
 - WHOIS data
@@ -237,27 +244,46 @@ ASN and BGP reconnaissance:
 - `naabu` - Port scanning
 - Note: Requires security MCP profile (`~/.claude/MCPs/swap-mcp security`)
 
-### Future Tool Integration
+### CyberSleuth MCP (Recommended)
 
-**Shodan** (when API key added)
-- Search for exposed services
-- Historical scan data
-- Vulnerability information
+[CyberSleuth](https://github.com/Mar8x/cybersleuth) is an MCP server that provides Shodan, VirusTotal, URLScan, BuiltWith, WHOIS, DNS, certificate transparency, favicon hashing, and AS intelligence as native MCP tools — replacing the manual shell-based approaches above.
 
-**Censys** (when API key added)
-- Certificate searches
-- Host discovery
-- Internet-wide scanning data
+**When CyberSleuth MCP is active, use `Workflows/CyberSleutRecon.md`** instead of DomainRecon for richer, faster results.
 
-**SecurityTrails** (when API key added)
-- Historical DNS records
-- WHOIS history
-- Subdomain discovery
+**Installation:**
+```bash
+git clone https://github.com/Mar8x/cybersleuth.git
+cd cybersleuth && uv sync
+```
 
-**VirusTotal** (when API key added)
-- Domain/IP reputation
-- Passive DNS
-- Malware associations
+Add to `~/.claude.json` mcpServers:
+```json
+"cybersleuth": {
+  "type": "stdio",
+  "command": "uv",
+  "args": ["run", "--directory", "/path/to/cybersleuth", "cybersleuth"],
+  "env": {
+    "SHODAN_API_KEY": "your-key",
+    "VIRUSTOTAL_API_KEY": "your-key",
+    "URLSCAN_API_KEY": "your-key",
+    "BUILTWITH_API_KEY": "your-key"
+  }
+}
+```
+
+**Available MCP tools:**
+| Tool | Replaces |
+|------|---------|
+| `whois_lookup` | `whois` shell command (region-aware: RIR for IPs, TLD fallback for domains) |
+| `dns_records` | `dig` — all record types in one call |
+| `certificate_info` | crt.sh curl + jq pipeline |
+| `shodan_search` | Shodan API (was "Future Tool Integration") |
+| `vt_domain_report` / `vt_ip_report` | VirusTotal (was "Future Tool Integration") |
+| `urlscan_history` / `urlscan_submit` | URLScan.io web scanning |
+| `builtwith_lookup` | Technology stack fingerprinting |
+| `favicon_hash` | Favicon hash for Shodan `http.favicon.hash:` queries |
+| `as_intelligence` | ASN lookup with hosting/cloud detection |
+| `reverse_dns` | PTR record lookups |
 
 ## TypeScript Utilities
 
