@@ -11,9 +11,11 @@ set -o pipefail
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-PAI_DIR="${PAI_DIR:-$HOME/.claude/PAI}"
-CLAUDE_HOME="$HOME/.claude"
-SETTINGS_FILE="$CLAUDE_HOME/settings.json"
+# Path resolution via shared helper (mirrors hooks/lib/paths.ts contract)
+. "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/lib/paths.sh"
+CLAUDE_HOME="$(get_claude_dir)"
+PAI_DIR="$(get_pai_dir)"
+SETTINGS_FILE="$(get_settings_path)"
 RATINGS_FILE="$PAI_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl"
 MODEL_CACHE="$PAI_DIR/MEMORY/STATE/model-cache.txt"
 QUOTE_CACHE="$PAI_DIR/.quote-cache"
@@ -59,7 +61,7 @@ PAI_VERSION="${PAI_VERSION:-—}"
 # multiple candidate paths in order, keeping the first non-empty result.
 ALGO_VERSION=""
 for _algo_path in \
-    "$PAI_DIR/ALGORITHM/LATEST" \
+    "$(pai_path ALGORITHM LATEST)" \
     "$HOME/.claude/PAI/ALGORITHM/LATEST" \
     "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST" \
     "$(eval echo ~"$(id -un 2>/dev/null)")/.claude/PAI/ALGORITHM/LATEST"; do
@@ -73,7 +75,7 @@ done
     printf '[%s] ALGO_VERSION=%q HOME=%q PAI_DIR=%q USER=%q paths_tried:' \
         "$(date '+%H:%M:%S')" "$ALGO_VERSION" "${HOME:-UNSET}" "${PAI_DIR:-UNSET}" "${USER:-UNSET}"
     for _algo_path in \
-        "$PAI_DIR/ALGORITHM/LATEST" \
+        "$(pai_path ALGORITHM LATEST)" \
         "$HOME/.claude/PAI/ALGORITHM/LATEST" \
         "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST"; do
         printf ' %s=%s' "$_algo_path" "$([ -f "$_algo_path" ] && echo OK || echo MISS)"
@@ -273,7 +275,7 @@ if [ "$context_pct" = "0" ] && [ "$total_input" -eq 0 ] 2>/dev/null; then
         done < <(jq -r '.loadAtStartup.files[]? // empty' "$SETTINGS_FILE" 2>/dev/null)
 
         # Project memory files (CC native memory at ~/.claude/projects/*/memory/)
-        for _f in "$HOME"/.claude/projects/*/memory/MEMORY.md; do
+        for _f in "$(get_claude_dir)"/projects/*/memory/MEMORY.md; do
             [ -f "$_f" ] && _est=$((_est + $(wc -c < "$_f") * 10 / 35))
         done
 
@@ -694,7 +696,7 @@ USAGEEOF
             if [ "$(uname -s)" = "Darwin" ]; then
                 cred_json=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
             else
-                cred_json=$(cat "${HOME}/.claude/.credentials.json" 2>/dev/null)
+                cred_json=$(cat "$(get_claude_dir)/.credentials.json" 2>/dev/null)
             fi
             token=$(echo "$cred_json" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
 
