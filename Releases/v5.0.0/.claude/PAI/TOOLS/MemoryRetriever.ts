@@ -283,7 +283,7 @@ function extractExcerpt(note: KnowledgeNote, queryTerms: string[]): string {
 // ============================================================================
 
 function compress(text: string, budget: number): string {
-  const inferPath = path.join(PAI_DIR, "Tools", "Inference.ts");
+  const inferPath = path.join(PAI_DIR, "TOOLS", "Inference.ts");
 
   if (!fs.existsSync(inferPath)) {
     // Fallback: truncate to approximate token count

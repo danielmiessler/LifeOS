@@ -31,7 +31,7 @@ import { join, basename } from "path";
 const CLAUDE_DIR = join(homedir(), ".claude");
 const MCP_DIR = join(CLAUDE_DIR, "MCPs");
 const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
-const BANNER_SCRIPT = join(homedir(), ".claude", "PAI", "Tools", "Banner.ts");
+const BANNER_SCRIPT = join(homedir(), ".claude", "PAI", "TOOLS", "Banner.ts");
 const VOICE_SERVER = "http://localhost:31337/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
 // Note: RAW archiving removed - Claude Code handles its own cleanup (30-day retention in projects/)
