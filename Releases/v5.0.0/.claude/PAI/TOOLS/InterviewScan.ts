@@ -197,6 +197,13 @@ const PLACEHOLDER_PATTERNS = [
   /^\s*-\s*TBD\s*$/gim,
 ];
 
+// Sample-template detection. Bootstrap-installed TELOS files carry a banner
+// and "(sample)" prefixed entries. Both indicate the user has not yet
+// personalized the file — without these checks the scanner scored such files
+// 100% because they're length-substantive and TBD-free, masking real gaps.
+const SAMPLE_TEMPLATE_BANNER = /🎯 SAMPLE TEMPLATE/;
+const SAMPLE_LINE = /^\s*[-*]\s+(?:\*\*[^*]+\*\*[\s:—–-]*)?\(sample\)\b/gim;
+
 // Phase boost ensures foundational TELOS files always beat Phase 2+ files in
 // priority order, regardless of incompleteness. Phase 1 at 100% complete still
 // outranks Phase 2 at 0% complete — {{PRINCIPAL_NAME}}'s rule: review foundational first.
@@ -249,6 +256,19 @@ function scoreFile(target: (typeof REGISTRY)[number]): Target {
   const placeholderPenalty = result.tbd_count * 40 + result.seed_markers * 20 + result.empty_sections * 30;
   const contentBonus = Math.min(content.length / 10, 500);
   result.completeness_score = Math.max(0, Math.min(100, 100 - placeholderPenalty / 10 + contentBonus / 50));
+
+  // Sample-template kill-switch. Banner = unmodified bootstrap → cap at 15%.
+  // ≥2 "(sample)" entries = mostly-template → cap at 25%. A single "(sample)"
+  // could be incidental user wording, so we only act on multiples.
+  const hasBanner = SAMPLE_TEMPLATE_BANNER.test(content);
+  const sampleEntries = (content.match(SAMPLE_LINE) || []).length;
+  if (hasBanner) {
+    result.completeness_score = Math.min(result.completeness_score, 15);
+    result.why_incomplete.push("SAMPLE TEMPLATE banner present — content is bootstrap default");
+  } else if (sampleEntries >= 2) {
+    result.completeness_score = Math.min(result.completeness_score, 25);
+    result.why_incomplete.push(`${sampleEntries} "(sample)" entries — content not personalized`);
+  }
 
   // Priority: phase (dominant) + leverage + incompleteness. Phase 1 always beats Phase 2.
   const incompleteness = 100 - result.completeness_score;
