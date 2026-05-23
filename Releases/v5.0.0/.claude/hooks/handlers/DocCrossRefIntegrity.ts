@@ -3,7 +3,7 @@
  *
  * Two-layer approach:
  * Layer 1 (Deterministic): Grep-based pattern checks for broken refs, counts, timestamps
- * Layer 2 (Inference): AI analysis of semantic drift using TOOLS/Inference.ts fast tier
+ * Layer 2 (Inference): AI analysis of semantic drift using Tools/Inference.ts fast tier
  *
  * The deterministic layer detects WHAT changed. The inference layer understands
  * HOW docs need updating — generating surgical edit pairs, never full rewrites.
@@ -20,23 +20,24 @@
  *
  * INFERENCE ANALYSIS:
  * 7. Semantic drift - doc descriptions vs actual file behavior
- *    Uses Inference.ts fast tier (~500ms), constrained to surgical edits only
+ * Uses Inference.ts fast tier (~500ms), constrained to surgical edits only
  *
  * AUDIT TRAIL: All operations logged to stderr via [DocAutoUpdate] prefix
  *
  * SIDE EFFECTS:
  * - Updates timestamps, counts (deterministic)
  * - Applies surgical text edits (inference-generated)
+ * - Saves drift report to MEMORY/STATE/doc-drift-state.json
  * - Emits doc.integrity event to events.jsonl
+ * - Adds unfixable items to MEMORY/STATE/doc-review-queue.json
  */
 
-import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
-import { join, basename } from 'path';
-import { paiPath, getPaiDir, getClaudeDir } from '../lib/paths';
+import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, mkdirSync } from 'fs';
+import { join, basename, dirname } from 'path';
+import { paiPath, getPaiDir } from '../lib/paths';
 import { getIdentity } from '../lib/identity';
-import { inference } from '../../PAI/TOOLS/Inference';
-import type { ParsedTranscript } from '../../PAI/TOOLS/TranscriptParser';
-
+import { inference } from '../../PAI/Tools/Inference';
+import type { ParsedTranscript } from '../../PAI/Tools/TranscriptParser';
 
 // ============================================================================
 // Types
@@ -55,15 +56,25 @@ interface DriftItem {
   issue: string;
 }
 
+interface DriftReport {
+  timestamp: string;
+  session_id: string;
+  docs_checked: string[];
+  drift_items: DriftItem[];
+  updates_applied: string[];
+}
+
 // ============================================================================
 // Constants
 // ============================================================================
 
-const SYSTEM_DIR = getPaiDir();
-const DOCS_DIR = join(SYSTEM_DIR, 'DOCUMENTATION');
-const HOOKS_DIR = join(getClaudeDir(), 'hooks');
+const SYSTEM_DIR = paiPath('PAI');
+const HOOKS_DIR = paiPath('hooks');
 const HANDLERS_DIR = join(HOOKS_DIR, 'handlers');
 const LIB_DIR = join(HOOKS_DIR, 'lib');
+const DRIFT_STATE_FILE = paiPath('MEMORY', 'STATE', 'doc-drift-state.json');
+const REVIEW_QUEUE_FILE = paiPath('MEMORY', 'STATE', 'doc-review-queue.json');
+const ERROR_LOG_FILE = paiPath('MEMORY', 'STATE', 'doc-integrity-errors.log');
 const TAG = '[DocAutoUpdate]';
 
 // ============================================================================
@@ -94,7 +105,7 @@ function getLibFilesOnDisk(): string[] {
 }
 
 function getSystemDocsOnDisk(): string[] {
-  return listFiles(DOCS_DIR, '.md');
+  return listFiles(SYSTEM_DIR, '.md');
 }
 
 // ============================================================================
@@ -106,7 +117,6 @@ function getModifiedFiles(transcriptPath: string): Set<string> {
   try {
     const content = readFileSync(transcriptPath, 'utf-8');
     const lines = content.split('\n').filter(Boolean);
-
     for (const line of lines) {
       try {
         const entry = JSON.parse(line);
@@ -150,43 +160,32 @@ function isHookModified(modifiedFiles: Set<string>): boolean {
 
 /**
  * Check if ANY meaningful PAI system file was modified.
- * PAI spans TWO root directories:
- *   - CLAUDE_DIR (~/.claude) — hooks, skills, settings, agents, CLAUDE.md
- *   - PAI_DIR (~/.claude/PAI) — PAI data, Tools, Components, Workflows, SYSTEM docs
+ * This is the broader gate — catches skills, hooks, tools, config, components,
+ * workflows, and SYSTEM docs.
  * Excludes MEMORY/WORK, MEMORY/LEARNING, MEMORY/STATE, and other non-system paths.
  */
 function isSystemFileModified(modifiedFiles: Set<string>): boolean {
   const PAI_DIR = getPaiDir();
-  const CLAUDE_DIR = getClaudeDir();
-  const PAI_EXCLUDED = ['MEMORY/WORK/', 'MEMORY/LEARNING/', 'MEMORY/STATE/', 'Plans/', '.git/', 'node_modules/', 'ShellSnapshots/', 'MEMORY/VOICE/', 'MEMORY/RELATIONSHIP/', 'history.jsonl', '.quote-cache'];
-  const CLAUDE_EXCLUDED = ['projects/', '.git/', 'node_modules/', 'history.jsonl'];
-
+  const EXCLUDED = ['MEMORY/WORK/', 'MEMORY/LEARNING/', 'MEMORY/STATE/', 'Plans/', 'projects/', '.git/', 'node_modules/', 'ShellSnapshots/', 'Projects/', 'MEMORY/VOICE/', 'MEMORY/RELATIONSHIP/', 'history.jsonl', '.quote-cache'];
   for (const filePath of modifiedFiles) {
-    // --- Check ~/.claude/ paths ---
-    if (filePath.startsWith(CLAUDE_DIR + '/')) {
-      const relPath = filePath.slice(CLAUDE_DIR.length + 1);
-      if (CLAUDE_EXCLUDED.some(ex => relPath.includes(ex))) continue;
-
-      if (relPath.startsWith('hooks/') && (relPath.endsWith('.ts') || relPath.endsWith('.sh'))) return true;
-      if (relPath.startsWith('skills/') && (relPath.endsWith('.md') || relPath.endsWith('.ts') || relPath.endsWith('.yaml') || relPath.endsWith('.yml'))) return true;
-      if (relPath === 'settings.json') return true;
-      if (relPath === 'CLAUDE.md') return true;
-      if (relPath.startsWith('agents/') && relPath.endsWith('.md')) return true;
-      if (relPath.startsWith('custom-agents/') && relPath.endsWith('.md')) return true;
-      if (relPath.startsWith('commands/') && relPath.endsWith('.md')) return true;
-      continue;
-    }
-
-    // --- Check ~/.claude/PAI/ paths ---
-    if (filePath.startsWith(PAI_DIR + '/')) {
-      const relPath = filePath.slice(PAI_DIR.length + 1);
-      if (PAI_EXCLUDED.some(ex => relPath.includes(ex))) continue;
-
-      if ((relPath.startsWith('PAI/') || relPath.includes('skills/')) && (relPath.endsWith('.md') || relPath.endsWith('.ts') || relPath.endsWith('.yaml') || relPath.endsWith('.yml'))) return true;
-      if (relPath.includes('/Tools/') && relPath.endsWith('.ts')) return true;
-      if (relPath.includes('/Workflows/') && relPath.endsWith('.md')) return true;
-      continue;
-    }
+    // Normalize to relative path for checking
+    const relPath = filePath.startsWith(PAI_DIR)
+      ? filePath.slice(PAI_DIR.length + 1)
+      : filePath;
+    // Must be within PAI directory
+    if (filePath.startsWith('/') && !filePath.startsWith(PAI_DIR)) continue;
+    // Skip excluded paths
+    if (EXCLUDED.some(ex => relPath.includes(ex))) continue;
+    // Match meaningful system files (PAI root MDs, SYSTEM docs, USER dir, Algorithm, Tools, Workflows, skills)
+    if ((relPath.startsWith('PAI/') || relPath.includes('skills/')) && (relPath.endsWith('.md') || relPath.endsWith('.ts') || relPath.endsWith('.yaml') || relPath.endsWith('.yml'))) return true;
+    if (relPath.includes('hooks/') && relPath.endsWith('.ts')) return true;
+    if (relPath.endsWith('settings.json')) return true;
+    if (relPath.includes('PAI/Algorithm/') && relPath.endsWith('.md')) return true;
+    if (relPath.includes('/Tools/') && relPath.endsWith('.ts')) return true;
+    if (relPath.includes('/Workflows/') && relPath.endsWith('.md')) return true;
+    if (relPath.startsWith('agents/') && relPath.endsWith('.md')) return true;
+    if (relPath === 'CLAUDE.md') return true;
+    if (relPath.startsWith('custom-agents/') && relPath.endsWith('.md')) return true;
   }
   return false;
 }
@@ -201,16 +200,13 @@ function isSystemFileModified(modifiedFiles: Set<string>): boolean {
 function checkHookFileRefs(docsToCheck: string[], hooksOnDisk: Set<string>): DriftItem[] {
   const drift: DriftItem[] = [];
   const hookRefRegex = /(\w+)\.hook\.ts/g;
-
   for (const docFile of docsToCheck) {
-    const docPath = join(DOCS_DIR, docFile);
+    const docPath = join(SYSTEM_DIR, docFile);
     if (!existsSync(docPath)) continue;
-
     const content = readFileSync(docPath, 'utf-8');
     let match: RegExpExecArray | null;
-
     while ((match = hookRefRegex.exec(content)) !== null) {
-      const hookName = match[0]; // e.g., "LoadContext.hook.ts"
+      const hookName = match[0];
       if (!hooksOnDisk.has(hookName)) {
         drift.push({
           doc: docFile,
@@ -221,7 +217,6 @@ function checkHookFileRefs(docsToCheck: string[], hooksOnDisk: Set<string>): Dri
       }
     }
   }
-
   return drift;
 }
 
@@ -231,14 +226,11 @@ function checkHookFileRefs(docsToCheck: string[], hooksOnDisk: Set<string>): Dri
 function checkHandlerFileRefs(docsToCheck: string[], handlersOnDisk: Set<string>): DriftItem[] {
   const drift: DriftItem[] = [];
   const handlerRefRegex = /handlers\/(\w+)\.ts/g;
-
   for (const docFile of docsToCheck) {
-    const docPath = join(DOCS_DIR, docFile);
+    const docPath = join(SYSTEM_DIR, docFile);
     if (!existsSync(docPath)) continue;
-
     const content = readFileSync(docPath, 'utf-8');
     let match: RegExpExecArray | null;
-
     while ((match = handlerRefRegex.exec(content)) !== null) {
       const handlerFilename = `${match[1]}.ts`;
       if (!handlersOnDisk.has(handlerFilename)) {
@@ -251,7 +243,6 @@ function checkHandlerFileRefs(docsToCheck: string[], handlersOnDisk: Set<string>
       }
     }
   }
-
   return drift;
 }
 
@@ -261,14 +252,11 @@ function checkHandlerFileRefs(docsToCheck: string[], handlersOnDisk: Set<string>
 function checkLibFileRefs(docsToCheck: string[], libsOnDisk: Set<string>): DriftItem[] {
   const drift: DriftItem[] = [];
   const libRefRegex = /hooks\/lib\/([\w-]+)\.ts/g;
-
   for (const docFile of docsToCheck) {
-    const docPath = join(DOCS_DIR, docFile);
+    const docPath = join(SYSTEM_DIR, docFile);
     if (!existsSync(docPath)) continue;
-
     const content = readFileSync(docPath, 'utf-8');
     let match: RegExpExecArray | null;
-
     while ((match = libRefRegex.exec(content)) !== null) {
       const libFilename = `${match[1]}.ts`;
       if (!libsOnDisk.has(libFilename)) {
@@ -281,7 +269,6 @@ function checkLibFileRefs(docsToCheck: string[], libsOnDisk: Set<string>): Drift
       }
     }
   }
-
   return drift;
 }
 
@@ -290,24 +277,16 @@ function checkLibFileRefs(docsToCheck: string[], libsOnDisk: Set<string>): Drift
  */
 function checkSystemDocRefs(docsToCheck: string[], systemDocsOnDisk: Set<string>): DriftItem[] {
   const drift: DriftItem[] = [];
-  // Match backtick-wrapped or plain doc references in PAI/ (both old skills/PAI/ and new PAI/ paths)
-  const sysDocRefRegex = /(?:`|'|")(?:~\/\.(?:claude|config\/PAI)\/)?(?:skills\/)?PAI\/([\w/]+\.md)(?:`|'|")/g;
-
+  const sysDocRefRegex = /(?:`|'|")(?:~\/\.claude\/)?(?:skills\/)?PAI\/([\w/]+\.md)(?:`|'|")/g;
   for (const docFile of docsToCheck) {
     const docPath = join(SYSTEM_DIR, docFile);
     if (!existsSync(docPath)) continue;
-
     const content = readFileSync(docPath, 'utf-8');
     let match: RegExpExecArray | null;
-
     while ((match = sysDocRefRegex.exec(content)) !== null) {
-      const refTarget = match[1]; // e.g., "DOCUMENTATION/PAISystemArchitecture.md" or "PAISECURITYSYSTEM/ARCHITECTURE.md"
-      const targetBasename = basename(refTarget);
-      // Check SYSTEM_DIR first (for nested paths like PAISECURITYSYSTEM/ARCHITECTURE.md),
-      // then DOCS_DIR (for bare basenames that refer to files relocated under DOCUMENTATION/).
-      const systemPath = join(SYSTEM_DIR, refTarget);
-      const docsPath = join(DOCS_DIR, refTarget);
-      if (!existsSync(systemPath) && !existsSync(docsPath)) {
+      const refTarget = match[1];
+      const targetPath = join(SYSTEM_DIR, refTarget);
+      if (!existsSync(targetPath)) {
         drift.push({
           doc: docFile,
           pattern: 'system_doc_ref',
@@ -317,7 +296,6 @@ function checkSystemDocRefs(docsToCheck: string[], systemDocsOnDisk: Set<string>
       }
     }
   }
-
   return drift;
 }
 
@@ -326,16 +304,12 @@ function checkSystemDocRefs(docsToCheck: string[], systemDocsOnDisk: Set<string>
  */
 function checkHookCounts(docsToCheck: string[], actualCount: number): DriftItem[] {
   const drift: DriftItem[] = [];
-  // Match "N hooks active" or "N hooks running" patterns, NOT in example/anti-pattern contexts
   const countRegex = /\*\*Status:\*\*.*?(\d+) hooks? active/g;
-
   for (const docFile of docsToCheck) {
-    const docPath = join(DOCS_DIR, docFile);
+    const docPath = join(SYSTEM_DIR, docFile);
     if (!existsSync(docPath)) continue;
-
     const content = readFileSync(docPath, 'utf-8');
     let match: RegExpExecArray | null;
-
     while ((match = countRegex.exec(content)) !== null) {
       const docCount = parseInt(match[1], 10);
       if (docCount !== actualCount) {
@@ -348,7 +322,6 @@ function checkHookCounts(docsToCheck: string[], actualCount: number): DriftItem[
       }
     }
   }
-
   return drift;
 }
 
@@ -358,7 +331,7 @@ function checkHookCounts(docsToCheck: string[], actualCount: number): DriftItem[
 
 async function notifyVoice(message: string): Promise<void> {
   try {
-    await fetch('http://localhost:31337/notify', {
+    await fetch('http://localhost:8888/notify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(3000),
@@ -367,6 +340,45 @@ async function notifyVoice(message: string): Promise<void> {
   } catch {
     // Voice server may not be running — silent fail
   }
+}
+
+// ============================================================================
+// Review Queue (for drift items that need human judgment)
+// ============================================================================
+
+interface ReviewItem {
+  timestamp: string;
+  type: 'broken_hook_ref' | 'broken_handler_ref' | 'broken_lib_ref' | 'broken_doc_ref' | 'count_mismatch';
+  description: string;
+  doc: string;
+  reference: string;
+}
+
+function addToReviewQueue(driftItems: DriftItem[]): void {
+  if (driftItems.length === 0) return;
+
+  let queue: ReviewItem[] = [];
+  try {
+    if (existsSync(REVIEW_QUEUE_FILE)) {
+      queue = JSON.parse(readFileSync(REVIEW_QUEUE_FILE, 'utf-8'));
+    }
+  } catch { queue = []; }
+
+  const now = new Date().toISOString();
+  const newItems: ReviewItem[] = driftItems.map(item => ({
+    timestamp: now,
+    type: item.pattern as ReviewItem['type'],
+    description: item.issue,
+    doc: item.doc,
+    reference: item.reference,
+  }));
+  queue.push(...newItems);
+  if (queue.length > 50) queue = queue.slice(-50);
+
+  const dir = dirname(REVIEW_QUEUE_FILE);
+  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+  writeFileSync(REVIEW_QUEUE_FILE, JSON.stringify(queue, null, 2));
+  console.error(`${TAG} Added ${newItems.length} item(s) to review queue: ${REVIEW_QUEUE_FILE}`);
 }
 
 // ============================================================================
@@ -385,7 +397,6 @@ const INFERENCE_SYSTEM_PROMPT = `You are a documentation accuracy checker. You r
 2. Documentation sections that reference those files
 
 Your job: identify where documentation is now FACTUALLY INCORRECT given the source changes.
-
 OUTPUT FORMAT: Return a JSON array of surgical edits:
 [{"doc": "filename.md", "old_text": "exact text to replace", "new_text": "corrected text", "reason": "brief explanation"}]
 
@@ -404,17 +415,8 @@ RULES (CRITICAL):
 
 Return ONLY the JSON array, no other text.`;
 
-/**
- * Build context for inference: what changed and what docs say about it.
- * Keeps context small for fast inference (~500ms target).
- */
-function buildInferenceContext(
-  modifiedFiles: Set<string>,
-  docsToCheck: string[],
-): string {
+function buildInferenceContext(modifiedFiles: Set<string>, docsToCheck: string[]): string {
   const parts: string[] = [];
-
-  // Collect modified system files with their content — must match isSystemFileModified scope
   const relevantFiles = Array.from(modifiedFiles).filter(f =>
     f.includes('/hooks/') ||
     f.includes('/PAI/') ||
@@ -424,13 +426,11 @@ function buildInferenceContext(
     f.includes('/custom-agents/') ||
     f.endsWith('CLAUDE.md'),
   );
-
-  for (const filePath of relevantFiles.slice(0, 5)) { // Cap at 5 files
+  for (const filePath of relevantFiles.slice(0, 5)) {
     try {
       if (!existsSync(filePath)) continue;
       const content = readFileSync(filePath, 'utf-8');
       const lines = content.split('\n');
-      // Take the doc comment header + enough code to understand behavior
       const snippet = lines.slice(0, 60).join('\n');
       parts.push(`=== SOURCE FILE: ${basename(filePath)} ===\n${snippet}\n`);
     } catch {
@@ -438,33 +438,23 @@ function buildInferenceContext(
     }
   }
 
-  // Collect doc sections that reference modified files
-  // For each affected doc, extract the FULL section (## heading to next ## heading)
-  // so inference has enough context to make quality corrections
   for (const docFile of docsToCheck) {
     const docPath = join(SYSTEM_DIR, docFile);
     if (!existsSync(docPath)) continue;
-
     try {
       const content = readFileSync(docPath, 'utf-8');
-      // Check if this doc references any modified file
       const referencesModified = relevantFiles.some(f => {
         const name = basename(f, '.ts').replace('.hook', '');
         return content.includes(name);
       });
-
       if (referencesModified) {
-        // Extract full sections that reference changed files
         const lines = content.split('\n');
         const sections: string[] = [];
         let currentSection: string[] = [];
         let currentSectionRelevant = false;
-
         for (let i = 0; i < lines.length; i++) {
           const isHeading = lines[i].match(/^#{1,3} /);
-
           if (isHeading && currentSection.length > 0) {
-            // End of section — include if it referenced a changed file
             if (currentSectionRelevant) {
               sections.push(currentSection.join('\n'));
             }
@@ -474,7 +464,6 @@ function buildInferenceContext(
             currentSection.push(lines[i]);
           }
 
-          // Check if this line references any modified file
           if (!currentSectionRelevant) {
             currentSectionRelevant = relevantFiles.some(f => {
               const name = basename(f, '.ts').replace('.hook', '');
@@ -482,13 +471,11 @@ function buildInferenceContext(
             });
           }
         }
-        // Don't forget the last section
         if (currentSectionRelevant && currentSection.length > 0) {
           sections.push(currentSection.join('\n'));
         }
 
         if (sections.length > 0) {
-          // Cap total doc context to prevent token explosion
           const docContext = sections.join('\n\n---\n\n').slice(0, 4000);
           parts.push(`=== DOC: ${docFile} (affected sections) ===\n${docContext}\n`);
         }
@@ -497,28 +484,15 @@ function buildInferenceContext(
       // Skip unreadable
     }
   }
-
   return parts.join('\n');
 }
 
-/**
- * Run inference to detect semantic drift and generate surgical edits.
- * Uses Inference.ts fast tier (Haiku, ~500ms).
- */
-async function runInferenceAnalysis(
-  modifiedFiles: Set<string>,
-  docsToCheck: string[],
-): Promise<InferenceEdit[]> {
+async function runInferenceAnalysis(modifiedFiles: Set<string>, docsToCheck: string[]): Promise<InferenceEdit[]> {
   const startTime = Date.now();
-
   const context = buildInferenceContext(modifiedFiles, docsToCheck);
   if (!context.trim()) {
-    console.error(`${TAG} [INFERENCE] No relevant context for inference, skipping`);
     return [];
   }
-
-  console.error(`${TAG} [INFERENCE] Running semantic analysis (fast tier)...`);
-  console.error(`${TAG} [INFERENCE] Context size: ${context.length} chars`);
 
   try {
     const result = await inference({
@@ -526,68 +500,55 @@ async function runInferenceAnalysis(
       userPrompt: `Analyze these source file changes and documentation sections for factual inaccuracies:\n\n${context}`,
       level: 'standard',
       expectJson: true,
-      timeout: 15000, // Sonnet needs more time but produces better quality
+      timeout: 15000,
     });
 
-    const elapsed = Date.now() - startTime;
-    console.error(`${TAG} [INFERENCE] Completed in ${elapsed}ms (success: ${result.success})`);
-
     if (!result.success) {
-      console.error(`${TAG} [INFERENCE] Failed: ${result.error}`);
+      // SILENT FAILURE TO LOCAL DISK STREAM: Prevents token caching validation breakages via stderr leakage
+      try {
+        const dir = dirname(ERROR_LOG_FILE);
+        if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+        const errLog = `[${new Date().toISOString()}] Inference Failure: ${result.error}\n`;
+        appendFileSync(ERROR_LOG_FILE, errLog);
+      } catch {}
       return [];
     }
 
-    // Parse and validate edits
     const rawEdits = result.parsed as InferenceEdit[] | undefined;
     if (!Array.isArray(rawEdits)) {
-      console.error(`${TAG} [INFERENCE] Response was not a JSON array, skipping`);
       return [];
     }
 
-    // Validate each edit has required fields and old_text actually exists in doc
     const validEdits: InferenceEdit[] = [];
-    for (const edit of rawEdits.slice(0, 10)) { // Max 10 edits
+    for (const edit of rawEdits.slice(0, 10)) {
       if (!edit.doc || !edit.old_text || !edit.new_text || !edit.reason) {
-        console.error(`${TAG} [INFERENCE] Skipping malformed edit: ${JSON.stringify(edit)}`);
         continue;
       }
 
-      // Verify old_text exists in the doc
       const docPath = join(SYSTEM_DIR, edit.doc);
-      if (!existsSync(docPath)) {
-        console.error(`${TAG} [INFERENCE] Doc not found: ${edit.doc}, skipping edit`);
-        continue;
-      }
+      if (!existsSync(docPath)) continue;
 
       const docContent = readFileSync(docPath, 'utf-8');
-      if (!docContent.includes(edit.old_text)) {
-        console.error(`${TAG} [INFERENCE] old_text not found in ${edit.doc}, skipping: "${edit.old_text.slice(0, 60)}..."`);
-        continue;
-      }
-
-      // Reject no-ops
-      if (edit.old_text === edit.new_text) {
-        continue;
-      }
+      if (!docContent.includes(edit.old_text)) continue;
+      if (edit.old_text === edit.new_text) continue;
 
       validEdits.push(edit);
     }
-
-    console.error(`${TAG} [INFERENCE] ${validEdits.length} valid edits from ${rawEdits.length} raw`);
     return validEdits;
   } catch (error) {
-    console.error(`${TAG} [INFERENCE] Error: ${error}`);
+    // SILENT EXCEPTION PASSING: Prevents raw try/catch diagnostic context bleeding
+    try {
+      const dir = dirname(ERROR_LOG_FILE);
+      if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+      const errLog = `[${new Date().toISOString()}] Runtime Exception: ${error}\n`;
+      appendFileSync(ERROR_LOG_FILE, errLog);
+    } catch {}
     return [];
   }
 }
 
-/**
- * Apply inference-generated edits to documentation files.
- * Each edit is a surgical find-and-replace with full audit logging.
- */
 function applyInferenceEdits(edits: InferenceEdit[]): string[] {
   const applied: string[] = [];
-
   for (const edit of edits) {
     const docPath = join(SYSTEM_DIR, edit.doc);
     try {
@@ -599,7 +560,6 @@ function applyInferenceEdits(edits: InferenceEdit[]): string[] {
 
       const updated = content.replace(edit.old_text, edit.new_text);
       writeFileSync(docPath, updated);
-
       const summary = `[INFERENCE] ${edit.doc}: ${edit.reason} ("${edit.old_text.slice(0, 40)}..." → "${edit.new_text.slice(0, 40)}...")`;
       console.error(`${TAG} [UPDATED] ${summary}`);
       applied.push(summary);
@@ -607,7 +567,6 @@ function applyInferenceEdits(edits: InferenceEdit[]): string[] {
       console.error(`${TAG} [INFERENCE-APPLY] Failed on ${edit.doc}: ${error}`);
     }
   }
-
   return applied;
 }
 
@@ -619,12 +578,11 @@ function applyInferenceEdits(edits: InferenceEdit[]): string[] {
  * Update Pattern 6: Last Updated timestamps in modified docs.
  */
 function updateLastUpdatedTimestamp(docFile: string): string | null {
-  const docPath = join(DOCS_DIR, docFile);
+  const docPath = join(SYSTEM_DIR, docFile);
   if (!existsSync(docPath)) return null;
-
   const content = readFileSync(docPath, 'utf-8');
   const today = new Date().toISOString().split('T')[0];
-  const timestampRegex = /(\*\*Last Updated:\*\* )\d{4}-\d{2}-\d{2}/;
+  const timestampRegex = /(\**Last Updated:\*\* )\d{4}-\d{2}-\d{2}/;
 
   const match = content.match(timestampRegex);
   if (match && !content.includes(`**Last Updated:** ${today}`)) {
@@ -632,19 +590,18 @@ function updateLastUpdatedTimestamp(docFile: string): string | null {
     writeFileSync(docPath, updated);
     return `Updated "Last Updated" in ${docFile}: ${match[0]} -> **Last Updated:** ${today}`;
   }
-
   return null;
 }
 
 /**
- * Update Pattern 5: Hook count in DOCUMENTATION/Hooks/HookSystem.md.
+ * Update Pattern 5: Hook count in THEHOOKSYSTEM.md.
  */
 function updateHookCount(actualCount: number): string | null {
-  const docPath = join(DOCS_DIR, 'THEHOOKSYSTEM.md');
+  const docPath = join(SYSTEM_DIR, 'THEHOOKSYSTEM.md');
   if (!existsSync(docPath)) return null;
 
   const content = readFileSync(docPath, 'utf-8');
-  const countRegex = /(\*\*Status:\*\* Production - )\d+( hooks? active)/;
+  const countRegex = /(\**Status:\*\* Production - )\d+( hooks? active)/;
 
   const match = content.match(countRegex);
   if (match) {
@@ -655,7 +612,6 @@ function updateHookCount(actualCount: number): string | null {
       return `Updated hook count in THEHOOKSYSTEM.md: ${oldCount} -> ${actualCount}`;
     }
   }
-
   return null;
 }
 
@@ -693,11 +649,9 @@ export async function handleDocCrossRefIntegrity(
   const handlersOnDisk = new Set(getHandlerFilesOnDisk());
   const libsOnDisk = new Set(getLibFilesOnDisk());
   const systemDocsOnDisk = new Set(getSystemDocsOnDisk());
-
   console.error(`${TAG} Inventory: ${hooksOnDisk.size} hooks, ${handlersOnDisk.size} handlers, ${libsOnDisk.size} libs, ${systemDocsOnDisk.size} system docs`);
 
   // Step 3: Determine which docs to check
-  // Check all SYSTEM docs that reference hooks/handlers/libs
   const docsToCheck = Array.from(systemDocsOnDisk);
   console.error(`${TAG} Checking ${docsToCheck.length} SYSTEM docs for cross-reference drift`);
 
@@ -788,27 +742,64 @@ export async function handleDocCrossRefIntegrity(
     }
   }
 
+  // ============================================================================
   // Step 6: Inference-powered semantic analysis
-  // Run inference to catch what grep can't: semantic drift in descriptions.
-  // Always runs when system files are modified — deterministic checks only catch
-  // broken refs/counts, not semantic drift (e.g., "this hook does X" when it now does Y).
-  console.error(`${TAG} === Running inference analysis ===`);
-  const inferenceEdits = await runInferenceAnalysis(modifiedFiles, docsToCheck);
-  if (inferenceEdits.length > 0) {
-    const inferenceApplied = applyInferenceEdits(inferenceEdits);
-    updatesApplied.push(...inferenceApplied);
+  // ============================================================================
+  let inferenceEditsCount = 0; [span_5](start_span)// Pre-initialized function-scoped safety tracker[span_5](end_span)
+
+  if (allDrift.length > 0) {
+    console.error(`${TAG} === Running inference analysis ===`);
+    const inferenceEdits = await runInferenceAnalysis(modifiedFiles, docsToCheck);
+    if (inferenceEdits && inferenceEdits.length > 0) {
+      inferenceEditsCount = inferenceEdits.length; [span_6](start_span)// Assigned safely inside valid tier execution path[span_6](end_span)
+      const inferenceApplied = applyInferenceEdits(inferenceEdits);
+      updatesApplied.push(...inferenceApplied);
+    } else {
+      console.error(`${TAG} [INFERENCE] No semantic corrections needed`);
+    }
   } else {
-    console.error(`${TAG} [INFERENCE] No semantic corrections needed`);
+    console.error(`${TAG} [INFERENCE] Skipped — no drift detected`);
   }
 
-  // Step 7: Summary
+  // ============================================================================
+  // Step 7: Save drift report
+  // ============================================================================
+  const report: DriftReport = {
+    timestamp: new Date().toISOString(),
+    session_id: hookInput.session_id,
+    docs_checked: docsToCheck,
+    drift_items: allDrift,
+    updates_applied: updatesApplied,
+  };
+
+  try {
+    writeFileSync(DRIFT_STATE_FILE, JSON.stringify(report, null, 2));
+    console.error(`${TAG} Drift report saved to ${DRIFT_STATE_FILE}`);
+  } catch (error) {
+    console.error(`${TAG} Failed to save drift report:`, error);
+  }
+
+  // ============================================================================
+  // Step 8: Add unfixable drift items to review queue
+  // ============================================================================
+  if (allDrift.length > 0) {
+    addToReviewQueue(allDrift);
+  }
+
+  // ============================================================================
+  // Step 9: Summary
+  // ============================================================================
   const totalElapsed = Date.now() - handlerStart;
   console.error(`${TAG} === Summary (${totalElapsed}ms) ===`);
   console.error(`${TAG} Docs checked: ${docsToCheck.length}`);
   console.error(`${TAG} Drift items found: ${allDrift.length}`);
-  console.error(`${TAG} Updates applied: ${updatesApplied.length}`);
+  
+  [span_7](start_span)// FIXED LOGGING SUMMARY: Always reads a guaranteed numerical scalar value[span_7](end_span)
+  console.error(`${TAG} Updates applied: ${updatesApplied.length} (${updatesApplied.length - inferenceEditsCount} deterministic, ${inferenceEditsCount} inference)`);
+
   if (allDrift.length > 0) {
     console.error(`${TAG} WARNING: ${allDrift.length} cross-reference drift items need manual attention`);
+    console.error(`${TAG} Review: ${DRIFT_STATE_FILE}`);
   } else {
     console.error(`${TAG} All cross-references valid`);
   }
@@ -816,11 +807,8 @@ export async function handleDocCrossRefIntegrity(
   console.error(`${TAG} === Check complete ===`);
 
   // Step 10: Voice notification — ONLY when actual documentation edits were applied
-  // No voice for "queued for review" or "in sync" — that's noise
   if (updatesApplied.length > 0) {
-    // Delay 3s so the main 🗣️ {{DA_NAME}} voice line plays first
     await new Promise(resolve => setTimeout(resolve, 3000));
-
     const affectedDocs = new Set<string>();
     for (const update of updatesApplied) {
       const docMatch = update.match(/(?:in |] )(\w+\.md)/);
