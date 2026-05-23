@@ -194,7 +194,6 @@ function isSystemFileModified(modifiedFiles: Set<string>): boolean {
   }
   return false;
 }
-
 // ============================================================================
 // Pattern Checkers
 // ============================================================================
@@ -831,23 +830,32 @@ export async function handleDocCrossRefIntegrity(
     }
   }
 
+  // ============================================================================
   // Step 6: Inference-powered semantic analysis
-  // Run inference to catch what grep can't: semantic drift in descriptions
-  // Skip if no drift found — saves ~15s of inference per response
+  // ============================================================================
+  let inferenceEditsCount = 0; // Initialize a safe, function-scoped counter
+
   if (allDrift.length > 0) {
     console.error(`${TAG} === Running inference analysis ===`);
-    const inferenceEdits = await runInferenceAnalysis(modifiedFiles, docsToCheck);
-    if (inferenceEdits.length > 0) {
-      const inferenceApplied = applyInferenceEdits(inferenceEdits);
-      updatesApplied.push(...inferenceApplied);
-    } else {
-      console.error(`${TAG} [INFERENCE] No semantic corrections needed`);
+    try {
+      const inferenceEdits = await runInferenceAnalysis(modifiedFiles, docsToCheck);
+      if (inferenceEdits && inferenceEdits.length > 0) {
+        inferenceEditsCount = inferenceEdits.length; // Capture length safely if valid
+        const inferenceApplied = applyInferenceEdits(inferenceEdits);
+        updatesApplied.push(...inferenceApplied);
+      } else {
+        console.error(`${TAG} [INFERENCE] No semantic corrections needed`);
+      }
+    } catch (inferError) {
+      console.error(`${TAG} [INFERENCE] Semantic pass threw an unhandled error:`, inferError);
     }
   } else {
     console.error(`${TAG} [INFERENCE] Skipped — no drift detected`);
   }
 
-  // Step 7: Save drift report (renumbered for inference step)
+  // ============================================================================
+  // Step 7: Save drift report
+  // ============================================================================
   const report: DriftReport = {
     timestamp: new Date().toISOString(),
     session_id: hookInput.session_id,
@@ -863,17 +871,24 @@ export async function handleDocCrossRefIntegrity(
     console.error(`${TAG} Failed to save drift report:`, error);
   }
 
+  // ============================================================================
   // Step 8: Add unfixable drift items to review queue
+  // ============================================================================
   if (allDrift.length > 0) {
     addToReviewQueue(allDrift);
   }
 
+  // ============================================================================
   // Step 9: Summary
+  // ============================================================================
   const totalElapsed = Date.now() - handlerStart;
   console.error(`${TAG} === Summary (${totalElapsed}ms) ===`);
   console.error(`${TAG} Docs checked: ${docsToCheck.length}`);
   console.error(`${TAG} Drift items found: ${allDrift.length}`);
-  console.error(`${TAG} Updates applied: ${updatesApplied.length} (${updatesApplied.length - inferenceEdits.length} deterministic, ${inferenceEdits.length} inference)`);
+  
+  // SAFE LOGGING: Interpolates using the function-scoped counter variable
+  console.error(`${TAG} Updates applied: ${updatesApplied.length} (${updatesApplied.length - inferenceEditsCount} deterministic, ${inferenceEditsCount} inference)`);
+
   if (allDrift.length > 0) {
     console.error(`${TAG} WARNING: ${allDrift.length} cross-reference drift items need manual attention`);
     console.error(`${TAG} Review: ${DRIFT_STATE_FILE}`);
