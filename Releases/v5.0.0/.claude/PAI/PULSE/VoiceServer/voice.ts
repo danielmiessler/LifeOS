@@ -1,29 +1,38 @@
 /**
  * PAI Pulse — Voice Module
  *
- * ElevenLabs TTS, macOS notifications, pronunciation preprocessing.
- * Absorbed from VoiceServer/server.ts into a Pulse-embeddable module.
+ * Dual-provider TTS: Supertonic (local CPU) or ElevenLabs (cloud fallback).
+ * Pronunciation preprocessing, Linux desktop notifications.
  *
- * Config resolution (3-tier):
- *   1. Caller sends voice_settings in request body → use directly (pass-through)
- *   2. Caller sends voice_id → look up in settings.json daidentity.voices → use those settings
+ * Provider selection:
+ *   settings.json → daidentity.voices.provider: "supertonic" | "elevenlabs"
+ *   Default: "supertonic" (local, zero cost, no quota)
+ *
+ * Config resolution (3-tier, ElevenLabs only):
+ *   1. Caller sends voice_settings in request body → use directly
+ *   2. Caller sends voice_id → look up in settings.json daidentity.voices
  *   3. Neither → use settings.json daidentity.voices.main as default
  *
- * Does NOT create its own HTTP server. Exports handleVoiceRequest() for the
- * parent pulse.ts to call on matching routes.
+ * Supertonic voice mapping:
+ *   settings.json daidentity.voices.{name}.supertonicVoice: "M1"-"M5", "F1"-"F5"
+ *   Default: "M1"
  */
 
-import { spawn } from "child_process"
-import { join } from "path"
-import { existsSync, readFileSync } from "fs"
+import { spawn, execFile } from "child_process"
+import { join, dirname } from "path"
+import { existsSync, readFileSync, unlinkSync } from "fs"
 import { log } from "../lib"
 
 // ── Public Config Interface ──
 
+export type VoiceProvider = "supertonic" | "elevenlabs"
+
 export interface VoiceConfig {
   enabled: boolean
+  provider?: VoiceProvider
   elevenlabs_api_key?: string
   default_voice_id?: string
+  default_supertonic_voice?: string
   pronunciations_path?: string
 }
 
@@ -40,6 +49,7 @@ interface ElevenLabsVoiceSettings {
 interface VoiceEntry {
   voiceId: string
   voiceName?: string
+  supertonicVoice?: string
   stability: number
   similarity_boost: number
   style: number
@@ -49,7 +59,9 @@ interface VoiceEntry {
 }
 
 interface LoadedVoiceConfig {
+  provider: VoiceProvider
   defaultVoiceId: string
+  defaultSupertonicVoice: string
   voices: Record<string, VoiceEntry>
   voicesByVoiceId: Record<string, VoiceEntry>
   desktopNotifications: boolean
@@ -69,11 +81,24 @@ interface EmotionalOverlay {
 
 let moduleConfig: VoiceConfig = { enabled: false }
 let pronunciationRules: CompiledRule[] = []
-let voiceConfig: LoadedVoiceConfig = { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
+let voiceConfig: LoadedVoiceConfig = {
+  provider: "supertonic",
+  defaultVoiceId: "",
+  defaultSupertonicVoice: "M1",
+  voices: {},
+  voicesByVoiceId: {},
+  desktopNotifications: true,
+}
 let defaultVoiceId = ""
+let activeProvider: VoiceProvider = "supertonic"
 let initialized = false
 
 // ── Constants ──
+
+const VOICE_DIR = dirname(new URL(import.meta.url).pathname)
+const SUPERTONIC_PYTHON = join(VOICE_DIR, ".venv", "bin", "python")
+const SUPERTONIC_SCRIPT = join(VOICE_DIR, "supertonic-tts.py")
+const VALID_SUPERTONIC_VOICES = ["M1", "M2", "M3", "M4", "M5", "F1", "F2", "F3", "F4", "F5"]
 
 const FALLBACK_VOICE_SETTINGS: ElevenLabsVoiceSettings = {
   stability: 0.5,
@@ -91,33 +116,22 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 }
 
-// 13 Emotional Presets — overlay onto resolved voice settings
 const EMOTIONAL_PRESETS: Record<string, EmotionalOverlay> = {
-  // High Energy / Positive
-  excited:     { stability: 0.7, similarity_boost: 0.9 },
-  celebration: { stability: 0.65, similarity_boost: 0.85 },
-  insight:     { stability: 0.55, similarity_boost: 0.8 },
-  creative:    { stability: 0.5, similarity_boost: 0.75 },
-
-  // Success / Achievement
-  success:  { stability: 0.6, similarity_boost: 0.8 },
-  progress: { stability: 0.55, similarity_boost: 0.75 },
-
-  // Analysis / Investigation
+  excited:       { stability: 0.7, similarity_boost: 0.9 },
+  celebration:   { stability: 0.65, similarity_boost: 0.85 },
+  insight:       { stability: 0.55, similarity_boost: 0.8 },
+  creative:      { stability: 0.5, similarity_boost: 0.75 },
+  success:       { stability: 0.6, similarity_boost: 0.8 },
+  progress:      { stability: 0.55, similarity_boost: 0.75 },
   investigating: { stability: 0.6, similarity_boost: 0.85 },
   debugging:     { stability: 0.55, similarity_boost: 0.8 },
   learning:      { stability: 0.5, similarity_boost: 0.75 },
-
-  // Thoughtful / Careful
-  pondering: { stability: 0.65, similarity_boost: 0.8 },
-  focused:   { stability: 0.7, similarity_boost: 0.85 },
-  caution:   { stability: 0.4, similarity_boost: 0.6 },
-
-  // Urgent / Critical
-  urgent: { stability: 0.3, similarity_boost: 0.9 },
+  pondering:     { stability: 0.65, similarity_boost: 0.8 },
+  focused:       { stability: 0.7, similarity_boost: 0.85 },
+  caution:       { stability: 0.4, similarity_boost: 0.6 },
+  urgent:        { stability: 0.3, similarity_boost: 0.9 },
 }
 
-// Emoji → emotion mapping for marker extraction
 const EMOJI_TO_EMOTION: Record<string, string> = {
   "\u{1F4A5}": "excited",
   "\u{1F389}": "celebration",
@@ -200,7 +214,14 @@ function loadVoiceConfigFromSettings(): LoadedVoiceConfig {
   try {
     if (!existsSync(settingsPath)) {
       log("warn", "Voice: settings.json not found — using fallback voice defaults")
-      return { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
+      return {
+        provider: "supertonic",
+        defaultVoiceId: "",
+        defaultSupertonicVoice: "M1",
+        voices: {},
+        voicesByVoiceId: {},
+        desktopNotifications: true,
+      }
     }
 
     const content = readFileSync(settingsPath, "utf-8")
@@ -209,38 +230,58 @@ function loadVoiceConfigFromSettings(): LoadedVoiceConfig {
     const voicesSection = daidentity.voices || {}
     const desktopNotifications = settings.notifications?.desktop?.enabled !== false
 
+    const provider = (voicesSection.provider || "supertonic") as VoiceProvider
+
     const voices: Record<string, VoiceEntry> = {}
     const voicesByVoiceId: Record<string, VoiceEntry> = {}
 
     for (const [name, config] of Object.entries(voicesSection)) {
+      if (name === "provider") continue
       const entry = config as Record<string, unknown>
-      const vid = (entry.voiceId || entry.VOICE_ID || entry.voice_id) as string | undefined
-      if (vid) {
-        const voiceEntry: VoiceEntry = {
-          voiceId: vid,
-          voiceName: (entry.voiceName || entry.VOICE_NAME || entry.voice_name) as string | undefined,
-          stability: (entry.stability ?? entry.STABILITY ?? 0.5) as number,
-          similarity_boost: (entry.similarity_boost ?? entry.SIMILARITY_BOOST ?? entry.similarityBoost ?? 0.75) as number,
-          style: (entry.style ?? entry.STYLE ?? 0.0) as number,
-          speed: (entry.speed ?? entry.SPEED ?? 1.0) as number,
-          use_speaker_boost: (entry.use_speaker_boost ?? entry.USE_SPEAKER_BOOST ?? entry.useSpeakerBoost ?? true) as boolean,
-          volume: (entry.volume ?? entry.VOLUME ?? 1.0) as number,
-        }
-        voices[name.toLowerCase()] = voiceEntry
-        voicesByVoiceId[vid] = voiceEntry
+      const vid = (entry.voiceId || entry.VOICE_ID || entry.voice_id || "") as string
+      const supertonicVoice = (entry.supertonicVoice || entry.supertonic_voice || "M1") as string
+
+      const voiceEntry: VoiceEntry = {
+        voiceId: vid,
+        voiceName: (entry.voiceName || entry.VOICE_NAME || entry.voice_name) as string | undefined,
+        supertonicVoice,
+        stability: (entry.stability ?? entry.STABILITY ?? 0.5) as number,
+        similarity_boost: (entry.similarity_boost ?? entry.SIMILARITY_BOOST ?? entry.similarityBoost ?? 0.75) as number,
+        style: (entry.style ?? entry.STYLE ?? 0.0) as number,
+        speed: (entry.speed ?? entry.SPEED ?? 1.0) as number,
+        use_speaker_boost: (entry.use_speaker_boost ?? entry.USE_SPEAKER_BOOST ?? entry.useSpeakerBoost ?? true) as boolean,
+        volume: (entry.volume ?? entry.VOLUME ?? 1.0) as number,
       }
+      voices[name.toLowerCase()] = voiceEntry
+      if (vid) voicesByVoiceId[vid] = voiceEntry
     }
 
     const resolvedDefaultVoiceId = voices.main?.voiceId || (daidentity.mainDAVoiceID as string) || ""
+    const resolvedDefaultSupertonicVoice = voices.main?.supertonicVoice || "M1"
 
     log("info", `Voice: loaded ${Object.keys(voices).length} voice config(s) from settings.json`, {
+      provider,
       voices: Object.keys(voices),
     })
 
-    return { defaultVoiceId: resolvedDefaultVoiceId, voices, voicesByVoiceId, desktopNotifications }
+    return {
+      provider,
+      defaultVoiceId: resolvedDefaultVoiceId,
+      defaultSupertonicVoice: resolvedDefaultSupertonicVoice,
+      voices,
+      voicesByVoiceId,
+      desktopNotifications,
+    }
   } catch (error) {
     log("error", "Voice: failed to load settings.json voice config", { error: String(error) })
-    return { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
+    return {
+      provider: "supertonic",
+      defaultVoiceId: "",
+      defaultSupertonicVoice: "M1",
+      voices: {},
+      voicesByVoiceId: {},
+      desktopNotifications: true,
+    }
   }
 }
 
@@ -299,15 +340,54 @@ function extractEmotionalMarker(message: string): { cleaned: string; emotion?: s
   return { cleaned: message }
 }
 
-// ── AppleScript Escaping ──
+// ── Supertonic Local TTS ──
 
-function escapeForAppleScript(input: string): string {
-  return input.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+function resolveSupertonicVoice(voiceId: string | null): string {
+  if (voiceId) {
+    const entry = voiceConfig.voicesByVoiceId[voiceId] || voiceConfig.voices[voiceId.toLowerCase()]
+    if (entry?.supertonicVoice && VALID_SUPERTONIC_VOICES.includes(entry.supertonicVoice)) {
+      return entry.supertonicVoice
+    }
+    if (VALID_SUPERTONIC_VOICES.includes(voiceId.toUpperCase())) {
+      return voiceId.toUpperCase()
+    }
+  }
+
+  return voiceConfig.defaultSupertonicVoice || "M1"
 }
 
-// ── TTS Generation ──
+async function generateSpeechLocal(text: string, voice: string): Promise<string> {
+  const pronouncedText = applyPronunciations(text)
+  if (pronouncedText !== text) {
+    log("info", `Voice pronunciation: "${text}" -> "${pronouncedText}"`)
+  }
 
-async function generateSpeech(
+  const outputPath = `/tmp/voice-${Date.now()}.wav`
+
+  return new Promise<string>((resolve, reject) => {
+    execFile(
+      SUPERTONIC_PYTHON,
+      [SUPERTONIC_SCRIPT, "--text", pronouncedText, "--voice", voice, "--lang", "en", "--output", outputPath],
+      { timeout: 30_000 },
+      (error, _stdout, stderr) => {
+        if (error) {
+          log("error", "Voice: Supertonic synthesis failed", { error: String(error), stderr })
+          reject(new Error(`Supertonic TTS failed: ${error.message}`))
+          return
+        }
+        if (!existsSync(outputPath)) {
+          reject(new Error("Supertonic TTS produced no output file"))
+          return
+        }
+        resolve(outputPath)
+      },
+    )
+  })
+}
+
+// ── ElevenLabs Cloud TTS ──
+
+async function generateSpeechCloud(
   text: string,
   voiceId: string,
   voiceSettings: ElevenLabsVoiceSettings,
@@ -346,51 +426,85 @@ async function generateSpeech(
 
 // ── Audio Playback ──
 
-async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
-  const tempFile = `/tmp/voice-${Date.now()}.mp3`
+function findAudioPlayer(): { cmd: string; argsForFile: (file: string, volume: number) => string[] } {
+  if (existsSync("/usr/bin/paplay")) {
+    return {
+      cmd: "/usr/bin/paplay",
+      argsForFile: (file, volume) => [`--volume=${Math.round(volume * 65536)}`, file],
+    }
+  }
+  if (existsSync("/usr/bin/ffplay")) {
+    return {
+      cmd: "/usr/bin/ffplay",
+      argsForFile: (file, volume) => ["-nodisp", "-autoexit", "-volume", String(Math.round(volume * 100)), file],
+    }
+  }
+  if (existsSync("/usr/bin/afplay")) {
+    return {
+      cmd: "/usr/bin/afplay",
+      argsForFile: (file, volume) => ["-v", volume.toString(), file],
+    }
+  }
+  throw new Error("No audio player found (tried paplay, ffplay, afplay)")
+}
 
-  await Bun.write(tempFile, audioBuffer)
+async function playAudioFile(filePath: string, volume: number = FALLBACK_VOLUME): Promise<void> {
+  const player = findAudioPlayer()
 
   return new Promise((resolve, reject) => {
-    const proc = spawn("/usr/bin/afplay", ["-v", volume.toString(), tempFile])
+    const args = player.argsForFile(filePath, volume)
+    const proc = spawn(player.cmd, args)
 
     proc.on("error", (error) => {
-      log("error", "Voice: error playing audio", { error: String(error) })
+      log("error", "Voice: error playing audio", { error: String(error), player: player.cmd })
       reject(error)
     })
 
     proc.on("exit", (code) => {
-      spawn("/bin/rm", [tempFile])
+      try { unlinkSync(filePath) } catch { /* already cleaned up */ }
       if (code === 0) {
         resolve()
       } else {
-        reject(new Error(`afplay exited with code ${code}`))
+        reject(new Error(`${player.cmd} exited with code ${code}`))
       }
     })
   })
 }
 
-// ── macOS Desktop Notification ──
+async function playAudioBuffer(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
+  const tempFile = `/tmp/voice-${Date.now()}.mp3`
+  await Bun.write(tempFile, audioBuffer)
+  return playAudioFile(tempFile, volume)
+}
+
+// ── Desktop Notification ──
 
 async function showDesktopNotification(title: string, message: string): Promise<void> {
   if (!voiceConfig.desktopNotifications) return
 
   try {
-    const escapedTitle = escapeForAppleScript(title)
-    const escapedMessage = escapeForAppleScript(message)
-    const script = `display notification "${escapedMessage}" with title "${escapedTitle}" sound name ""`
-
-    await new Promise<void>((resolve, reject) => {
-      const proc = spawn("/usr/bin/osascript", ["-e", script])
-      proc.on("error", reject)
-      proc.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`osascript exited ${code}`))))
-    })
+    if (existsSync("/usr/bin/notify-send")) {
+      await new Promise<void>((resolve, reject) => {
+        execFile("/usr/bin/notify-send", [title, message, "-t", "5000"], (error) => {
+          if (error) reject(error)
+          else resolve()
+        })
+      })
+    } else if (existsSync("/usr/bin/osascript")) {
+      const escaped = (s: string) => s.replace(/\\/g, "\\\\").replace(/"/g, '\\"')
+      const script = `display notification "${escaped(message)}" with title "${escaped(title)}" sound name ""`
+      await new Promise<void>((resolve, reject) => {
+        const proc = spawn("/usr/bin/osascript", ["-e", script])
+        proc.on("error", reject)
+        proc.on("exit", (code) => (code === 0 ? resolve() : reject(new Error(`osascript exited ${code}`))))
+      })
+    }
   } catch (error) {
     log("error", "Voice: notification display error", { error: String(error) })
   }
 }
 
-// ── Core: Send Notification with 3-Tier Voice Settings Resolution ──
+// ── Core: Send Notification ──
 
 async function sendNotification(
   title: string,
@@ -415,81 +529,76 @@ async function sendNotification(
   let voicePlayed = false
   let voiceError: string | undefined
 
-  if (voiceEnabled && moduleConfig.elevenlabs_api_key) {
+  if (voiceEnabled) {
     try {
-      const voice = voiceId || defaultVoiceId
+      if (activeProvider === "supertonic") {
+        const supertonicVoice = resolveSupertonicVoice(voiceId)
+        const resolvedVolume = callerVolume ?? voiceConfig.voices.main?.volume ?? FALLBACK_VOLUME
 
-      // 3-tier voice settings resolution
-      let resolvedSettings: ElevenLabsVoiceSettings
-      let resolvedVolume: number
+        log("info", `Voice: Supertonic synthesis`, { voice: supertonicVoice, volume: resolvedVolume })
 
-      if (callerVoiceSettings && Object.keys(callerVoiceSettings).length > 0) {
-        // Tier 1: Caller provided explicit voice_settings
-        resolvedSettings = {
-          stability: callerVoiceSettings.stability ?? FALLBACK_VOICE_SETTINGS.stability,
-          similarity_boost: callerVoiceSettings.similarity_boost ?? FALLBACK_VOICE_SETTINGS.similarity_boost,
-          style: callerVoiceSettings.style ?? FALLBACK_VOICE_SETTINGS.style,
-          speed: callerVoiceSettings.speed ?? FALLBACK_VOICE_SETTINGS.speed,
-          use_speaker_boost: callerVoiceSettings.use_speaker_boost ?? FALLBACK_VOICE_SETTINGS.use_speaker_boost,
-        }
-        resolvedVolume = callerVolume ?? FALLBACK_VOLUME
-        log("info", "Voice settings: pass-through from caller")
-      } else {
-        // Tier 2/3: Look up by voiceId, fall back to main
-        const voiceEntry = voiceConfig.voicesByVoiceId[voice] || voiceConfig.voices.main
-        if (voiceEntry) {
+        const wavPath = await generateSpeechLocal(safeMessage, supertonicVoice)
+        await playAudioFile(wavPath, resolvedVolume)
+        voicePlayed = true
+      } else if (activeProvider === "elevenlabs" && moduleConfig.elevenlabs_api_key) {
+        const voice = voiceId || defaultVoiceId
+
+        let resolvedSettings: ElevenLabsVoiceSettings
+        let resolvedVolume: number
+
+        if (callerVoiceSettings && Object.keys(callerVoiceSettings).length > 0) {
           resolvedSettings = {
-            stability: voiceEntry.stability,
-            similarity_boost: voiceEntry.similarity_boost,
-            style: voiceEntry.style,
-            speed: voiceEntry.speed,
-            use_speaker_boost: voiceEntry.use_speaker_boost,
+            stability: callerVoiceSettings.stability ?? FALLBACK_VOICE_SETTINGS.stability,
+            similarity_boost: callerVoiceSettings.similarity_boost ?? FALLBACK_VOICE_SETTINGS.similarity_boost,
+            style: callerVoiceSettings.style ?? FALLBACK_VOICE_SETTINGS.style,
+            speed: callerVoiceSettings.speed ?? FALLBACK_VOICE_SETTINGS.speed,
+            use_speaker_boost: callerVoiceSettings.use_speaker_boost ?? FALLBACK_VOICE_SETTINGS.use_speaker_boost,
           }
-          resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME
-          log("info", `Voice settings: from settings.json (${voiceEntry.voiceName || voice})`)
-        } else {
-          resolvedSettings = { ...FALLBACK_VOICE_SETTINGS }
           resolvedVolume = callerVolume ?? FALLBACK_VOLUME
-          log("warn", `Voice settings: fallback defaults (no config found for ${voice})`)
+        } else {
+          const voiceEntry = voiceConfig.voicesByVoiceId[voice] || voiceConfig.voices.main
+          if (voiceEntry) {
+            resolvedSettings = {
+              stability: voiceEntry.stability,
+              similarity_boost: voiceEntry.similarity_boost,
+              style: voiceEntry.style,
+              speed: voiceEntry.speed,
+              use_speaker_boost: voiceEntry.use_speaker_boost,
+            }
+            resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME
+          } else {
+            resolvedSettings = { ...FALLBACK_VOICE_SETTINGS }
+            resolvedVolume = callerVolume ?? FALLBACK_VOLUME
+          }
         }
-      }
 
-      // Emotional preset overlay — modifies stability + similarity_boost only
-      if (emotion && EMOTIONAL_PRESETS[emotion]) {
-        resolvedSettings = {
-          ...resolvedSettings,
-          stability: EMOTIONAL_PRESETS[emotion].stability,
-          similarity_boost: EMOTIONAL_PRESETS[emotion].similarity_boost,
+        if (emotion && EMOTIONAL_PRESETS[emotion]) {
+          resolvedSettings = {
+            ...resolvedSettings,
+            stability: EMOTIONAL_PRESETS[emotion].stability,
+            similarity_boost: EMOTIONAL_PRESETS[emotion].similarity_boost,
+          }
         }
-        log("info", `Voice emotion overlay: ${emotion}`)
+
+        const audioBuffer = await generateSpeechCloud(safeMessage, voice, resolvedSettings)
+        await playAudioBuffer(audioBuffer, resolvedVolume)
+        voicePlayed = true
+      } else {
+        voiceError = `Provider "${activeProvider}" not available`
       }
-
-      log("info", `Voice: generating speech`, {
-        voiceId: voice,
-        speed: resolvedSettings.speed,
-        stability: resolvedSettings.stability,
-        boost: resolvedSettings.similarity_boost,
-        style: resolvedSettings.style,
-        volume: resolvedVolume,
-      })
-
-      const audioBuffer = await generateSpeech(safeMessage, voice, resolvedSettings)
-      await playAudio(audioBuffer, resolvedVolume)
-      voicePlayed = true
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: failed to generate/play speech", { error: msg })
+      log("error", "Voice: failed to generate/play speech", { error: msg, provider: activeProvider })
       voiceError = msg
     }
   }
 
-  // macOS desktop notification
   await showDesktopNotification(safeTitle, safeMessage)
 
   return { voicePlayed, voiceError }
 }
 
-// ── JSON Error Response Helper ──
+// ── JSON Helpers ──
 
 function jsonResponse(body: Record<string, unknown>, status: number): Response {
   return new Response(JSON.stringify(body), {
@@ -504,11 +613,7 @@ function errorStatus(message: string): number {
 
 // ── Public API ──
 
-/**
- * Initialize the voice module. Call once at startup before handling requests.
- */
 export function startVoice(config: VoiceConfig): void {
-  // Resolve API key: config → env
   if (!config.elevenlabs_api_key && process.env.ELEVENLABS_API_KEY) {
     config.elevenlabs_api_key = process.env.ELEVENLABS_API_KEY
   }
@@ -519,36 +624,42 @@ export function startVoice(config: VoiceConfig): void {
     return
   }
 
-  if (!config.elevenlabs_api_key) {
-    log("warn", "Voice module: ELEVENLABS_API_KEY not set in config or env")
-  }
-
-  // Load pronunciation rules
   loadPronunciations(config.pronunciations_path)
-
-  // Load voice config from settings.json
   voiceConfig = loadVoiceConfigFromSettings()
 
-  // Resolve default voice ID: config override → settings.json → hardcoded fallback
-  defaultVoiceId = config.default_voice_id || voiceConfig.defaultVoiceId || "s3TPKV1kjDlVtZbl4Ksh"
+  activeProvider = config.provider || voiceConfig.provider || "supertonic"
+
+  if (activeProvider === "supertonic") {
+    if (!existsSync(SUPERTONIC_PYTHON) || !existsSync(SUPERTONIC_SCRIPT)) {
+      log("warn", "Voice: Supertonic not installed — falling back to elevenlabs")
+      activeProvider = "elevenlabs"
+    }
+  }
+
+  if (activeProvider === "elevenlabs" && !config.elevenlabs_api_key) {
+    log("warn", "Voice module: ELEVENLABS_API_KEY not set — voice will be silent")
+  }
+
+  defaultVoiceId = config.default_voice_id || voiceConfig.defaultVoiceId || "21m00Tcm4TlvDq8ikWAM"
 
   initialized = true
   log("info", "Voice module: initialized", {
-    defaultVoiceId,
+    provider: activeProvider,
+    defaultVoiceId: activeProvider === "elevenlabs" ? defaultVoiceId : undefined,
+    defaultSupertonicVoice: activeProvider === "supertonic" ? voiceConfig.defaultSupertonicVoice : undefined,
     pronunciationRules: pronunciationRules.length,
     configuredVoices: Object.keys(voiceConfig.voices),
-    apiKeyConfigured: !!config.elevenlabs_api_key,
   })
 }
 
-/**
- * Health check for the voice subsystem.
- */
 export function voiceHealth(): Record<string, unknown> {
   return {
     initialized,
     enabled: moduleConfig.enabled,
-    voice_system: "ElevenLabs",
+    provider: activeProvider,
+    voice_system: activeProvider === "supertonic" ? "Supertonic (local CPU)" : "ElevenLabs (cloud)",
+    supertonic_available: existsSync(SUPERTONIC_PYTHON) && existsSync(SUPERTONIC_SCRIPT),
+    default_supertonic_voice: voiceConfig.defaultSupertonicVoice,
     default_voice_id: defaultVoiceId,
     api_key_configured: !!moduleConfig.elevenlabs_api_key,
     pronunciation_rules: pronunciationRules.length,
@@ -558,50 +669,25 @@ export function voiceHealth(): Record<string, unknown> {
 }
 
 // ── Phase Capture: REMOVED ──
-//
-// Until 2026-04-27, /notify also wrote work.json `phase` and `phaseHistory` and
-// called setPhaseTab(). That was the second writer in a dual-source design with
-// ISASync.hook.ts (PostToolUse Edit/Write on ISA.md). It silently skipped when
-// the AI couldn't pass a resolvable session_id/slug — the dashboard then
-// "stuck" on whichever phase was last successfully captured.
-//
-// ISA frontmatter is now the SINGLE source of truth: AI edits ISA `phase:` →
+// ISA frontmatter is the SINGLE source of truth: AI edits ISA `phase:` →
 // ISASync syncs to work.json AND calls setPhaseTab. Voice is audio-only.
-//
-// If you're tempted to reintroduce a phase-capture path here, fix the AI's
-// ISA-edit discipline instead — that's the actual signal.
-/**
- * Handle an incoming HTTP request for voice routes.
- *
- * Routes:
- *   POST /notify              — main notification endpoint
- *   POST /notify/personality   — compatibility shim (Qwen3-TTS era)
- *   POST /pai                 — PAI assistant notification
- *   GET  /voice/health        — voice subsystem health
- *
- * Returns a Response for matched routes, or null if the route is not ours.
- */
+
 export async function handleVoiceRequest(req: Request): Promise<Response | null> {
   const url = new URL(req.url)
   const pathname = url.pathname
 
-  // CORS preflight for any of our routes
   if (req.method === "OPTIONS" && ["/notify", "/notify/personality", "/pai", "/voice/health"].includes(pathname)) {
     return new Response(null, { headers: CORS_HEADERS, status: 204 })
   }
 
-  // Rate limit check
   const clientIp = req.headers.get("x-forwarded-for") || "localhost"
 
-  // GET /voice/health
   if (pathname === "/voice/health" && req.method === "GET") {
     return jsonResponse(voiceHealth(), 200)
   }
 
-  // All remaining routes are POST
   if (req.method !== "POST") return null
 
-  // Rate limit on POST routes
   if (!checkRateLimit(clientIp)) {
     return jsonResponse({ status: "error", message: "Rate limit exceeded" }, 429)
   }
@@ -621,7 +707,7 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
 
       log("info", `Voice: notification "${title}" - "${message}"`, {
         voiceEnabled,
-        voiceId: voiceId || defaultVoiceId,
+        provider: activeProvider,
       })
 
       const result = await sendNotification(title, message, voiceEnabled, voiceId, voiceSettings, volume)
@@ -630,7 +716,7 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
         return jsonResponse({ status: "error", message: `TTS failed: ${result.voiceError}`, notification_sent: true }, 502)
       }
 
-      return jsonResponse({ status: "success", message: "Notification sent" }, 200)
+      return jsonResponse({ status: "success", message: "Notification sent", provider: activeProvider }, 200)
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
       log("error", "Voice: notification error", { error: msg })
@@ -638,18 +724,12 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
     }
   }
 
-  // POST /notify/personality — compatibility shim for Qwen3-TTS callers
+  // POST /notify/personality
   if (pathname === "/notify/personality") {
     try {
       const data = await req.json()
       const message = data.message || "Notification"
 
-      // Live-read voice ID from settings.json each call. Without this, pulse
-      // uses the defaultVoiceId cached at server startup — which is stale
-      // after the install wizard writes a new daidentity.voices.main.voiceId
-      // (the wizard runs AFTER pulse starts, so the cache holds the public
-      // template default instead of the user-picked voice). Live-read keeps
-      // /notify/personality honest with whatever the user last selected.
       let voiceId: string | null = null
       try {
         const settingsFile = join(process.env.HOME ?? "~", ".claude", "settings.json")
@@ -658,10 +738,10 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
         const vid = (main?.voiceId || main?.VOICE_ID || main?.voice_id) as string | undefined
         if (vid) voiceId = vid
       } catch {
-        // Fall through — sendNotification will use the cached defaultVoiceId
+        // Fall through
       }
 
-      log("info", `Voice: personality notification "${message}"`, { voiceId })
+      log("info", `Voice: personality notification "${message}"`, { voiceId, provider: activeProvider })
       await sendNotification("PAI Notification", message, true, voiceId)
 
       return jsonResponse({ status: "success", message: "Personality notification sent" }, 200)
@@ -690,6 +770,5 @@ export async function handleVoiceRequest(req: Request): Promise<Response | null>
     }
   }
 
-  // Not our route
   return null
 }
