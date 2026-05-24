@@ -246,7 +246,7 @@ export async function spawnScript(command: string, timeoutMs = 60_000): Promise<
   const proc = Bun.spawn(["bash", "-c", command], {
     stdout: "pipe",
     stderr: "pipe",
-    cwd: join(process.env.HOME ?? "~", ".claude", "PAI", "Pulse"),
+    cwd: join(process.env.HOME ?? "~", ".claude", "PAI", "PULSE"),
     env: { ...process.env },
   })
 

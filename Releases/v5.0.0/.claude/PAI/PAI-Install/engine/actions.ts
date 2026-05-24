@@ -1525,7 +1525,7 @@ export async function runConfiguration(
   const userShell = process.env.SHELL || "/bin/zsh";
   const rcFile = userShell.includes("bash") ? ".bashrc" : userShell.includes("fish") ? ".config/fish/config.fish" : ".zshrc";
   const rcPath = join(homedir(), rcFile);
-  const aliasLine = `alias pai='bun ${join(paiDir, "PAI", "Tools", "pai.ts")}'`;
+  const aliasLine = `alias pai='bun ${join(paiDir, "PAI", "TOOLS", "pai.ts")}'`;
   const marker = "# PAI alias";
 
   if (existsSync(rcPath)) {

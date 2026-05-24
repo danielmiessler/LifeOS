@@ -10,7 +10,7 @@
 
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, readFileSync } from 'fs';
 import { join } from 'path';
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 import { TAB_COLORS, PHASE_TAB_CONFIG, ACTIVE_TAB_BG, ACTIVE_TAB_FG, INACTIVE_TAB_FG, type TabState, type AlgorithmTabPhase } from './tab-constants';
 import { paiPath } from './paths';
 
@@ -121,12 +121,19 @@ function cleanupStaleStateFiles(): void {
     const defaultSocket = `/tmp/kitty-${process.env.USER}`;
     const socketPath = process.env.KITTY_LISTEN_ON || (existsSync(defaultSocket) ? `unix:${defaultSocket}` : null);
     if (!socketPath) return; // No socket — skip cleanup to avoid escape sequence IPC
-    const liveOutput = execSync(`kitten @ --to="${socketPath}" ls 2>/dev/null | jq -r ".[].tabs[].windows[].id" 2>/dev/null`, {
+    // Validate socket path before passing to execFileSync (prevent injection via env var)
+    if (!/^[a-zA-Z0-9_\-]+:[a-zA-Z0-9/_\-.]+$/.test(socketPath)) return;
+    const rawLs = execFileSync('kitten', ['@', `--to=${socketPath}`, 'ls'], {
       encoding: 'utf-8', timeout: 2000,
     }).trim();
-    if (!liveOutput) return;
+    if (!rawLs) return;
 
-    const liveIds = new Set(liveOutput.split('\n').map(id => id.trim()));
+    const liveIds = new Set<string>();
+    try {
+      const osWindows = JSON.parse(rawLs) as Array<{ tabs: Array<{ windows: Array<{ id: number }> }> }>;
+      for (const os of osWindows) for (const tab of os.tabs) for (const win of tab.windows) liveIds.add(String(win.id));
+    } catch { return; }
+    if (liveIds.size === 0) return;
 
     for (const file of files) {
       const winId = file.replace('.json', '');
@@ -156,27 +163,20 @@ export function setTabState(opts: SetTabOptions): void {
       return;
     }
 
-    const escaped = title.replace(/"/g, '\\"');
     // Set BOTH tab title AND window title. Kitty's tab_title_template uses
     // {active_window.title} (the window title). OSC escape codes from Claude Code
     // reset set-tab-title overrides, so the template falls back to window title.
     // By setting both, our title survives OSC resets.
-    const toFlag = `--to="${kittyEnv.listenOn}"`;
-    console.error(`[tab-setter] Setting tab: "${escaped}" with toFlag: ${toFlag}`);
-    execSync(`kitten @ ${toFlag} set-tab-title "${escaped}"`, { stdio: 'ignore', timeout: 2000 });
-    execSync(`kitten @ ${toFlag} set-window-title "${escaped}"`, { stdio: 'ignore', timeout: 2000 });
+    const toArg = `--to=${kittyEnv.listenOn}`;
+    console.error(`[tab-setter] Setting tab: "${title}" via ${toArg}`);
+    execFileSync('kitten', ['@', toArg, 'set-tab-title', title], { stdio: 'ignore', timeout: 2000 });
+    execFileSync('kitten', ['@', toArg, 'set-window-title', title], { stdio: 'ignore', timeout: 2000 });
 
     // For idle state, reset ALL colors to Kitty defaults (no lingering backgrounds)
     if (state === 'idle') {
-      execSync(
-        `kitten @ ${toFlag} set-tab-color --self active_bg=none active_fg=none inactive_bg=none inactive_fg=none`,
-        { stdio: 'ignore', timeout: 2000 }
-      );
+      execFileSync('kitten', ['@', toArg, 'set-tab-color', '--self', 'active_bg=none', 'active_fg=none', 'inactive_bg=none', 'inactive_fg=none'], { stdio: 'ignore', timeout: 2000 });
     } else {
-      execSync(
-        `kitten @ ${toFlag} set-tab-color --self active_bg=${ACTIVE_TAB_BG} active_fg=${ACTIVE_TAB_FG} inactive_bg=${colors.inactiveBg} inactive_fg=${INACTIVE_TAB_FG}`,
-        { stdio: 'ignore', timeout: 2000 }
-      );
+      execFileSync('kitten', ['@', toArg, 'set-tab-color', '--self', `active_bg=${ACTIVE_TAB_BG}`, `active_fg=${ACTIVE_TAB_FG}`, `inactive_bg=${colors.inactiveBg}`, `inactive_fg=${INACTIVE_TAB_FG}`], { stdio: 'ignore', timeout: 2000 });
     }
     console.error(`[tab-setter] Tab commands completed successfully`);
   } catch (err) {
@@ -323,24 +323,17 @@ export function setPhaseTab(phase: AlgorithmTabPhase, sessionId: string, summary
       return;
     }
 
-    const escaped = title.replace(/"/g, '\\"');
-    const toFlag = `--to="${kittyEnv.listenOn}"`;
+    const toArg = `--to=${kittyEnv.listenOn}`;
 
-    execSync(`kitten @ ${toFlag} set-tab-title "${escaped}"`, { stdio: 'ignore', timeout: 2000 });
-    execSync(`kitten @ ${toFlag} set-window-title "${escaped}"`, { stdio: 'ignore', timeout: 2000 });
+    execFileSync('kitten', ['@', toArg, 'set-tab-title', title], { stdio: 'ignore', timeout: 2000 });
+    execFileSync('kitten', ['@', toArg, 'set-window-title', title], { stdio: 'ignore', timeout: 2000 });
 
     if (phase === 'IDLE') {
-      execSync(
-        `kitten @ ${toFlag} set-tab-color --self active_bg=none active_fg=none inactive_bg=none inactive_fg=none`,
-        { stdio: 'ignore', timeout: 2000 }
-      );
+      execFileSync('kitten', ['@', toArg, 'set-tab-color', '--self', 'active_bg=none', 'active_fg=none', 'inactive_bg=none', 'inactive_fg=none'], { stdio: 'ignore', timeout: 2000 });
     } else {
-      execSync(
-        `kitten @ ${toFlag} set-tab-color --self active_bg=${ACTIVE_TAB_BG} active_fg=${ACTIVE_TAB_FG} inactive_bg=${config.inactiveBg} inactive_fg=${INACTIVE_TAB_FG}`,
-        { stdio: 'ignore', timeout: 2000 }
-      );
+      execFileSync('kitten', ['@', toArg, 'set-tab-color', '--self', `active_bg=${ACTIVE_TAB_BG}`, `active_fg=${ACTIVE_TAB_FG}`, `inactive_bg=${config.inactiveBg}`, `inactive_fg=${INACTIVE_TAB_FG}`], { stdio: 'ignore', timeout: 2000 });
     }
-    console.error(`[tab-setter] Phase tab: "${escaped}" (${phase}, bg=${config.inactiveBg})`);
+    console.error(`[tab-setter] Phase tab: "${title}" (${phase}, bg=${config.inactiveBg})`);
   } catch (err) {
     console.error(`[tab-setter] Error setting phase tab:`, err);
   }

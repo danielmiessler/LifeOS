@@ -25,7 +25,7 @@ import { join, relative, basename, dirname } from "path"
 const HOME = process.env.HOME ?? ""
 const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI")
 const USER_DIR = join(PAI_DIR, "USER")
-const STATE_DIR = join(PAI_DIR, "Pulse", "state")
+const STATE_DIR = join(PAI_DIR, "PULSE", "state")
 const INDEX_PATH = join(STATE_DIR, "user-index.json")
 const MODULE_NAME = "user-index"
 
