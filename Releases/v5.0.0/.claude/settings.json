@@ -1208,7 +1208,9 @@
   "postCompactRestore": {
     "_docs": "System default files re-injected after compaction. User additions via EXTRA_COMPACT_RESTORE in PAI_CONFIG.yaml.",
     "fullFiles": [
-      "USER/PROJECTS/PROJECTS.md"
+      "USER/PROJECTS/PROJECTS.md",
+      "USER/DA_IDENTITY.md",
+      "USER/PRINCIPAL_IDENTITY.md"
     ]
   },
   "contextFiles": [],
