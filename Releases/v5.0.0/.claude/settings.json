@@ -5,6 +5,7 @@
     "PROJECTS_DIR": "${HOME}/Projects",
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
     "API_TIMEOUT_MS": "1800000",
+    "CLAUDE_CODE_SESSIONEND_HOOKS_TIMEOUT_MS": "10000",
     "PAI_CONFIG_DIR": "${HOME}/.claude/PAI",
     "GOOGLE_WORKSPACE_CLI_CREDENTIALS_FILE": "$HOME/.claude/PAI/USER/CREDENTIALS/google/your-domain.example.com.json"
   },
