@@ -70,7 +70,7 @@ User: "analyze ~/Projects/MyApp with TELOS"
 **Example 3: Build project dashboard**
 ```
 User: "build a dashboard for TELOSAPP"
---> Launches up to 10 parallel engineers
+--> Launches up to 16 parallel engineers
 --> Creates Next.js dashboard with shadcn/ui + Aceternity
 --> Returns interactive dashboard with dependency graphs, metrics cards, progress tables
 ```
@@ -380,7 +380,7 @@ Engineer 10: Integration and testing
 2. **Auto-Detection** - Determines context from user question
 3. **Flexible Discovery** - Finds files regardless of structure
 4. **TELOS Methodology** - Applies relationships, dependencies, goals, narratives
-5. **Parallel Execution** - Up to 10 engineers for dashboard builds
+5. **Parallel Execution** - Up to 16 engineers for dashboard builds
 6. **Visual Excellence** - Beautiful outputs with shadcn/ui + Aceternity
 7. **Privacy-Aware** - Respects sensitive data
 8. **Integrated** - Works with development, research, and other skills
