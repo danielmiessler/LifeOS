@@ -65,10 +65,13 @@ def main():
         for i, server in enumerate(servers):
             print(f"Starting server {i+1}/{len(servers)}: {server['cmd']}")
 
-            # Use shell=True to support commands with cd and &&
+            # shell=True is intentional: this is a local developer helper and `server['cmd']`
+            # is the operator's own --server argument (needs cd/&& support). The command is
+            # already operator-controlled at the same trust level as the shell invoking this
+            # script, so there is no privilege boundary to cross. Do NOT pass untrusted input here.
             process = subprocess.Popen(
                 server['cmd'],
-                shell=True,
+                shell=True,  # nosec B602 - operator-supplied local command, see note above
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )
