@@ -1,10 +1,18 @@
 /**
  * PAI Pulse — Voice Module
  *
- * ElevenLabs TTS, macOS notifications, pronunciation preprocessing.
+ * Text-to-speech (ElevenLabs or native macOS `say`), macOS notifications,
+ * pronunciation preprocessing.
  * Absorbed from VoiceServer/server.ts into a Pulse-embeddable module.
  *
- * Config resolution (3-tier):
+ * TTS engines (select via `voice_engine` in the [voice] section of PULSE.toml,
+ * or the PAI_VOICE_ENGINE env var):
+ *   - "elevenlabs" (default) — cloud TTS, requires ELEVENLABS_API_KEY.
+ *   - "say"                  — native macOS `say` binary. Free, fully offline,
+ *                              no API key, and no notification text ever leaves
+ *                              the machine. macOS only.
+ *
+ * Config resolution (3-tier, applies to both engines):
  *   1. Caller sends voice_settings in request body → use directly (pass-through)
  *   2. Caller sends voice_id → look up in settings.json daidentity.voices → use those settings
  *   3. Neither → use settings.json daidentity.voices.main as default
@@ -22,8 +30,16 @@ import { log } from "../lib"
 
 export interface VoiceConfig {
   enabled: boolean
+  /** TTS backend: "elevenlabs" (default) or "say" (native macOS, offline, free). */
+  voice_engine?: "elevenlabs" | "say"
   elevenlabs_api_key?: string
   default_voice_id?: string
+  /**
+   * Default macOS `say` voice name used when voice_engine="say" and the resolved
+   * voice entry has no `sayVoice` of its own (e.g. "Samantha", "Daniel").
+   * Omit to use the system default voice. Run `say -v '?'` to list installed voices.
+   */
+  default_say_voice?: string
   pronunciations_path?: string
 }
 
@@ -40,6 +56,8 @@ interface ElevenLabsVoiceSettings {
 interface VoiceEntry {
   voiceId: string
   voiceName?: string
+  /** macOS `say` voice name for this entry (used when voice_engine="say"). */
+  sayVoice?: string
   stability: number
   similarity_boost: number
   style: number
@@ -71,6 +89,8 @@ let moduleConfig: VoiceConfig = { enabled: false }
 let pronunciationRules: CompiledRule[] = []
 let voiceConfig: LoadedVoiceConfig = { defaultVoiceId: "", voices: {}, voicesByVoiceId: {}, desktopNotifications: true }
 let defaultVoiceId = ""
+let voiceEngine: "elevenlabs" | "say" = "elevenlabs"
+let defaultSayVoice: string | undefined
 let initialized = false
 
 // ── Constants ──
@@ -84,6 +104,12 @@ const FALLBACK_VOICE_SETTINGS: ElevenLabsVoiceSettings = {
 }
 
 const FALLBACK_VOLUME = 1.0
+
+// macOS `say` rate mapping. ElevenLabs uses a speed multiplier (~0.7–1.2);
+// `say` uses words-per-minute. Map speed→wpm around the system default and clamp.
+const SAY_BASE_WPM = 175
+const SAY_RATE_MIN = 100
+const SAY_RATE_MAX = 320
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "http://localhost",
@@ -219,6 +245,7 @@ function loadVoiceConfigFromSettings(): LoadedVoiceConfig {
         const voiceEntry: VoiceEntry = {
           voiceId: vid,
           voiceName: (entry.voiceName || entry.VOICE_NAME || entry.voice_name) as string | undefined,
+          sayVoice: (entry.sayVoice || entry.say_voice || entry.SAY_VOICE) as string | undefined,
           stability: (entry.stability ?? entry.STABILITY ?? 0.5) as number,
           similarity_boost: (entry.similarity_boost ?? entry.SIMILARITY_BOOST ?? entry.similarityBoost ?? 0.75) as number,
           style: (entry.style ?? entry.STYLE ?? 0.0) as number,
@@ -346,13 +373,9 @@ async function generateSpeech(
 
 // ── Audio Playback ──
 
-async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
-  const tempFile = `/tmp/voice-${Date.now()}.mp3`
-
-  await Bun.write(tempFile, audioBuffer)
-
+async function playAudioFile(path: string, volume: number = FALLBACK_VOLUME): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn("/usr/bin/afplay", ["-v", volume.toString(), tempFile])
+    const proc = spawn("/usr/bin/afplay", ["-v", volume.toString(), path])
 
     proc.on("error", (error) => {
       log("error", "Voice: error playing audio", { error: String(error) })
@@ -360,7 +383,7 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
     })
 
     proc.on("exit", (code) => {
-      spawn("/bin/rm", [tempFile])
+      spawn("/bin/rm", [path])
       if (code === 0) {
         resolve()
       } else {
@@ -368,6 +391,59 @@ async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOL
       }
     })
   })
+}
+
+async function playAudio(audioBuffer: ArrayBuffer, volume: number = FALLBACK_VOLUME): Promise<void> {
+  const tempFile = `/tmp/voice-${Date.now()}.mp3`
+  await Bun.write(tempFile, audioBuffer)
+  await playAudioFile(tempFile, volume)
+}
+
+// ── macOS `say` Engine (offline, free, no API key) ──
+
+/** Map an ElevenLabs-style speed multiplier (~0.7–1.2) to a macOS `say` words-per-minute rate. */
+function sayRateFromSpeed(speed: number | undefined): number {
+  const rate = Math.round(SAY_BASE_WPM * (speed ?? 1.0))
+  return Math.min(SAY_RATE_MAX, Math.max(SAY_RATE_MIN, rate))
+}
+
+/**
+ * Speak text via the native macOS `say` binary. No network, no API key — the
+ * message never leaves the machine. Generates an AIFF then plays it through
+ * afplay so the existing per-voice volume control still applies.
+ *
+ * Arguments are passed to spawn() as an array (no shell), so message text is
+ * never interpolated into a command line. `--` terminates option parsing so a
+ * message that happens to start with "-" is treated as text, not a flag.
+ */
+async function speakWithSay(
+  text: string,
+  sayVoice: string | undefined,
+  rateWpm: number,
+  volume: number = FALLBACK_VOLUME,
+): Promise<void> {
+  const pronouncedText = applyPronunciations(text)
+  if (pronouncedText !== text) {
+    log("info", `Voice pronunciation: "${text}" -> "${pronouncedText}"`)
+  }
+
+  const tempFile = `/tmp/voice-${Date.now()}.aiff`
+  const args: string[] = []
+  if (sayVoice) args.push("-v", sayVoice)
+  args.push("-r", String(rateWpm), "-o", tempFile, "--", pronouncedText)
+
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn("/usr/bin/say", args)
+    proc.on("error", (error) => {
+      log("error", "Voice: error running say", { error: String(error) })
+      reject(error)
+    })
+    proc.on("exit", (code) =>
+      code === 0 ? resolve() : reject(new Error(`say exited with code ${code}`)),
+    )
+  })
+
+  await playAudioFile(tempFile, volume)
 }
 
 // ── macOS Desktop Notification ──
@@ -415,9 +491,10 @@ async function sendNotification(
   let voicePlayed = false
   let voiceError: string | undefined
 
-  if (voiceEnabled && moduleConfig.elevenlabs_api_key) {
+  if (voiceEnabled) {
     try {
       const voice = voiceId || defaultVoiceId
+      const voiceEntry = voiceConfig.voicesByVoiceId[voice] || voiceConfig.voices.main
 
       // 3-tier voice settings resolution
       let resolvedSettings: ElevenLabsVoiceSettings
@@ -434,24 +511,21 @@ async function sendNotification(
         }
         resolvedVolume = callerVolume ?? FALLBACK_VOLUME
         log("info", "Voice settings: pass-through from caller")
-      } else {
+      } else if (voiceEntry) {
         // Tier 2/3: Look up by voiceId, fall back to main
-        const voiceEntry = voiceConfig.voicesByVoiceId[voice] || voiceConfig.voices.main
-        if (voiceEntry) {
-          resolvedSettings = {
-            stability: voiceEntry.stability,
-            similarity_boost: voiceEntry.similarity_boost,
-            style: voiceEntry.style,
-            speed: voiceEntry.speed,
-            use_speaker_boost: voiceEntry.use_speaker_boost,
-          }
-          resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME
-          log("info", `Voice settings: from settings.json (${voiceEntry.voiceName || voice})`)
-        } else {
-          resolvedSettings = { ...FALLBACK_VOICE_SETTINGS }
-          resolvedVolume = callerVolume ?? FALLBACK_VOLUME
-          log("warn", `Voice settings: fallback defaults (no config found for ${voice})`)
+        resolvedSettings = {
+          stability: voiceEntry.stability,
+          similarity_boost: voiceEntry.similarity_boost,
+          style: voiceEntry.style,
+          speed: voiceEntry.speed,
+          use_speaker_boost: voiceEntry.use_speaker_boost,
         }
+        resolvedVolume = callerVolume ?? voiceEntry.volume ?? FALLBACK_VOLUME
+        log("info", `Voice settings: from settings.json (${voiceEntry.voiceName || voice})`)
+      } else {
+        resolvedSettings = { ...FALLBACK_VOICE_SETTINGS }
+        resolvedVolume = callerVolume ?? FALLBACK_VOLUME
+        log("warn", `Voice settings: fallback defaults (no config found for ${voice})`)
       }
 
       // Emotional preset overlay — modifies stability + similarity_boost only
@@ -464,18 +538,34 @@ async function sendNotification(
         log("info", `Voice emotion overlay: ${emotion}`)
       }
 
-      log("info", `Voice: generating speech`, {
-        voiceId: voice,
-        speed: resolvedSettings.speed,
-        stability: resolvedSettings.stability,
-        boost: resolvedSettings.similarity_boost,
-        style: resolvedSettings.style,
-        volume: resolvedVolume,
-      })
-
-      const audioBuffer = await generateSpeech(safeMessage, voice, resolvedSettings)
-      await playAudio(audioBuffer, resolvedVolume)
-      voicePlayed = true
+      if (voiceEngine === "say") {
+        // Native macOS engine — no API key, nothing leaves the machine.
+        const sayVoice = voiceEntry?.sayVoice || defaultSayVoice
+        const rate = sayRateFromSpeed(resolvedSettings.speed)
+        log("info", `Voice: generating speech (macOS say)`, {
+          sayVoice: sayVoice ?? "(system default)",
+          rate,
+          volume: resolvedVolume,
+        })
+        await speakWithSay(safeMessage, sayVoice, rate, resolvedVolume)
+        voicePlayed = true
+      } else {
+        // ElevenLabs cloud engine.
+        if (!moduleConfig.elevenlabs_api_key) {
+          throw new Error("ElevenLabs API key not configured")
+        }
+        log("info", `Voice: generating speech (ElevenLabs)`, {
+          voiceId: voice,
+          speed: resolvedSettings.speed,
+          stability: resolvedSettings.stability,
+          boost: resolvedSettings.similarity_boost,
+          style: resolvedSettings.style,
+          volume: resolvedVolume,
+        })
+        const audioBuffer = await generateSpeech(safeMessage, voice, resolvedSettings)
+        await playAudio(audioBuffer, resolvedVolume)
+        voicePlayed = true
+      }
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error)
       log("error", "Voice: failed to generate/play speech", { error: msg })
@@ -519,8 +609,16 @@ export function startVoice(config: VoiceConfig): void {
     return
   }
 
-  if (!config.elevenlabs_api_key) {
-    log("warn", "Voice module: ELEVENLABS_API_KEY not set in config or env")
+  // Resolve TTS engine: config → PAI_VOICE_ENGINE env → default "elevenlabs".
+  const requestedEngine = (config.voice_engine || process.env.PAI_VOICE_ENGINE || "").toLowerCase()
+  if (requestedEngine && requestedEngine !== "say" && requestedEngine !== "elevenlabs") {
+    log("warn", `Voice module: unrecognized voice_engine "${requestedEngine}" — falling back to "elevenlabs" (valid: "elevenlabs", "say")`)
+  }
+  voiceEngine = requestedEngine === "say" ? "say" : "elevenlabs"
+  defaultSayVoice = config.default_say_voice || process.env.PAI_SAY_VOICE
+
+  if (voiceEngine === "elevenlabs" && !config.elevenlabs_api_key) {
+    log("warn", 'Voice module: ELEVENLABS_API_KEY not set — set voice_engine="say" for free, offline macOS TTS, or add a key')
   }
 
   // Load pronunciation rules
@@ -534,7 +632,9 @@ export function startVoice(config: VoiceConfig): void {
 
   initialized = true
   log("info", "Voice module: initialized", {
+    voiceEngine,
     defaultVoiceId,
+    defaultSayVoice: defaultSayVoice ?? "(system default)",
     pronunciationRules: pronunciationRules.length,
     configuredVoices: Object.keys(voiceConfig.voices),
     apiKeyConfigured: !!config.elevenlabs_api_key,
@@ -548,8 +648,10 @@ export function voiceHealth(): Record<string, unknown> {
   return {
     initialized,
     enabled: moduleConfig.enabled,
-    voice_system: "ElevenLabs",
+    voice_system: voiceEngine === "say" ? "macOS say" : "ElevenLabs",
+    voice_engine: voiceEngine,
     default_voice_id: defaultVoiceId,
+    default_say_voice: defaultSayVoice ?? null,
     api_key_configured: !!moduleConfig.elevenlabs_api_key,
     pronunciation_rules: pronunciationRules.length,
     configured_voices: Object.keys(voiceConfig.voices),
