@@ -84,7 +84,7 @@ case "$1" in
     ;;
 
   install)
-    mkdir -p "$PULSE_DIR/state" "$PULSE_DIR/logs"
+    mkdir -p "$PULSE_DIR/state" "$PULSE_DIR/logs" "$HOME/Library/LaunchAgents"
 
     # Cleanup any prior pulse before installing fresh — prevents the stale-PID
     # / unbound-port half-dead state where a previous launchd-managed pulse is
