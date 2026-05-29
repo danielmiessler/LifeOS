@@ -83,10 +83,14 @@ export class IPInfoClient {
     // Rate limiting
     await this.rateLimit();
 
-    const url = `${this.baseUrl}/${ip}/json?token=${this.apiKey}`;
+    // Send the token via Authorization header, not the URL query string
+    // (URL params leak into proxy/server logs).
+    const url = `${this.baseUrl}/${ip}/json`;
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${this.apiKey}` },
+      });
 
       if (!response.ok) {
         if (response.status === 429) {
@@ -135,13 +139,14 @@ export class IPInfoClient {
     // Rate limiting
     await this.rateLimit();
 
-    const url = `${this.baseUrl}/batch?token=${this.apiKey}`;
+    const url = `${this.baseUrl}/batch`;
 
     try {
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${this.apiKey}`,
         },
         body: JSON.stringify(uncachedIPs),
       });

@@ -47,7 +47,9 @@ async function runChaos(domain: string): Promise<string[]> {
     return [];
   }
   try {
-    const result = await $`chaos -key ${key} -d ${domain} -silent`.text();
+    // chaos reads PDCP_API_KEY from the environment; passing -key would expose
+    // the credential in the process argument list (visible via ps/proc).
+    const result = await $`chaos -d ${domain} -silent`.env({ ...process.env, PDCP_API_KEY: key }).text();
     return result.trim().split("\n").filter(Boolean);
   } catch {
     console.error("[chaos] Failed");
