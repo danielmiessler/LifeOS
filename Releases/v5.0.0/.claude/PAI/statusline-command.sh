@@ -43,7 +43,12 @@ else
       "work_count=" + (.counts.work // 0 | tostring) + "\n" +
       "sessions_count=" + (.counts.sessions // 0 | tostring) + "\n" +
       "research_count=" + (.counts.research // 0 | tostring) + "\n" +
-      "ratings_count=" + (.counts.ratings // 0 | tostring)
+      "ratings_count=" + (.counts.ratings // 0 | tostring) + "\n" +
+      "LOC_CITY=" + (.location.city? // "" | @sh) + "\n" +
+      "LOC_REGION=" + (.location.regionName? // "" | @sh) + "\n" +
+      "LOC_LAT=" + (.location.lat? // "" | tostring | @sh) + "\n" +
+      "LOC_LON=" + (.location.lon? // "" | tostring | @sh) + "\n" +
+      "LOC_CC=" + (.location.countryCode? // "" | @sh)
     ' "$SETTINGS_FILE" 2>/dev/null > "$_SETTINGS_CACHE"
     # shellcheck disable=SC1090
     source "$_SETTINGS_CACHE"
@@ -531,7 +536,19 @@ if [ "$MODE" = "mini" ] || [ "$MODE" = "normal" ]; then
     cache_age=999999
     [ -f "$LOCATION_CACHE" ] && cache_age=$((NOW_EPOCH - $(get_mtime "$LOCATION_CACHE")))
 
-    if [ "$cache_age" -gt "$LOCATION_CACHE_TTL" ]; then
+    if [ -n "${LOC_CITY:-}" ]; then
+        # User-configured location (settings.json .location) is authoritative.
+        # Skip ip-api.com entirely — correct for VPN/proxy/corporate-network users
+        # whose exit node is in a different city, AND one fewer third-party request
+        # exposing the user's IP. IP geolocation remains the fallback when unset. (#843)
+        jq -n --arg city "$LOC_CITY" --arg region "${LOC_REGION:-}" \
+              --arg cc "${LOC_CC:-}" \
+              --arg lat "${LOC_LAT:-}" --arg lon "${LOC_LON:-}" \
+              '{city:$city, regionName:$region, countryCode:$cc,
+                lat:($lat | if . == "" then null else tonumber end),
+                lon:($lon | if . == "" then null else tonumber end)}' \
+              > "$LOCATION_CACHE" 2>/dev/null
+    elif [ "$cache_age" -gt "$LOCATION_CACHE_TTL" ]; then
         loc_data=$(curl -s --max-time 2 "http://ip-api.com/json/?fields=city,region,regionName,country,countryCode,lat,lon" 2>/dev/null)
         if [ -n "$loc_data" ] && echo "$loc_data" | jq -e '.city' >/dev/null 2>&1; then
             echo "$loc_data" > "$LOCATION_CACHE"
