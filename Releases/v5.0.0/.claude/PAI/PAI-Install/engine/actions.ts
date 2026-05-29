@@ -1588,18 +1588,24 @@ async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<b
   await emit({ event: "progress", step: "voice", percent: 20, detail: "Installing Pulse (voice + dashboard + observability)..." });
 
   try {
+    // Capture manage.sh stderr so a failed install reports the actual cause
+    // (e.g. missing ~/Library/LaunchAgents, sed/launchctl errors) instead of a
+    // generic message that sends users hunting blind.
+    let installStderr = "";
     const installOk = await new Promise<boolean>((resolve) => {
       const child = spawn("bash", [manageScript, "install"], {
         cwd: pulseDir,
         stdio: ["ignore", "pipe", "pipe"],
       });
+      child.stderr?.on("data", (chunk) => { installStderr += chunk.toString(); });
       const timer = setTimeout(() => { child.kill(); resolve(false); }, 30000);
       child.on("close", (code) => { clearTimeout(timer); resolve(code === 0); });
       child.on("error", () => { clearTimeout(timer); resolve(false); });
     });
 
     if (!installOk) {
-      await emit({ event: "message", content: "Pulse install command failed. Voice notifications will not be available." });
+      const tail = installStderr.trim().split("\n").slice(-20).join("\n");
+      await emit({ event: "message", content: "Pulse install command failed. Voice notifications will not be available." + (tail ? "\nmanage.sh stderr (last lines):\n" + tail : "") });
       return false;
     }
 
