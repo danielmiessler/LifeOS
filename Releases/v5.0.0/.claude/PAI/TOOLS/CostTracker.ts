@@ -191,6 +191,12 @@ function classifyCallSite(file: string, reason: string): { classification: "bypa
   if (file.endsWith(".md")) {
     return { classification: "legit", note: "markdown (docs/template) — no runtime billing risk" };
   }
+  // Dependency manifests / lockfiles declare packages — they don't execute, so an
+  // SDK name appearing here is a declaration, not a billing call site.
+  if (file.endsWith("package.json") || file.endsWith("package-lock.json") ||
+      file.endsWith("bun.lock") || file.endsWith("bun.lockb") || file.endsWith("yarn.lock")) {
+    return { classification: "legit", note: "dependency manifest — declaration, not a runtime call" };
+  }
   for (const [hint, note] of Object.entries(LEGIT_HINTS)) {
     if (file.includes(hint)) return { classification: "legit", note };
   }
