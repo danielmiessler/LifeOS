@@ -29,7 +29,7 @@
  */
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "fs";
-import { join } from "path";
+import { basename, join } from "path";
 import { execSync } from "child_process";
 
 const HOME = process.env.HOME ?? "";
@@ -62,11 +62,22 @@ interface CostSnapshot {
   alerts: string[];
 }
 
-interface CallSite {
+type Classification = "bypass" | "legit" | "unknown";
+type RiskPatternKind = "sdk-dependency" | "bare-cli" | "raw-http";
+
+export interface RiskPattern {
+  id: string;
+  pattern: string;
+  reason: string;
+  kind: RiskPatternKind;
+}
+
+export interface CallSite {
   file: string;
   line: number;
   match: string;
-  classification: "bypass" | "legit" | "unknown";
+  classification: Classification;
+  patternId: string;
   reason: string;
 }
 
@@ -151,13 +162,43 @@ const SCAN_EXCLUDES = [
 ];
 
 // Patterns that indicate API billing risk
-const RISK_PATTERNS = [
-  { pattern: "@anthropic-ai/claude-agent-sdk", reason: "Claude Agent SDK — bills API unless ANTHROPIC_API_KEY is stripped from env" },
-  { pattern: "@anthropic-ai/sdk", reason: "Raw Anthropic SDK — bills API directly" },
-  { pattern: "@ai-sdk/anthropic", reason: "Vercel AI SDK Anthropic provider — bills API directly" },
-  { pattern: "claude.*--bare", reason: "`claude --bare` flag forces ANTHROPIC_API_KEY auth, skips OAuth/keychain" },
-  { pattern: "x-api-key.*anthropic\\|x-api-key.*sk-ant", reason: "Raw HTTP to Anthropic API with x-api-key header" },
-  { pattern: "api\\.anthropic\\.com/v1/messages", reason: "Direct HTTP POST to Anthropic messages endpoint" },
+export const RISK_PATTERNS: RiskPattern[] = [
+  {
+    id: "claude-agent-sdk",
+    pattern: "@anthropic-ai/claude-agent-sdk",
+    reason: "Claude Agent SDK — bills API unless ANTHROPIC_API_KEY is stripped from env",
+    kind: "sdk-dependency",
+  },
+  {
+    id: "anthropic-sdk",
+    pattern: "@anthropic-ai/sdk",
+    reason: "Raw Anthropic SDK — bills API directly",
+    kind: "sdk-dependency",
+  },
+  {
+    id: "ai-sdk-anthropic",
+    pattern: "@ai-sdk/anthropic",
+    reason: "Vercel AI SDK Anthropic provider — bills API directly",
+    kind: "sdk-dependency",
+  },
+  {
+    id: "claude-bare",
+    pattern: "claude.*--bare",
+    reason: "`claude --bare` flag forces ANTHROPIC_API_KEY auth, skips OAuth/keychain",
+    kind: "bare-cli",
+  },
+  {
+    id: "raw-http-x-api-key",
+    pattern: "x-api-key.*(anthropic|sk-ant)",
+    reason: "Raw HTTP to Anthropic API with x-api-key header",
+    kind: "raw-http",
+  },
+  {
+    id: "raw-http-messages-endpoint",
+    pattern: "api\\.anthropic\\.com/v1/messages",
+    reason: "Direct HTTP POST to Anthropic messages endpoint",
+    kind: "raw-http",
+  },
 ];
 
 // Known-legit classifications (file path substrings)
@@ -165,7 +206,7 @@ const LEGIT_HINTS: Record<string, string> = {
   "CostTracker.ts": "this tool — scans itself for patterns",
   "hooks/handlers/UpdateCounts.ts": "OAuth usage cache (not billing inference)",
   "Daemon/Tools/SecurityFilter.ts": "content redaction filter — regex only, no API call",
-  "skills/Evals/": "opt-in API billing, gated by EVALS_ALLOW_API_BILLING=1",
+  "skills/Evals/": "Evals opt-in API billing, gated by EVALS_ALLOW_API_BILLING=1",
   "PAI/TOOLS/Inference.ts": "canonical inference tool — deletes ANTHROPIC_API_KEY before spawn",
   "PAI/PULSE/setup.ts": "provisioning script — placeholder comment only",
 };
@@ -186,7 +227,24 @@ function fileHasGuard(filePath: string): boolean {
   }
 }
 
-function classifyCallSite(file: string, reason: string): { classification: "bypass" | "legit" | "unknown"; note: string } {
+// Files whose SDK references live in a declarative dependency section or are
+// pure lockfiles. Deliberately EXCLUDES config-with-scripts manifests like
+// deno.json / composer.json, whose `tasks`/`scripts` blocks can hold real
+// executable billing calls — those must not be exempted.
+const DEPENDENCY_MANIFEST_BASENAMES = new Set([
+  "package.json",
+  "package-lock.json",
+  "bun.lock",
+  "yarn.lock",
+  "pnpm-lock.yaml",
+  "deno.lock",
+]);
+
+export function isDependencyManifest(file: string): boolean {
+  return DEPENDENCY_MANIFEST_BASENAMES.has(basename(file));
+}
+
+export function classifyCallSite(file: string, risk: RiskPattern): { classification: Classification; note: string } {
   // Documentation files (.md) never execute — just mention SDK/API in prose or examples
   if (file.endsWith(".md")) {
     return { classification: "legit", note: "markdown (docs/template) — no runtime billing risk" };
@@ -194,17 +252,25 @@ function classifyCallSite(file: string, reason: string): { classification: "bypa
   for (const [hint, note] of Object.entries(LEGIT_HINTS)) {
     if (file.includes(hint)) return { classification: "legit", note };
   }
+  // Dependency manifests / lockfiles declare SDK packages, but may also contain
+  // executable scripts; exempt only dependency-name patterns here.
+  if (risk.kind === "sdk-dependency" && isDependencyManifest(file)) {
+    return { classification: "legit", note: "dependency manifest — declaration, not a runtime call" };
+  }
   // File has the ANTHROPIC_API_KEY-delete guard → its SDK/API-risk usage is neutralized
   if (fileHasGuard(file)) {
     return { classification: "legit", note: "file has `delete process.env.ANTHROPIC_API_KEY` guard — SDK/CLI uses OAuth subscription" };
   }
-  if (reason.includes("--bare")) {
+  if (risk.kind === "bare-cli") {
     return { classification: "bypass", note: "`--bare` flag — remove it, use Inference.ts flag pattern, and strip ANTHROPIC_API_KEY from env" };
   }
-  if (reason.includes("SDK")) {
+  if (risk.kind === "sdk-dependency") {
     return { classification: "bypass", note: "SDK call without ANTHROPIC_API_KEY-delete guard — will bill API if key present in env" };
   }
-  return { classification: "unknown", note: reason };
+  if (risk.kind === "raw-http") {
+    return { classification: "bypass", note: "raw Anthropic HTTP call without ANTHROPIC_API_KEY-delete guard — will bill API if key present in env" };
+  }
+  return { classification: "unknown", note: risk.reason };
 }
 
 function scanCallSites(): CallSite[] {
@@ -213,9 +279,9 @@ function scanCallSites(): CallSite[] {
 
   for (const root of SCAN_ROOTS) {
     if (!existsSync(root)) continue;
-    for (const { pattern, reason } of RISK_PATTERNS) {
+    for (const risk of RISK_PATTERNS) {
       try {
-        const cmd = `rg --line-number --no-heading ${excludeArgs} -e '${pattern}' '${root}' 2>/dev/null`;
+        const cmd = `rg --line-number --no-heading ${excludeArgs} -e '${risk.pattern}' '${root}' 2>/dev/null`;
         const output = execSync(cmd, { encoding: "utf-8", maxBuffer: 4 * 1024 * 1024 }).trim();
         if (!output) continue;
         for (const line of output.split("\n")) {
@@ -223,12 +289,13 @@ function scanCallSites(): CallSite[] {
           if (!match) continue;
           const [, file, lineNumStr, matched] = match;
           const lineNum = parseInt(lineNumStr, 10);
-          const { classification, note } = classifyCallSite(file, reason);
+          const { classification, note } = classifyCallSite(file, risk);
           hits.push({
             file: file.replace(HOME, "~"),
             line: lineNum,
             match: matched.trim().slice(0, 120),
             classification,
+            patternId: risk.id,
             reason: note,
           });
         }
@@ -241,7 +308,7 @@ function scanCallSites(): CallSite[] {
   // Dedup by file+line+pattern
   const seen = new Set<string>();
   return hits.filter((h) => {
-    const key = `${h.file}:${h.line}:${h.reason}`;
+    const key = baselineKey(h);
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -252,11 +319,28 @@ function scanCallSites(): CallSite[] {
 // Baseline diff — detect new call sites since last scan
 // ──────────────────────────────────────────────────────────────────────────
 
+export function baselineKey(site: Pick<CallSite, "file" | "line" | "patternId">): string {
+  return `${site.file}:${site.line}:${site.patternId}`;
+}
+
 function readBaseline(): Set<string> {
   try {
     const raw = readFileSync(CALL_SITES_PATH, "utf-8");
-    const data = JSON.parse(raw) as { sites: CallSite[] };
-    return new Set(data.sites.map((s) => `${s.file}:${s.line}:${s.reason}`));
+    const data = JSON.parse(raw) as { sites?: Array<Partial<CallSite>> };
+    const keys = new Set<string>();
+    for (const site of data.sites ?? []) {
+      if (typeof site.file !== "string" || typeof site.line !== "number") continue;
+      if (typeof site.patternId === "string") {
+        keys.add(baselineKey(site as Pick<CallSite, "file" | "line" | "patternId">));
+      } else {
+        // Legacy baselines were keyed by mutable notes and did not persist the
+        // matched pattern. Treat the file/line as known across current patterns.
+        for (const risk of RISK_PATTERNS) {
+          keys.add(`${site.file}:${site.line}:${risk.id}`);
+        }
+      }
+    }
+    return keys;
   } catch {
     return new Set();
   }
@@ -280,7 +364,7 @@ async function takeSnapshot(): Promise<{ snapshot: CostSnapshot; sites: CallSite
   const bypass = sites.filter((s) => s.classification === "bypass").length;
   const legit = sites.filter((s) => s.classification === "legit").length;
   const newSites = sites
-    .filter((s) => !baseline.has(`${s.file}:${s.line}:${s.reason}`))
+    .filter((s) => !baseline.has(baselineKey(s)))
     .map((s) => `${s.file}:${s.line} (${s.classification}) — ${s.reason}`);
 
   const alerts: string[] = [];
