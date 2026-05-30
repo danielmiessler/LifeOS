@@ -36,8 +36,8 @@ import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, m
 import { join, basename, dirname } from 'path';
 import { paiPath, getPaiDir } from '../lib/paths';
 import { getIdentity } from '../lib/identity';
-import { inference } from '../../PAI/Tools/Inference';
-import type { ParsedTranscript } from '../../PAI/Tools/TranscriptParser';
+import { inference } from '../../PAI/TOOLS/Inference';
+import type { ParsedTranscript } from '../../PAI/TOOLS/TranscriptParser';
 
 // ============================================================================
 // Types
