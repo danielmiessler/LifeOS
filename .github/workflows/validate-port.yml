@@ -1,0 +1,71 @@
+name: Validate Port
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'targets/**'
+      - 'spec/**'
+      - 'Releases/Pi/**'
+  pull_request:
+    paths:
+      - 'targets/**'
+      - 'spec/**'
+      - 'Releases/Pi/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check Hermes frontmatter
+        run: |
+          e=0
+          for f in targets/hermes/skills/*/SKILL.md; do
+            n=$(basename $(dirname $f))
+            for x in "name:" "description:" "version:" "author:" "license:" "metadata:"; do
+              grep -q "^$x" "$f" || { echo "MISSING $x in $n"; e=$((e+1)); }
+            done
+            grep -q "USE WHEN" "$f" || { echo "MISSING USE WHEN in $n"; e=$((e+1)); }
+            grep -q "NOT FOR" "$f" || { echo "MISSING NOT FOR in $n"; e=$((e+1)); }
+          done
+          [ "$e" -eq 0 ] || { echo "$e frontmatter errors"; exit 1; }
+
+      - name: Check Hermes sections
+        run: |
+          e=0
+          for f in targets/hermes/skills/*/SKILL.md; do
+            n=$(basename $(dirname $f))
+            for s in "## Gotchas" "## Execution Log"; do
+              grep -q "$s" "$f" || { echo "MISSING $s in $n"; e=$((e+1)); }
+            done
+          done
+          [ "$e" -eq 0 ] || { echo "$e section errors"; exit 1; }
+
+      - name: Check Pi frontmatter
+        run: |
+          e=0
+          for f in Releases/Pi/skills/*/SKILL.md; do
+            head -1 "$f" | grep -q '^---$' || { echo "NO FRONTMATTER in $(basename $(dirname $f))"; e=$((e+1)); }
+          done
+          [ "$e" -eq 0 ] || { echo "$e Pi frontmatter errors"; exit 1; }
+
+      - name: Check trailing whitespace
+        run: |
+          c=$(grep -rn '[[:space:]]$' targets/ spec/ Releases/Pi/skills/ --include='*.md' --include='*.sh' 2>/dev/null | wc -l)
+          [ "$c" -eq 0 ] || { echo "$c lines with trailing whitespace"; exit 1; }
+
+      - name: Check empty files
+        run: |
+          e=$(find targets/ spec/ Releases/Pi/skills/ -type f -empty 2>/dev/null)
+          [ -z "$e" ] || { echo "Empty files: $e"; exit 1; }
+
+      - name: Check install.sh syntax
+        run: "bash -n targets/hermes/install.sh"
+
+      - name: Count skills
+        run: |
+          h=$(ls -d targets/hermes/skills/*/ 2>/dev/null | wc -l)
+          p=$(ls -d Releases/Pi/skills/*/ 2>/dev/null | wc -l)
+          echo "Hermes: $h skills, Pi: $p skills"
+          [ "$h" -eq 38 ] || { echo "Expected 38 Hermes skills, got $h"; exit 1; }
