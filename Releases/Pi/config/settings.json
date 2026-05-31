@@ -1,14 +1,47 @@
 {
-  "thinkingLevel": "high",
+  "algorithmVersion": "6.3.0",
+  "defaultMode": "algorithm",
+  "effortTier": "E2",
+  "thinkingLevel": "medium",
   "theme": "dark",
   "steeringMode": "one-at-a-time",
   "followUpMode": "one-at-a-time",
   "transport": "auto",
   "enableSkillCommands": true,
   "quietStartup": true,
+  "voiceEnabled": false,
+  "voiceEndpoint": "http://localhost:31337/notify",
   "compaction": {
     "enabled": true,
     "proactive": true,
     "contextThreshold": 0.85
+  },
+  "isa": {
+    "minSections": 2,
+    "requireAntiCriteria": true,
+    "idStability": true,
+    "changelogRequired": true
+  },
+  "containment": {
+    "enabled": true,
+    "zones": ["Z1", "Z2", "Z3", "Z4", "Z5", "Z6"],
+    "blockCrossZoneWrites": true
+  },
+  "verification": {
+    "requireEvidence": true,
+    "liveProbeRequired": true,
+    "crossVendorAuditTiers": ["E4", "E5"],
+    "failThreshold": 0.2
+  },
+  "learning": {
+    "captureSignals": true,
+    "captureReflections": true,
+    "learningDir": "learning"
+  },
+  "memory": {
+    "workDir": "work",
+    "knowledgeDir": "knowledge",
+    "learningDir": "learning",
+    "stateDir": "state"
   }
 }
