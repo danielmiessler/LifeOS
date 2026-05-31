@@ -1,6 +1,6 @@
 ---
 name: pai-science
-description: "Scientific method as universal problem-solving algorithm. 7 workflows: DefineGoal, GenerateHypotheses, DesignExperiment, Measure, Analyze, Iterate, FullCycle. Three scales: micro (minutes), meso (hours), macro (days). USE WHEN rigorous hypothesis-driven investigation is needed — formulating hypotheses, designing experiments, measuring outcomes, and iterating based on evidence. NOT for routine debugging, opinion-based analysis, or tasks where experimentation is impractical."
+description: "Scientific method as universal problem-solving algorithm. 7 workflows: DefineGoal, GenerateHypotheses, DesignExperiment, Measure, Analyze, Iterate, FullCycle. Three scales: micro (minutes), meso (hours), macro (days). USE WHEN rigorous hypothesis-driven investigation is needed — formulating hypotheses, designing experiments, measuring outcomes, and iterating based on evidence. NOT FOR routine debugging, opinion-based analysis, or tasks where experimentation is impractical."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
