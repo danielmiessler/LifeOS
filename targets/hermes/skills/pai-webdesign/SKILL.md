@@ -8,6 +8,15 @@ not_for: "Graphic design tools exports (Figma/Sketch); animation-heavy motion de
 tags: [web, design, UI, prototype, tailwind, react, design-system]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-webdesign skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-webdesign: Web & UI Design Pipeline
 
 ## Workflow Routing

@@ -8,6 +8,15 @@ not_for: "Simple scraping where speed matters (use pai-brightdata Tier 1-3); aut
 tags: [browser, automation, extension, chrome, undetected, interception]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-interceptor skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-interceptor: Real Chrome Browser Automation via Extension
 
 ## Workflow Routing

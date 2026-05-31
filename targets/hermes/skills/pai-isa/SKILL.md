@@ -13,6 +13,15 @@ workflows:
   reconcile: workflows/reconcile.md
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-isa skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-isa — Intelligence Stack Architecture
 
 ## Overview

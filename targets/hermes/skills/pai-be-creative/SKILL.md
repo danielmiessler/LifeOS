@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-ideate, pai-iterative-depth, pai-science]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-be-creative skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Be Creative — Divergent Ideation via Verbalized Sampling
 
 ## Overview

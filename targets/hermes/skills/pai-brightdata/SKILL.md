@@ -8,6 +8,15 @@ not_for: "Simple static HTML pages (use web_extract directly); APIs with proper 
 tags: [scraping, web, brightdata, proxy, browser, progressive]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-brightdata skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-brightdata: Progressive Web Scraping
 
 ## Scraping Tiers

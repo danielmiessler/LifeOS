@@ -9,6 +9,15 @@ metadata:
   requires: [delegate_task, web_search, web_extract, read_file, write_file]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-research skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-research — Multi-Mode Research
 
 ## Overview

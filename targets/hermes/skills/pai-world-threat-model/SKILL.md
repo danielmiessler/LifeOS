@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-red-team, pai-pai-first-principles, pai-systems-thinking, pai-council]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-world-threat-model skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # World Threat Model — Long-Horizon Stress-Testing
 
 ## Overview

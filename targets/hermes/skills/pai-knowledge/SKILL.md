@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-algorithm, pai-telos]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-knowledge skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Knowledge — Typed Knowledge Graph (Hermes Port)
 
 ## Overview

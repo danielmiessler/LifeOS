@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-algorithm, pai-isa]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-telos skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Telos — Life OS (Hermes Port)
 
 ## Overview
@@ -61,6 +70,13 @@ Telos documents live at `~/.hermes/profiles/dev/pai/USER/TELOS/`:
 - **Key Results:** [Measurable outcomes]
 - **Link to Mission:** [How this serves the larger mission]
 ```
+
+## Gotchas
+
+- **Telos changes.** Goals evolve, beliefs shift. Treat Telos as living documents, not static artifacts.
+- **Don't delete old entries.** Preserve history — append new entries, don't delete old ones unless the user explicitly asks.
+- **Telos influences everything.** When making decisions, check alignment with Telos.
+- **Bias toward action.** A goal without a plan is a wish. Telos should drive action, not replace it.
 
 ## Execution Log
 

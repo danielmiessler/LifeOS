@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-pai-first-principles, pai-pai-root-cause-analysis, pai-iterative-depth]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-systems-thinking skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Systems Thinking
 
 ## Overview

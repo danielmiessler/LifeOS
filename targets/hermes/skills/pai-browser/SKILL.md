@@ -8,6 +8,15 @@ not_for: "Static HTML parsing (use web_extract instead); large-scale crawling wi
 tags: [browser, automation, headless, scraping, recipes, web]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-browser skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-browser: Headless Browser Automation
 
 ## Workflow Routing

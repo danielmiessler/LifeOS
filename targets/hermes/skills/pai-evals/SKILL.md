@@ -9,6 +9,15 @@ metadata:
   requires: [delegate_task, terminal, read_file, write_file, search_files, web_search]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-evals skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-evals — Evaluation Framework
 
 ## Overview

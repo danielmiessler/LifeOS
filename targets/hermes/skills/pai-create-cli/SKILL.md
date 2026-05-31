@@ -8,6 +8,15 @@ not_for: "Python CLI generation; JavaScript (non-TypeScript) CLI tools; existing
 tags: [cli, typescript, scaffolding, commander, oclif, llcli]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-create-cli skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-create-cli: TypeScript CLI Generation
 
 ## Workflow Routing

@@ -8,6 +8,15 @@ not_for: "Full-text paper analysis (use pai-extract-wisdom); downloading PDFs en
 tags: [arxiv, academic, papers, research, API, search]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-arxiv skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-arxiv: Academic Paper Search
 
 ## Workflow Routing

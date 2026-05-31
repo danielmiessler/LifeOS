@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-isa, pai-telos, deep-research, plan]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-algorithm skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # PAI Algorithm v6.3.0 (Hermes Port)
 
 ## Overview

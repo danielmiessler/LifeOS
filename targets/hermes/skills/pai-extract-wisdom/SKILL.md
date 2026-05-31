@@ -8,6 +8,15 @@ not_for: "Simple summarization (use pai-fabric/sumarize); extracting structured 
 tags: [extraction, wisdom, analysis, insights, contrarian, deep-dive]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-extract-wisdom skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-extract-wisdom: Content-Adaptive Wisdom Extraction
 
 ## Workflow Routing

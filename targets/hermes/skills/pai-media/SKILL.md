@@ -8,6 +8,15 @@ not_for: "Photo-realistic image generation (use dedicated image AI); video produ
 tags: [media, visualization, diagrams, d3, mermaid, svg, icons, design]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-media skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-media: Visual Content Generation
 
 ## Workflow Routing

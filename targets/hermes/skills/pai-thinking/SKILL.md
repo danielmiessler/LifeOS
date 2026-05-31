@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-algorithm, deep-research, pai-first-principles, pai-root-cause-analysis]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-thinking skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Thinking Capabilities (Hermes Port)
 
 ## Overview
@@ -98,6 +107,16 @@ A library of 19 named thinking capabilities that the Algorithm invokes during OB
 ### 18. FeedbackMemoryConsult — Past lessons
 **When:** Repeating a type of task that has been done before.
 **Method:** Check MEMORY/LEARNING/ for relevant patterns. Check MEMORY/KNOWLEDGE/ for entities. Apply past lessons to current work.
+
+## Gotchas
+
+- **Not a replacement for domain expertise.** Thinking capabilities help structure reasoning, but they don't substitute for domain knowledge. Use them as frameworks, not answers.
+- **Don't run all 19.** Select 1-3 capabilities appropriate to the task. Running all 19 is context wasteful.
+- **Council requires careful persona selection.** Generic personas produce generic debate. Invest time in crafting specific, contrasting perspectives.
+- **RedTeam at full scale (32 agents) is expensive.** Use Quick mode for most tasks. Only run full ParallelAnalysis on high-stakes decisions.
+- **FirstPrinciples is hard to do well.** Many attempts at first principles reasoning produce false decompositions. Challenge your own decomposition before rebuilding.
+- **WorldThreatModel produces long outputs.** Each horizon generates a scenario. At 11 horizons the document is substantial. Use Standard tier unless the decision is existential.
+- **BitterPill is a meta-audit.** It's for evaluating instructions, not for solving problems. Don't use it as a thinking tool — use it as a quality gate.
 
 ## Execution Log
 

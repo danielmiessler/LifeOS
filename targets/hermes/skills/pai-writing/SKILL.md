@@ -8,6 +8,15 @@ not_for: "Technical documentation (use direct LLM prompting); academic papers (u
 tags: [writing, fiction, creative, narrative, prose, anti-cliche]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-writing skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-writing: Fiction & Content Writing
 
 ## Workflow Routing

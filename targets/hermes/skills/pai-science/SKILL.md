@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-pai-first-principles, pai-red-team, pai-iterative-depth]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-science skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Science — The Scientific Method as Universal Algorithm
 
 ## Overview

@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-be-creative, pai-iterative-depth, pai-red-team, pai-science]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-ideate skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Ideate — Evolutionary Ideation
 
 ## Overview

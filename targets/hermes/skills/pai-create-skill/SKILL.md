@@ -8,6 +8,15 @@ not_for: "Modifying existing skills outside the scaffold/validate/evaluate workf
 tags: [skill, scaffolding, validation, evaluation, development, pai]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-create-skill skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-create-skill: PAI Skill Development Lifecycle
 
 ## Workflow Routing

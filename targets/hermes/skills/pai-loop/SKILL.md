@@ -9,6 +9,15 @@ metadata:
   requires: [delegate_task, read_file, write_file, terminal, web_search]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-loop skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-loop — Iterative Improvement Loop
 
 ## Overview

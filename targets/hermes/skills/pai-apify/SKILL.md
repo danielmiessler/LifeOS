@@ -8,6 +8,15 @@ not_for: "Scraping without Apify credits; bypassing platform authentication or r
 tags: [apify, scraping, social-media, instagram, linkedin, tiktok, youtube]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-apify skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-apify: Social Media Scraping via Apify Actors
 
 ## Workflow Routing

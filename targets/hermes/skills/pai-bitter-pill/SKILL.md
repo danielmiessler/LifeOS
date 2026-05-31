@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-red-team, pai-pai-first-principles]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-bitter-pill skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Bitter Pill — Over-Prompting Audit
 
 ## Overview

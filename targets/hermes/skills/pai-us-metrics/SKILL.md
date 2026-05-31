@@ -8,6 +8,15 @@ not_for: "Non-US economic data; real-time stock prices (use financial API); fore
 tags: [economics, indicators, FRED, BLS, EIA, treasury, data, analysis]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-us-metrics skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-us-metrics: US Economic Indicators
 
 ## Workflow Routing

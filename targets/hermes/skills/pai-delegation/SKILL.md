@@ -9,6 +9,15 @@ metadata:
   requires: [delegate_task, terminal, read_file, write_file, process]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-delegation skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-delegation — 6 Parallelization Patterns
 
 ## Overview

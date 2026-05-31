@@ -8,6 +8,15 @@ not_for: "Illegal surveillance; doxxing; accessing private/protected data withou
 tags: [osint, investigation, research, public-records, parallel, social-media]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-private-investigator skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-private-investigator: Ethical OSINT
 
 ## Workflow Routing

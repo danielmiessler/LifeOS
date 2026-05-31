@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-aperture-oscillation, pai-systems-thinking, pai-ideate]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-iterative-depth skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # Iterative Depth — Multi-Angle Sequential Exploration
 
 ## Overview

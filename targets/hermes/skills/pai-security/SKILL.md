@@ -8,6 +8,15 @@ not_for: "Unauthorized penetration testing; attacking systems without explicit p
 tags: [security, assessment, recon, pentest, prompt-injection, webapp]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-security skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-security: Security Assessment Frameworks
 
 ## Workflow Routing

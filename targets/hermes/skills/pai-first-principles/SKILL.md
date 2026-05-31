@@ -10,6 +10,15 @@ metadata:
     related_skills: [pai-systems-thinking, pai-pai-root-cause-analysis, pai-red-team]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-first-principles skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # First Principles Thinking
 
 ## Overview

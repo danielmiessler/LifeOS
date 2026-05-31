@@ -10,6 +10,15 @@ metadata:
   hermes_tools: [session_search]
 ---
 
+<!-- Voice notification — fire-and-forget on invocation -->
+```bash
+curl -s -X POST http://localhost:31337/notify \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Running the pai-context-search skill"}' \
+  > /dev/null 2>&1 &
+```
+
+
 # pai-context-search — Session Recovery & Context Search
 
 ## Overview
