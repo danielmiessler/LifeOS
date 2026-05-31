@@ -216,5 +216,5 @@ for batch in chunks(agent_personas, 8):
 After every invocation:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-red-team","workflow":"ParallelAnalysis|AdversarialValidation","agents":32,"status":"ok","duration_s":SECONDS}' >> ~/.hermes/profiles/dev/pai/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-red-team","workflow":"ParallelAnalysis|AdversarialValidation","agents":32,"status":"ok","duration_s":SECONDS}' >> ~/.hermes/pai/MEMORY/SKILLS/execution.jsonl
 ```

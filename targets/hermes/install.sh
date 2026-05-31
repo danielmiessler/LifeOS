@@ -15,9 +15,14 @@ else
   HERMES_HOME="$HOME/.hermes/profiles/$HERMES_PROFILE"
 fi
 
+# PAI root — created at the Hermes root so it works across profiles
+# A cross-profile symlink ensures dev/default both resolve
+PAI_ROOT="$HOME/.hermes/pai"
+
 echo "=== PAI v5.0 for Hermes Agent ==="
 echo "Profile: $HERMES_PROFILE"
 echo "Target:  $HERMES_HOME"
+echo "PAI root: $PAI_ROOT"
 echo ""
 
 # Check Hermes is installed
@@ -27,14 +32,27 @@ if ! command -v hermes &>/dev/null; then
   exit 1
 fi
 
-# Create PAI directory structure
+# Create PAI directory structure at the canonical root
 echo "Creating PAI memory infrastructure..."
-mkdir -p "$HERMES_HOME/pai/MEMORY"/{WORK,KNOWLEDGE/{People,Companies,Ideas,Research,Blogs},LEARNING,STATE,SKILLS,RELATIONSHIP,OBSERVABILITY,PROJECT,SCRATCHPAD,WISDOM,VERIFICATION,AUTO,RAW}
-mkdir -p "$HERMES_HOME/pai/USER/TELOS"
-mkdir -p "$HERMES_HOME/pai/ALGORITHM"
+mkdir -p "$PAI_ROOT/MEMORY"/{WORK,KNOWLEDGE/{People,Companies,Ideas,Research,Blogs},LEARNING,STATE,SKILLS,RELATIONSHIP,OBSERVABILITY,PROJECT,SCRATCHPAD,WISDOM,VERIFICATION,AUTO,RAW}
+mkdir -p "$PAI_ROOT/USER/TELOS"
+mkdir -p "$PAI_ROOT/ALGORITHM"
 
 # Initialize state
-echo '{"version":1,"active_sessions":[],"completed_sessions":[]}' > "$HERMES_HOME/pai/MEMORY/STATE/work.json"
+echo '{"version":1,"active_sessions":[],"completed_sessions":[]}' > "$PAI_ROOT/MEMORY/STATE/work.json"
+
+# Copy template USER files
+cp "$PAI_SOURCE/pai/USER/PRINCIPAL_IDENTITY.md" "$PAI_ROOT/USER/" 2>/dev/null || true
+cp "$PAI_SOURCE/pai/USER/DA_IDENTITY.md" "$PAI_ROOT/USER/" 2>/dev/null || true
+cp "$PAI_SOURCE/pai/ALGORITHM/ALGORITHM.md" "$PAI_ROOT/ALGORITHM/" 2>/dev/null || true
+cp "$PAI_SOURCE/pai/PAI_SYSTEM_PROMPT.md" "$PAI_ROOT/" 2>/dev/null || true
+
+# Create cross-profile symlink so dev/default both resolve
+mkdir -p "$HERMES_HOME"
+if [ ! -L "$HERMES_HOME/pai" ] && [ ! -d "$HERMES_HOME/pai" ]; then
+  ln -sf "$PAI_ROOT" "$HERMES_HOME/pai"
+  echo "  ✅ Symlink: $HERMES_HOME/pai -> $PAI_ROOT"
+fi
 
 # Install skill packs
 echo "Installing PAI skill packs..."
@@ -58,4 +76,5 @@ echo ""
 echo "To start using:"
 echo "  hermes -s pai-algorithm \"your task description\""
 echo ""
-echo "PAI memory root: $HERMES_HOME/pai/"
+echo "PAI memory root: $PAI_ROOT"
+echo "Execution log:   $PAI_ROOT/MEMORY/SKILLS/execution.jsonl"

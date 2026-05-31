@@ -164,7 +164,7 @@ When in THINK phase, select from these 19 named capabilities:
 After every Algorithm invocation, append to the execution log:
 
 ```
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-algorithm","mode":"CLASSIFIED_MODE","effort":"E1-E5","phase":"CURRENT_PHASE","status":"ok|error","duration_s":SECONDS}' >> ~/.hermes/profiles/dev/pai/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-algorithm","mode":"CLASSIFIED_MODE","effort":"E1-E5","phase":"CURRENT_PHASE","status":"ok|error","duration_s":SECONDS}' >> ~/.hermes/pai/MEMORY/SKILLS/execution.jsonl
 ```
 
 ## Gotchas

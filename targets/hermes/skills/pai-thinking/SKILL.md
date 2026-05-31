@@ -122,5 +122,5 @@ A library of 19 named thinking capabilities that the Algorithm invokes during OB
 
 After every thinking capability invocation:
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-thinking","capability":"CAPABILITY_NAME","status":"ok","duration_s":SECONDS}' >> ~/.hermes/profiles/dev/pai/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-thinking","capability":"CAPABILITY_NAME","status":"ok","duration_s":SECONDS}' >> ~/.hermes/pai/MEMORY/SKILLS/execution.jsonl
 ```

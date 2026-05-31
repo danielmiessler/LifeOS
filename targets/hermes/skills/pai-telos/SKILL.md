@@ -82,5 +82,5 @@ Telos documents live at `~/.hermes/profiles/dev/pai/USER/TELOS/`:
 
 After every Telos operation:
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-telos","workflow":"WORKFLOW","status":"ok","duration_s":SECONDS}' >> ~/.hermes/profiles/dev/pai/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"pai-telos","workflow":"WORKFLOW","status":"ok","duration_s":SECONDS}' >> ~/.hermes/pai/MEMORY/SKILLS/execution.jsonl
 ```
