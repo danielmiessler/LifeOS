@@ -4,9 +4,9 @@ This directory contains installable, ready-to-use ports of the **PAI v5.0 Life O
 
 ## Quick Comparison
 
-| Target | Install Method | Skills | Memory | Automation | Best For |
-|--------|---------------|--------|--------|------------|----------|
-| **[Hermes Agent](hermes/)** | `bash install.sh` | 38 skill packs | ✅ Persistent | ✅ Full | Users who want the most complete PAI experience |
+| Target | Install Method | Skills | Memory | Automation | Pulse | Best For |
+|--------|---------------|--------|--------|------------|-------|----------|
+| **[Hermes Agent](hermes/)** | `bash install.sh` | 41 skill packs | ✅ Persistent | ✅ Full | ✅ Pulse MCP | Users who want the most complete PAI experience |
 | **[Pi-mono](Releases/Pi/)** | `cp -r * ~/.config/PAI-pi/` | 27 skill packs | ✅ Filesystem | ⚠️ Extension only | Users who want model-agnostic PAI |
 | **[OpenCode](opencode/)** | `cp -r * ~/.codex/pai/` | Context files only | ⚠️ Manual | ❌ Manual | Users who want PAI methodology as reference |
 

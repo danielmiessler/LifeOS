@@ -17,7 +17,7 @@
 
 | Target | Install | Skills | 
 |--------|---------|--------|
-| **Hermes Agent** | `cd targets/hermes && bash install.sh` | 38 skills |
+| **Hermes Agent** | `cd targets/hermes && bash install.sh` | 41 skills |
 | **Pi-mono** | Copy `Releases/Pi/*` to `~/.config/PAI-pi/` | 27 skills |
 | **OpenCode** | Copy `targets/opencode/pai/*` to `~/.codex/pai/` | Context files |
 

@@ -6,7 +6,7 @@
 
 - **Algorithm v6.3.0** — 7-phase execution loop (OBSERVE → THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN)
 - **ISA** — Ideal State Artifact primitive for defining "done" on any task
-- **45+ skill packs** — Thinking, research, engineering, creative, productivity, data scraping
+- **41 skill packs** — Thinking, research, engineering, creative, productivity, data scraping
 - **Memory** — Persistent WORK/KNOWLEDGE/LEARNING tiers
 - **Telos** — Life OS mission, goals, beliefs, wisdom management
 - **Council** — Multi-agent collaborative debate
@@ -137,6 +137,9 @@ Hermes CLI
 | `pai-webdesign` | Web/UI design pipeline |
 | `pai-writing` | Fiction and content writing |
 | `pai-prompting` | Meta-prompting standard library |
+| `pai-aphorisms` | Curated aphorism collection with CRUD |
+| `pai-migrate` | External content intake pipeline |
+| `pulse` | MCP server for notifications + Life Dashboard |
 | `pai-documentation` | System documentation management |
 
 ## Prerequisites
