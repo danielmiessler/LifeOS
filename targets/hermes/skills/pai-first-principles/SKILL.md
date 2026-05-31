@@ -1,7 +1,7 @@
 ---
 name: pai-first-principles
 description: "Physics-based reasoning: decompose problems to irreducible truths, challenge assumptions, and reconstruct from first principles. DECONSTRUCT → CHALLENGE → RECONSTRUCT pattern with constraint classification (hard/soft/assumption)."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

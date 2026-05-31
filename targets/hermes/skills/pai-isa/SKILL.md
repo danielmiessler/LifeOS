@@ -1,7 +1,8 @@
 ---
 name: pai-isa
 description: Intelligence Stack Architecture — tier-gated ISA scaffolding, completeness checking, and ephemeral-to-master reconciliation
-version: 1.0.0
+version: 5.0.0
+author: PAI v5.0 → Hermes Port
 metadata:
   hermes_tags: [pai, isa, architecture, scaffolding, governance]
   related_skills: [pai-council, pai-evals, pai-loop]

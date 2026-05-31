@@ -1,7 +1,7 @@
 ---
 name: pai-be-creative
 description: "Divergent ideation via Verbalized Sampling — a research-backed technique producing demonstrably more diverse outputs. 7 workflows: Standard, Maximum, IdeaGeneration, TreeOfThoughts, DomainSpecific, Technical, SyntheticDataExpansion."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

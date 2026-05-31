@@ -1,7 +1,8 @@
 ---
 name: pai-delegation
 description: 6 parallelization patterns — built-in agents, worktrees, background tasks, custom agents, teams, and parallel dispatch
-version: 1.0.0
+version: 5.0.0
+author: PAI v5.0 → Hermes Port
 metadata:
   hermes_tags: [pai, delegation, parallel, dispatch, agents, worktrees]
   related_skills: [pai-research, pai-council, pai-loop]

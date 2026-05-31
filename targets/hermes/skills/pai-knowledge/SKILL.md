@@ -1,7 +1,7 @@
 ---
 name: pai-knowledge
 description: "PAI v5.0 Knowledge management — typed knowledge graph with People, Companies, Ideas. USE WHEN adding, searching, or updating knowledge entities, harvesting wisdom, or checking cross-references. NOT FOR task memory (use WORK/) or simple Q&A."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

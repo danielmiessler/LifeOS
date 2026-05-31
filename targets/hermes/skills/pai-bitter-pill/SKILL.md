@@ -1,7 +1,7 @@
 ---
 name: pai-bitter-pill
 description: "Over-prompting audit: systematically evaluate every rule in an instruction set using 5 questions per rule. Classify each rule as CUT, RESOLVE, MERGE, EVALUATE, SHARPEN, MOVE, or KEEP with token savings estimates."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

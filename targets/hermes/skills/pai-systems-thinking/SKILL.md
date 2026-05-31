@@ -1,7 +1,7 @@
 ---
 name: pai-systems-thinking
 description: "Structural analysis of complex problems using the Iceberg Model, Causal Loop Diagrams, 12 Leverage Points, and 10 canonical Archetypes. 5 workflows for understanding system behavior, feedback loops, and intervention points."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

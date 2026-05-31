@@ -1,7 +1,7 @@
 ---
 name: pai-algorithm
 description: "PAI v5.0 Algorithm — 7-phase execution loop (OBSERVE → THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN). USE WHEN the task requires structured problem-solving, complex work decomposition, criteria-driven verification, or multi-phase execution. NOT FOR simple Q&A, direct commands, or single-step tasks."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

@@ -1,7 +1,7 @@
 ---
 name: pai-red-team
 description: "Adversarial stress-testing using 32 parallel expert agents. Two core workflows: ParallelAnalysis (5-phase systematic attack) and AdversarialValidation (targeted challenge). Uses delegate_task for parallel agent orchestration."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

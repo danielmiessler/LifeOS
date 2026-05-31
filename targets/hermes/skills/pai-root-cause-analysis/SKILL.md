@@ -1,7 +1,7 @@
 ---
 name: pai-root-cause-analysis
 description: "Systematic incident investigation using 5 proven methods: 5 Whys, Fishbone Diagrams, Fault Tree Analysis, Postmortems, and Kepner-Tregoe. Step-by-step procedures for each method with Hermes tool integration."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

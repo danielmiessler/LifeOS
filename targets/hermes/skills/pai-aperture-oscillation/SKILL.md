@@ -1,7 +1,7 @@
 ---
 name: pai-aperture-oscillation
 description: "3-pass scope switching methodology: narrow/tactical → wide/strategic → synthesis. Oscillates between zoom levels to reveal design tensions and coherence issues invisible at any single scope."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

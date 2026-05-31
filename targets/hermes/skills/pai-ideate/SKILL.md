@@ -1,7 +1,7 @@
 ---
 name: pai-ideate
 description: "9-phase evolutionary ideation: CONSUME → DREAM → DAYDREAM → CONTEMPLATE → STEAL → MATE → TEST → EVOLVE → META-LEARN. Evolves rough ideas into refined concepts through structured creative phases."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

@@ -2,7 +2,7 @@
 name: pai-browser
 description: "Headless browser automation via Hermes browser tools. Recipe-based navigation, clicking, typing, snapshot extraction, and vision analysis."
 version: 5.0.0
-author: PAI v5 Hermes Port
+author: PAI v5.0 → Hermes Port
 use_when: "You need to automate a web browser — fill forms, scrape SPAs, capture screenshots, or run recipe-based user flows on live sites."
 not_for: "Static HTML parsing (use web_extract instead); large-scale crawling without rate limiting; bypassing authentication or CAPTCHA systems."
 tags: [browser, automation, headless, scraping, recipes, web]

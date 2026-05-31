@@ -1,7 +1,7 @@
 ---
 name: pai-world-threat-model
 description: "Long-horizon stress-testing against 11 time horizons (6 months to 50 years). Three tiers (Fast/Standard/Deep) for flexible application. Integrates Red Team, First Principles, and Systems Thinking internally."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

@@ -1,7 +1,7 @@
 ---
 name: pai-iterative-depth
 description: "Multi-angle sequential exploration using 20 grounded techniques. 2-8 sequential passes through systematically different perspectives. Each pass uses a different lens from a library of 20 rigorous techniques."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

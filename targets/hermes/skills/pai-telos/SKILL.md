@@ -1,7 +1,7 @@
 ---
 name: pai-telos
 description: "PAI v5.0 Telos management — mission, goals, beliefs, wisdom, mental models. USE WHEN checking user goals, updating Telos, generating mission-aligned recommendations, or reviewing life direction. NOT FOR task execution (use pai-algorithm) or simple identity info (in USER/ files)."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

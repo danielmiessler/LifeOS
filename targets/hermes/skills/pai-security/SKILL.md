@@ -2,7 +2,7 @@
 name: pai-security
 description: "Security assessment framework covering network reconnaissance, web application testing, and prompt injection testing. Structured methodology with tool-assisted analysis."
 version: 5.0.0
-author: PAI v5 Hermes Port
+author: PAI v5.0 → Hermes Port
 use_when: "You need to assess security posture — network recon, web app vulnerability scanning, or prompt injection testing against AI systems — using ethical, authorized testing frameworks."
 not_for: "Unauthorized penetration testing; attacking systems without explicit permission; production system scanning without change management approval."
 tags: [security, assessment, recon, pentest, prompt-injection, webapp]

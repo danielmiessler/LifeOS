@@ -1,7 +1,7 @@
 ---
 name: pai-thinking
 description: "PAI v5.0 Thinking capabilities bundle — 19 structured thinking methods for structured reasoning. USE WHEN the Algorithm's THINK phase selects a capability, or when the user asks for structured analysis (first principles, systems thinking, red team, council, etc.). NOT FOR unstructured brainstorming or standard tool use."
-version: 1.0.0
+version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:

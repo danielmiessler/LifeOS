@@ -1,7 +1,8 @@
 ---
 name: pai-council
 description: Multi-agent collaborative debate with 4 parallel personas, 3 rounds of round-by-round context passing, and synthesis
-version: 1.0.0
+version: 5.0.0
+author: PAI v5.0 → Hermes Port
 metadata:
   hermes_tags: [pai, council, debate, multi-agent, synthesis]
   related_skills: [pai-research, pai-isa, pai-loop]
