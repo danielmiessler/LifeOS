@@ -159,12 +159,12 @@ Pass 1: 3 tactical questions only
   1. What specifically needs to happen?
   2. What are the top 3 blockers?
   3. What's the cost/timeline?
-  
+
 Pass 2: 3 strategic questions only
   1. How does this fit the bigger picture?
   2. What are the top 3 unintended consequences?
   3. What future options does this affect?
-  
+
 Pass 3: Synthesis
   1. What's the most critical tension?
   2. Which recommendation satisfies both levels?

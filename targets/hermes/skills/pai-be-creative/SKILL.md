@@ -188,7 +188,7 @@ A structured approach to divergent thinking that uses Verbalized Sampling — ex
    - What are the domain's conventions and norms? (to challenge)
    - What are the domain's hard constraints? (to respect)
    - What are the domain's typical failure modes? (to avoid)
-   
+
    Use web_search for domain research
    Use read_file for internal domain docs
    ```
@@ -260,7 +260,7 @@ A structured approach to divergent thinking that uses Verbalized Sampling — ex
    - What patterns are overrepresented?
    - What edge cases are missing?
    - What variations exist in the real world?
-   
+
    Use read_file for existing data
    ```
 

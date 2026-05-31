@@ -56,7 +56,7 @@ Instructions:
 ```
 
 ### Layer 4: Temporal (Pacing & Rhythm)
-```  
+```
 The flow of time in prose.
 Instructions:
 - Vary sentence length: short for action/tension, long for reflection/description

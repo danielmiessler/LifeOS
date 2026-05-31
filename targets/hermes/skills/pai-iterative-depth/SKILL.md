@@ -102,7 +102,7 @@ For each pass:
 ```
 === Pass 3: Comparative ===
 Technique: Compare to alternatives
-Applied to: [Problem] 
+Applied to: [Problem]
 Comparisons made:
 - [Alternative A]: Similar in X, different in Y → insight about Y
 - [Alternative B]: Opposite approach → reveals hidden assumption about Z

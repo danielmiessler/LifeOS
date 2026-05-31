@@ -60,7 +60,7 @@ _Atomic, individually testable ISCs (Ideal State Criteria). Each ISC is a binary
 | ISC-4 | | antecedent | |
 | ... | | | |
 
-**Required:** At minimum one Anti-ISC (proves the task is NOT done).  
+**Required:** At minimum one Anti-ISC (proves the task is NOT done).
 **If experiential goal:** At minimum one Antecedent ISC (anchored to prior work).
 
 ### Test Strategy
@@ -107,9 +107,9 @@ _Timestamped decision log. Entries are never deleted — only superseded._
 
 _Error-correction trail. Every entry uses the four-piece format: conjecture → refuted-by → learned → criterion-now._
 
-> **Conjecture:** _What was believed_  
-> **Refuted by:** _What disproved it_  
-> **Learned:** _What is now understood_  
+> **Conjecture:** _What was believed_
+> **Refuted by:** _What disproved it_
+> **Learned:** _What is now understood_
 > **Criterion now:** _How the ISA changed_
 
 ### Verification

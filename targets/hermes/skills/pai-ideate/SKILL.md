@@ -53,7 +53,7 @@ A complete ideation lifecycle that evolves a rough seed idea through 9 structure
    - What are the known approaches?
    - What are the pain points with existing solutions?
    - What constraints must we work within?
-   
+
    Use web_search for competitive analysis
    Use read_file for internal documentation
    Use delegate_task for parallel research

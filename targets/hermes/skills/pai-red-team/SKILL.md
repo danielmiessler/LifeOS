@@ -141,7 +141,7 @@ for batch in chunks(agent_personas, 8):
 2. **For each claim, generate adversarial counter-arguments:**
    ```
    Claim: [Statement]
-   
+
    Challenge 1: What's the opposite of this claim?
    Challenge 2: What would need to be true for this to fail?
    Challenge 3: What data would disprove this?

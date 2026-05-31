@@ -20,7 +20,7 @@ Telos is the user's mission, goals, beliefs, wisdom, challenges, mental models, 
 
 Telos documents live at `~/.hermes/profiles/dev/pai/USER/TELOS/`:
 
-| File | Purpose | 
+| File | Purpose |
 |------|---------|
 | `MISSION.md` | Core mission — 1-3 sentences why |
 | `GOALS.md` | Current goals with priority, status, dates |

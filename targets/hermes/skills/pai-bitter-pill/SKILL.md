@@ -180,7 +180,7 @@ Output format:
 Total original tokens: [N]
 Rules analyzed: [N]
 Rules to CUT: [N] ([N] tokens saved)
-Rules to MERGE: [N] ([N] tokens saved)  
+Rules to MERGE: [N] ([N] tokens saved)
 Rules to SHARPEN: [N] ([N] tokens saved)
 Total potential savings: [N] tokens ([N]% reduction)
 

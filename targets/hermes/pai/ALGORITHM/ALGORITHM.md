@@ -19,38 +19,38 @@ The classifier reasons about the request — it does not regex-match keywords.
 ## The 7 Phases
 
 ### OBSERVE
-**Entry:** User request received, mode classified as ALGORITHM.  
-**Work:** Reverse-engineer request. Load context. Classify effort tier (E1-E5). Scaffold ISA. Define ISCs.  
+**Entry:** User request received, mode classified as ALGORITHM.
+**Work:** Reverse-engineer request. Load context. Classify effort tier (E1-E5). Scaffold ISA. Define ISCs.
 **Exit:** ISA exists with all ISCs for the tier. Frontmatter populated.
 
 ### THINK
-**Entry:** ISA scaffolded, ISCs defined.  
-**Work:** Select thinking capabilities. Run premortem. Check prerequisites. Identify risks and unknowns.  
+**Entry:** ISA scaffolded, ISCs defined.
+**Work:** Select thinking capabilities. Run premortem. Check prerequisites. Identify risks and unknowns.
 **Exit:** Risk register populated, capabilities selected.
 
 ### PLAN
-**Entry:** Risks identified, approach selected.  
-**Work:** Design approach. Define features with dependencies. Identify parallel workstreams. Check feasibility.  
+**Entry:** Risks identified, approach selected.
+**Work:** Design approach. Define features with dependencies. Identify parallel workstreams. Check feasibility.
 **Exit:** Feature breakdown with dependency graph.
 
 ### BUILD
-**Entry:** Plan ready.  
-**Work:** Prepare artifacts. Invoke capabilities. Create test harness.  
+**Entry:** Plan ready.
+**Work:** Prepare artifacts. Invoke capabilities. Create test harness.
 **Exit:** Prerequisites ready.
 
 ### EXECUTE
-**Entry:** Prerequisites ready.  
-**Work:** Execute features in dependency order. Mark ISCs as they pass. Revise ISA if stuck.  
+**Entry:** Prerequisites ready.
+**Work:** Execute features in dependency order. Mark ISCs as they pass. Revise ISA if stuck.
 **Exit:** Features executed, ISCs marked pass/fail.
 
 ### VERIFY
-**Entry:** All features attempted.  
-**Work:** Test every ISC with concrete evidence. Cross-vendor audit at E4/E5. If fail → revise and re-execute.  
+**Entry:** All features attempted.
+**Work:** Test every ISC with concrete evidence. Cross-vendor audit at E4/E5. If fail → revise and re-execute.
 **Exit:** Every ISC verified pass/fail with evidence.
 
 ### LEARN
-**Entry:** All ISCs verified.  
-**Work:** Record changelog entry (conjecture → refuted-by → learned → criterion-now). Capture satisfaction. Persist learnings. Reconcile ephemeral files.  
+**Entry:** All ISCs verified.
+**Work:** Record changelog entry (conjecture → refuted-by → learned → criterion-now). Capture satisfaction. Persist learnings. Reconcile ephemeral files.
 **Exit:** Learning recorded, ISA finalized.
 
 ## Effort Tiers
