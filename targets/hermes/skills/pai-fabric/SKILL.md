@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, fabric, patterns, prompts]
     related_skills: []
 tags: [fabric, prompts, patterns, analysis, summarization, rewriting]
 ---

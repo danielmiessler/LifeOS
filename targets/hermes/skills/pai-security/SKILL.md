@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, security, audit, assessment]
     related_skills: []
 tags: [security, assessment, recon, pentest, prompt-injection, webapp]
 ---

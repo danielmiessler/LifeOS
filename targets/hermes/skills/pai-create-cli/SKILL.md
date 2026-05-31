@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, cli, scaffolding, typescript]
     related_skills: []
 tags: [cli, typescript, scaffolding, commander, oclif, llcli]
 ---

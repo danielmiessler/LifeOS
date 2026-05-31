@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, extraction, wisdom, content]
     related_skills: []
 tags: [extraction, wisdom, analysis, insights, contrarian, deep-dive]
 ---

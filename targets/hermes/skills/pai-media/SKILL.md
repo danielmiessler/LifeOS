@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, media, visual, content]
     related_skills: []
 tags: [media, visualization, diagrams, d3, mermaid, svg, icons, design]
 ---

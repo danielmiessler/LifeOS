@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, writing, creative, content]
     related_skills: []
 tags: [writing, fiction, creative, narrative, prose, anti-cliche]
 ---

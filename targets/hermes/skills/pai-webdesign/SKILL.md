@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, design, web, ui]
     related_skills: []
 tags: [web, design, UI, prototype, tailwind, react, design-system]
 ---

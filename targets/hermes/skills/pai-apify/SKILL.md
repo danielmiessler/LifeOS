@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, scraping, social-media, apify]
     related_skills: []
 tags: [apify, scraping, social-media, instagram, linkedin, tiktok, youtube]
 ---

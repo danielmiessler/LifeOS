@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, economics, data, metrics]
     related_skills: []
 tags: [economics, indicators, FRED, BLS, EIA, treasury, data, analysis]
 ---

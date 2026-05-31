@@ -6,7 +6,7 @@ author: PAI v5.0 → Hermes Port
 license: MIT
 metadata:
   hermes:
-    tags: [pai]
+    tags: [pai, browser, automation, scraping]
     related_skills: []
 tags: [browser, automation, headless, scraping, recipes, web]
 ---
