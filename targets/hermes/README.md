@@ -140,7 +140,6 @@ Hermes CLI
 | `pai-aphorisms` | Curated aphorism collection with CRUD |
 | `pai-migrate` | External content intake pipeline |
 | `pulse` | MCP server for notifications + Life Dashboard |
-| `pai-documentation` | System documentation management |
 
 ## Prerequisites
 
