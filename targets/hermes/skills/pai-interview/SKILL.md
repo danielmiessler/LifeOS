@@ -3,6 +3,7 @@ name: pai-interview
 description: Phased conversational onboarding with 4 phases (TELOS, IDEAL_STATE, Preferences, Identity) and file-based persistence with Review/Fill modes
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
 metadata:
   hermes_tags: [pai, interview, onboarding, profiling, conversational]
   related_skills: [pai-isa, pai-context-search]

@@ -3,6 +3,11 @@ name: pai-webdesign
 description: "Web and UI design pipeline — create interactive prototypes, extract design systems from existing sites, and export to production-ready code (HTML/CSS/Tailwind/React)."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
+metadata:
+  hermes:
+    tags: [pai]
+    related_skills: []
 use_when: "You need to design a web page or UI — create a prototype, extract an existing site's design system, or convert designs to code (HTML/CSS/Tailwind/React components)."
 not_for: "Graphic design tools exports (Figma/Sketch); animation-heavy motion design; photo manipulation."
 tags: [web, design, UI, prototype, tailwind, react, design-system]

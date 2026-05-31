@@ -3,6 +3,7 @@ name: pai-research
 description: Multi-mode parallel research with quick, standard, extensive, and deep modes using delegate_task for parallel research agents with cross-verification
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
 metadata:
   hermes_tags: [pai, research, web-search, parallel, cross-verification]
   related_skills: [pai-council, pai-isa, pai-context-search]

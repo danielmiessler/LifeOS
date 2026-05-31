@@ -6,6 +6,10 @@ author: PAI v5.0 → Hermes Port
 use_when: "You need to create, validate, or evaluate a new Hermes skill following the PAI v5 convention — including SKILL.md frontmatter, workflow routing, procedures, gotchas, and execution logs."
 not_for: "Modifying existing skills outside the scaffold/validate/evaluate workflow; non-Hermes skill systems."
 tags: [skill, scaffolding, validation, evaluation, development, pai]
+license: MIT
+metadata:
+  hermes:
+    tags: [pai, skill, scaffolding, development]
 ---
 
 <!-- Voice notification — fire-and-forget on invocation -->

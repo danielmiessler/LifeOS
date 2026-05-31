@@ -3,6 +3,11 @@ name: pai-interceptor
 description: "Real Chrome browser automation via a browser extension. Zero CDP fingerprint — indistinguishable from a real user interaction because it uses a real browser extension API."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
+metadata:
+  hermes:
+    tags: [pai]
+    related_skills: []
 use_when: "You need to automate a real Chrome browser in a way that avoids headless/CDP fingerprinting — ideal for sites that detect Playwright/Puppeteer/Selenium via CDP-specific behavior."
 not_for: "Simple scraping where speed matters (use pai-brightdata Tier 1-3); automating sites without extension APIs; scenarios where a headless approach is sufficient."
 tags: [browser, automation, extension, chrome, undetected, interception]

@@ -3,6 +3,7 @@ name: pai-loop
 description: Iterative improvement agent that wraps an Algorithm across multiple cycles with a Dead End ledger to avoid retrying rejected paths
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
 metadata:
   hermes_tags: [pai, loop, iterative, improvement, optimization, dead-end]
   related_skills: [pai-isa, pai-evals, pai-council, pai-delegation]

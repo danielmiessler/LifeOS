@@ -3,6 +3,7 @@ name: pai-context-search
 description: Two-phase session recovery — session registry search followed by work directory content search, using hermes session_search tool
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
 metadata:
   hermes_tags: [pai, context, search, session, recovery]
   related_skills: [pai-research, pai-interview, pai-isa]

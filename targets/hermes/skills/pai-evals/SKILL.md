@@ -3,6 +3,7 @@ name: pai-evals
 description: Evaluation framework with 3 grader types (code-based, model-based, human), pass@k/pass^k scoring, and ISA integration
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
+license: MIT
 metadata:
   hermes_tags: [pai, evals, evaluation, scoring, grading, testing]
   related_skills: [pai-isa, pai-loop, pai-delegation]
