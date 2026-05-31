@@ -1,6 +1,6 @@
 ---
 name: pai-evals
-description: Evaluation framework with 3 grader types (code-based, model-based, human), pass@k/pass^k scoring, and ISA integration
+description: "Evaluation framework with 3 grader types: code-based (syntax/lint/types/tests), model-based (rubric with pass@k/pass^k scoring), and human (generates review form). ISA integration for compliance verification. USE WHEN designing evaluation criteria and scoring for agent outputs, code quality, or task completion — determining which grader type fits the artifact being evaluated. NOT FOR production monitoring, real-time testing, or replacing existing CI/CD pipelines."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

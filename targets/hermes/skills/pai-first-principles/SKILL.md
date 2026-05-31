@@ -1,6 +1,6 @@
 ---
 name: pai-first-principles
-description: "Physics-based reasoning: decompose problems to irreducible truths, challenge assumptions, and reconstruct from first principles. DECONSTRUCT → CHALLENGE → RECONSTRUCT pattern with constraint classification (hard/soft/assumption)."
+description: "Physics-based reasoning: DECONSTRUCT to irreducible truths -> CHALLENGE each assumption -> RECONSTRUCT from fundamentals. Constraint classification (hard/soft/assumption). Musk methodology: strip away analogy until only fundamental truths remain. USE WHEN the problem benefits from first-principles decomposition — breaking down assumptions to their irreducible elements and rebuilding from fundamentals. NOT FOR tasks with well-known solutions, problems where analogy is sufficient, or situations requiring quick answers."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

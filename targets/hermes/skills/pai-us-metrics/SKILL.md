@@ -1,6 +1,6 @@
 ---
 name: pai-us-metrics
-description: "Access 68 US economic indicators via FRED, EIA, Treasury, and BLS APIs. Trend analysis, correlation between indicators, and data visualization support."
+description: "Access 68 US economic indicators via FRED, EIA, Treasury, BLS, and Census APIs. Trend analysis, cross-metric correlation, structured economic overviews. USE WHEN you need US economic data — GDP, unemployment, inflation (CPI/PCE), interest rates, housing starts, industrial production, trade balances, or energy statistics with trend analysis. NOT FOR non-US economic data, real-time market data, or individual company financials."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need US economic data — GDP, unemployment, inflation (CPI/PCE), interest rates, energy prices, treasury yields, or any of 68 tracked indicators — with trend analysis and cross-indicator correlation."
-not_for: "Non-US economic data; real-time stock prices (use financial API); forecasting beyond simple trend projection."
 tags: [economics, indicators, FRED, BLS, EIA, treasury, data, analysis]
 ---
 

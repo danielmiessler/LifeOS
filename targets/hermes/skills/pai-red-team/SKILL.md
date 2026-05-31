@@ -1,6 +1,6 @@
 ---
 name: pai-red-team
-description: "Adversarial stress-testing using 32 parallel expert agents. Two core workflows: ParallelAnalysis (5-phase systematic attack) and AdversarialValidation (targeted challenge). Uses delegate_task for parallel agent orchestration."
+description: "Adversarial stress-testing via 32 parallel expert agents across 8 categories. Two workflows: ParallelAnalysis (5-phase: Recon -> Attack -> Escalate -> Persist -> Report) and AdversarialValidation. Ranked findings with remediation paths. USE WHEN stress-testing an idea, strategy, plan, or system against adversarial attack — identifying vulnerabilities, weaknesses, and blind spots through multi-agent red teaming. NOT FOR standard code review, friendly feedback, or building consensus."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

@@ -1,6 +1,6 @@
 ---
 name: pai-world-threat-model
-description: "Long-horizon stress-testing against 11 time horizons (6 months to 50 years). Three tiers (Fast/Standard/Deep) for flexible application. Integrates Red Team, First Principles, and Systems Thinking internally."
+description: "Long-horizon risk assessment: stress-tests ideas/strategies/investments against 11 time horizons from 6 months to 50 years. 3 execution tiers (Fast/Standard/Deep). Orchestrates RedTeam, FirstPrinciples, and Council internally for multi-method coverage. USE WHEN evaluating decisions with multi-year implications — identifying systemic risks, cascade effects, and black-swan scenarios across 11 time horizons. NOT FOR short-term operational risk, personal safety assessment, or tactical decision-making."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

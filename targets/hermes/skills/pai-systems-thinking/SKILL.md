@@ -1,6 +1,6 @@
 ---
 name: pai-systems-thinking
-description: "Structural analysis of complex problems using the Iceberg Model, Causal Loop Diagrams, 12 Leverage Points, and 10 canonical Archetypes. 5 workflows for understanding system behavior, feedback loops, and intervention points."
+description: "Structural analysis via Iceberg Model (events/patterns/structure/mental models), Causal Loop Diagramming, 12 Leverage Points (Meadows), and 10 canonical Archetypes with documented interventions. 5 workflows. USE WHEN analyzing problems with feedback loops, delays, unintended consequences, or systemic structures — applying causal loop diagrams, archetype matching, and leverage point identification. NOT FOR linear cause-effect analysis, individual behavior troubleshooting, or component-level debugging."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

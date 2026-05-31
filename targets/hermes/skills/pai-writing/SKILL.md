@@ -1,6 +1,6 @@
 ---
 name: pai-writing
-description: "Fiction and content writing engine with 7 narrative layers, an anti-cliche detection system, and configurable aesthetics. Produces prose that's genuinely engaging, not formulaic."
+description: "Fiction and content writing engine with 7 narrative layers, anti-cliche system, and configurable aesthetic profiles. USE WHEN you need to write creative fiction, narrative content, or engaging prose — short stories, articles, marketing copy, or narrative-driven content with structured story layers and anti-cliche enforcement. NOT FOR technical documentation, academic writing, or data-driven reports."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to write creative fiction, narrative content, or engaging prose — stories, scenes, character work, world-building, or any creative text that should avoid cliches and feel fresh."
-not_for: "Technical documentation (use direct LLM prompting); academic papers (use pai-arxiv + pai-extract-wisdom); SEO blog content generation."
 tags: [writing, fiction, creative, narrative, prose, anti-cliche]
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pai-context-search
-description: Two-phase session recovery — session registry search followed by work directory content search, using hermes session_search tool
+description: "2-phase session recovery search: (1) search session registry via Hermes session_search tool, (2) scan work directories for recent changes by modification time. Produces a context snapshot with resume recommendations. USE WHEN starting a new session and need to recover what was being worked on — find active tasks, recent file changes, and ongoing Algorithm sessions. NOT FOR general file search, knowledge graph queries, or real-time monitoring."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

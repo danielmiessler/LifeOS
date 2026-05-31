@@ -1,6 +1,6 @@
 ---
 name: pai-create-skill
-description: "PAI skill development lifecycle manager. Guides scaffold → validate → evaluate workflow for creating new Hermes skills that follow PAI v5 standards."
+description: "PAI skill development lifecycle manager. Guides scaffold -> validate -> evaluate workflow for creating new Hermes skills that follow PAI v5 standards. USE WHEN you need to create, validate, or evaluate a new Hermes skill following the PAI v5 convention — including SKILL.md frontmatter, workflow routing, procedures, gotchas, and execution logs. NOT FOR modifying existing skills outside the scaffold/validate/evaluate workflow, or non-Hermes skill systems."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 use_when: "You need to create, validate, or evaluate a new Hermes skill following the PAI v5 convention — including SKILL.md frontmatter, workflow routing, procedures, gotchas, and execution logs."

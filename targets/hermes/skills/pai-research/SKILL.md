@@ -1,6 +1,6 @@
 ---
 name: pai-research
-description: Multi-mode parallel research with quick, standard, extensive, and deep modes using delegate_task for parallel research agents with cross-verification
+description: "Multi-agent parallel research with 4 depth modes: Quick (1 agent, 10s), Standard (3 parallel agents), Extensive (6 parallel agents with cross-verification), Deep (12 parallel agents with full synthesis). USE WHEN investigating a topic through parallel research — spawning multiple agents with different search strategies to provide comprehensive, cross-verified findings. NOT FOR single-source fact-checking, real-time data monitoring, or personal/legal investigation requiring discretion."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

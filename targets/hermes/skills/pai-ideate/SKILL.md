@@ -1,6 +1,6 @@
 ---
 name: pai-ideate
-description: "9-phase evolutionary ideation: CONSUME → DREAM → DAYDREAM → CONTEMPLATE → STEAL → MATE → TEST → EVOLVE → META-LEARN. Evolves rough ideas into refined concepts through structured creative phases."
+description: "9-phase evolutionary ideation engine: CONSUME -> DREAM -> DAYDREAM -> CONTEMPLATE -> STEAL -> MATE -> TEST -> EVOLVE -> META-LEARN. Integrates IterativeDepth, RedTeam, and Council internally for multi-lens exploration. USE WHEN evolving a rough idea into something refined through structured creative phases — from initial consumption through mutation, testing, and meta-learning. NOT FOR one-shot idea generation, convergent problem-solving, or tasks with a single correct solution."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

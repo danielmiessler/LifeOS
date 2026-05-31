@@ -1,6 +1,6 @@
 ---
 name: pai-interview
-description: Phased conversational onboarding with 4 phases (TELOS, IDEAL_STATE, Preferences, Identity) and file-based persistence with Review/Fill modes
+description: "Phased conversational onboarding across 4 phases: TELOS (mission/goals), IDEAL_STATE (success criteria), Preferences (tools/conventions), Identity (DA personality). Fill mode (live Q&A) and Review mode (edit existing entries). USE WHEN onboarding a new user to the PAI system — discovering their mission, goals, beliefs, preferences, and ideal state through structured conversation. NOT FOR general Q&A, technical support, or modifying existing system configurations."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

@@ -1,6 +1,6 @@
 ---
 name: pai-loop
-description: Iterative improvement agent that wraps an Algorithm across multiple cycles with a Dead End ledger to avoid retrying rejected paths
+description: "Iterative improvement wrapper for the Algorithm: runs multiple full OBSERVE-to-LEARN cycles on the same target, with Dead End ledger to avoid retrying rejected paths, configurable max cycles, and cycle-level artifact persistence. USE WHEN the initial pass at a task needs refinement — running multiple Algorithm cycles where each LEARN feeds the next OBSERVE. NOT FOR single-pass tasks, real-time operations, or situations where the first result is sufficient."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

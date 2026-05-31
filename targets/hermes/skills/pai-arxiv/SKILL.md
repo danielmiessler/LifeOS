@@ -1,6 +1,6 @@
 ---
 name: pai-arxiv
-description: "Academic paper search via the arXiv API. Search by topic, category, author, or ID. Supports boolean operators, pagination, and structured result parsing."
+description: "Academic paper search via the arXiv API. Search by topic, category, author, or ID. Supports boolean operators, pagination, and structured result parsing. USE WHEN you need to search for academic papers on arXiv — find papers by topic, category, author, or retrieve specific paper details with metadata. NOT FOR non-academic web search, PDF content extraction, or papers behind paywalls."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to search for academic papers on arXiv — find papers by topic, category, author, or retrieve specific paper details with metadata."
-not_for: "Full-text paper analysis (use pai-extract-wisdom); downloading PDFs en masse; searching non-arXiv repositories."
 tags: [arxiv, academic, papers, research, API, search]
 ---
 

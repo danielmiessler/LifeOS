@@ -1,6 +1,6 @@
 ---
 name: pai-isa
-description: Intelligence Stack Architecture — tier-gated ISA scaffolding, completeness checking, and ephemeral-to-master reconciliation
+description: "PAI v5.0 Ideal State Artifact — scaffold new ISAs from prompts at specified effort tiers (E1-E5), check completeness against tier gates, and reconcile ephemeral feature files back to master ISAs using deterministic merge. USE WHEN scaffolding a new task, checking completeness, reconciling work, or defining success criteria via the 12-section ISA template. NOT FOR running the algorithm itself (use pai-algorithm), general note-taking, or project management outside the ISA framework."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

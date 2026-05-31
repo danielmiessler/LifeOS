@@ -1,6 +1,6 @@
 ---
 name: pai-council
-description: Multi-agent collaborative debate with 4 parallel personas, 3 rounds of round-by-round context passing, and synthesis
+description: "Multi-agent collaborative debate: spawns 4-6 parallel agents with distinct personas, runs 3 rounds of debate with full cross-context, then synthesizes findings into areas of agreement, points of tension, and action items. USE WHEN a decision has meaningful trade-offs requiring genuine intellectual friction — evaluating competing approaches, stress-testing assumptions, or exploring complex decisions from multiple angles. NOT FOR simple Q&A, tasks with a single correct answer, or situations where consensus is already clear."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

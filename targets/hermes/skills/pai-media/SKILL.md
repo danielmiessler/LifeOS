@@ -1,6 +1,6 @@
 ---
 name: pai-media
-description: "Visual content generation across multiple formats: architecture diagrams, D3.js data visualizations, Mermaid charts, SVG icons, and blog/social media headers."
+description: "Visual content generation across multiple formats: diagrams, data visualizations, Mermaid charts, SVG icons, blog headers, and social media graphics. USE WHEN you need to generate visual content — diagrams, data visualizations, Mermaid charts, SVG icons, blog headers, social media graphics, or architecture illustrations. NOT FOR video production, 3D modeling, or audio content creation."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to generate visual content — diagrams, data visualizations, icons, charts, or social media graphics — in various output formats (D3.js, Mermaid, SVG, HTML/CSS)."
-not_for: "Photo-realistic image generation (use dedicated image AI); video production; 3D modeling."
 tags: [media, visualization, diagrams, d3, mermaid, svg, icons, design]
 ---
 

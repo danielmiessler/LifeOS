@@ -1,6 +1,6 @@
 ---
 name: pai-security
-description: "Security assessment framework covering network reconnaissance, web application testing, and prompt injection testing. Structured methodology with tool-assisted analysis."
+description: "Security assessment framework covering network recon, web application testing, API security review, and dependency auditing. USE WHEN you need to assess security posture — network recon, web app testing, API security review, dependency vulnerability scanning, or OWASP Top 10 analysis. NOT FOR production system penetration testing without authorization, social engineering, or physical security assessment."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to assess security posture — network recon, web app vulnerability scanning, or prompt injection testing against AI systems — using ethical, authorized testing frameworks."
-not_for: "Unauthorized penetration testing; attacking systems without explicit permission; production system scanning without change management approval."
 tags: [security, assessment, recon, pentest, prompt-injection, webapp]
 ---
 

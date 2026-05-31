@@ -1,6 +1,6 @@
 ---
 name: pai-delegation
-description: 6 parallelization patterns — built-in agents, worktrees, background tasks, custom agents, teams, and parallel dispatch
+description: "Six parallelization patterns for agent work: built-in agents, git worktrees, background terminal tasks, custom agent composition, hierarchical teams, and parallel map-reduce dispatch. USE WHEN work can be parallelized across independent workstreams — choosing the right decomposition pattern for the task characteristics. NOT FOR sequential tasks with dependencies, single-step operations, or tasks requiring tight coordination between streams."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

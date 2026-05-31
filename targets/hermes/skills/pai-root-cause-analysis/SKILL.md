@@ -1,6 +1,6 @@
 ---
 name: pai-root-cause-analysis
-description: "Systematic incident investigation using 5 proven methods: 5 Whys, Fishbone Diagrams, Fault Tree Analysis, Postmortems, and Kepner-Tregoe. Step-by-step procedures for each method with Hermes tool integration."
+description: "Structured incident investigation with 5 methods: 5 Whys, Fishbone (Ishikawa) Diagram, Fault Tree Analysis, Postmortem (SRE-style), and Kepner-Tregoe IS/IS NOT matrix. Grounded in Toyota Production System and Google SRE methodologies. USE WHEN investigating a failure, incident, or unexpected behavior to find the actual root cause — selecting the most appropriate method based on the problem characteristics. NOT FOR proactive risk assessment, performance optimization, or standard debugging."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

@@ -1,6 +1,6 @@
 ---
 name: pai-science
-description: "The scientific method as a universal algorithm for rigorous inquiry. 7 workflows covering the complete hypothesis→experiment→measure→iterate cycle. Three scales: micro (minutes), meso (hours), macro (days)."
+description: "Scientific method as universal problem-solving algorithm. 7 workflows: DefineGoal, GenerateHypotheses, DesignExperiment, Measure, Analyze, Iterate, FullCycle. Three scales: micro (minutes), meso (hours), macro (days). USE WHEN rigorous hypothesis-driven investigation is needed — formulating hypotheses, designing experiments, measuring outcomes, and iterating based on evidence. NOT for routine debugging, opinion-based analysis, or tasks where experimentation is impractical."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

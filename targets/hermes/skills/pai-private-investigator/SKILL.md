@@ -1,6 +1,6 @@
 ---
 name: pai-private-investigator
-description: "Ethical OSINT investigation framework. Spawns 15 parallel research agents with 45 concurrent threads for public records, social media, reverse lookups, domain intelligence, and data correlation."
+description: "Ethical OSINT investigation framework. Spawns parallel research agents across public records, social media, and web sources. USE WHEN you need to conduct ethical open-source intelligence gathering — people search, identity verification, social media footprint analysis, public records lookup, or username enumeration across platforms. NOT FOR stalking, harassment, illegal data access, or bypassing paywalls/privacy controls."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to conduct ethical open-source intelligence gathering — researching a person, company, domain, or topic across multiple public data sources simultaneously with parallel agents."
-not_for: "Illegal surveillance; doxxing; accessing private/protected data without authorization; any use that violates platform ToS for automated scraping."
 tags: [osint, investigation, research, public-records, parallel, social-media]
 ---
 

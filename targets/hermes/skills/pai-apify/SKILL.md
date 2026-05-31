@@ -1,6 +1,6 @@
 ---
 name: pai-apify
-description: "Social media scraping via Apify actors. Supports Instagram, LinkedIn, TikTok, and YouTube data extraction through Apify's pre-built actor marketplace with structured data output."
+description: "Social media scraping via Apify actors. Supports Instagram, LinkedIn, TikTok, and YouTube data extraction through Apify's pre-built actor marketplace with structured data output. USE WHEN you need to extract data from social media platforms — Instagram profiles/posts, LinkedIn profiles/jobs, TikTok videos/users, or YouTube channels/videos — using Apify's scalable actor infrastructure. NOT FOR personal privacy violations, password-protected content, or platforms that explicitly prohibit scraping."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to extract data from social media platforms — Instagram profiles/posts, LinkedIn profiles/jobs, TikTok videos/users, or YouTube channels/videos — using Apify's scalable actor infrastructure."
-not_for: "Scraping without Apify credits; bypassing platform authentication or rate limits; collecting private/protected account data."
 tags: [apify, scraping, social-media, instagram, linkedin, tiktok, youtube]
 ---
 

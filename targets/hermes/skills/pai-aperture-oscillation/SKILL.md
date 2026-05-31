@@ -1,6 +1,6 @@
 ---
 name: pai-aperture-oscillation
-description: "3-pass scope switching methodology: narrow/tactical → wide/strategic → synthesis. Oscillates between zoom levels to reveal design tensions and coherence issues invisible at any single scope."
+description: "3-pass scope switching methodology: narrow/tactical -> wide/strategic -> synthesis. Oscillates between zoom levels to reveal design tensions and coherence issues invisible at any single scope. USE WHEN the problem needs examination at multiple scales — switching between tactical details and strategic implications to surface hidden design tensions. NOT FOR linear problem-solving, deep dives into a single level, or tasks with no strategic dimension."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

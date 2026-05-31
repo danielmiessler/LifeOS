@@ -1,6 +1,6 @@
 ---
 name: pai-extract-wisdom
-description: "Content-adaptive wisdom extraction from any source. 5 depth levels from Instant to Comprehensive. Always includes contrarian perspectives and spicy takes."
+description: "Content-adaptive wisdom extraction from any source. Dynamically builds extraction sections based on detected content domains. USE WHEN you need deep wisdom extraction from articles, papers, books, videos, or transcripts — extracting key insights, quotable passages, contrarian takes, and actionable takeaways at configurable depth levels. NOT FOR simple summarization (use standard analysis instead), real-time transcription, or multi-source synthesis."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need deep wisdom extraction from articles, papers, books, talks, or any content — not just summarization but surprising insights, contrarian views, actionable takeaways, and the 'spicy' angle."
-not_for: "Simple summarization (use pai-fabric/sumarize); extracting structured data points; content that needs verbatim quotation only."
 tags: [extraction, wisdom, analysis, insights, contrarian, deep-dive]
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: pai-fabric
-description: "Executes 240+ Fabric prompt patterns natively (no CLI dependency). Pattern selection, context injection, and execution workflow."
+description: "Executes 240+ Fabric prompt patterns natively without CLI dependency. Covers extraction, summarization, analysis, creation, improvement, security, and rating categories. USE WHEN you need to apply a structured prompt pattern from the Fabric library — pattern selection via description matching, context-aware execution, and formatted output. NOT FOR raw Fabric CLI operations, prompt engineering from scratch, or non-Fabric pattern systems."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to apply a structured prompt pattern from the Fabric collection — summarization, analysis, rewriting, extraction, or creative generation without a separate CLI tool."
-not_for: "One-off freeform prompting (use direct LLM call instead); tasks that don't map to a known Fabric pattern."
 tags: [fabric, prompts, patterns, analysis, summarization, rewriting]
 ---
 

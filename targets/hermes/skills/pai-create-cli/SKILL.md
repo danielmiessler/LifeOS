@@ -1,6 +1,6 @@
 ---
 name: pai-create-cli
-description: "TypeScript CLI generator. Three tiers: zero-dependency (llcli), Commander.js, and oclif. Supports AddCommand and UpgradeTier workflows for progressive scaffolding."
+description: "TypeScript CLI generator. Three tiers: zero-dependency llcli, Commander.js, or oclif. USE WHEN you need to scaffold a TypeScript CLI tool from scratch — choosing between zero-dependency (llcli), Commander.js (lightweight), or oclif (enterprise) templates. NOT FOR non-CLI projects, Python CLIs, or modifying existing CLI codebases."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to scaffold a TypeScript CLI tool from scratch — choose between zero-dependency, Commander.js, or oclif framework, then add commands or upgrade tiers interactively."
-not_for: "Python CLI generation; JavaScript (non-TypeScript) CLI tools; existing CLI projects that need major restructuring."
 tags: [cli, typescript, scaffolding, commander, oclif, llcli]
 ---
 

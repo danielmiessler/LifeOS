@@ -1,6 +1,6 @@
 ---
 name: pai-iterative-depth
-description: "Multi-angle sequential exploration using 20 grounded techniques. 2-8 sequential passes through systematically different perspectives. Each pass uses a different lens from a library of 20 rigorous techniques."
+description: "Multi-angle sequential exploration via 2-8 passes through systematically different analytical lenses. 20 grounded techniques including Hermeneutic Circle, Six Thinking Hats, Dialectical, Historical, Comparative, and Ethical lenses. USE WHEN a problem needs examination through multiple distinct analytical lenses — each pass using a different method to surface insights invisible from any single perspective. NOT FOR shallow exploration, single-angle analysis, or problems with straightforward answers."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT

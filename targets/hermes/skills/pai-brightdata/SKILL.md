@@ -1,6 +1,6 @@
 ---
 name: pai-brightdata
-description: "Progressive web scraping with 4 escalation tiers: WebFetch → curl → agent-browser → Bright Data MCP. Automatically escalates when simpler methods fail."
+description: "Progressive web scraping with 4 escalation tiers: WebFetch -> curl -> agent-browser -> Bright Data MCP. Automatically escalates when simpler methods fail. USE WHEN you need to scrape web content that may be behind JavaScript rendering, anti-bot protections, or complex client-side logic. NOT FOR static HTML pages that curl can handle, or sites requiring authenticated sessions."
 version: 5.0.0
 author: PAI v5.0 → Hermes Port
 license: MIT
@@ -8,8 +8,6 @@ metadata:
   hermes:
     tags: [pai]
     related_skills: []
-use_when: "You need to scrape web content that may be behind JavaScript rendering, anti-bot protections, or complex client-side logic — automatically escalating through increasingly powerful methods."
-not_for: "Simple static HTML pages (use web_extract directly); APIs with proper documentation (use their SDK/API instead); scraping behind login walls without authorization."
 tags: [scraping, web, brightdata, proxy, browser, progressive]
 ---
 
