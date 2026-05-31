@@ -1,34 +1,32 @@
-# Optimization Report — Pass 2
+# Optimization Report — Pass 3
 
-## Changes Made
+## Change Made
 
 | Fix | Files | Change | Before → After |
 |-----|-------|--------|----------------|
-| Add USE WHEN / NOT FOR descriptions | 34 files | Functional | 34 skills missing → all 38 have proper routing descriptions |
+| Upgrade metadata tags | 14 files | Skills had generic `tags: [pai]` → now have specific tags like `[pai, browser, automation, scraping]` | 14 generic → 31 specific + 7 hermes_tags with specific content |
 
-## Correctness
+## Cumulative State (All 3 Passes)
 
-- [x] Baseline metrics recorded before any changes (checkpoint commit)
-- [x] Each optimization applied atomically (one commit)
-- [x] Full frontmatter completeness: all 38 skills
-- [x] USE WHEN / NOT FOR descriptions: all 38 skills ✅
-- [x] Voice notification: all 38 skills
-- [x] Required sections (Gotchas, Execution Log): all 38 skills
-- [x] Version consistency: 5.0.0 across all 38 skills ✅
-- [x] Author consistency: "PAI v5.0 → Hermes Port" across all 38 ✅
-- [x] Pi skills frontmatter: all 27 ✅
-- [x] Trailing whitespace: 0 lines ✅
+| Metric | Status |
+|--------|--------|
+| Trailing whitespace | 0 lines ✅ |
+| Empty files | 0 ✅ |
+| Hermes frontmatter (name, desc, version, author, license, metadata) | 38/38 ✅ |
+| USE WHEN / NOT FOR descriptions | 38/38 ✅ |
+| Gotchas + Execution Log sections | 38/38 ✅ |
+| Voice notification curl | 38/38 ✅ |
+| Version consistency | 38/38 at 5.0.0 ✅ |
+| Author consistency | 38/38 at "PAI v5.0 → Hermes Port" ✅ |
+| Metadata tags | 38/38 with specific, meaningful tags ✅ |
+| Cross-reference integrity | 0 broken ✅ |
+| Pi skills frontmatter | 27/27 ✅ |
+| Pi skills author + version | 27/27 ✅ |
 
-## Cumulative Optimization Summary (Pass 1 + Pass 2)
+## Session History
 
-| Metric | Before | After |
-|--------|--------|-------|
-| Trailing whitespace lines | 56 | 0 |
-| Hermes skills with consistent version | 2 variants (1.0.0, 5.0.0) | All 5.0.0 |
-| Hermes skills with author field | 30 | All 38 |
-| Broken cross-references | 4 | 0 |
-| Skills with Gotchas section | 36 | All 38 |
-| Skills with voice notification | 0 | All 38 |
-| Skills with license + metadata | 15 | All 38 |
-| Skills with USE WHEN / NOT FOR | 4 inline | All 38 |
-| Pi skills with frontmatter | 0 | All 27 |
+| Pass | Commits | Focus |
+|------|---------|-------|
+| 1 | 6 commits + 1 doc | Frontmatter, voice, cross-refs, gotchas, whitespace |
+| 2 | 3 commits | Descriptions (USE WHEN / NOT FOR) |
+| 3 | 1 commit | Metadata tags upgrade |
