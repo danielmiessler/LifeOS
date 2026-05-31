@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, red-team, adversarial, stress-test, security, validation]
-    related_skills: [pai-council, pai-first-principles, pai-world-threat-model]
+    related_skills: [pai-council, pai-pai-first-principles, pai-world-threat-model]
 ---
 
 # Red Team — Adversarial Analysis

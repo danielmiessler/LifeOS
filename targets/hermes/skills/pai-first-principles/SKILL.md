@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, first-principles, reasoning, decomposition, constraints]
-    related_skills: [pai-systems-thinking, pai-root-cause-analysis, pai-red-team]
+    related_skills: [pai-systems-thinking, pai-pai-root-cause-analysis, pai-red-team]
 ---
 
 # First Principles Thinking

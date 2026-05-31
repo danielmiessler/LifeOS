@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, threat-model, risk, long-horizon, strategy, forecasting]
-    related_skills: [pai-red-team, pai-first-principles, pai-systems-thinking, pai-council]
+    related_skills: [pai-red-team, pai-pai-first-principles, pai-systems-thinking, pai-council]
 ---
 
 # World Threat Model — Long-Horizon Stress-Testing

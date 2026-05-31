@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, systems-thinking, feedback-loops, leverage-points, archetypes]
-    related_skills: [pai-first-principles, pai-root-cause-analysis, pai-iterative-depth]
+    related_skills: [pai-pai-first-principles, pai-pai-root-cause-analysis, pai-iterative-depth]
 ---
 
 # Systems Thinking

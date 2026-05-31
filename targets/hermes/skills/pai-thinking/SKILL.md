@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, reasoning, analysis, methodology]
-    related_skills: [pai-algorithm, deep-research, first-principles, root-cause-analysis]
+    related_skills: [pai-algorithm, deep-research, pai-first-principles, pai-root-cause-analysis]
 ---
 
 # Thinking Capabilities (Hermes Port)

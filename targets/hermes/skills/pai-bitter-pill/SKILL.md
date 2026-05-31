@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, audit, prompt-engineering, token-efficiency, over-prompting]
-    related_skills: [pai-red-team, pai-first-principles]
+    related_skills: [pai-red-team, pai-pai-first-principles]
 ---
 
 # Bitter Pill — Over-Prompting Audit

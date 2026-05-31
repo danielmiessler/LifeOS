@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, root-cause-analysis, incident-investigation, debugging, RCA]
-    related_skills: [pai-first-principles, pai-systems-thinking, pai-science]
+    related_skills: [pai-pai-first-principles, pai-systems-thinking, pai-science]
 ---
 
 # Root Cause Analysis

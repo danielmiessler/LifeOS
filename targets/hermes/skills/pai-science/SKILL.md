@@ -7,7 +7,7 @@ license: MIT
 metadata:
   hermes:
     tags: [pai, thinking, science, scientific-method, hypothesis, experimentation]
-    related_skills: [pai-first-principles, pai-red-team, pai-iterative-depth]
+    related_skills: [pai-pai-first-principles, pai-red-team, pai-iterative-depth]
 ---
 
 # Science — The Scientific Method as Universal Algorithm
