@@ -68,4 +68,4 @@ jobs:
           h=$(ls -d targets/hermes/skills/*/ 2>/dev/null | wc -l)
           p=$(ls -d Releases/Pi/skills/*/ 2>/dev/null | wc -l)
           echo "Hermes: $h skills, Pi: $p skills"
-          [ "$h" -eq 38 ] || { echo "Expected 38 Hermes skills, got $h"; exit 1; }
+          [ "$h" -eq 41 ] || { echo "Expected 41 Hermes skills, got $h"; exit 1; }
