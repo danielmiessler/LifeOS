@@ -4,6 +4,10 @@
 # Explicitly mark script and config files as text with LF endings
 *.ts text eol=lf
 *.js text eol=lf
+# Python
+*.py text eol=lf
+
+# Shell
 *.sh text eol=lf
 *.md text eol=lf
 *.json text eol=lf

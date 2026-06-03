@@ -1,3 +1,28 @@
+<!------------------------------------------------------------------------------
+  FORK NOTICE: This is a port of PAI v5.0 for Hermes Agent, Pi-mono, and
+  OpenCode. See targets/ for installable ports and spec/ for the complete
+  reverse-engineered specification. Original: danielmiessler/Personal_AI_Infrastructure
+---
+
+> **🔀 This fork ports PAI v5.0 to open-source agentic systems.**
+>
+> [Hermes Agent](targets/hermes/) · [Pi-mono](Releases/Pi/) · [OpenCode](targets/opencode/)
+> · [Specification](spec/) · 38 Hermes skills · 27 Pi skills · Full Algorithm v6.3.0
+
+---
+
+## 🚀 Quick Start
+
+**New here?** Start with [GETTING_STARTED.md](GETTING_STARTED.md) to choose the right target.
+
+| Target | Install | Skills | 
+|--------|---------|--------|
+| **Hermes Agent** | `cd targets/hermes && bash install.sh` | 41 skills |
+| **Pi-mono** | Copy `Releases/Pi/*` to `~/.config/PAI-pi/` | 27 skills |
+| **OpenCode** | Copy `targets/opencode/pai/*` to `~/.codex/pai/` | Context files |
+
+---
+
 <div align="center">
 
 <picture>
