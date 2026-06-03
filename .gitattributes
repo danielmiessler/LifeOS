@@ -5,6 +5,8 @@
 *.ts text eol=lf
 *.js text eol=lf
 *.sh text eol=lf
+# Python
+*.py text eol=lf
 *.md text eol=lf
 *.json text eol=lf
 *.yaml text eol=lf
