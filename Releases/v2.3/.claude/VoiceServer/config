@@ -1,9 +1,0 @@
-{
-  "voiceProvider": "macos",
-  "elevenlabs": {
-    "voiceId": "s3TPKV1kjDlVtZbl4Ksh"
-  },
-  "macos": {
-    "voice": "Reed"
-  }
-}

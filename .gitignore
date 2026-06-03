@@ -69,6 +69,9 @@ private/
 secrets/
 credentials/
 
+# Agentic artifacts
+.hermes/
+
 # PAI Update System (sideloading)
 .claude/pai_updates/
 .claude/pai_backups/

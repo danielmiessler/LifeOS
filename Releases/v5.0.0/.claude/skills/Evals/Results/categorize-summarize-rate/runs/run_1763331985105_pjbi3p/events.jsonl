@@ -1,3 +1,0 @@
-{"type":"run.started","data":{"runId":"run_1763331985105_pjbi3p","timestamp":"2025-11-16T22:26:25.106Z","config":{"promptVersion":"v1","testCases":["test-001"],"criteria":["proper-markdown-links","summary-length-check","no-date-in-urls"],"model":"claude-sonnet-3.5","provider":"anthropic"}}}
-{"type":"phase.started","data":{"phase":"loading","timestamp":"2025-11-16T22:26:25.107Z"}}
-{"type":"phase.started","data":{"phase":"generating","timestamp":"2025-11-16T22:26:25.107Z"}}
