@@ -10,6 +10,6 @@
     "recon": "bun run src/recon.ts"
   },
   "dependencies": {
-    "@types/node": "^20.10.0"
+    "@types/node": "20.17.30"
   }
 }

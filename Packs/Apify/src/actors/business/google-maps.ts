@@ -53,7 +53,7 @@ export interface GoogleMapsPlaceInput {
   scrapeContactInfo?: boolean
 }
 
-export interface GoogleMapsPlace extends BusinessInfo {
+export interface GoogleMapsPlace extends Omit<BusinessInfo, 'openingHours'> {
   placeId: string
   name: string
   url: string

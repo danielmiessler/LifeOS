@@ -4,7 +4,7 @@
   "description": "Agent composition and management tools for PAI",
   "type": "module",
   "dependencies": {
-    "yaml": "^2.3.4",
-    "handlebars": "^4.7.8"
+    "yaml": "2.8.2",
+    "handlebars": "4.7.8"
   }
 }

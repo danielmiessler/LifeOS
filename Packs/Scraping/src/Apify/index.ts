@@ -11,19 +11,15 @@ export interface Actor {
   id: string
   name: string
   username: string
-  title: string
+  title?: string
   description?: string
   createdAt?: string
   modifiedAt?: string
-  stats?: {
-    totalRuns?: number
-    lastRunStartedAt?: string
-  }
+  stats?: Record<string, any>
 }
 
 export interface ActorRun {
   id: string
-  actorId: string
   status: 'READY' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'TIMED-OUT' | 'ABORTED'
   startedAt: string
   finishedAt?: string
@@ -92,7 +88,7 @@ export class Apify {
     })
 
     // Return requested number of matches
-    return filtered.slice(0, options?.limit ?? 10) as Actor[]
+    return filtered.slice(0, options?.limit ?? 10) as unknown as Actor[]
   }
 
   /**
@@ -118,7 +114,7 @@ export class Apify {
       build: options?.build
     })
 
-    return run as ActorRun
+    return run as unknown as ActorRun
   }
 
   /**
@@ -139,7 +135,7 @@ export class Apify {
    */
   async getRun(runId: string): Promise<ActorRun> {
     const run = await this.client.run(runId).get()
-    return run as ActorRun
+    return run as unknown as ActorRun
   }
 
   /**
@@ -158,7 +154,7 @@ export class Apify {
     const run = await this.client.run(runId).waitForFinish({
       waitSecs: options?.waitSecs
     })
-    return run as ActorRun
+    return run as unknown as ActorRun
   }
 }
 

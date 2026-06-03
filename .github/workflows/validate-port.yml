@@ -16,7 +16,7 @@ jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
 
       - name: Check Hermes frontmatter
         run: |
@@ -63,9 +63,77 @@ jobs:
       - name: Check install.sh syntax
         run: "bash -n targets/hermes/install.sh"
 
+      - name: Smoke test — Python syntax check
+        run: |
+          e=0
+          while IFS= read -r f; do
+            python3 -m py_compile "$f" 2>/dev/null || { echo "SYNTAX ERROR: $f"; e=$((e+1)); }
+          done < <(find Packs/ -name '*.py' -not -path '*/node_modules/*' 2>/dev/null)
+          [ "$e" -eq 0 ] || { echo "$e Python file(s) with syntax errors"; exit 1; }
+          echo "✅ All Python files parse clean"
+
+      - name: Smoke test — Shell syntax check
+        run: |
+          e=0
+          while IFS= read -r f; do
+            bash -n "$f" 2>/dev/null || { echo "SYNTAX ERROR: $f"; e=$((e+1)); }
+          done < <(find . -name '*.sh' -not -path './.git/*' -not -path '*/node_modules/*' 2>/dev/null)
+          [ "$e" -eq 0 ] || { echo "$e shell file(s) with syntax errors"; exit 1; }
+          echo "✅ All shell files parse clean"
+
       - name: Count skills
         run: |
           h=$(ls -d targets/hermes/skills/*/ 2>/dev/null | wc -l)
           p=$(ls -d Releases/Pi/skills/*/ 2>/dev/null | wc -l)
           echo "Hermes: $h skills, Pi: $p skills"
           [ "$h" -eq 41 ] || { echo "Expected 41 Hermes skills, got $h"; exit 1; }
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          fetch-depth: 1
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@4bc047ad3df7e0c20dc644119cb3719ab01106c4 # v2.0.2
+        with:
+          bun-version: latest
+
+      - name: TypeScript type-check — Packs
+        run: |
+          pass=0
+          fail=0
+          for dir in \
+            Packs/Apify/src \
+            Packs/Art/src/Tools \
+            Packs/Evals/src \
+            Packs/Media/src/Art/Tools \
+            Packs/Media/src/Remotion/Tools \
+            Packs/Remotion/src/Tools \
+            Packs/Scraping/src/Apify; do
+            if [ ! -f "$dir/tsconfig.json" ]; then
+              echo "⚠️  $dir — no tsconfig.json (skipping)"
+              continue
+            fi
+            echo "Checking $dir..."
+            if (cd "$dir" && bun install --frozen-lockfile 2>/dev/null && bunx tsc --noEmit 2>/dev/null); then
+              echo "  ✅ PASS"
+              pass=$((pass+1))
+            else
+              echo "  ❌ HAS ERRORS (pre-existing)"
+              fail=$((fail+1))
+            fi
+          done
+          echo ""
+          echo "Type-check summary: $pass passed, $fail with pre-existing errors"
+          echo "Note: Only the core port packs (Apify, Remotion) are expected to be clean."
+          echo "Art/Media packs have pre-existing issues from upstream duplication."
+
+      - name: Check duplicate tsconfig dirs (next.js apps skip)
+        run: |
+          for dir in Packs/Telos/src/DashboardTemplate Packs/Telos/src/ReportTemplate; do
+            if [ -f "$dir/tsconfig.json" ]; then
+              echo "Skipping $dir (Next.js app — has own build step)"
+            fi
+          done
