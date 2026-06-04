@@ -3,7 +3,13 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-const TELOS_DIR = path.join(os.homedir(), '.claude/skills/life/telos')
+const TELOS_DIR = path.join(os.homedir(), '.claude/skills/PAI/USER/TELOS')
+const PROJECTS_FILE = path.join(os.homedir(), '.claude/skills/PAI/USER/PROJECTS/PROJECTS.md')
+
+function resolveTelosFilePath(filename: string): string {
+  if (filename === 'PROJECTS.md') return PROJECTS_FILE
+  return path.join(TELOS_DIR, filename)
+}
 
 export async function POST(request: Request) {
   try {
@@ -24,7 +30,7 @@ export async function POST(request: Request) {
       const csvDir = path.join(TELOS_DIR, 'data')
       filePath = path.join(csvDir, filename)
     } else {
-      filePath = path.join(TELOS_DIR, filename)
+      filePath = resolveTelosFilePath(filename)
     }
 
     // Verify file exists before overwriting

@@ -10,6 +10,13 @@ export interface TelosFile {
 }
 
 const TELOS_DIR = path.join(os.homedir(), '.claude/skills/PAI/USER/TELOS')
+// PROJECTS.md lives alongside other USER dirs, not inside TELOS
+const PROJECTS_FILE = path.join(os.homedir(), '.claude/skills/PAI/USER/PROJECTS/PROJECTS.md')
+
+function resolveTelosFilePath(filename: string): string {
+  if (filename === 'PROJECTS.md') return PROJECTS_FILE
+  return path.join(TELOS_DIR, filename)
+}
 
 export function getAllTelosData(): TelosFile[] {
   const files: TelosFile[] = []
@@ -22,7 +29,7 @@ export function getAllTelosData(): TelosFile[] {
       for (const filename of dirFiles) {
         if (filename.endsWith('.md') && !filename.startsWith('.')) {
           try {
-            const filePath = path.join(TELOS_DIR, filename)
+            const filePath = resolveTelosFilePath(filename)
             const stats = fs.statSync(filePath)
 
             if (stats.isFile()) {
