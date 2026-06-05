@@ -80,20 +80,44 @@ function parseFrontmatter(content: string): Record<string, any> {
   const match = content.match(/^---\n([\s\S]*?)\n---/);
   if (!match) return {};
   const result: Record<string, any> = {};
-  for (const line of match[1].split("\n")) {
+  const lines = match[1].split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    if (line.startsWith("  ") || line.startsWith("\t")) continue;
     const colonIdx = line.indexOf(":");
     if (colonIdx > 0) {
       const key = line.substring(0, colonIdx).trim();
-      // Skip indented lines (YAML nested content handled separately)
-      if (line.startsWith("  ") || line.startsWith("\t")) continue;
       let value: any = line.substring(colonIdx + 1).trim();
-      if (value.startsWith("[") && value.endsWith("]")) {
+      if (value.length === 0) {
+        const items: string[] = [];
+        let j = i + 1;
+        while (j < lines.length && (lines[j].startsWith("  ") || lines[j].startsWith("\t"))) {
+          const itemLine = lines[j].trim();
+          if (itemLine.startsWith("-")) {
+            let item = itemLine.replace(/^-\s*/, "");
+            const quotedItem = item.match(/^\s*(["'])([\s\S]*)\1\s*$/);
+            if (quotedItem) {
+              item = quotedItem[2];
+            }
+            item = item.trim();
+            if (item.length > 0) {
+              items.push(item);
+            }
+          }
+          j++;
+        }
+        if (items.length > 0) {
+          value = items;
+          i = j - 1;
+        }
+      }
+      if (typeof value === "string" && value.startsWith("[") && value.endsWith("]")) {
         value = value
           .slice(1, -1)
           .split(",")
           .map((s: string) => s.trim().replace(/['"]/g, ""))
           .filter((s: string) => s.length > 0);
-      } else if (value.startsWith('"') && value.endsWith('"')) {
+      } else if (typeof value === "string" && value.startsWith('"') && value.endsWith('"')) {
         value = value.slice(1, -1);
       }
       result[key] = value;
@@ -127,6 +151,41 @@ function extractRelated(content: string): Array<{ slug: string; type: string }> 
   const lines = fmMatch[1].split("\n");
   let inRelated = false;
   let currentSlug: string | null = null;
+  let currentType = "related";
+
+  function normalizeSlug(value: string): string {
+    let slug = value.trim();
+    const quoted = slug.match(/^(['"])([\s\S]*)\1$/);
+    if (quoted) {
+      slug = quoted[2];
+    }
+    slug = slug.trim();
+    if (slug.startsWith("[[") && slug.endsWith("]]")) {
+      slug = slug.slice(2, -2).trim();
+    }
+    if (slug.includes("|")) {
+      slug = slug.split("|")[0].trim();
+    }
+    if (slug.includes("/")) {
+      slug = slug.split("/").pop()!.trim();
+    }
+    slug = slug.replace(/^\[+/, "").replace(/\]+$/, "").trim();
+    const requoted = slug.match(/^(['"])([\s\S]*)\1$/);
+    if (requoted) {
+      slug = requoted[2].trim();
+    }
+    return slug;
+  }
+
+  function pushCurrent(): void {
+    if (!currentSlug) return;
+    const slug = normalizeSlug(currentSlug);
+    if (slug.length > 0) {
+      related.push({ slug, type: currentType || "related" });
+    }
+    currentSlug = null;
+    currentType = "related";
+  }
 
   for (const line of lines) {
     if (line.match(/^related\s*:/)) {
@@ -136,37 +195,41 @@ function extractRelated(content: string): Array<{ slug: string; type: string }> 
     if (inRelated) {
       // End of related block: non-indented, non-empty line that isn't a list item
       if (!line.startsWith("  ") && !line.startsWith("\t") && !line.startsWith("-") && line.trim().length > 0) {
+        pushCurrent();
         inRelated = false;
         continue;
       }
-      // New list item
-      if (line.trim().startsWith("- slug:") || line.trim().startsWith("slug:")) {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) continue;
+      // New structured list item
+      if (trimmed.startsWith("- slug:") || trimmed.startsWith("slug:")) {
+        pushCurrent();
         const slugMatch = line.match(/slug:\s*(.+)/);
         if (slugMatch) {
-          // Push previous entry if exists
-          if (currentSlug) {
-            related.push({ slug: currentSlug, type: "related" });
-          }
-          currentSlug = slugMatch[1].trim().replace(/['"]/g, "");
+          currentSlug = slugMatch[1].trim();
+          currentType = "related";
+        }
+        continue;
+      }
+      // Simple list item
+      if (trimmed.startsWith("-")) {
+        pushCurrent();
+        const slug = normalizeSlug(trimmed.replace(/^-\s*/, ""));
+        if (slug.length > 0) {
+          related.push({ slug, type: "related" });
         }
         continue;
       }
       // Type line for current slug
       const typeMatch = line.match(/type:\s*(.+)/);
       if (typeMatch && currentSlug) {
-        related.push({
-          slug: currentSlug,
-          type: typeMatch[1].trim().replace(/['"]/g, ""),
-        });
-        currentSlug = null;
+        currentType = typeMatch[1].trim().replace(/['"]/g, "");
+        pushCurrent();
         continue;
       }
     }
   }
-  // Push trailing slug without type
-  if (currentSlug) {
-    related.push({ slug: currentSlug, type: "related" });
-  }
+  pushCurrent();
 
   return related;
 }

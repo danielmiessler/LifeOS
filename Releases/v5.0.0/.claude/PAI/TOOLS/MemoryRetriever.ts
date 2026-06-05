@@ -93,15 +93,29 @@ function parseFrontmatter(content: string): { frontmatter: Frontmatter; body: st
   if (!match) return { frontmatter: {}, body: content };
 
   const result: Frontmatter = {};
+  let blockKey: string | null = null; // top-level key currently collecting a YAML block-list
   for (const line of match[1].split("\n")) {
+    // Block-list item: an indented "- item" belongs to the preceding empty-valued key.
+    const listItem = line.match(/^\s+-\s+(.*)$/);
+    if (blockKey && listItem) {
+      const item = listItem[1].trim().replace(/^['"]|['"]$/g, "");
+      if (item.length > 0) {
+        if (!Array.isArray(result[blockKey])) result[blockKey] = [];
+        (result[blockKey] as string[]).push(item);
+      }
+      continue;
+    }
+    if (line.startsWith(" ") || line.startsWith("\t")) continue; // skip other nested lines
     const colonIdx = line.indexOf(":");
     if (colonIdx > 0) {
       const key = line.substring(0, colonIdx).trim();
       let value: string | string[] = line.substring(colonIdx + 1).trim();
+      if (value === "") { blockKey = key; continue; } // maybe a YAML block-list parent
       if (typeof value === "string" && value.startsWith("[") && value.endsWith("]")) {
-        value = value.slice(1, -1).split(",").map((s: string) => s.trim().replace(/['"]/g, ""));
+        value = value.slice(1, -1).split(",").map((s: string) => s.trim().replace(/['"]/g, "")).filter((s: string) => s.length > 0);
       }
       result[key] = value;
+      blockKey = null;
     }
   }
 
