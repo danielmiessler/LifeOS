@@ -30,7 +30,7 @@ When answering questions:
     // Use Inference tool instead of direct API
     const inferenceResult = await new Promise<{ success: boolean; output?: string; error?: string }>((resolve) => {
       const homeDir = process.env.HOME || ''
-      const proc = spawn('bun', ['run', `${homeDir}/.claude/PAI/Tools/Inference.ts`, '--level', 'fast', systemPrompt, message], {
+      const proc = spawn('bun', ['run', `${homeDir}/.claude/PAI/TOOLS/Inference.ts`, '--level', 'fast', systemPrompt, message], {
         stdio: ['ignore', 'pipe', 'pipe'],
       })
 

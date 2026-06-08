@@ -98,7 +98,7 @@ TRANSPARENT: Use Images skill to remove background for overlay use
 **For transparent background** — use the **Images skill** for background removal:
 
 ```bash
-bun ~/.claude/PAI/Tools/RemoveBg.ts /path/to/visualization.png
+bun ~/.claude/PAI/TOOLS/RemoveBg.ts /path/to/visualization.png
 ```
 
 **See:** `~/.claude/skills/Images/Workflows/BackgroundRemoval.md` for full documentation.

@@ -513,10 +513,10 @@ For non-blog images that only need transparency, or to remove backgrounds after 
 
 ```bash
 # Use the Images Skill for background removal
-bun ~/.claude/PAI/Tools/RemoveBg.ts /path/to/output.png
+bun ~/.claude/PAI/TOOLS/RemoveBg.ts /path/to/output.png
 
 # Or batch process multiple images
-bun ~/.claude/PAI/Tools/RemoveBg.ts image1.png image2.png image3.png
+bun ~/.claude/PAI/TOOLS/RemoveBg.ts image1.png image2.png image3.png
 ```
 
 **See:** `~/.claude/skills/Images/Workflows/BackgroundRemoval.md` for full documentation.

@@ -669,7 +669,7 @@ GOING INTO BLOG/WEBSITE: Remove background for transparency
 **For blog/website use** — use the **Images skill** for background removal:
 
 ```bash
-bun ~/.claude/PAI/Tools/RemoveBg.ts /path/to/mermaid-diagram.png
+bun ~/.claude/PAI/TOOLS/RemoveBg.ts /path/to/mermaid-diagram.png
 ```
 
 **See:** `~/.claude/skills/Images/Workflows/BackgroundRemoval.md` for full documentation.

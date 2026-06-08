@@ -143,7 +143,7 @@ Agent 2 - YouTube Channels:
 "Check configured YouTube channels for new content and EXTRACT GRANULAR TECHNIQUES:
 
 1. Load channel config:
-   bun ~/.claude/PAI/Tools/LoadSkillConfig.ts ../youtube-channels.json
+   bun ~/.claude/PAI/TOOLS/LoadSkillConfig.ts ../youtube-channels.json
 
 2. For each channel, check recent videos:
    yt-dlp --flat-playlist --dump-json 'https://www.youtube.com/@channelhandle/videos' 2>/dev/null | head -5
@@ -152,7 +152,7 @@ Agent 2 - YouTube Channels:
    cat ../State/youtube-videos.json
 
 4. For NEW videos, extract transcripts:
-   bun ~/.claude/PAI/Tools/GetTranscript.ts '<video-url>'
+   bun ~/.claude/PAI/TOOLS/GetTranscript.ts '<video-url>'
 
 5. CRITICAL - For each transcript, extract SPECIFIC TECHNIQUES:
    - Look for code patterns, configurations, command examples

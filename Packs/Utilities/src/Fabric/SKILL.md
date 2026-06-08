@@ -179,7 +179,7 @@ Each pattern's `system.md` contains the full prompt that defines:
 ## Changelog
 
 ### 2026-01-18
-- Initial skill creation (extracted from PAI/Tools/fabric)
+- Initial skill creation (extracted from PAI/TOOLS/fabric)
 - Native pattern execution (no CLI dependency for most patterns)
 - Two workflows: ExecutePattern, UpdatePatterns
 - 240+ patterns organized by category

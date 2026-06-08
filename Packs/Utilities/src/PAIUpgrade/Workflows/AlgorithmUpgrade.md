@@ -225,7 +225,7 @@ Ideas that require fundamental changes, not just spec edits:
 - [ ] Review proposals
 - [ ] Apply approved changes to Algorithm spec
 - [ ] Bump version if warranted
-- [ ] Run `bun PAI/Tools/RebuildPAI.ts` to rebuild
+- [ ] Run `bun PAI/TOOLS/RebuildPAI.ts` to rebuild
 ```
 
 ---
