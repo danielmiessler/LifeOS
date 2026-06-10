@@ -57,7 +57,7 @@ The skill runs **four parallel agent threads** that converge into personalized r
 
 **Canonical spec:** `References/OutputFormat.md` — single source of truth for section order, Prior Status legend, table columns, and hard rules. Both this skill and `Workflows/Upgrade.md` reference that file rather than inlining their own copies.
 
-Section order: Discoveries → Recommendations → Technique Details → Internal Reflections → Summary → Skipped → Sources Processed.
+Section order: Discoveries → Recommendations → Technique Details → Interactions & Sequencing (mandatory >10 recs) → Internal Reflections → Summary → Skipped → Sources Processed.
 
 **Print only non-empty Recommendation tiers** (no empty `🟡 MEDIUM` headers).
 
@@ -69,6 +69,7 @@ Section order: Discoveries → Recommendations → Technique Details → Interna
 2. **Quote or code-block the actual content** — show exactly what was said/written.
 3. **Map to PAI components** — every technique connects to a specific file, skill, workflow, or system component.
 4. **Verify Prior State (Thread 0 gate)** — Before emitting ANY recommendation, confirm against Thread 0 inventory: is it already in Algorithm / PATTERNS.yaml / hooks / SKILL files / KNOWLEDGE / prior ISAs? Assign a Prior Status emoji and cite evidence. Items that are ✅ DONE go to Skipped, not Recommendations.
+   - **Cross-reference recommendations against EACH OTHER (Step 6b gate)** — when the report exceeds 10 recommendations, run the interference analysis (measurement confounds, same-file collisions, input dependencies, doctrine bundling), adversarially verified by a second agent, and emit the Interactions & Sequencing section. Prior Status gates against the past; this gates against the set itself.
 5. **Two mandatory description fields, ≤2 sentences each, concrete and specific:**
    - **What It Is:** the technique itself — what it does, how it works, what capability it provides
    - **How It Helps PAI:** the specific benefit — which component improves, what gap it fills
@@ -147,6 +148,7 @@ These output patterns are **FAILURES**:
 
 ## Gotchas
 
+- **A large recommendation set is itself a system — analyze it as one.** A 44-recommendation report once shipped with every row Prior-Status-gated but zero pairwise analysis; the retrofit found two high-severity measurement confounds (a fallback setting and a safety-routing behavior each silently swapping the model under an A/B eval) plus six same-file collisions. Step 6b (interference matrix + adversarial pass) is mandatory at >10 recs.
 - **Check ALL sources in parallel** — Anthropic blog, changelog, YouTube channels, GitHub releases. Don't check sequentially.
 - **Upgrades must not break existing skills or workflows.** Verify backward compatibility before applying.
 - **Full upgrade check can take 5-7 minutes.** Use `run_in_background: true` for the outer agent.

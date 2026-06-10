@@ -7,10 +7,11 @@
 1. **✨ Discoveries** — what was found, ranked by interestingness
 2. **🔥 Recommendations** — what to do, ranked by priority tier
 3. **🎯 Technique Details** — full extraction with code/quotes
-4. **🪞 Internal Reflections** — upgrade candidates from algorithm reflections (Thread 3)
-5. **📊 Summary** — one-line totals
-6. **⏭️ Skipped Content** — already-done / rejected with file:line evidence
-7. **🔍 Sources Processed** — count footer
+4. **⚠️ Interactions & Sequencing** — cross-recommendation interference matrix (MANDATORY when >10 recommendations; see Workflows/Upgrade.md Step 6b)
+5. **🪞 Internal Reflections** — upgrade candidates from algorithm reflections (Thread 3)
+6. **📊 Summary** — one-line totals
+7. **⏭️ Skipped Content** — already-done / rejected with file:line evidence
+8. **🔍 Sources Processed** — count footer
 
 **Print only non-empty tiers** in Recommendations. If no CRITICAL items, omit that header entirely.
 
@@ -111,6 +112,29 @@ Numbered to match Recommendations. One block per technique.
 
 ---
 
+## ⚠️ Interactions & Sequencing
+
+Mandatory when the report carries more than 10 recommendations (Step 6b in Upgrade.md); at ≤10, the section reduces to a single line: "interference: none found across N recs".
+
+```markdown
+Pairwise interference analysis across R1-RN, adversarially verified by a second agent (different model family when available).
+
+| # | Pair | Mechanism | Guard |
+|---|------|-----------|-------|
+| C1 | Rx↔Ry | [how they interfere — confound / same-file / dependency / bundling] | [sequencing rule, design guard, or precondition] |
+
+**Wave sequence:** W0 [conflict-free now] → W1 [deadline-ordered] → … → Wn [independent anytime].
+
+**Synergies:** [pairs that reinforce each other, worth implementing together]
+```
+
+**Hard sub-rules:**
+- Every conflict row has a non-empty Guard cell — a conflict without a resolution blocks the report.
+- The matrix must survive an adversarial pass by a second agent; disputes resolve by probing ground truth, not by model preference.
+- Recommendation rows involved in any conflict are tagged so readers hit the warning before implementing.
+
+---
+
 ## 🪞 Internal Reflections (Thread 3)
 
 ```markdown
@@ -166,3 +190,4 @@ One-line digest of source counts and routing.
 8. **Skip boldly.** Content with no extractable technique → Skipped, not diluted.
 9. **Numbered cross-references** are consistent across Discoveries, Recommendations, and Technique Details.
 10. **Print only non-empty tiers.** Empty tier headers are noise.
+11. **Interference gate.** >10 recommendations → the Interactions & Sequencing section is mandatory, adversarially verified, and every conflict pair carries a guard. Prior-Status gates against the past; this gates against each other.
