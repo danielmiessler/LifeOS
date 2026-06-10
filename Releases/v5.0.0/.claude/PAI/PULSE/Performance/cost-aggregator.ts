@@ -21,6 +21,8 @@ const STATE_FILE = join(PAI_DIR, "PULSE", "Performance", "aggregator-state.json"
 
 // Model pricing per million tokens (as of 2026-04)
 const MODEL_PRICING: Record<string, { input: number; output: number; cacheWrite: number; cacheRead: number }> = {
+  // Fable 5
+  "claude-fable-5": { input: 10, output: 50, cacheWrite: 12.50, cacheRead: 1.00 },
   // Opus 4 / 4.6
   "claude-opus-4-20250514": { input: 15, output: 75, cacheWrite: 18.75, cacheRead: 1.50 },
   "claude-opus-4-6": { input: 15, output: 75, cacheWrite: 18.75, cacheRead: 1.50 },
@@ -35,8 +37,10 @@ const MODEL_PRICING: Record<string, { input: number; output: number; cacheWrite:
 function getPricing(model: string): { input: number; output: number; cacheWrite: number; cacheRead: number } {
   // Exact match
   if (MODEL_PRICING[model]) return MODEL_PRICING[model]
-  // Fuzzy match: opus, sonnet, haiku
+  // Fuzzy match: fable, opus, sonnet, haiku — transcripts can carry suffixed
+  // ids (e.g. "claude-fable-5[1m]") that won't exact-match the table
   const lower = model.toLowerCase()
+  if (lower.includes("fable")) return MODEL_PRICING["claude-fable-5"]
   if (lower.includes("opus")) return MODEL_PRICING["claude-opus-4-6"]
   if (lower.includes("haiku")) return MODEL_PRICING["claude-haiku-4-5-20251001"]
   if (lower.includes("sonnet")) return MODEL_PRICING["claude-sonnet-4-6"]

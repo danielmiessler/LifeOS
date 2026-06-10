@@ -102,6 +102,7 @@ function formatTokens(n: number): string {
 }
 
 function shortModel(m: string): string {
+  if (m.includes("fable")) return "Fable";
   if (m.includes("opus")) return "Opus";
   if (m.includes("haiku")) return "Haiku";
   if (m.includes("sonnet")) return "Sonnet";
