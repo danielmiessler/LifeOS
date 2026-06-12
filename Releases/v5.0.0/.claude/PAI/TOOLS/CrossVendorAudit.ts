@@ -189,10 +189,24 @@ function assembleBundle(isa: string, artifacts: string, toolTail: string, adviso
 
 function invokeCodex(bundle: string): Promise<{ stdout: string; stderr: string; code: number | null }> {
   return new Promise((resolvePromise) => {
+    // --skip-git-repo-check: the PAI directory is not always a git repository
+    // (some installs persist it by other means), and codex exec refuses to run
+    // from a non-git working directory without this flag.
+    // Env scrub: codex's auth precedence puts OPENAI_API_KEY / OPENAI_BASE_URL
+    // above ~/.codex/auth.json and config.toml, so a stray key in the parent
+    // shell silently flips the audit from the user's configured codex auth
+    // (e.g. ChatGPT subscription) to direct API billing. Only scrub when a
+    // configured auth file exists — users who authenticate codex solely via
+    // OPENAI_API_KEY keep working unchanged.
+    const env = { ...process.env };
+    if (existsSync(join(HOME, ".codex", "auth.json"))) {
+      delete env.OPENAI_API_KEY;
+      delete env.OPENAI_BASE_URL;
+    }
     const proc = spawn(
       CODEX_BIN,
-      ["exec", "--sandbox", "read-only", "--model", "gpt-5.4", "-"],
-      { stdio: ["pipe", "pipe", "pipe"] }
+      ["exec", "--sandbox", "read-only", "--skip-git-repo-check", "--model", "gpt-5.4", "-"],
+      { stdio: ["pipe", "pipe", "pipe"], env }
     );
     let stdout = "";
     let stderr = "";
