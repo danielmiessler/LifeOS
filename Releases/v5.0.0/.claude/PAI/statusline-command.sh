@@ -20,6 +20,7 @@ QUOTE_CACHE="$PAI_DIR/.quote-cache"
 LOCATION_CACHE="$PAI_DIR/MEMORY/STATE/location-cache.json"
 WEATHER_CACHE="$PAI_DIR/MEMORY/STATE/weather-cache.json"
 USAGE_CACHE="/tmp/pai-usage-${USER:-anon}.json"
+USAGE_LOCK="/tmp/pai-usage-${USER:-anon}.lock"   # P4: single-fetcher mutex (atomic mkdir; portable, no flock(1))
 LEARNING_CACHE="$PAI_DIR/MEMORY/STATE/learning-cache.sh"
 
 # Settings values read once up front. Re-reading settings.json is measurable on
@@ -100,6 +101,8 @@ settings_has_counts="${settings_has_counts:-false}"
 LOCATION_CACHE_TTL=3600
 WEATHER_CACHE_TTL=900
 USAGE_CACHE_TTL=900      # 15 min: /api/oauth/usage has aggressive per-token rate limits (~5 req before 429)
+USAGE_HARD_EXPIRY=21600  # P5: 6h. Show last-known-good (dimmed + stale badge) until here, then hide —
+                         # replaces the old 1800s cliff that deleted the cache and vanished the counters.
 
 # Source .env for API keys
 [ -f "${PAI_CONFIG_DIR:-$HOME/.claude/PAI}/.env" ] && source "${PAI_CONFIG_DIR:-$HOME/.claude/PAI}/.env"
@@ -212,6 +215,8 @@ eval "$(jq -r '
   "context_pct=" + (.context_window.used_percentage // 0 | tostring) + "\n" +
   "total_input=" + (.context_window.total_input_tokens // 0 | tostring) + "\n" +
   "has_native_rate_limits=" + ((.rate_limits != null) | tostring) + "\n" +
+  "native_usage_5h_present=" + ((.rate_limits.five_hour.used_percentage // .rate_limits.five_hour.utilization) != null | tostring) + "\n" +
+  "native_usage_7d_present=" + ((.rate_limits.seven_day.used_percentage // .rate_limits.seven_day.utilization) != null | tostring) + "\n" +
   "native_usage_5h=" + (.rate_limits.five_hour.used_percentage // .rate_limits.five_hour.utilization // 0 | tostring) + "\n" +
   "native_usage_5h_reset=" + (.rate_limits.five_hour.resets_at // "" | @sh) + "\n" +
   "native_usage_7d=" + (.rate_limits.seven_day.used_percentage // .rate_limits.seven_day.utilization // 0 | tostring) + "\n" +
@@ -228,6 +233,8 @@ context_pct=${context_pct:-0}
 context_max=${context_max:-200000}
 total_input=${total_input:-0}
 has_native_rate_limits="${has_native_rate_limits:-false}"
+native_usage_5h_present="${native_usage_5h_present:-false}"
+native_usage_7d_present="${native_usage_7d_present:-false}"
 
 # Claude Code reserves ~16.5% of context for compaction overhead.
 # Usable context = 83.5% of window. Scale displayed % so it matches reality.
@@ -671,8 +678,18 @@ if [ "$MODE" = "normal" ]; then
     _usage_now=$NOW_EPOCH
 
     if [ "$has_native_rate_limits" = "true" ]; then
-        # Native rate_limits available — use directly, skip OAuth API entirely
+        # Native rate_limits available — use directly, skip OAuth API entirely.
+        # Presence is tri-state and per-source (P1): a present 0% is real data
+        # (state=fresh); an absent rate_limits window is NOT (state=absent).
+        # "field absent" must never be conflated with "value 0".
+        if [ "$native_usage_5h_present" = "true" ] || [ "$native_usage_7d_present" = "true" ]; then
+            _native_state=fresh
+        else
+            _native_state=absent
+        fi
         cat > "$_parallel_tmp/usage.sh" << USAGEEOF
+usage_source=native
+usage_state=$_native_state
 usage_5h=${native_usage_5h:-0}
 usage_5h_reset=${native_usage_5h_reset:-''}
 usage_7d=${native_usage_7d:-0}
@@ -686,37 +703,86 @@ usage_ws_cost_cents=0
 USAGEEOF
     else
         # Fallback: fetch from OAuth API (pre-v2.1.80 or non-Claude.ai auth)
-        cache_age=999999
-        [ -f "$USAGE_CACHE" ] && cache_age=$((_usage_now - $(get_mtime "$USAGE_CACHE")))
-
-        if [ "$cache_age" -gt "$USAGE_CACHE_TTL" ]; then
-            # Extract OAuth token — macOS Keychain or Linux credentials file
-            if [ "$(uname -s)" = "Darwin" ]; then
-                cred_json=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
+        # Data age is computed from the in-data fetched_at stamp (P6) when present,
+        # else the file mtime — so rsync/backup/touch can't fake freshness or staleness.
+        _data_age=999999
+        if [ -f "$USAGE_CACHE" ]; then
+            _fetched_at=$(jq -r '.fetched_at // empty' "$USAGE_CACHE" 2>/dev/null)
+            if [[ "$_fetched_at" =~ ^[0-9]+$ ]]; then
+                _data_age=$((_usage_now - _fetched_at))
             else
-                cred_json=$(cat "${HOME}/.claude/.credentials.json" 2>/dev/null)
-            fi
-            token=$(echo "$cred_json" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
-
-            if [ -n "$token" ]; then
-                usage_json=$(curl -s --max-time 3 \
-                    -H "Authorization: Bearer $token" \
-                    -H "Content-Type: application/json" \
-                    -H "anthropic-beta: oauth-2025-04-20" \
-                    "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
-
-                if [ -n "$usage_json" ] && echo "$usage_json" | jq -e '.five_hour' >/dev/null 2>&1; then
-                    echo "$usage_json" | jq '.' > "$USAGE_CACHE" 2>/dev/null
-                fi
+                _data_age=$((_usage_now - $(get_mtime "$USAGE_CACHE")))
             fi
         fi
 
-        # Read cache if it exists and is <30min old. Otherwise no data.
-        _usage_age=999999
-        [ -f "$USAGE_CACHE" ] && _usage_age=$((_usage_now - $(get_mtime "$USAGE_CACHE")))
+        if [ "$_data_age" -gt "$USAGE_CACHE_TTL" ]; then
+            # Single-fetcher coordination (P4): only ONE of N concurrent statuslines
+            # fetches per TTL window. mkdir is an atomic, portable mutex — macOS has
+            # no flock(1). Acquisition is NON-BLOCKING: a loser never waits on the
+            # slow 429-prone endpoint, it falls straight through to last-known-good.
+            #
+            # Reap only a lock whose owner PROCESS IS DEAD (crash) — a liveness check
+            # (kill -0), not a bare timeout, so a slow-but-alive winner is never reaped
+            # out from under itself. Invariant: curl --max-time (3s total, incl.
+            # connect) ≪ the 15s reap floor, so a live winner can't be misclassified.
+            if [ -d "$USAGE_LOCK" ]; then
+                _owner=$(cat "$USAGE_LOCK/pid" 2>/dev/null)
+                _lock_age=$((_usage_now - $(get_mtime "$USAGE_LOCK")))
+                if [ "$_lock_age" -gt 15 ] && { [ -z "$_owner" ] || ! kill -0 "$_owner" 2>/dev/null; }; then
+                    rm -f "$USAGE_LOCK/pid" 2>/dev/null; rmdir "$USAGE_LOCK" 2>/dev/null
+                fi
+            fi
+            if mkdir "$USAGE_LOCK" 2>/dev/null; then
+                echo "$$" > "$USAGE_LOCK/pid" 2>/dev/null   # ownership token (verified on release)
+                # Extract OAuth token — macOS Keychain or Linux credentials file
+                if [ "$(uname -s)" = "Darwin" ]; then
+                    cred_json=$(security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null)
+                else
+                    cred_json=$(cat "${HOME}/.claude/.credentials.json" 2>/dev/null)
+                fi
+                token=$(echo "$cred_json" | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)
 
-        if [ -f "$USAGE_CACHE" ] && [ "$_usage_age" -lt 1800 ]; then
+                if [ -n "$token" ]; then
+                    usage_json=$(curl -s --max-time 3 \
+                        -H "Authorization: Bearer $token" \
+                        -H "Content-Type: application/json" \
+                        -H "anthropic-beta: oauth-2025-04-20" \
+                        "https://api.anthropic.com/api/oauth/usage" 2>/dev/null)
+
+                    # Fail CLOSED: install a new cache ONLY when the body is real JSON
+                    # with a five_hour field. A 429/5xx/HTML body fails this probe, so
+                    # last-known-good is never atomically overwritten with garbage (P5).
+                    if [ -n "$usage_json" ] && echo "$usage_json" | jq -e '.five_hour' >/dev/null 2>&1; then
+                        # Atomic write (P4): temp in the SAME dir (same fs => rename is
+                        # atomic), 0600, and never mv onto a followed symlink (the path
+                        # is predictable in a world-writable dir). Stamp fetched_at (P6).
+                        # mv ONLY if the temp is non-empty (defends jq-exit-0-empty).
+                        _tmp_cache="${USAGE_CACHE}.tmp.$$"
+                        if echo "$usage_json" | jq --argjson now "$_usage_now" '. + {fetched_at:$now}' > "$_tmp_cache" 2>/dev/null && [ -s "$_tmp_cache" ]; then
+                            chmod 600 "$_tmp_cache" 2>/dev/null
+                            [ -L "$USAGE_CACHE" ] && rm -f "$USAGE_CACHE" 2>/dev/null
+                            mv -f "$_tmp_cache" "$USAGE_CACHE" 2>/dev/null && _data_age=0
+                        fi
+                        rm -f "$_tmp_cache" 2>/dev/null
+                    fi
+                fi
+                # Release ONLY if we still own the lock — never nuke another holder's.
+                if [ "$(cat "$USAGE_LOCK/pid" 2>/dev/null)" = "$$" ]; then
+                    rm -f "$USAGE_LOCK/pid" 2>/dev/null; rmdir "$USAGE_LOCK" 2>/dev/null
+                fi
+            fi
+            # Losers (mkdir failed): no fetch, no wait — fall through to last-known-good.
+        fi
+
+        # Read last-known-good (P5): show cached data — dimmed with a stale badge by
+        # the render block — until USAGE_HARD_EXPIRY, instead of the old 30-min cliff
+        # that rm'd the cache and vanished the counters. Hide only when the cache is
+        # missing/unparseable or past hard expiry. Never delete the cache: a future
+        # successful fetch resumes from it.
+        if [ -f "$USAGE_CACHE" ] && [ "$_data_age" -lt "$USAGE_HARD_EXPIRY" ] && jq -e '.five_hour' "$USAGE_CACHE" >/dev/null 2>&1; then
             jq -r '
+                "usage_source=oauth\n" +
+                "usage_state=fresh\n" +
                 "usage_5h=" + (.five_hour.utilization // 0 | tostring) + "\n" +
                 "usage_5h_reset=" + (.five_hour.resets_at // "" | @sh) + "\n" +
                 "usage_7d=" + (.seven_day.utilization // 0 | tostring) + "\n" +
@@ -728,9 +794,9 @@ USAGEEOF
                 "usage_extra_used=" + (.extra_usage.used_credits // 0 | tostring) + "\n" +
                 "usage_ws_cost_cents=0"
             ' "$USAGE_CACHE" > "$_parallel_tmp/usage.sh" 2>/dev/null
+            echo "usage_data_age=$_data_age" >> "$_parallel_tmp/usage.sh"
         else
-            rm -f "$USAGE_CACHE" 2>/dev/null
-            echo -e "usage_5h=0\nusage_7d=0\nusage_extra_enabled=false\nusage_ws_cost_cents=0\nusage_no_data=true" > "$_parallel_tmp/usage.sh"
+            echo -e "usage_source=oauth\nusage_state=absent\nusage_5h=0\nusage_7d=0\nusage_extra_enabled=false\nusage_ws_cost_cents=0\nusage_no_data=true" > "$_parallel_tmp/usage.sh"
         fi
     fi
 } &
@@ -1296,8 +1362,12 @@ usage_7d_int=${usage_7d%%.*}
 [ -z "$usage_5h_int" ] && usage_5h_int=0
 [ -z "$usage_7d_int" ] && usage_7d_int=0
 
-# Only show usage line if we have data (token was valid, cache fresh)
-if [ "${usage_no_data:-false}" != "true" ] && { [ "$usage_5h_int" -gt 0 ] || [ "$usage_7d_int" -gt 0 ] || [ -f "$USAGE_CACHE" ]; }; then
+# Show the usage line iff we actually have data, decided per-source BEFORE any
+# file lookup (P3). Native presence comes from the in-process rate_limits object
+# (reflected in usage_state); OAuth presence comes from its cache (also reflected
+# in usage_state by the producer). Never use cache-file existence as a data proxy
+# — that hid genuine native 0% (Failure 2) and is independent of the live data.
+if [ "${usage_state:-absent}" != "absent" ]; then
     usage_5h_color=$(get_usage_color "$usage_5h_int")
     usage_7d_color=$(get_usage_color "$usage_7d_int")
 
@@ -1334,18 +1404,26 @@ if [ "${usage_no_data:-false}" != "true" ] && { [ "$usage_5h_int" -gt 0 ] || [ "
         extra_display="E:\$${extra_used_dollars:-0}/${extra_limit_fmt}"
     fi
 
-    # Staleness indicator: dim labels/timestamps only, NEVER dim data values
+    # Staleness indicator: dim labels/timestamps only, NEVER dim data values.
+    # Applies ONLY to the OAuth path (P2). Native rate_limits arrive fresh on
+    # stdin every tick, so they must never inherit the /tmp OAuth cache's mtime —
+    # that was the long-session bug where live native data showed a false "(Nh)".
     _usage_cache_age=0
-    [ -f "$USAGE_CACHE" ] && _usage_cache_age=$(( NOW_EPOCH - $(get_mtime "$USAGE_CACHE") ))
     _usage_is_stale=false
     stale_suffix=""
-    if [ "$_usage_cache_age" -gt 600 ]; then
-        _usage_is_stale=true
-        stale_min=$((_usage_cache_age / 60))
-        if [ "$stale_min" -ge 60 ]; then
-            stale_suffix=" ${USAGE_STALE}($((stale_min / 60))h)${RESET}"
-        else
-            stale_suffix=" ${USAGE_STALE}(${stale_min}m)${RESET}"
+    if [ "${usage_source:-oauth}" != "native" ]; then
+        # P6: staleness from the data's own age (usage_data_age, derived from the
+        # in-data fetched_at stamp by the producer), NOT the file mtime — so
+        # rsync/backup/touch can neither fake freshness nor fake staleness.
+        _usage_cache_age=${usage_data_age:-0}
+        if [ "$_usage_cache_age" -gt 600 ]; then
+            _usage_is_stale=true
+            stale_min=$((_usage_cache_age / 60))
+            if [ "$stale_min" -ge 60 ]; then
+                stale_suffix=" ${USAGE_STALE}($((stale_min / 60))h)${RESET}"
+            else
+                stale_suffix=" ${USAGE_STALE}(${stale_min}m)${RESET}"
+            fi
         fi
     fi
 
