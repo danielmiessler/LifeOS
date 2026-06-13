@@ -25,9 +25,10 @@
  *   --auto-state                   v3.24 P5: Auto-synthesize state from current ISA + recent activity (advisor mode only, 2 positional args: task, question)
  *   --json                         Expect and parse JSON response
  *   --timeout <ms>                 Custom timeout (default varies by level)
+ *   --no-thinking                  Disable the extended-thinking budget (snap-judgment latency); implied by --level fast
  *
  * DEFAULTS BY LEVEL:
- *   fast:     model=haiku,   timeout=15s
+ *   fast:     model=haiku,   timeout=15s,  thinking=off
  *   standard: model=sonnet,  timeout=30s
  *   smart:    model=opus,    timeout=90s
  *   advisor:  model=opus,    timeout=120s
@@ -71,6 +72,12 @@ export interface InferenceOptions {
    * are prepended to the user prompt as @-references so Claude reads them as
    * image attachments. Routes through subscription like all other inference. */
   imagePaths?: string[];
+  /** Set to `false` to disable the extended-thinking budget for this call (sets
+   * MAX_THINKING_TOKENS=0 in the subprocess env). Every `claude --print` call
+   * otherwise silently spends a thinking budget — measured ~14.9s vs ~3.2s on a
+   * snap-judgment classification payload, with model tier nearly irrelevant.
+   * Implicitly disabled for `level: 'fast'`. */
+  thinking?: boolean;
 }
 
 export interface InferenceResult {
@@ -115,6 +122,15 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
     // either path leaks subscription work onto API-key billing. Scrub both.
     delete env.ANTHROPIC_API_KEY;
     delete env.ANTHROPIC_AUTH_TOKEN;
+
+    // Disable the extended-thinking budget for latency-sensitive calls. Every
+    // `claude --print` subprocess otherwise silently spends a thinking budget
+    // (measured ~14.9s vs ~3.2s on a snap-judgment classification payload, with
+    // model tier nearly irrelevant). `fast` is a snap judgment by definition;
+    // other levels opt out explicitly with `thinking: false`.
+    if (level === 'fast' || options.thinking === false) {
+      env.MAX_THINKING_TOKENS = '0';
+    }
 
     const hasImages = options.imagePaths && options.imagePaths.length > 0;
     const args = [
@@ -414,6 +430,7 @@ async function main() {
   let expectJson = false;
   let timeout: number | undefined;
   let level: InferenceLevel = 'standard';
+  let noThinking = false;
   let mode: 'inference' | 'advisor' = 'inference';
   let autoState = false;  // v3.24 P5
   const positionalArgs: string[] = [];
@@ -444,6 +461,8 @@ async function main() {
     } else if (args[i] === '--timeout' && args[i + 1]) {
       timeout = parseInt(args[i + 1], 10);
       i++;
+    } else if (args[i] === '--no-thinking') {
+      noThinking = true;
     } else {
       positionalArgs.push(args[i]);
     }
@@ -483,7 +502,7 @@ async function main() {
   }
 
   if (positionalArgs.length < 2) {
-    console.error('Usage: bun Inference.ts [--level fast|standard|smart] [--json] [--timeout <ms>] <system_prompt> <user_prompt>');
+    console.error('Usage: bun Inference.ts [--level fast|standard|smart] [--json] [--timeout <ms>] [--no-thinking] <system_prompt> <user_prompt>');
     process.exit(1);
   }
 
@@ -495,6 +514,7 @@ async function main() {
     level,
     expectJson,
     timeout,
+    thinking: noThinking ? false : undefined,
   });
 
   if (result.success) {
