@@ -67,6 +67,22 @@ The first three are author-stated (declarative). Anti-criteria are derived — t
 
 ---
 
+## Deliverable Framing (outward-artifact ISAs)
+
+When an ISA's ideal state is an outward-facing artifact (a document, email, post, deck, report) rather than code or infrastructure, one Principle pays for itself repeatedly: author the durable substance (the facts and analysis) separately from the framing layer (the voice, positioning, and calls to action) aimed at a specific audience.
+
+The reason is rework cost. When substance and framing are entangled in the first draft, a late correction to the audience or the artifact's purpose ripples back through the substance and forces a rewrite. When they are kept separate, the same correction is a light revision of the wrapper while the substance stays put.
+
+The entanglement usually traces to three things being assumed instead of settled during OBSERVE:
+
+- **Recipient and role:** who consumes the artifact, and as what. This is part of the Vision, since experiential intent is always for someone.
+- **Prior visibility:** what that audience has already seen, which positions the artifact as new, a revision, or a follow-up.
+- **Artifact type and its burden of proof:** a risk write-up, a policy or compliance note, a marketing page, and a technical reference each carry different structure and standards of evidence. Where a type implies a hard limit, that limit is a Constraint.
+
+Naming these three before drafting keeps the substance/framing separation cheap to maintain.
+
+---
+
 ## Tier Completeness Gate (HARD at all tiers)
 
 Mirrors the v6.1.0 thinking-floor non-relaxability. Required sections per tier:
