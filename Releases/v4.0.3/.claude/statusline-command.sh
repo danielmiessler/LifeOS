@@ -100,6 +100,27 @@ context_remaining=${context_remaining:-100}
 total_input=${total_input:-0}
 total_output=${total_output:-0}
 
+# Model-aware context window correction. When switching between Opus (1M) and
+# Sonnet/Haiku (200K) mid-session, Claude Code may report context_window_size
+# from the session's starting model, not the current model. Use model_name to
+# derive the expected window and recalculate context_pct against the right value.
+_model_lower="${model_name,,}"
+if [[ "$_model_lower" == *"opus"* ]]; then
+    _expected_ctx=1048576
+elif [[ "$_model_lower" == *"sonnet"* ]] || [[ "$_model_lower" == *"haiku"* ]] || [[ "$_model_lower" == *"fable"* ]]; then
+    _expected_ctx=200000
+else
+    _expected_ctx=""
+fi
+if [ -n "$_expected_ctx" ] && [ "$context_max" != "$_expected_ctx" ] && [ "$_expected_ctx" -gt 0 ]; then
+    if [ "$total_input" -gt 0 ]; then
+        context_pct=$(( total_input * 100 / _expected_ctx ))
+    elif [ "$context_max" -gt 0 ] && [ "$context_pct" -gt 0 ]; then
+        context_pct=$(( context_pct * context_max / _expected_ctx ))
+    fi
+    context_max="$_expected_ctx"
+fi
+
 # NOTE: Removed fallback that calculated context_pct from total_input + total_output
 # when used_percentage was 0. total_input/output_tokens are CUMULATIVE session totals
 # (like an odometer) — they can far exceed context_window_size. After /clear,
