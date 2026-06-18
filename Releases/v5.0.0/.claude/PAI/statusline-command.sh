@@ -1217,7 +1217,7 @@ sep
 # ═══════════════════════════════════════════════════════════════════════════════
 # LINE: MODE · ALGORITHM TIER · MODEL EFFORT
 # PAI mode (NATIVE/ALGORITHM) + active Algorithm tier (E1-E5) read from
-# work.json by sessionUUID; model reasoning effort (LOW/MEDIUM/HIGH/MAX) from
+# work.json by sessionUUID; model reasoning effort (LOW/MEDIUM/HIGH/XHIGH/MAX) from
 # Claude Code's native input JSON `.effort.level`. Active items bright, rest dim.
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1273,8 +1273,8 @@ done
 
 # Model reasoning effort — active label colored by intensity, rest dim
 _eff_lc="$(printf '%s' "${model_effort:-}" | tr '[:upper:]' '[:lower:]')"
-_eff_levels=(low medium high max)
-_eff_labels=(LOW MEDIUM HIGH MAX)
+_eff_levels=(low medium high xhigh max)
+_eff_labels=(LOW MEDIUM HIGH XHIGH MAX)
 printf "  ${SLATE_600}│${RESET} ${SLATE_500}🔒 LEVEL:${RESET}"
 for _li in "${!_eff_levels[@]}"; do
     if [ "$_eff_lc" = "${_eff_levels[$_li]}" ]; then
@@ -1282,6 +1282,7 @@ for _li in "${!_eff_levels[@]}"; do
             low)    _ec='\033[38;2;134;239;172m' ;;  # green
             medium) _ec='\033[38;2;253;224;71m' ;;   # yellow
             high)   _ec='\033[38;2;251;146;60m' ;;   # orange
+            xhigh)  _ec='\033[38;2;239;68;68m' ;;    # red
             max)    _ec='\033[38;2;251;113;133m' ;;  # rose
             *)      _ec="$_ALG_ON" ;;
         esac
