@@ -220,7 +220,10 @@ eval "$(jq -r '
   "native_usage_sonnet=" + (if .rate_limits.seven_day_sonnet then (.rate_limits.seven_day_sonnet.used_percentage // .rate_limits.seven_day_sonnet.utilization // 0 | tostring) else "null" end) + "\n" +
   "native_usage_extra_enabled=" + (.rate_limits.extra_usage.is_enabled // false | tostring) + "\n" +
   "native_usage_extra_limit=" + (.rate_limits.extra_usage.monthly_limit // 0 | tostring) + "\n" +
-  "native_usage_extra_used=" + (.rate_limits.extra_usage.used_credits // 0 | tostring)
+  "native_usage_extra_used=" + (.rate_limits.extra_usage.used_credits // 0 | tostring) + "\n" +
+  "model_effort=" + (.effort.level // "" | @sh) + "\n" +
+  "fast_mode_flag=" + (.fast_mode // false | tostring) + "\n" +
+  "thinking_enabled=" + (.thinking.enabled // false | tostring)
 ' 2>/dev/null <<< "$input")"
 
 # Ensure defaults for critical numeric values
@@ -1207,6 +1210,85 @@ for _i in "${!_dims[@]}"; do
     esac
     printf "%b%s${RESET} %b%s%s${RESET}" "$_dc" "${_labels[$_i]}" "$_tc" "$_val" "$_suffix"
     [ "$_i" -lt $((${#_dims[@]} - 1)) ] && printf " ${SLATE_600}│${RESET} "
+done
+printf "\n"
+sep
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LINE: MODE · ALGORITHM TIER · MODEL EFFORT
+# PAI mode (NATIVE/ALGORITHM) + active Algorithm tier (E1-E5) read from
+# work.json by sessionUUID; model reasoning effort (LOW/MEDIUM/HIGH/MAX) from
+# Claude Code's native input JSON `.effort.level`. Active items bright, rest dim.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Source PAI mode + effort tier from work.json registry, matched on sessionUUID.
+# Newest non-complete session wins. Defaults keep the row sane when absent.
+pai_mode="native"
+pai_effort="standard"
+_WORK_JSON="$PAI_DIR/MEMORY/STATE/work.json"
+if [ -n "$session_id" ] && [ -f "$_WORK_JSON" ]; then
+    eval "$(jq -r --arg sid "$session_id" '
+        ([.sessions[]? | select(.sessionUUID == $sid and .phase != "complete")]
+         | sort_by(.updatedAt) | last) as $s
+        | if $s then
+            "pai_mode=" + ($s.currentMode // "native" | @sh) + "\n" +
+            "pai_effort=" + ($s.effort // "standard" | @sh)
+          else empty end
+    ' "$_WORK_JSON" 2>/dev/null)"
+fi
+
+# Map effort word → Algorithm tier number (0 = no tier / not in algorithm mode)
+case "$(printf '%s' "$pai_effort" | tr '[:upper:]' '[:lower:]')" in
+    e1|standard)      algo_tier=1 ;;
+    e2|extended)      algo_tier=2 ;;
+    e3|advanced)      algo_tier=3 ;;
+    e4|deep)          algo_tier=4 ;;
+    e5|comprehensive) algo_tier=5 ;;
+    *)                algo_tier=0 ;;
+esac
+
+# Mode/tier colors — active bright, inactive dim slate
+_ALG_ON='\033[38;2;96;165;250m'     # bright blue — active mode
+_ALG_OFF='\033[38;2;71;85;105m'     # slate-600 — inactive
+_TIER_ON='\033[38;2;134;239;172m'   # green — active tier pip
+_TIER_OFF='\033[38;2;71;85;105m'    # slate-600 — inactive pip
+
+_is_algo=false
+[ "$pai_mode" = "algorithm" ] && _is_algo=true
+if [ "$_is_algo" = true ]; then
+    _native_c="$_ALG_OFF"; _algo_c="$_ALG_ON"
+else
+    _native_c="$_ALG_ON"; _algo_c="$_ALG_OFF"
+    algo_tier=0   # tiers only meaningful in algorithm mode
+fi
+
+printf "${SLATE_500}⊞${RESET} ${_native_c}NATIVE${RESET} ${_algo_c}ALGORITHM${RESET}"
+for _t in 1 2 3 4 5; do
+    if [ "$algo_tier" = "$_t" ]; then
+        printf " ${_TIER_ON}%s${RESET}" "$_t"
+    else
+        printf " ${_TIER_OFF}%s${RESET}" "$_t"
+    fi
+done
+
+# Model reasoning effort — active label colored by intensity, rest dim
+_eff_lc="$(printf '%s' "${model_effort:-}" | tr '[:upper:]' '[:lower:]')"
+_eff_levels=(low medium high max)
+_eff_labels=(LOW MEDIUM HIGH MAX)
+printf "  ${SLATE_600}│${RESET} ${SLATE_500}🔒 LEVEL:${RESET}"
+for _li in "${!_eff_levels[@]}"; do
+    if [ "$_eff_lc" = "${_eff_levels[$_li]}" ]; then
+        case "${_eff_levels[$_li]}" in
+            low)    _ec='\033[38;2;134;239;172m' ;;  # green
+            medium) _ec='\033[38;2;253;224;71m' ;;   # yellow
+            high)   _ec='\033[38;2;251;146;60m' ;;   # orange
+            max)    _ec='\033[38;2;251;113;133m' ;;  # rose
+            *)      _ec="$_ALG_ON" ;;
+        esac
+        printf " ${_ec}%s${RESET}" "${_eff_labels[$_li]}"
+    else
+        printf " ${_ALG_OFF}%s${RESET}" "${_eff_labels[$_li]}"
+    fi
 done
 printf "\n"
 sep
