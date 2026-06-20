@@ -153,6 +153,19 @@ const SYSTEM_TEXT_PATTERNS = [
   /^Note:.*was read before/i,
 ];
 
+// ── Rating Validity ──
+
+/**
+ * A satisfaction rating is only meaningful when the model returns an actual
+ * value in the 1-10 band. Anything else (missing, null, out of range, NaN,
+ * non-number) is the ABSENCE of a signal — it must not be coerced to a neutral
+ * 5, which would pollute every running average (the aggregator flat-means
+ * `.rating` and ignores confidence).
+ */
+export function isValidRating(x: unknown): boolean {
+  return typeof x === 'number' && Number.isFinite(x) && x >= 1 && x <= 10;
+}
+
 // ── Rating Writer ──
 
 function writeRating(entry: RatingEntry): void {
@@ -422,10 +435,9 @@ async function main() {
         level: 'fast',
       });
 
-      if (result.success && result.parsed) {
+      if (result.success && result.parsed && isValidRating((result.parsed as SentimentResult).rating)) {
         const r = result.parsed as SentimentResult;
-        // Clamp rating to 1-10, default 5 if missing
-        const rating = (r.rating != null && r.rating >= 1 && r.rating <= 10) ? r.rating : 5;
+        const rating = r.rating;
         const confidence = r.confidence || 0.5;
 
         console.error(`[SatisfactionCapture] Implicit: ${rating}/10 (${confidence}) - ${r.summary || 'no summary'}`);
@@ -459,6 +471,10 @@ async function main() {
             }).catch((err) => console.error(`[SatisfactionCapture] Failure capture error: ${err}`));
           }
         }
+      } else if (result.success) {
+        // Inference succeeded but returned no usable 1-10 rating (missing/garbled
+        // JSON). That's the absence of a signal, not a neutral 5 — skip the write.
+        console.error(`[SatisfactionCapture] Inference returned no valid rating — skipping signal (no rating written)`);
       } else {
         // Inference failed — skip the signal instead of fabricating a neutral 5.
         // A failed classification is not a real satisfaction signal; writing a
@@ -480,4 +496,4 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.main) main();
