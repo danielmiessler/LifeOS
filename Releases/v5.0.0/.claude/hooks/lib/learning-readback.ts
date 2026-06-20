@@ -26,12 +26,41 @@
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 
+/** Default freshness window for the learning digest. Entries older than this are
+ *  excluded so a quiet category can't surface weeks-old signals as if current. */
+const DEFAULT_MAX_AGE_DAYS = 21;
+
 /**
- * Read the N most recent learning files from a LEARNING subdirectory.
- * Files are named YYYY-MM-DD-HHMMSS_LEARNING_*.md with YAML frontmatter.
- * Extracts the **Feedback:** line and rating for compact display.
+ * Parse the timestamp encoded in a learning filename
+ * (YYYY-MM-DD-HHMMSS_LEARNING_*.md). Returns null if the name doesn't match.
  */
-function getRecentLearnings(baseDir: string, subdir: string, count: number): string[] {
+export function parseLearningDate(filename: string): Date | null {
+  const m = filename.match(/^(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})_/);
+  if (!m) return null;
+  const [, y, mo, d, h, mi, s] = m;
+  const dt = new Date(Number(y), Number(mo) - 1, Number(d), Number(h), Number(mi), Number(s));
+  return Number.isNaN(dt.getTime()) ? null : dt;
+}
+
+/**
+ * Whether a learning file is recent enough to surface in the digest. Unparseable
+ * names are treated as not fresh (excluded) — the digest must never present a
+ * signal it cannot date as though it were current.
+ */
+export function isFresh(filename: string, maxAgeDays: number, now: Date = new Date()): boolean {
+  const dt = parseLearningDate(filename);
+  if (!dt) return false;
+  const ageMs = now.getTime() - dt.getTime();
+  return ageMs >= 0 && ageMs <= maxAgeDays * 86_400_000;
+}
+
+/**
+ * Read the N most recent learning files from a LEARNING subdirectory, limited to
+ * a freshness window. Files are named YYYY-MM-DD-HHMMSS_LEARNING_*.md with YAML
+ * frontmatter. Extracts the **Feedback:** line and rating, and stamps each entry
+ * with its date so staleness is always visible.
+ */
+function getRecentLearnings(baseDir: string, subdir: string, count: number, maxAgeDays: number = DEFAULT_MAX_AGE_DAYS): string[] {
   const insights: string[] = [];
   const learningDir = join(baseDir, 'MEMORY', 'LEARNING', subdir);
   if (!existsSync(learningDir)) return insights;
@@ -56,6 +85,8 @@ function getRecentLearnings(baseDir: string, subdir: string, count: number): str
 
         for (const file of files) {
           if (insights.length >= count) break;
+          // Skip stale entries so a quiet category can't surface old signals.
+          if (!isFresh(file, maxAgeDays)) continue;
           try {
             const content = readFileSync(join(monthPath, file), 'utf-8');
             const feedbackMatch = content.match(/\*\*Feedback:\*\*\s*(.+)/);
@@ -63,7 +94,9 @@ function getRecentLearnings(baseDir: string, subdir: string, count: number): str
             if (feedbackMatch) {
               const rating = ratingMatch ? ratingMatch[1] : '?';
               const feedback = feedbackMatch[1].substring(0, 80);
-              insights.push(`[${rating}/10] ${feedback}`);
+              const dt = parseLearningDate(file);
+              const dateStr = dt ? dt.toISOString().slice(0, 10) : '';
+              insights.push(`[${rating}/10] (${dateStr}) ${feedback}`);
             }
           } catch { /* skip unreadable files */ }
         }
