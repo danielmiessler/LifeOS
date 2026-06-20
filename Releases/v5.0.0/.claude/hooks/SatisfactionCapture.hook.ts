@@ -460,30 +460,17 @@ async function main() {
           }
         }
       } else {
-        // Inference failed — default to 5 (neutral)
+        // Inference failed — skip the signal instead of fabricating a neutral 5.
+        // A failed classification is not a real satisfaction signal; writing a
+        // default-5 row pollutes ratings.jsonl and drags every running average
+        // toward the mushy middle. Log for observability, write nothing.
         const errorReason = result.error || 'unknown';
-        console.error(`[SatisfactionCapture] Inference failed: ${errorReason} — defaulting to 5`);
-        writeRating({
-          timestamp: getISOTimestamp(),
-          rating: 5,
-          session_id: sessionId,
-          source: 'implicit',
-          sentiment_summary: `Inference failed: ${errorReason.slice(0, 80)}`,
-          confidence: 0.3,
-        });
+        console.error(`[SatisfactionCapture] Inference failed: ${errorReason} — skipping signal (no rating written)`);
       }
     } catch (err) {
-      // Inference errored — default to 5 (neutral)
+      // Inference errored — skip the signal (see note above). Do not fabricate a 5.
       const errMsg = err instanceof Error ? err.message : String(err);
-      console.error(`[SatisfactionCapture] Inference error: ${errMsg} — defaulting to 5`);
-      writeRating({
-        timestamp: getISOTimestamp(),
-        rating: 5,
-        session_id: sessionId,
-        source: 'implicit',
-        sentiment_summary: `Inference error: ${errMsg.slice(0, 80)}`,
-        confidence: 0.3,
-      });
+      console.error(`[SatisfactionCapture] Inference error: ${errMsg} — skipping signal (no rating written)`);
     }
 
     process.exit(0);
