@@ -2,17 +2,6 @@
 
 **Step-by-step visual recipes for processes and methodologies using UL aesthetic.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the RecipeCards workflow in the Art skill to create recipe cards"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **RecipeCards** in **Art**...
-
 ---
 
 Creates **PROCESS RECIPE CARDS** — numbered steps with small illustrations for each action, combining procedural clarity with editorial style.

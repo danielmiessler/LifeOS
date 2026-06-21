@@ -30,13 +30,11 @@ The PAI system uses Kitty terminal tab colors and title suffixes to provide inst
 - Hook: `SessionAnalysis.hook.ts`
 - Sets title with `…` suffix
 - Sets background to orange (working)
-- Announces via voice server
 
 **2. Stop (End of Work)**
 - Hook: `SessionAnalysis.hook.ts` → `handlers/TabState.ts`
 - Detects final state (completed, awaiting input, error)
 - Sets appropriate suffix and color
-- Voice notification with completion message
 
 ### State Detection Logic
 
@@ -79,7 +77,7 @@ Separate from the State System above, **Algorithm runs** drive tab titles/colors
 **Two drivers feed `setPhaseTab`:**
 
 1. **`ISASync.hook.ts` (PostToolUse, Edit on ISA.md)** — fires when the Algorithm executor edits the ISA frontmatter `phase:` field.
-2. **`PAI/PULSE/VoiceServer/voice.ts::tryPhaseCapture` (out-of-process)** — fires when an Algorithm phase-announcement voice call hits `/notify` with `phase` + `slug`. The daemon resolves the kitty socket via the per-session file at `MEMORY/STATE/kitty-sessions/{sessionUUID}.json` (written by `KittyEnvPersist.hook.ts` at SessionStart).
+2. **Pulse daemon `/notify` phase capture (out-of-process)** — fires when an Algorithm phase signal hits `/notify` with `phase` + `slug`. The daemon resolves the kitty socket via the per-session file at `MEMORY/STATE/kitty-sessions/{sessionUUID}.json` (written by `KittyEnvPersist.hook.ts` at SessionStart).
 
 **Cross-process support details:**
 

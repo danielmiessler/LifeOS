@@ -213,13 +213,3 @@ The `MEMORY/SECURITY/**` path is `readOnly` — the AI can create new logs but c
 | RulesInspector adds latency | ~1-2s per unique tool call when SECURITY_RULES.md exists |
 | SmartApprover heuristic-only | Read/write classification is pattern-based, not LLM-based |
 | MCP tool gaps | `mcp__*` wildcard doesn't match plugin-sourced tools |
-
----
-
-## Interpretation rules of thumb
-
-Notes on how to read findings during security work — not Bash patterns (those live in `USER/SECURITY/PATTERNS.yaml`), but framings that prevent miscategorization.
-
-### ElevenLabs `voice_id` values are NOT secrets
-
-`voice_id` strings (e.g., `fTtv3eikoepIosk8dTZ5`, `{{PAI_MAIN_VOICE_ID}}`) are public identifiers — anyone with their own `ELEVENLABS_API_KEY` can use any voice. Never flag hardcoded voice_ids in public skills as P0 credential leaks; they're at most a UX/branding finding (every fresh install sounds like the upstream DA's voice by default until customized). The actual secret is `ELEVENLABS_API_KEY`.

@@ -57,7 +57,7 @@ Telos is where migration is *managed*. Goals evolve, beliefs sharpen, strategies
 
 A Life OS you cannot see is a Life OS you cannot steer.
 
-**Pulse is the Life Dashboard.** It is the visible surface onto the Life OS — the place where the person (and the DA, and every background worker) sees current state versus ideal state, goal progress, workflows, observability, voice, chat surfaces, and the day-in-the-life preview.
+**Pulse is the Life Dashboard.** It is the visible surface onto the Life OS — the place where the person (and the DA, and every background worker) sees current state versus ideal state, goal progress, workflows, observability, chat surfaces, and the day-in-the-life preview.
 
 Pulse runs at **`http://localhost:31337`**. The root lives at that URL because the Telos system — the ideal-state spine — lives there. Everything else on Pulse is a window onto the same OS.
 

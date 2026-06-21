@@ -2,17 +2,6 @@
 
 **Charcoal Architectural Sketch TECHNIQUE — Applied to CONTENT-RELEVANT subjects.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Essay workflow in the Art skill to create header images"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **Essay** in **Art**...
-
 ---
 
 Uses architectural sketching STYLE (gestural lines, hatching, charcoal) to depict whatever the content is actually ABOUT — NOT defaulting to buildings.
@@ -646,7 +635,6 @@ bun ~/.claude/PAI/TOOLS/RemoveBg.ts /path/to/output.png
 bun ~/.claude/PAI/TOOLS/RemoveBg.ts image1.png image2.png image3.png
 ```
 
-
 ### 🚨 COMPOSITION: USE FULL FRAME, MINIMALIST, NO BACKGROUNDS
 
 **SUBJECTS FILL THE FRAME. FEW ELEMENTS. NO FILLED BACKGROUNDS.**
@@ -726,8 +714,6 @@ mv ~/Downloads/[name]-padded.png ~/Downloads/[name].png
 ```
 
 **Skip conditions: NONE.** Both stages run on every Essay-workflow image, every time. Stage A cost ~200ms, Stage B ~100ms. The cost of skipping is shipping either wallpaper-margin garbage (Stage A skip) or edge-clipped subject (Stage B skip). Both have happened in production; both are documented failures.
-
-
 
 ### Why This Step Matters
 

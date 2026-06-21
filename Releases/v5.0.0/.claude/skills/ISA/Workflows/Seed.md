@@ -38,15 +38,6 @@ review_required: true
 
 ## Procedure
 
-### Step 1 — Voice notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Seed workflow in the ISA skill"}' \
-  > /dev/null 2>&1 &
-```
-
 ### Step 2 — Refuse if ISA already exists
 
 If `<project_path>/ISA.md` exists, abort and emit `status: exists`. Seed never overwrites — the user uses Interview or Scaffold to deepen an existing project ISA.

@@ -8,8 +8,6 @@
 
 let ws = null;
 let connected = false;
-let voiceEnabled = true;
-let currentAudio = null;
 let steps = [
   { id: 'system-detect', name: 'System Detection', number: 1, status: 'pending' },
   { id: 'prerequisites', name: 'Prerequisites', number: 2, status: 'pending' },
@@ -17,7 +15,7 @@ let steps = [
   { id: 'identity', name: 'Identity', number: 4, status: 'pending' },
   { id: 'repository', name: 'PAI Repository', number: 5, status: 'pending' },
   { id: 'configuration', name: 'Configuration', number: 6, status: 'pending' },
-  { id: 'voice', name: 'DA Voice', number: 7, status: 'pending' },
+  { id: 'pulse', name: 'Pulse', number: 7, status: 'pending' },
   { id: 'telegram', name: 'Telegram', number: 8, status: 'pending' },
   { id: 'validation', name: 'Validation', number: 9, status: 'pending' },
 ];
@@ -74,9 +72,6 @@ function handleServerMessage(msg) {
 
     case 'message':
       addMessage(msg.role || 'assistant', msg.content, isReplayed);
-      if (msg.speak && !isReplayed && voiceEnabled) {
-        // TTS would go here if we had the ElevenLabs key
-      }
       break;
 
     case 'section_header':
@@ -105,8 +100,8 @@ function handleServerMessage(msg) {
       // enough for the user to see the summary, then we close the window —
       // electron/main.js's window-all-closed handler triggers app.quit(),
       // which exits the bun child, which lets install.sh resume and exec the
-      // post-install `pai` handoff. 3s is the same beat as the success voice
-      // notification so the audio finishes before the window disappears.
+      // post-install `pai` handoff. 3s gives the user a beat to read the
+      // summary before the window disappears.
       setTimeout(() => { window.close(); }, 3000);
       break;
 
@@ -213,7 +208,6 @@ function renderDetection(data) {
     { icon: data.tools?.claude?.installed ? 'check' : 'info', label: 'Claude Code', value: data.tools?.claude?.installed ? 'v' + data.tools.claude.version : 'Will install' },
     { icon: 'info', label: 'Timezone', value: data.timezone },
     { icon: data.existing?.paiInstalled ? 'info' : 'check', label: 'Existing PAI', value: data.existing?.paiInstalled ? 'v' + (data.existing.paiVersion || '?') : 'Fresh install' },
-    { icon: data.existing?.hasApiKeys ? 'check' : 'info', label: 'ElevenLabs Key', value: data.existing?.elevenLabsKeyFound ? 'Found' : 'Not found' },
   ];
 
   const grid = document.createElement('div');
@@ -312,10 +306,6 @@ function renderChoiceForm(requestId, prompt, choices) {
 
   addMessage('assistant', prompt);
 
-  // Voice preview audio map — show previews for both initial and retry voice selection
-  const voicePreviews = { female: '/assets/voice-female.mp3', male: '/assets/voice-male.mp3' };
-  const isVoiceTypeRequest = requestId === 'voice-type' || requestId === 'voice-type-retry';
-
   const group = document.createElement('div');
   group.className = 'choice-group';
 
@@ -337,32 +327,12 @@ function renderChoiceForm(requestId, prompt, choices) {
       btn.appendChild(descSpan);
     }
 
-    if (voicePreviews[c.value] && isVoiceTypeRequest) {
-      const preview = document.createElement('span');
-      preview.className = 'preview-btn';
-      preview.innerHTML = '&#9654; Preview';
-      preview.addEventListener('click', (e) => {
-        e.stopPropagation();
-        playPreview(voicePreviews[c.value], preview);
-      });
-      btn.appendChild(preview);
-    }
-
     btn.addEventListener('click', () => submitChoice(requestId, c.value, btn));
     group.appendChild(btn);
   });
 
   chat.appendChild(group);
   scrollToBottom();
-}
-
-function playPreview(src, btn) {
-  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
-  currentAudio = new Audio(src);
-  currentAudio.volume = 0.8;
-  currentAudio.play().catch(() => {});
-  btn.textContent = '⏹ Playing';
-  currentAudio.onended = () => { btn.textContent = '▶ Preview'; currentAudio = null; };
 }
 
 function submitChoice(requestId, value, btn) {
@@ -464,7 +434,6 @@ function renderSummary(summary) {
     <div class="summary-row"><span class="s-label">Principal</span><span class="s-value">${summary.principalName}</span></div>
     <div class="summary-row"><span class="s-label">AI Name</span><span class="s-value">${summary.aiName}</span></div>
     <div class="summary-row"><span class="s-label">Timezone</span><span class="s-value">${summary.timezone}</span></div>
-    <div class="summary-row"><span class="s-label">Voice</span><span class="s-value">${summary.voiceEnabled ? summary.voiceMode : 'Disabled'}</span></div>
     <div class="summary-row"><span class="s-label">Install Type</span><span class="s-value">${installTypeLabel}</span></div>
     <div class="summary-action">
       <p>To activate PAI, open a terminal and run:</p>
@@ -505,6 +474,4 @@ function scrollToBottom() {
 document.addEventListener('DOMContentLoaded', () => {
   renderSteps();
   connect();
-
-  // Welcome audio is played via <audio autoplay> in index.html
 });

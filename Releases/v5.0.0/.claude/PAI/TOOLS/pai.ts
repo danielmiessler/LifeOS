@@ -19,7 +19,7 @@
  */
 
 import { spawn, spawnSync } from "bun";
-import { getIdentity, getStartupCatchphrase } from "../../../.claude/hooks/lib/identity";
+import { getStartupCatchphrase } from "../../../.claude/hooks/lib/identity";
 import { existsSync, readFileSync, writeFileSync, readdirSync, symlinkSync, unlinkSync, lstatSync } from "fs";
 import { homedir } from "os";
 import { join, basename } from "path";
@@ -32,7 +32,6 @@ const CLAUDE_DIR = join(homedir(), ".claude");
 const MCP_DIR = join(CLAUDE_DIR, "MCPs");
 const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
 const BANNER_SCRIPT = join(homedir(), ".claude", "PAI", "Tools", "Banner.ts");
-const VOICE_SERVER = "http://localhost:31337/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
 // Note: RAW archiving removed - Claude Code handles its own cleanup (30-day retention in projects/)
 
@@ -79,44 +78,9 @@ function error(message: string) {
   process.exit(1);
 }
 
-function notifyVoice(message: string) {
-  // Fire and forget voice notification using Qwen3-TTS with personality
-  const identity = getIdentity();
-  const personality = identity.personality;
-
-  if (!personality?.baseVoice) {
-    // Fall back to simple notify if no personality configured
-    fetch("http://localhost:31337/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, play: true }),
-    }).catch(() => {});
-    return;
-  }
-
-  fetch(VOICE_SERVER, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message,
-      personality: {
-        name: identity.name.toLowerCase(),
-        base_voice: personality.baseVoice,
-        enthusiasm: personality.enthusiasm,
-        energy: personality.energy,
-        expressiveness: personality.expressiveness,
-        resilience: personality.resilience,
-        composure: personality.composure,
-        optimism: personality.optimism,
-        warmth: personality.warmth,
-        formality: personality.formality,
-        directness: personality.directness,
-        precision: personality.precision,
-        curiosity: personality.curiosity,
-        playfulness: personality.playfulness,
-      },
-    }),
-  }).catch(() => {}); // Silently ignore errors
+function notifyStatus(message: string) {
+  // Text status to stderr. Voice/TTS emission via Pulse was removed.
+  console.error(message);
 }
 
 function displayBanner() {
@@ -377,7 +341,7 @@ function cmdWallpaper(args: string[]) {
   const success = setWallpaper(match);
   if (success) {
     log(`Wallpaper set to ${name}`, "✅");
-    notifyVoice(`Wallpaper changed to ${name}`);
+    notifyStatus(`Wallpaper changed to ${name}`);
   } else {
     error("Failed to set wallpaper");
   }
@@ -422,11 +386,10 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
     process.chdir(CLAUDE_DIR);
   }
 
-  // Voice notification (using focused marker for calmer tone).
-  // Reads daidentity.startupCatchphrase from settings.json so the user's
-  // install-time catchphrase is actually honored. Falls back to the
-  // historical "<name> here, ready to go." default when unset.
-  notifyVoice(`[🎯 focused] ${getStartupCatchphrase()}`);
+  // Startup status (text). Reads daidentity.startupCatchphrase from
+  // settings.json so the user's install-time catchphrase is honored. Falls
+  // back to the historical "<name> here, ready to go." default when unset.
+  notifyStatus(`[🎯 focused] ${getStartupCatchphrase()}`);
 
   // Launch Claude
   // BILLING: subscription, not API. Strip ANTHROPIC_API_KEY before spawn so the

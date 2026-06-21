@@ -2,17 +2,6 @@
 
 **Launches multiple parallel agents for grunt work - same task, different inputs.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the SpawnParallelAgents workflow in the Agents skill to launch agents"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **SpawnParallelAgents** in **Agents**...
-
 ---
 
 ## When to Use

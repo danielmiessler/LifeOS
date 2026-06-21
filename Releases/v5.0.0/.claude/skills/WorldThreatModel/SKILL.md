@@ -76,15 +76,6 @@ This skill orchestrates multiple PAI capabilities:
 - **Council** — Multi-perspective debate on idea viability across horizons
 - **Research** — Deep research for model creation and updates
 
-## Voice Notification
-
-Before any workflow execution:
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running WORKFLOW_NAME in the World Threat Model Harness", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
-```
-
 ## Customization Check
 
 Before execution, check for user customizations at:

@@ -1,16 +1,5 @@
 # TreeOfThoughts Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the TreeOfThoughts workflow in the BeCreative skill to explore solution paths"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **TreeOfThoughts** in **BeCreative**...
-
 ---
 
 **When to use:** Complex creative problem-solving requiring exploration of multiple paths

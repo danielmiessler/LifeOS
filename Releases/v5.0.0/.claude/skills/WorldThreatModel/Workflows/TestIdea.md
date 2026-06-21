@@ -36,15 +36,7 @@ If any missing: "World models incomplete. Run 'update world models' first."
 If models older than 30 days: warn user but proceed.
 ```
 
-### Step 1: Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Testing your idea against all eleven world threat models at TIER tier", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
-```
-
-### Step 2: Extract and Decompose the Idea
+### Step 1: Extract and Decompose the Idea
 
 Before hitting it with world models, decompose the idea:
 
@@ -57,7 +49,7 @@ For **Standard and Deep tiers:** Invoke FirstPrinciples skill to classify assump
 - Soft constraints (policy, regulation, cultural norms)
 - Assumptions (unvalidated beliefs the idea depends on)
 
-### Step 3: Run Against World Models
+### Step 2: Run Against World Models
 
 Read all 11 model files from `~/.claude/PAI/MEMORY/RESEARCH/WorldModels/`.
 
@@ -94,21 +86,13 @@ Full capability invocation:
 6. Synthesize all findings
 7. Output using complete format from OutputFormat.md (all sections)
 
-### Step 4: Format Output
+### Step 3: Format Output
 
 Use the template in `OutputFormat.md` (loaded from skill root). Ensure:
 - Each horizon is clearly separated with its own section header
 - Verdicts use consistent emoji indicators
 - Confidence levels reflect model confidence × analysis certainty
 - Adversarial findings attribute to specific horizon contexts
-
-### Step 5: Voice Summary
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Analysis complete. SUMMARY_OF_EXECUTIVE_VERDICT", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
-```
 
 ## Output Format
 

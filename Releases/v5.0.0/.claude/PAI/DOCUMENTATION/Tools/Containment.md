@@ -56,7 +56,7 @@ Zones drift. Before running `ShadowRelease --create <version>`:
 A file outside every configured zone is a policy violation if it contains any of:
 
 - **Identity** — absolute user paths, personal email, personal domain names, principal-specific hostnames
-- **Infrastructure IDs** — Cloudflare account or KV namespace IDs, ElevenLabs voice IDs, launchd bundle IDs, any UUID that identifies a specific account or resource
+- **Infrastructure IDs** — Cloudflare account or KV namespace IDs, launchd bundle IDs, any UUID that identifies a specific account or resource
 - **Secrets** — API tokens, private keys (`.pem`, `.key`), session cookies, OAuth refresh tokens
 
 The `hooks/ContainmentGuard.hook.ts` enforces the identity and CF-ID list prospectively on every Edit/Write/MultiEdit. The `ShadowRelease --check` gates enforce all three categories retrospectively before release.

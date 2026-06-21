@@ -2,17 +2,6 @@
 
 **Purpose:** Add workflows or modify an existing skill while maintaining canonical structure and TitleCase naming.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the UpdateSkill workflow in the CreateSkill skill to modify existing skill"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **UpdateSkill** workflow in the **CreateSkill** skill to modify existing skill...
-
 ---
 
 ## Step 1: Read the Authoritative Source

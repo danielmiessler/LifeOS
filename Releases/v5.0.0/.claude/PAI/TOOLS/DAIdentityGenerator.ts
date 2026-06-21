@@ -38,11 +38,6 @@ interface Identity {
     role: string;
     origin_story: string;
   };
-  voice: {
-    provider: string;
-    main: { voice_id: string; stability: number; similarity_boost: number; style?: number; speed?: number; volume?: number };
-    algorithm?: { voice_id: string; stability: number; similarity_boost: number; style?: number; speed?: number; volume?: number };
-  };
   backstory?: string;
   personality: {
     base_description: string;
@@ -92,7 +87,7 @@ function generateMarkdown(identity: Identity, registry: Registry, daName: string
   const a = identity.autonomy;
 
   // Generate COMPACT operational identity — loaded every session via CLAUDE.md
-  // Backstory, trait bars, and voice config are in DA_IDENTITY.yaml (reference only)
+  // Backstory and trait bars are in DA_IDENTITY.yaml (reference only)
   const lines: string[] = [];
 
   lines.push(`# DA Identity — ${c.full_name}`);

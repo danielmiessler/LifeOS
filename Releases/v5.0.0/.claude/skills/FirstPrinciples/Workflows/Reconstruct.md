@@ -2,17 +2,6 @@
 
 **Purpose**: Build an optimal solution from scratch using only the fundamental truths and hard constraints identified through Deconstruct and Challenge.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Reconstruct workflow in the FirstPrinciples skill to build optimal solution"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **Reconstruct** workflow in the **FirstPrinciples** skill to build optimal solution...
-
 ---
 
 **When to Use**:

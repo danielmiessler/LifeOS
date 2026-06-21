@@ -2,17 +2,6 @@
 
 **Shows all available traits that can be composed into custom agents.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ListTraits workflow in the Agents skill to show traits"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **ListTraits** in **Agents**...
-
 ---
 
 ## When to Use

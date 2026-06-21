@@ -239,50 +239,6 @@ bun ~/.claude/PAI/TOOLS/KnowledgeGraph.ts find architecture
 
 ---
 
-## Voice Server API - Generate Voice Narration
-
-**Location:** Voice server at `http://localhost:31337/notify`
-
-Send text to the voice server running on localhost for TTS using a configured voice clone.
-
-**Usage:**
-```bash
-# Single narration segment
-curl -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{
-    "message": "Your text here",
-    "voice_id": "$ELEVENLABS_VOICE_ID",
-    "title": "Voice Narrative"
-  }'
-
-# Pause between segments
-sleep 2
-```
-
-**Voice Configuration:**
-- **Voice ID:** Set via `ELEVENLABS_VOICE_ID` environment variable
-- **Stability:** 0.55 (natural variation in storytelling)
-- **Similarity Boost:** 0.85 (maintains authentic sound)
-- **Server:** `http://localhost:31337/notify`
-- **Max Segment:** 450 characters
-- **Pause Between:** 2 seconds
-
-**When to Use:**
-- "read this to me"
-- "voice narrative"
-- "speak this"
-- "narrate this"
-- "perform this"
-
-**Technical Details:**
-- Pulse must be running (voice handler lives at `~/.claude/PAI/PULSE/VoiceServer/voice.ts`, port 31337)
-- Segments longer than 450 chars should be split
-- Natural 2-second pauses between segments for storytelling flow
-- Uses ElevenLabs API under the hood
-
----
-
 ## extract-transcript.py - Transcribe Audio/Video Files
 
 **Location:** `~/.claude/PAI/TOOLS/extract-transcript.py`
@@ -587,7 +543,6 @@ Monitor({
 ### Research Skill
 - YouTube transcripts: `GetTranscript.ts`
 - Audio/video transcription: `extract-transcript.py`
-- Voice narration: Voice server API
 
 ### Metrics Skill
 - YouTube analytics: `YouTubeApi.ts`
@@ -625,7 +580,6 @@ The following skills have been consolidated into this Tools system:
 
 - **Images** → `Tools/RemoveBg.ts`, `Tools/AddBg.ts` (2024-12-22)
 - **VideoTranscript** → `Tools/GetTranscript.ts` (2024-12-22)
-- **VoiceNarration** → Voice server API (2024-12-22)
 - **ExtractTranscript** → `Tools/extract-transcript.py`, `Tools/ExtractTranscript.ts` (2024-12-22)
 - **YouTube** → `Tools/YouTubeApi.ts` (2024-12-22)
 - **Sensitive** → `trufflehog` system tool (2024-12-22)

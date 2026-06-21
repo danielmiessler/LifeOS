@@ -1,16 +1,5 @@
 # MaximumCreativity Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the MaximumCreativity workflow in the BeCreative skill to explore unconventional ideas"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **MaximumCreativity** in **BeCreative**...
-
 ---
 
 **When to use:** Need maximum creative diversity and unconventional thinking

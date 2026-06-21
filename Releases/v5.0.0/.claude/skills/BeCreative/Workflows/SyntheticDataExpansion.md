@@ -1,16 +1,5 @@
 # SyntheticDataExpansion Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the SyntheticDataExpansion workflow in the BeCreative skill to expand a seed corpus"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **SyntheticDataExpansion** in **BeCreative**...
-
 ---
 
 **When to use:** You have a small seed corpus (5–20 examples) and need to expand it into a diverse N-example dataset for evals, training, prompt-injection test sets, writing-style corpora, or any downstream task that benefits from variety.

@@ -310,21 +310,13 @@ async function takeSnapshot(): Promise<{ snapshot: CostSnapshot; sites: CallSite
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Voice alert via Pulse
+// Alert (text)
 // ──────────────────────────────────────────────────────────────────────────
 
-async function voiceAlert(message: string): Promise<void> {
-  try {
-    await fetch("http://localhost:31337/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, voice_enabled: true }),
-      signal: AbortSignal.timeout(3000),
-    });
-  } catch {
-    // Pulse may be down — log to stderr instead
-    console.error(`[CostTracker] alert (voice unavailable): ${message}`);
-  }
+async function emitAlert(message: string): Promise<void> {
+  // Text alert to stderr. Voice/TTS emission via Pulse was removed; callers
+  // also print the message to stdout for log/ntfy/telegram dispatch upstream.
+  console.error(`[CostTracker] alert: ${message}`);
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -402,7 +394,7 @@ async function main(): Promise<void> {
         return;
       }
       const message = `PAI cost alert: ${snapshot.alerts.join("; ")}`;
-      await voiceAlert(message);
+      await emitAlert(message);
       console.log(message);
       break;
     }

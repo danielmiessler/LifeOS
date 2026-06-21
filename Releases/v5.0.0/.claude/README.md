@@ -8,10 +8,10 @@
 
 ## What you get
 
-- **A Digital Assistant (DA)** — named by you, voiced by you, running as a peer. Ships with a generic "PAI" DA on free public ElevenLabs voices so you can hear it out of the box; `/interview` personalizes it.
+- **A Digital Assistant (DA)** — named by you, running as a peer. Ships with a generic "PAI" DA out of the box; `/interview` personalizes it.
 - **The Algorithm** — a structured problem-solving framework (OBSERVE → THINK → PLAN → BUILD → EXECUTE → VERIFY → LEARN) that the DA runs for non-trivial tasks.
-- **Pulse** — a local daemon on port 31337 that provides voice notifications, observability, scheduled tasks, and a Life Dashboard. Runs as a macOS launchd service with a menu bar app.
-- **Skills** — 40+ composable capabilities (research, creative writing, security assessment, Cloudflare deploys, voice, etc.) that the DA self-selects at runtime.
+- **Pulse** — a local daemon on port 31337 that provides push notifications, observability, scheduled tasks, and a Life Dashboard. Runs as a macOS launchd service with a menu bar app.
+- **Skills** — 40+ composable capabilities (research, creative writing, security assessment, Cloudflare deploys, etc.) that the DA self-selects at runtime.
 - **Memory** — persistent typed storage that compounds across sessions (KNOWLEDGE for durable notes, WORK for active projects, LEARNING for meta-patterns).
 - **TELOS** — your mission, goals, beliefs, challenges, and wisdom captured in structured files so the DA can frame every recommendation against who you are and what you're trying to do.
 
@@ -24,7 +24,6 @@
 - macOS or Linux (Linux support is partial — Pulse menu bar is macOS-only)
 - [Claude Code](https://docs.claude.com/claude-code) installed
 - An [Anthropic API key](https://console.anthropic.com/) (required — Claude Code uses it)
-- An [ElevenLabs API key](https://elevenlabs.io/) (optional — enables voice notifications)
 
 ### ⚠️ Important: back up existing `~/.claude/` first
 
@@ -47,17 +46,16 @@ cd ~/.claude
 The installer will:
 1. Check/install Bun and Git
 2. Verify Claude Code is present
-3. Prompt for your ElevenLabs API key (skippable — voice falls back to desktop notifications)
-4. Launch a web-based wizard for DA identity and voice selection
-5. Set up the voice server and Pulse daemon
-6. Run validation
+3. Launch a web-based wizard for DA identity setup
+4. Set up the Pulse daemon
+5. Run validation
 
 ### First session
 
 After install completes:
 
 ```bash
-# Load Pulse (voice notifications + Life Dashboard)
+# Load Pulse (push notifications + Life Dashboard)
 cd ~/.claude/PAI/PULSE && bash manage.sh install
 
 # Start a Claude Code session
@@ -77,7 +75,7 @@ In your first Claude session, run `/interview` to personalize your DA with your 
 ├── PAI/                         # the engine
 │   ├── ALGORITHM/v3.29.0.md     # the universal problem-solving framework
 │   ├── DOCUMENTATION/           # every subsystem fully documented
-│   ├── PULSE/                   # daemon, menu bar, voice server, scheduled tasks
+│   ├── PULSE/                   # daemon, menu bar, scheduled tasks
 │   ├── TOOLS/                   # CLI utilities (Inference, GenerateTelosSummary, etc.)
 │   └── USER/                    # YOUR scaffolds — ABOUTME, TELOS/, DA_IDENTITY, etc.
 ├── skills/                      # 40+ composable capabilities
@@ -92,9 +90,8 @@ The DA reads `CLAUDE.md` at every session start, which `@`-imports your identity
 
 ## Post-install customization
 
-- **DA identity + voice** — `/interview` personalizes your DA's name, voice, personality, and relationship framing.
+- **DA identity** — `/interview` personalizes your DA's name, personality, and relationship framing.
 - **TELOS** — `/interview` (TELOS phase) populates your mission, goals, beliefs, challenges, wisdom.
-- **Voice pronunciation** — edit `~/.claude/PAI/USER/pronunciations.json` for custom phonetic overrides.
 - **Pulse port** — defaults to 31337, bound to loopback. Set `PAI_PULSE_BIND_ALL=1` in `~/.claude/.env` if you need LAN access (phone, other machines).
 - **Menu bar app** — `bash ~/.claude/PAI/PULSE/MenuBar/install.sh` builds and installs the Swift menu bar app.
 
@@ -117,8 +114,6 @@ The DA reads `CLAUDE.md` at every session start, which `@`-imports your identity
 
 **"Installer/server.ts not found":** The top-level `./install` delegates to `PAI/PAI-Install/install.sh`. Run that directly if the delegation fails.
 
-**"Voice server not found":** The voice server lives at `PAI/PULSE/VoiceServer/` (not `~/.claude/VoiceServer/`). Recent installer versions detect both paths; if you're on an older build, re-run `./install`.
-
 **Pulse won't start / port 31337 conflict:** `lsof -i :31337` to find the conflicting process. Edit `PULSE.toml` to change the port, or kill the conflicting process.
 
 **Menu bar icon doesn't appear:** `launchctl list | grep pai` should show `com.pai.pulse-menubar` loaded. If not, run `bash PAI/PULSE/MenuBar/install.sh`.
@@ -131,7 +126,7 @@ The DA reads `CLAUDE.md` at every session start, which `@`-imports your identity
 
 PAI treats AI as infrastructure, not a feature. The same reason you have a filesystem, a shell, and an init system — you need durable scaffolding the model can operate within. Naked chat is not enough. PAI is the Life OS: a layer above Claude Code that knows who you are, what you're building, who matters to you, and where you're trying to go.
 
-You name your DA. You configure your voice. You capture your TELOS. The DA reads all of it at every session and operates as a peer, not a tool.
+You name your DA. You shape its personality. You capture your TELOS. The DA reads all of it at every session and operates as a peer, not a tool.
 
 ---
 

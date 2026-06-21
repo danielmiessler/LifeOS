@@ -348,10 +348,6 @@
           },
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/VoiceCompletion.hook.ts"
-          },
-          {
-            "type": "command",
             "command": "$HOME/.claude/hooks/DocIntegrity.hook.ts"
           }
         ]
@@ -944,7 +940,7 @@
       "/create-skill scaffolds and validates new PAI skills.",
       "/create-cli generates TypeScript command-line tools.",
       "/cloudflare deploys Workers and Pages projects.",
-      "/agents creates custom agents with unique personalities and voices.",
+      "/agents creates custom agents with unique personalities.",
       "/evals benchmarks agent behavior with code-based and model-based graders.",
       "/prompt-injection tests AI applications for jailbreak vulnerabilities.",
       "/javascript-analysis-v2 does fast JS security analysis with AST parsing.",
@@ -1023,7 +1019,7 @@
       "BrowserAgent is a DEPRECATED built-in Claude Code agent. Use the Interceptor skill for web verification and agent-browser via the Browser skill for headless scraping. Playwright is banned across PAI.",
       "UIReviewer validates user stories — one agent per story, parallel execution.",
       "QATester is mandatory Gate 4 before claiming any web implementation is complete.",
-      "Agent templates live in agents/ — one .md file per personality with voice and behavioral rules.",
+      "Agent templates live in agents/ — one .md file per personality with behavioral rules.",
       "Agent teams need CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 (already enabled).",
       "Say 'create an agent team' to trigger multi-agent collaboration.",
       "Custom agents use subagent_type='general-purpose', never built-in type names.",
@@ -1044,8 +1040,8 @@
       "Use bun Inference.ts fast|standard|smart for AI inference — never direct API.",
       "bun SessionHarvester.ts extracts insights from past session transcripts.",
       "settings.json is the single source of truth for all PAI configuration.",
-      "daidentity in settings.json controls {DA_IDENTITY.NAME}'s name, color, voice, and personality.",
-      "principal in settings.json stores {PRINCIPAL.NAME}'s name, timezone, and voice clone.",
+      "daidentity in settings.json controls {DA_IDENTITY.NAME}'s name, color, and personality.",
+      "principal in settings.json stores {PRINCIPAL.NAME}'s name and timezone.",
       "The statusline command runs from PAI/statusline-command.sh.",
       "Personality traits (0-100) shape how emotions are expressed vocally.",
       "Never hardcode paths. Use ${PAI_DIR}, ${PROJECTS_DIR}, {PRINCIPAL.NAME}.",
@@ -1144,8 +1140,6 @@
       "v5.0 eliminated packs. The release IS the .claude/ directory — install by copying directly.",
       "PRD frontmatter has 8 fields: task, slug, effort, phase, progress, mode, started, updated.",
       "PRD body has 4 sections: Context, Criteria (ISC checkboxes), Decisions, Verification.",
-      "Voice announcements at Algorithm entry and every phase transition via pai:31337/notify.",
-      "Only the primary agent makes voice curls. Subagents and teammates skip voice entirely.",
       "PRDSync.hook.ts fires on Write/Edit of PRD.md and syncs frontmatter to work.json for the dashboard.",
       "Context compaction at phase boundaries prevents context rot — the #1 cause of late-phase failures."
     ]
@@ -1176,7 +1170,6 @@
       "Trusted local service: pai:31337"
     ]
   },
-  "voiceEnabled": true,
   "observability": {
     "targets": [
       {
@@ -1215,35 +1208,12 @@
   "_contextFiles_docs": "v5.0: contextFiles is empty — constitutional rules in PAI/PAI_SYSTEM_PROMPT.md (system prompt), operational procedures + @imported context in CLAUDE.md (native). Dynamic context (relationship, learning, work) injected by LoadContext.hook.ts.",
   "teammateMode": "in-process",
   "daidentity": {
-    "_docs_defaults": "Bootstrap defaults — functional for first boot. Interview overwrites name/fullName/displayName/voiceName with user's chosen DA identity, and voices.*.voiceId with user's ElevenLabs voice pick.",
+    "_docs_defaults": "Bootstrap defaults — functional for first boot. Interview overwrites name/fullName/displayName with user's chosen DA identity.",
     "name": "PAI",
     "fullName": "PAI Assistant",
     "displayName": "PAI",
     "color": "#3B82F6",
-    "voices": {
-      "main": {
-        "voiceId": "21m00Tcm4TlvDq8ikWAM",
-        "voiceName": "PAI",
-        "stability": 0.85,
-        "similarityBoost": 0.7,
-        "style": 0.3,
-        "speed": 1.1,
-        "useSpeakerBoost": true,
-        "volume": 1.2
-      },
-      "algorithm": {
-        "voiceId": "fTtv3eikoepIosk8dTZ5",
-        "voiceName": "Algorithm Voice",
-        "stability": 0.3,
-        "similarityBoost": 0.75,
-        "style": 0.8,
-        "speed": 1.2,
-        "useSpeakerBoost": true,
-        "volume": 1
-      }
-    },
     "personality": {
-      "baseVoice": "Slightly masculine androgynous young voice, Japanese-accented, rapid speech pattern, futuristic AI friend who thinks fast and talks fast, warm but efficient",
       "enthusiasm": 75,
       "energy": 80,
       "expressiveness": 85,
@@ -1260,11 +1230,10 @@
     "startupCatchphrase": "{name} here, ready to go"
   },
   "principal": {
-    "_docs_defaults": "Bootstrap defaults — functional for first boot. Interview overwrites name/pronunciation/timezone with user answers, and optionally creates voiceClone if user has a personal ElevenLabs clone.",
+    "_docs_defaults": "Bootstrap defaults — functional for first boot. Interview overwrites name/pronunciation/timezone with user answers.",
     "name": "User",
     "pronunciation": "User",
-    "timezone": "America/Los_Angeles",
-    "voiceClone": null
+    "timezone": "America/Los_Angeles"
   },
   "pai": {
     "version": "5.0.0",
@@ -1289,7 +1258,7 @@
   "_docs": {
     "_overview": "PAI settings — directly edited. Personal values live here. ShadowRelease.ts produces public staging via containment: clone + zone deletion + template overlay.",
     "_sections": {
-      "daidentity": "Digital Assistant identity (name, displayName, fullName, color, voiceId). Read by hooks via hooks/lib/identity.ts.",
+      "daidentity": "Digital Assistant identity (name, displayName, fullName, color). Read by hooks via hooks/lib/identity.ts.",
       "principal": "Principal (owner) identity (name, pronunciation, timezone).",
       "env": "Environment variables available to all hooks and tools via process.env",
       "permissions": "Tool permission configuration (allow, deny, ask lists)",

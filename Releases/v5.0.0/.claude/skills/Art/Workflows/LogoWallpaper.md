@@ -2,17 +2,6 @@
 
 **Generate branded wallpapers with embedded logo concepts for Kitty terminal and macOS desktop.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the LogoWallpaper workflow in the Art skill to create wallpapers"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **LogoWallpaper** in **Art**...
-
 ---
 
 Creates **4K 16:9 wallpapers** that integrate <brand> logos as organic design elements — emblazoned, embossed, or woven into the composition.

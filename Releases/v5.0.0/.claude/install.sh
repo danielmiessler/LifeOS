@@ -132,7 +132,9 @@ if command -v bun &>/dev/null; then
   success "Bun found: v$(bun --version 2>/dev/null || echo 'unknown')"
 else
   info "Installing Bun runtime..."
-  curl -fsSL https://bun.sh/install | bash 2>/dev/null
+  # `|| true` so a failed download/HTTP error doesn't abort under `set -o pipefail`
+  # — control must reach the `command -v bun` recovery check + manual-install message below.
+  curl -fsSL https://bun.sh/install | bash 2>/dev/null || true
 
   # Add to PATH for this session
   export PATH="$HOME/.bun/bin:$PATH"
@@ -164,7 +166,7 @@ if [ -x "$HOME/.bun/bin/bun" ]; then
       ln -sf "$HOME/.bun/bin/bun" "$target/bun" && success "Linked bun → $target/bun" && break
     fi
   done
-  if ! command -v /usr/local/bin/bun &>/dev/null && ! command -v /opt/homebrew/bin/bun &>/dev/null; then
+  if [ ! -e /usr/local/bin/bun ] && [ ! -e /opt/homebrew/bin/bun ]; then
     # /usr/local/bin needs sudo — try non-fatally
     if sudo -n ln -sf "$HOME/.bun/bin/bun" /usr/local/bin/bun 2>/dev/null; then
       success "Linked bun → /usr/local/bin/bun (via sudo)"
@@ -248,8 +250,11 @@ export PAI_BUNDLE_DIR="$SCRIPT_DIR"
 
 # Run the wizard. We deliberately do NOT exec here — once the wizard exits we
 # need to hand off to the user's interactive shell with `pai` already running.
-bun run "$INSTALLER_DIR/main.ts" --mode "$INSTALL_MODE"
-INSTALL_EXIT=$?
+# Capture the exit code in the SAME statement — a bare `bun run; INSTALL_EXIT=$?`
+# would let `set -e` abort on a non-zero wizard exit before the capture runs,
+# making the post-wizard handoff (and the headless fallback message) dead code.
+INSTALL_EXIT=0
+bun run "$INSTALLER_DIR/main.ts" --mode "$INSTALL_MODE" || INSTALL_EXIT=$?
 
 # Post-wizard handoff. Two paths, in priority order:
 #

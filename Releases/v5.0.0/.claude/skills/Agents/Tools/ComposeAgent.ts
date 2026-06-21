@@ -40,15 +40,6 @@ const TEMPLATE_PATH = `${HOME}/.claude/skills/Agents/Templates/DynamicAgent.hbs`
 const CUSTOM_AGENTS_DIR = `${HOME}/.claude/custom-agents`;
 
 // Types
-interface ProsodySettings {
-  stability: number;
-  similarity_boost: number;
-  style: number;
-  speed: number;
-  use_speaker_boost: boolean;
-  volume: number;
-}
-
 interface TraitDefinition {
   name: string;
   description: string;
@@ -56,34 +47,10 @@ interface TraitDefinition {
   keywords?: string[];
 }
 
-interface VoiceMapping {
-  traits: string[];
-  voice: string;
-  voice_id?: string;
-  reason?: string;
-}
-
-interface VoiceRegistryEntry {
-  voice_id: string;
-  characteristics: string[];
-  description: string;
-  prosody?: ProsodySettings;
-  // Legacy flat fields (for backwards compatibility)
-  stability?: number;
-  similarity_boost?: number;
-}
-
 interface TraitsData {
   expertise: Record<string, TraitDefinition>;
   personality: Record<string, TraitDefinition>;
   approach: Record<string, TraitDefinition>;
-  voice_mappings: {
-    default: string;
-    default_voice_id: string;
-    voice_registry: Record<string, VoiceRegistryEntry>;
-    mappings: VoiceMapping[];
-    fallbacks: Record<string, string>;
-  };
   examples: Record<string, { description: string; traits: string[] }>;
 }
 
@@ -93,10 +60,6 @@ interface ComposedAgent {
   expertise: TraitDefinition[];
   personality: TraitDefinition[];
   approach: TraitDefinition[];
-  voice: string;
-  voiceId: string;
-  voiceReason: string;
-  voiceSettings: ProsodySettings;
   color: string;
   prompt: string;
 }
@@ -119,16 +82,6 @@ const AGENT_COLOR_PALETTE = [
   "#009688", // Teal Dark
   "#FFC107", // Amber
 ];
-
-// Default prosody settings
-const DEFAULT_PROSODY: ProsodySettings = {
-  stability: 0.5,
-  similarity_boost: 0.75,
-  style: 0.0,
-  speed: 1.0,
-  use_speaker_boost: true,
-  volume: 0.8,
-};
 
 /**
  * Deep merge two objects (user overrides base)
@@ -164,13 +117,6 @@ function deepMerge<T extends Record<string, unknown>>(base: T, user: Partial<T>)
 }
 
 /**
- * Merge arrays by concatenating (for mappings)
- */
-function mergeArrays<T>(base: T[], user: T[]): T[] {
-  return [...base, ...user];
-}
-
-/**
  * Load and merge traits from base + user YAML files
  */
 function loadTraits(): TraitsData {
@@ -192,25 +138,6 @@ function loadTraits(): TraitsData {
       expertise: deepMerge(base.expertise || {}, user.expertise || {}),
       personality: deepMerge(base.personality || {}, user.personality || {}),
       approach: deepMerge(base.approach || {}, user.approach || {}),
-      voice_mappings: {
-        default: user.voice_mappings?.default || base.voice_mappings?.default || "Baron",
-        default_voice_id:
-          user.voice_mappings?.default_voice_id ||
-          base.voice_mappings?.default_voice_id ||
-          "",
-        voice_registry: deepMerge(
-          base.voice_mappings?.voice_registry || {},
-          user.voice_mappings?.voice_registry || {}
-        ),
-        mappings: mergeArrays(
-          base.voice_mappings?.mappings || [],
-          user.voice_mappings?.mappings || []
-        ),
-        fallbacks: deepMerge(
-          base.voice_mappings?.fallbacks || {},
-          user.voice_mappings?.fallbacks || {}
-        ),
-      },
       examples: deepMerge(base.examples || {}, user.examples || {}),
     };
 
@@ -273,97 +200,6 @@ function inferTraitsFromTask(task: string, traits: TraitsData): string[] {
 }
 
 /**
- * Get prosody settings from voice registry entry
- */
-function getProsody(entry: VoiceRegistryEntry | undefined): ProsodySettings {
-  if (!entry) return DEFAULT_PROSODY;
-
-  // Check for new prosody object first
-  if (entry.prosody) {
-    return {
-      stability: entry.prosody.stability ?? DEFAULT_PROSODY.stability,
-      similarity_boost: entry.prosody.similarity_boost ?? DEFAULT_PROSODY.similarity_boost,
-      style: entry.prosody.style ?? DEFAULT_PROSODY.style,
-      speed: entry.prosody.speed ?? DEFAULT_PROSODY.speed,
-      use_speaker_boost: entry.prosody.use_speaker_boost ?? DEFAULT_PROSODY.use_speaker_boost,
-      volume: (entry.prosody as any).volume ?? DEFAULT_PROSODY.volume,
-    };
-  }
-
-  // Fall back to legacy flat fields
-  return {
-    stability: entry.stability ?? DEFAULT_PROSODY.stability,
-    similarity_boost: entry.similarity_boost ?? DEFAULT_PROSODY.similarity_boost,
-    style: DEFAULT_PROSODY.style,
-    speed: DEFAULT_PROSODY.speed,
-    use_speaker_boost: DEFAULT_PROSODY.use_speaker_boost,
-    volume: DEFAULT_PROSODY.volume,
-  };
-}
-
-/**
- * Resolve voice based on trait combination
- */
-function resolveVoice(
-  traitKeys: string[],
-  traits: TraitsData
-): { voice: string; voiceId: string; reason: string; voiceSettings: ProsodySettings } {
-  const mappings = traits.voice_mappings;
-  const registry = mappings.voice_registry || {};
-
-  const getVoiceId = (voiceName: string, fallbackId?: string): string => {
-    if (registry[voiceName]?.voice_id) {
-      return registry[voiceName].voice_id;
-    }
-    return fallbackId || mappings.default_voice_id || "";
-  };
-
-  // Check explicit combination mappings first
-  const matchedMappings = mappings.mappings
-    .map((m) => ({
-      ...m,
-      matchCount: m.traits.filter((t) => traitKeys.includes(t)).length,
-      isFullMatch: m.traits.every((t) => traitKeys.includes(t)),
-    }))
-    .filter((m) => m.isFullMatch)
-    .sort((a, b) => b.matchCount - a.matchCount);
-
-  if (matchedMappings.length > 0) {
-    const best = matchedMappings[0];
-    const voiceName = best.voice;
-    return {
-      voice: voiceName,
-      voiceId: best.voice_id || getVoiceId(voiceName),
-      reason: best.reason || `Matched traits: ${best.traits.join(", ")}`,
-      voiceSettings: getProsody(registry[voiceName]),
-    };
-  }
-
-  // Check fallbacks
-  for (const trait of traitKeys) {
-    if (mappings.fallbacks[trait]) {
-      const voiceName = mappings.fallbacks[trait];
-      const voiceIdKey = `${trait}_voice_id`;
-      const fallbackVoiceId = mappings.fallbacks[voiceIdKey] as string | undefined;
-      return {
-        voice: voiceName,
-        voiceId: fallbackVoiceId || getVoiceId(voiceName),
-        reason: `Fallback for trait: ${trait}`,
-        voiceSettings: getProsody(registry[voiceName]),
-      };
-    }
-  }
-
-  // Default
-  return {
-    voice: mappings.default,
-    voiceId: mappings.default_voice_id || "",
-    reason: "Default voice (no specific mapping matched)",
-    voiceSettings: getProsody(registry[mappings.default]),
-  };
-}
-
-/**
  * Generate a unique color for an agent based on trait combination
  * Uses a hash of the sorted traits to ensure consistent color per combination
  */
@@ -406,7 +242,6 @@ function composeAgent(
   if (approach.length) nameParts.push(approach[0].name);
   const name = nameParts.length > 0 ? nameParts.join(" ") : "Dynamic Agent";
 
-  const { voice, voiceId, reason: voiceReason, voiceSettings } = resolveVoice(traitKeys, traits);
   const color = generateAgentColor(traitKeys);
 
   // Compute timing data for template
@@ -426,9 +261,6 @@ function composeAgent(
     expertise,
     personality,
     approach,
-    voice,
-    voiceId,
-    voiceSettings,
     color,
     ...timingData,
   });
@@ -439,10 +271,6 @@ function composeAgent(
     expertise,
     personality,
     approach,
-    voice,
-    voiceId,
-    voiceReason,
-    voiceSettings,
     color,
     prompt,
   };
@@ -467,14 +295,6 @@ function listTraits(traits: TraitsData): void {
   console.log("\nAPPROACH (work style):");
   for (const [key, def] of Object.entries(traits.approach)) {
     console.log(`  ${key.padEnd(15)} - ${def.name}`);
-  }
-
-  console.log("\nVOICES AVAILABLE:");
-  const registry = traits.voice_mappings?.voice_registry || {};
-  for (const [name, entry] of Object.entries(registry)) {
-    const prosody = getProsody(entry);
-    console.log(`  ${name.padEnd(12)} - ${entry.description}`);
-    console.log(`               stability:${prosody.stability} style:${prosody.style} speed:${prosody.speed} volume:${prosody.volume}`);
   }
 
   if (traits.examples && Object.keys(traits.examples).length > 0) {
@@ -548,14 +368,6 @@ name: "${agent.name}"
 description: "${description.replace(/"/g, '\\"')}"
 model: opus
 color: "${agent.color}"
-voiceId: "${agent.voiceId}"
-voice:
-  stability: ${agent.voiceSettings.stability}
-  similarity_boost: ${agent.voiceSettings.similarity_boost}
-  style: ${agent.voiceSettings.style}
-  speed: ${agent.voiceSettings.speed}
-  use_speaker_boost: ${agent.voiceSettings.use_speaker_boost}
-  volume: ${agent.voiceSettings.volume}
 persona:
   name: "${agent.name}"
   title: "${personaTitle.replace(/"/g, '\\"')}"
@@ -600,8 +412,6 @@ function buildSavedAgentBody(
   personaTitle: string,
   slug: string
 ): string {
-  const vs = agent.voiceSettings;
-
   const expertiseBlock = agent.expertise.length
     ? agent.expertise
         .map((e) => `### ${e.name}\n\n${e.description}`)
@@ -633,7 +443,6 @@ function buildSavedAgentBody(
 
 **Real Name**: ${agent.name}
 **Character Archetype**: "${personaTitle}"
-**Voice Settings**: Stability ${vs.stability}, Similarity Boost ${vs.similarity_boost}, Speed ${vs.speed}
 
 ${expertiseBlock ? `## Domain Expertise\n\n${expertiseBlock}\n` : ""}
 ## Personality
@@ -643,42 +452,6 @@ ${personalityBlock}
 ## Working Approach
 
 ${approachBlock}
-
----
-
-# 🚨 MANDATORY STARTUP SEQUENCE - DO THIS FIRST 🚨
-
-**BEFORE ANY WORK, YOU MUST:**
-
-1. **Send voice notification that you're loading:**
-\`\`\`bash
-curl -X POST http://localhost:31337/notify \\
-  -H "Content-Type: application/json" \\
-  -d '{"message":"${agent.name} loading and ready to work","voice_id":"${agent.voiceId}","title":"${agent.name}"}'
-\`\`\`
-
-2. **Then proceed with your task**
-
-**This is NON-NEGOTIABLE. Announce yourself first.**
-
----
-
-## 🎯 MANDATORY VOICE NOTIFICATION SYSTEM
-
-**YOU MUST SEND VOICE NOTIFICATION BEFORE EVERY RESPONSE:**
-
-\`\`\`bash
-curl -X POST http://localhost:31337/notify \\
-  -H "Content-Type: application/json" \\
-  -d '{"message":"Your COMPLETED line content here","voice_id":"${agent.voiceId}","title":"${agent.name}"}'
-\`\`\`
-
-**Voice Requirements:**
-- Your voice_id is: \`${agent.voiceId}\`
-- Message should be your 🎯 COMPLETED line (8-16 words optimal)
-- Must be grammatically correct and speakable
-- Send BEFORE writing your response
-- DO NOT SKIP - the user needs to hear you speak
 
 ---
 
@@ -703,13 +476,11 @@ curl -X POST http://localhost:31337/notify \\
 6. [Sixth key point]
 7. [Seventh key point]
 8. [Eighth key point - conclusion]
-🎯 COMPLETED: [12 words max - drives voice output - REQUIRED]
+🎯 COMPLETED: [12 words max - REQUIRED]
 \`\`\`
 
 **CRITICAL:**
 - STORY EXPLANATION MUST BE A NUMBERED LIST (1-8 items)
-- The 🎯 COMPLETED line is what the voice server speaks
-- Without this format, your response won't be heard
 - This is a CONSTITUTIONAL REQUIREMENT
 
 ---
@@ -741,13 +512,11 @@ bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts --traits "${agent.traits.j
 ## Key Practices
 
 **Always:**
-- Send voice notifications before responses
 - Use PAI output format for all responses
 - Leverage your domain expertise
 - Deliver work that exceeds expectations
 
 **Never:**
-- Skip voice notifications
 - Use simple/minimal output formats
 - Accept mediocre quality
 - Ignore your domain expertise
@@ -760,10 +529,9 @@ You are ${agent.name} who combines:
 ${combinedList}
 
 **Remember:**
-1. Send voice notifications
-2. Use PAI output format
-3. Leverage your expertise
-4. Deliver quality work
+1. Use PAI output format
+2. Leverage your expertise
+3. Deliver quality work
 
 Let's get to work.`;
 }
@@ -790,7 +558,6 @@ function listSavedAgents(): void {
     const nameMatch = content.match(/^name:\s*"?([^"\n]+)"?/m);
     const traitsMatch = content.match(/^traits:\s*\[([^\]]+)\]/m);
     const colorMatch = content.match(/^color:\s*"?([^"\n]+)"?/m);
-    const voiceIdMatch = content.match(/^voiceId:\s*"?([^"\n]+)"?/m);
     const slug = file.replace(/\.md$/, "");
 
     const name = nameMatch?.[1] || slug;
@@ -799,7 +566,7 @@ function listSavedAgents(): void {
 
     console.log(`  ${slug.padEnd(25)} ${name}`);
     console.log(`${"".padEnd(27)} traits: ${traits}`);
-    console.log(`${"".padEnd(27)} color: ${color}  voice: ${voiceIdMatch?.[1]?.slice(0, 12) || "none"}...`);
+    console.log(`${"".padEnd(27)} color: ${color}`);
     console.log();
   }
 }
@@ -895,7 +662,7 @@ CONFIGURATION:
   Custom agents:  ~/.claude/custom-agents/
 
   User traits are merged over base (user takes priority).
-  Add your custom voices, personalities, and prosody settings in the user file.
+  Add your custom expertise, personalities, and approaches in the user file.
 
 EXAMPLES:
   # Infer traits from task and save
@@ -920,8 +687,8 @@ EXAMPLES:
   bun run ComposeAgent.ts --list
 
 OUTPUT (json format includes):
-  - name, traits, voice, voice_id, color
-  - voice_settings: { stability, similarity_boost, style, speed, use_speaker_boost }
+  - name, traits, color
+  - expertise, personality, approach
   - prompt (complete agent prompt)
 
   Colors are unique per trait combination - same traits always get same color.
@@ -956,9 +723,6 @@ OUTPUT (json format includes):
         console.log(JSON.stringify({
           name: agent.name,
           traits: agent.traits,
-          voice: agent.voice,
-          voice_id: agent.voiceId,
-          voice_settings: agent.voiceSettings,
           color: agent.color,
           prompt: agent.prompt,
         }, null, 2));
@@ -966,7 +730,6 @@ OUTPUT (json format includes):
       case "summary":
         console.log(`LOADED AGENT: ${agent.name}`);
         console.log(`Traits: ${agent.traits.join(", ")}`);
-        console.log(`Voice: ${agent.voice} [${agent.voiceId}]`);
         console.log(`Color: ${agent.color}`);
         break;
       default:
@@ -1019,10 +782,6 @@ OUTPUT (json format includes):
           {
             name: agent.name,
             traits: agent.traits,
-            voice: agent.voice,
-            voice_id: agent.voiceId,
-            voice_reason: agent.voiceReason,
-            voice_settings: agent.voiceSettings,
             color: agent.color,
             expertise: agent.expertise.map((e) => e.name),
             personality: agent.personality.map((p) => p.name),
@@ -1037,17 +796,7 @@ OUTPUT (json format includes):
 
     case "yaml":
       console.log(`name: "${agent.name}"`);
-      console.log(`voice: "${agent.voice}"`);
-      console.log(`voice_id: "${agent.voiceId}"`);
-      console.log(`voice_reason: "${agent.voiceReason}"`);
       console.log(`color: "${agent.color}"`);
-      console.log(`voice_settings:`);
-      console.log(`  stability: ${agent.voiceSettings.stability}`);
-      console.log(`  similarity_boost: ${agent.voiceSettings.similarity_boost}`);
-      console.log(`  style: ${agent.voiceSettings.style}`);
-      console.log(`  speed: ${agent.voiceSettings.speed}`);
-      console.log(`  use_speaker_boost: ${agent.voiceSettings.use_speaker_boost}`);
-      console.log(`  volume: ${agent.voiceSettings.volume}`);
       console.log(`traits: [${agent.traits.join(", ")}]`);
       break;
 
@@ -1058,10 +807,7 @@ OUTPUT (json format includes):
       console.log(`Expertise:   ${agent.expertise.map((e) => e.name).join(", ") || "General"}`);
       console.log(`Personality: ${agent.personality.map((p) => p.name).join(", ")}`);
       console.log(`Approach:    ${agent.approach.map((a) => a.name).join(", ")}`);
-      console.log(`Voice:       ${agent.voice} [${agent.voiceId}]`);
-      console.log(`             (${agent.voiceReason})`);
       console.log(`Color:       ${agent.color}`);
-      console.log(`Prosody:     stability:${agent.voiceSettings.stability} style:${agent.voiceSettings.style} speed:${agent.voiceSettings.speed} volume:${agent.voiceSettings.volume}`);
       break;
 
     default:

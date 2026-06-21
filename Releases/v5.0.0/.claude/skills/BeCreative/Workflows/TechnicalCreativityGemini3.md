@@ -1,16 +1,5 @@
 # Technical Creativity with Gemini 3 Pro
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the TechnicalCreativityGemini3 workflow in the BeCreative skill to generate technical solutions"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **TechnicalCreativityGemini3** in **BeCreative**...
-
 ---
 
 ## Overview

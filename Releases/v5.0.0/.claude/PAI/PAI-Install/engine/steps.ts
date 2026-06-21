@@ -25,7 +25,7 @@ export const STEPS: StepDefinition[] = [
   {
     id: "api-keys",
     name: "API Keys",
-    description: "Find or collect ElevenLabs API key for voice features",
+    description: "Find or collect optional API keys",
     number: 3,
     required: true,
     dependsOn: ["prerequisites"],
@@ -55,9 +55,9 @@ export const STEPS: StepDefinition[] = [
     dependsOn: ["repository"],
   },
   {
-    id: "voice",
-    name: "Digital Assistant Voice",
-    description: "Configure ElevenLabs key, select voice, start voice server, and test",
+    id: "pulse",
+    name: "Pulse (Life Dashboard)",
+    description: "Install Pulse — the Life Dashboard + observability runtime on port 31337",
     number: 7,
     required: true,
     dependsOn: ["configuration"],
@@ -68,7 +68,7 @@ export const STEPS: StepDefinition[] = [
     description: "Optional: connect a Telegram bot so Pulse can chat with you and send notifications",
     number: 8,
     required: false,
-    dependsOn: ["voice"],
+    dependsOn: ["pulse"],
   },
   {
     id: "validation",

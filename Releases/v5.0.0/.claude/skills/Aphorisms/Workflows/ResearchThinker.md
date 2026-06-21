@@ -2,17 +2,6 @@
 
 **Purpose:** Deep research on specific philosopher/thinker to discover relevant aphorisms aligned with TELOS philosophy, then add to database.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ResearchThinker workflow in the Aphorisms skill to research quotes"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **ResearchThinker** in **Aphorisms**...
-
 ---
 
 **When to Use:**

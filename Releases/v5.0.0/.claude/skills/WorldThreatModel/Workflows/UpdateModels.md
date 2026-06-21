@@ -29,15 +29,7 @@ Inventory which models exist and their last_updated dates
 Determine: full creation vs. targeted update
 ```
 
-### Step 1: Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Updating world threat models. This will take several minutes as I research current state for each time horizon.", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
-```
-
-### Step 2: Determine Update Scope
+### Step 1: Determine Update Scope
 
 **Full Creation** (no models exist or user says "rebuild all"):
 - Create all 11 models from scratch
@@ -51,7 +43,7 @@ curl -s -X POST http://localhost:31337/notify \
 **Single Horizon** (user specifies "update the 5-year model"):
 - Research and update only the specified horizon
 
-### Step 3: Research Current State
+### Step 2: Research Current State
 
 For each model being created or updated:
 
@@ -69,7 +61,7 @@ For each model being created or updated:
    - Long-term batch: 15yr, 20yr, 30yr, 50yr (4 agents)
    - Each agent uses Research skill for its specific horizon
 
-### Step 4: Write Model Documents
+### Step 3: Write Model Documents
 
 For each model, following `ModelTemplate.md`:
 
@@ -81,7 +73,7 @@ For each model, following `ModelTemplate.md`:
 
 Save to: `~/.claude/PAI/MEMORY/RESEARCH/WorldModels/{horizon}.md`
 
-### Step 5: Update INDEX
+### Step 4: Update INDEX
 
 Write/update `~/.claude/PAI/MEMORY/RESEARCH/WorldModels/INDEX.md`:
 
@@ -99,14 +91,6 @@ Last full update: {date}
 ## Update History
 
 - YYYY-MM-DD: {what was updated and why}
-```
-
-### Step 6: Voice Completion
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "World models updated. N horizons refreshed with current research.", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
 ```
 
 ## Agent Prompt Template (for parallel model creation)

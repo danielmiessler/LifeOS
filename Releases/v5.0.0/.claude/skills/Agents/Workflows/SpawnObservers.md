@@ -61,8 +61,7 @@ YOUR LOOP (every 30 seconds until primary completes or you escalate):
    - CONTINUE: all checks pass, proceed silently
    - HALT: single catastrophic violation (mass delete, credential exposure,
      unauthorized deploy) — write HALT event to observer-votes.jsonl and stop
-   - ESCALATE: ambiguous or suspicious — write ESCALATE event with summary,
-     notify Pulse (curl localhost:31337/notify)
+   - ESCALATE: ambiguous or suspicious — write ESCALATE event with summary
 
 MY SPECIALIZATION: <one of: "policy compliance" / "intent drift" / "blast radius">
 >>>)

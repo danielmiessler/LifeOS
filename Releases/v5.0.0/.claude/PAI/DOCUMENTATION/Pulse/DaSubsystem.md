@@ -13,9 +13,9 @@
 ```
                                    PAI Pulse (port 31337)
                                          |
-        +------+--------+--------+-------+-------+--------+--------+
-        |      |        |        |       |       |        |        |
-      Voice  Hooks  Observ  Telegram  iMessage  Cron   Worker    DA
+        +--------+--------+-------+-------+--------+--------+
+        |        |        |       |       |        |        |
+      Hooks  Observ  Telegram  iMessage  Cron   Worker    DA
                                                           |
                           +-------------------------------+
                           |
@@ -66,7 +66,7 @@ PAI/USER/DA/
   _registry.yaml            # DA registry -- which DAs exist, which is primary
   _presets.yaml
   your-da/
-    DA_IDENTITY.yaml            # Complete identity (schema, backstory, anchors, voice, all config)
+    DA_IDENTITY.yaml            # Complete identity (schema, backstory, anchors, all config)
     DA_IDENTITY.md              # Generated readable version
     growth.jsonl
     opinions.yaml
@@ -86,7 +86,7 @@ PAI/USER/DA/
 # Which DAs exist and their roles
 
 version: 1
-primary: your-da                # The main DA (used in CLAUDE.md, voice, chat)
+primary: your-da                # The main DA (used in CLAUDE.md, chat)
 
 das:
   your-da:
@@ -97,7 +97,6 @@ das:
       - terminal
       - telegram
       - imessage
-      - voice
 
   devi:
     role: worker
@@ -117,7 +116,7 @@ schema_version: 1
 
 # ── Core Identity ──────────────────────────────────────
 core:
-  name: {{DA_NAME}}                     # Short name (used in UI, voice)
+  name: {{DA_NAME}}                     # Short name (used in UI)
   full_name: {{DA_FULL_NAME}}         # Full name (used in formal contexts)
   display_name: KAI             # Caps version for headers/labels
   color: "#3B82F6"              # Brand color (Tailwind Blue-500)
@@ -133,30 +132,11 @@ backstory: >
   came to be, formative experiences, and defining journey. Rendered
   as a "## Backstory" section in DA_IDENTITY.md.
 
-# ── Voice ──────────────────────────────────────────────
-voice:
-  provider: elevenlabs
-  main:
-    voice_id: {{PAI_MAIN_VOICE_ID}}
-    stability: 0.85
-    similarity_boost: 0.7
-    style: 0.3
-    speed: 1.1
-    volume: 1.2
-  algorithm:                    # Optional: separate voice for algorithm phases
-    voice_id: fTtv3eikoepIosk8dTZ5
-    stability: 0.3
-    similarity_boost: 0.75
-    style: 0.8
-    speed: 1.2
-    volume: 1.0
-
 # ── Personality ────────────────────────────────────────
 personality:
   base_description: >
-    Slightly masculine androgynous young voice, Japanese-accented,
-    rapid speech pattern, futuristic AI friend who thinks fast and
-    talks fast, warm but efficient
+    Futuristic AI friend who thinks fast and communicates
+    fast, warm but efficient
   traits:
     enthusiasm: 75              # 0-100 scale
     energy: 80
@@ -216,7 +196,7 @@ relationship:
 # ── Autonomy ───────────────────────────────────────────
 autonomy:
   can_initiate:                 # Things the DA can do without asking
-    - send_notification         # Voice/push notifications
+    - send_notification         # Push notifications
     - create_reminder           # Schedule a reminder for the principal
     - log_learning              # Write to LEARNING/
     - update_diary              # Write daily diary entry
@@ -260,7 +240,7 @@ Current files map to the new schema as follows:
 | Current File | New Location | Migration |
 |---|---|---|
 | `PAI/USER/DA_IDENTITY.md` | `PAI/USER/DA/your-da/DA_IDENTITY.md` (generated) | Extract structured fields into `DA_IDENTITY.yaml`, generate `.md` |
-| `PAI_CONFIG.yaml` DA section | `PAI/USER/DA/your-da/DA_IDENTITY.yaml` voice/personality sections | Move voice config, keep PAI_CONFIG reference as pointer |
+| `PAI_CONFIG.yaml` DA section | `PAI/USER/DA/your-da/DA_IDENTITY.yaml` personality sections | Move personality config, keep PAI_CONFIG reference as pointer |
 | `PAI/USER/OUR_STORY.md` | Stays in place (referenced by `relationship.history_file`) | No change |
 
 The `PAI_CONFIG.yaml` DA section becomes a thin pointer:
@@ -299,26 +279,25 @@ Phase 1: Quick Setup (under 2 minutes)
   Q2: "What name do you want for your AI assistant?" → core.name
   Q3: "Pick a personality vibe" → personality preset (options below)
   Q4: "How formal should I be? (1=casual, 5=formal)" → personality.formality
-  Q5: "Pick a voice" → voice.main.voice_id (plays samples)
   → Writes DA_IDENTITY.yaml with defaults filled in
   → Creates DA_IDENTITY.md
   → Updates _registry.yaml
 
 Phase 2: Deep Customization (optional, 3 more minutes)
-  Q6: "Describe your ideal assistant personality in a sentence"
+  Q5: "Describe your ideal assistant personality in a sentence"
       → LLM maps description to trait scores
-  Q7: "Things I should never do autonomously?"
+  Q6: "Things I should never do autonomously?"
       → autonomy.must_ask additions
-  Q8: "Do you have a companion? (pet, mascot, imaginary friend)"
+  Q7: "Do you have a companion? (pet, mascot, imaginary friend)"
       → companion section
-  Q9: "Any writing style preferences?"
+  Q8: "Any writing style preferences?"
       → writing section refinement
-  Q10: "What's our relationship dynamic?"
-       → relationship.dynamic + interaction_style
+  Q9: "What's our relationship dynamic?"
+      → relationship.dynamic + interaction_style
 
 Phase 3: Growth Seeding (optional, 2 more minutes)
-  Q11: "Topics you care about most?" → growth.initial_beliefs
-  Q12: "Strong opinions your AI should share?" → opinions.yaml seeds
+  Q10: "Topics you care about most?" → growth.initial_beliefs
+  Q11: "Strong opinions your AI should share?" → opinions.yaml seeds
 ```
 
 ### Personality Presets (Phase 1, Q3)
@@ -409,7 +388,7 @@ Layer 2: Evaluation (single Haiku call, ~$0.001)
     Output: JSON decision
     |
     +-- { action: "NO_ACTION" }                          → silent, log only
-    +-- { action: "notify", message: "...", channel: "voice" }  → dispatch
+    +-- { action: "notify", message: "...", channel: "telegram" }  → dispatch
     +-- { action: "remind", message: "...", delay: 300 }        → deferred notify
     +-- { action: "task", description: "...", schedule: "..." } → create task
     |
@@ -475,7 +454,7 @@ Context:
 {context_bundle_json}
 
 Respond with ONLY a JSON object:
-{"action": "NO_ACTION"} or {"action": "notify", "message": "...", "channel": "voice"}
+{"action": "NO_ACTION"} or {"action": "notify", "message": "...", "channel": "telegram"}
 ```
 
 ### Cost Model
@@ -529,7 +508,7 @@ interface ScheduledTask {
     type: "notify" | "prompt" | "script"
     // For "notify":
     message?: string            // What to say
-    channel?: string            // voice | telegram | ntfy
+    channel?: string            // telegram | ntfy
     // For "prompt":
     prompt?: string             // Claude prompt to execute
     model?: string              // haiku | sonnet
@@ -552,7 +531,7 @@ User: "remind me at 9am Monday to review PRs"
   -> Parser extracts:
      description: "review PRs"
      schedule: { type: "once", at: "2026-04-07T09:00:00-07:00" }
-     action: { type: "notify", message: "Time to review PRs", channel: "voice" }
+     action: { type: "notify", message: "Time to review PRs", channel: "telegram" }
 
 User: "every Friday at 3pm, check newsletter stats"
   -> Parser extracts:
@@ -564,7 +543,7 @@ User: "in 2 hours, remind me to call the dentist"
   -> Parser extracts:
      description: "call the dentist"
      schedule: { type: "once", at: "<now + 2h>" }
-     action: { type: "notify", message: "Reminder: call the dentist", channel: "voice" }
+     action: { type: "notify", message: "Reminder: call the dentist", channel: "telegram" }
 ```
 
 ### Task Evaluation (Check Script)
@@ -581,7 +560,7 @@ name = "da-scheduled-tasks"
 schedule = "* * * * *"
 type = "script"
 command = "bun run checks/da-tasks.ts"
-output = "voice"
+output = "telegram"
 enabled = true
 ```
 
@@ -733,7 +712,6 @@ The identity file itself evolves, but slowly and with guardrails.
 
 **What NEVER changes without principal approval:**
 - `core.name`, `core.full_name`
-- `voice.*` (voice settings)
 - `relationship.dynamic`
 - `autonomy.must_ask` (can only get MORE restrictive autonomously)
 
@@ -867,20 +845,18 @@ Continue Pulse startup (HTTP server, other modules, cron loop)
 ```
                     DA Module
                         |
-        +-------+-------+-------+-------+
-        |       |       |       |       |
-    Telegram  iMessage  Voice   Cron    Memory
-        |       |       |       |       |
-        v       v       v       v       v
-    Chat msgs  Chat    TTS     Jobs    WORK/
-    use DA     msgs    uses    use     LEARNING/
-    identity   use DA  DA      DA      STATE/
-               ident.  voice   context
+        +-------+-------+-------+
+        |       |       |       |
+    Telegram  iMessage  Cron    Memory
+        |       |       |       |
+        v       v       v       v
+    Chat msgs  Chat    Jobs    WORK/
+    use DA     msgs    use     LEARNING/
+    identity   use DA  DA      STATE/
+               ident.  context
 ```
 
 **Telegram/iMessage**: Already reference DA identity for system prompts. Will be updated to read from `DA_IDENTITY.yaml` instead of `DA_IDENTITY.md`.
-
-**Voice**: Already uses voice_id from config. Will read from `DA_IDENTITY.yaml` voice section.
 
 **Cron**: Heartbeat, diary, growth become standard cron jobs that the existing loop evaluates.
 
@@ -908,7 +884,7 @@ The DA module adds these routes to the Pulse HTTP server:
 
 1. **One primary, many workers**: Only one DA owns interactive channels (terminal, Telegram). Workers run in background only.
 2. **Shared infrastructure**: All DAs use the same Pulse instance, Memory system, Skills, and Hooks.
-3. **Distinct identities**: Each DA has its own personality, voice, growth trajectory, and opinions.
+3. **Distinct identities**: Each DA has its own personality, growth trajectory, and opinions.
 4. **Mutual awareness**: DAs know about each other via the registry. The primary DA can delegate to workers.
 
 ### Multi-DA Architecture
@@ -922,9 +898,9 @@ The DA module adds these routes to the Pulse HTTP server:
         your-da (primary)          worker-1 (worker)
             |                       |
     +-------+-------+       +------+------+
-    |       |       |       |      |      |
-  terminal telegram voice  background   voice
-  iMessage                  tasks       (own)
+    |       |               |             |
+  terminal telegram        background   tasks
+  iMessage
 ```
 
 ### Worker DA Pattern
@@ -1097,7 +1073,7 @@ Current State:
   PAI/USER/DA_IDENTITY.md          (flat markdown)
   PAI/USER/DA_WRITING_STYLE.md     (separate file)
   PAI/USER/OUR_STORY.md            (relationship history)
-  PAI_CONFIG.yaml → DA section     (voice, personality)
+  PAI_CONFIG.yaml → DA section     (personality)
 
 Step 1: Create directory structure
   mkdir -p PAI/USER/DA/your-da
@@ -1123,7 +1099,6 @@ Step 4: Update ConfigRenderer
 Step 5: Verify
   → CLAUDE.md generates correctly
   → Telegram module uses correct identity
-  → Voice uses correct voice_id
   → No visible behavioral change
 
 Step 6: Deprecate old files

@@ -1,6 +1,6 @@
 # The Observability System
 
-Single-source, multi-destination event pipeline for PAI tool activity, voice events, subagent lifecycle, and tool failures.
+Single-source, multi-destination event pipeline for PAI tool activity, subagent lifecycle, and tool failures.
 
 > **Infrastructure:** The observability HTTP server (`localhost:31337`) runs as a module inside the unified Pulse daemon (`~/.claude/PAI/PULSE/Observability/observability.ts`). There is no separate observability server process -- Pulse serves all local HTTP endpoints on port 31337.
 
@@ -10,8 +10,8 @@ Single-source, multi-destination event pipeline for PAI tool activity, voice eve
 JSONL Sources (local disk)          settings.json
   ├─ tool-activity.jsonl (100)   ──→  observability.targets[]
   ├─ tool-failures.jsonl (50)         ├─ { type: "cloudflare-kv", name: "production" }
-  ├─ voice-events.jsonl (50)          ├─ { type: "http", name: "local", url: "..." }
-  └─ subagent-events.jsonl (50)       └─ ... (0-N targets)
+  └─ subagent-events.jsonl (50)       ├─ { type: "http", name: "local", url: "..." }
+                                      └─ ... (0-N targets)
           │                                    │
           ▼                                    ▼
    collectEvents()  ───────────────→  pushEventsToTargets()
@@ -96,7 +96,6 @@ Example — adding a staging environment:
 |--------|-----------|-----------------|------|
 | Tool activity | `MEMORY/OBSERVABILITY/tool-activity.jsonl` | 100 | `ToolActivityTracker.hook.ts` (PostToolUse, catch-all) |
 | Tool failures | `MEMORY/OBSERVABILITY/tool-failures.jsonl` | 50 | `ToolFailureTracker.hook.ts` (PostToolUseFailure) |
-| Voice events | `MEMORY/VOICE/voice-events.jsonl` | 50 | Voice notification server |
 | Subagent events | `MEMORY/OBSERVABILITY/subagent-events.jsonl` | 50 | `AgentInvocation.hook.ts` (PreToolUse:Agent / PostToolUse:Agent) |
 | Agent watchdog | stdout (Monitor notifications) | — | `Tools/AgentWatchdog.ts` via Monitor tool. Reads tool-activity.jsonl + subagent-starts.json; alerts on 90s silence with active agents. Auto-triggered by Pulse agent-guard hook on background agent spawn. |
 
@@ -110,8 +109,8 @@ All events conform to the `PAIEvent` interface:
 interface PAIEvent {
   timestamp: string;     // ISO-8601 with timezone
   session_id: string;    // Claude Code session ID
-  source: string;        // "tool-activity" | "tool-failure" | "voice" | "subagent"
-  type: string;          // Event type (e.g. "tool_use", "voice_start", "subagent_start")
+  source: string;        // "tool-activity" | "tool-failure" | "subagent"
+  type: string;          // Event type (e.g. "tool_use", "subagent_start")
   [key: string]: unknown; // Additional fields per source
 }
 ```
@@ -198,7 +197,6 @@ All endpoints served by the Pulse daemon's observability module (`Observability/
 | `/api/observability/events` | GET | Raw event data | observability |
 | `/api/observability/events` | POST | Push events from hooks | observability |
 | `/api/events/recent` | GET | Merged recent events across all sources | observability |
-| `/api/observability/voice-events` | GET | Voice event log | observability |
 | `/api/observability/tool-failures` | GET | Tool failure log | observability |
 
 **Algorithm & Sessions**
@@ -250,13 +248,11 @@ All endpoints served by the Pulse daemon's observability module (`Observability/
 | `/assistant/diary` | GET | Recent diary entries | `Assistant/module.ts` |
 | `/assistant/opinions` | GET | Current DA opinions | `Assistant/module.ts` |
 
-**Voice & Notifications**
+**Notifications**
 
 | Endpoint | Method | Purpose | Source |
 |----------|--------|---------|--------|
-| `/notify` | POST | Send TTS notification via ElevenLabs | `pulse.ts` |
 | `/notify/personality` | POST | Personality-aware notification | `pulse.ts` |
-| `/voice` | GET | Voice status | `pulse.ts` |
 
 **Hook Validation**
 

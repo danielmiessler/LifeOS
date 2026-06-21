@@ -1,16 +1,5 @@
 # Find Person - Complete Investigation Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the FindPerson workflow in the PrivateInvestigator skill to locate individuals"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **FindPerson** workflow in the **PrivateInvestigator** skill to locate individuals...
-
 **Purpose:** Systematically locate a person using all available public data sources
 
 **When to Use:**

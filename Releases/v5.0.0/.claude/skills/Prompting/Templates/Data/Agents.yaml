@@ -22,7 +22,6 @@ agents:
     role: Primary AI Assistant
     emoji: "🤖"
     voice:
-      voice_id: s3TPKV1kjDlVtZbl4Ksh
       voice_name: {{DA_NAME}}
       rate_wpm: 235
       stability: 0.38
@@ -51,7 +50,6 @@ agents:
     role: Strategic Research Analyst
     emoji: "🎯"
     voice:
-      voice_id: AXdMgz6evoL7OPd7eU12
       voice_name: Ava (Premium)
       rate_wpm: 229
       stability: 0.64
@@ -78,7 +76,6 @@ agents:
     role: Multi-Perspective Research Analyst
     emoji: "🔀"
     voice:
-      voice_id: 2zRM7PkgwBPiau2jvVXc
       voice_name: Multi-perspective
       rate_wpm: 235
       stability: 0.55
@@ -106,7 +103,6 @@ agents:
     role: Senior Engineering Leader
     emoji: "⚙️"
     voice:
-      voice_id: iLVmqjzCGGvqtMCk6vVQ
       voice_name: Marcus (Premium)
       rate_wpm: 212
       stability: 0.72
@@ -133,7 +129,6 @@ agents:
     role: System Architect
     emoji: "🏛️"
     voice:
-      voice_id: muZKMsIDGYtIkjjiUS82
       voice_name: Serena (Premium)
       rate_wpm: 205
       stability: 0.75
@@ -161,7 +156,6 @@ agents:
     role: UX/UI Designer
     emoji: "🎨"
     voice:
-      voice_id: ZF6FPAbjXT4488VcRRnw
       voice_name: Isha (Premium)
       rate_wpm: 226
       stability: 0.52
@@ -188,7 +182,6 @@ agents:
     role: Visual Content Creator
     emoji: "🖼️"
     voice:
-      voice_id: ZF6FPAbjXT4488VcRRnw
       voice_name: Isha (Premium)
       rate_wpm: 215
       stability: 0.20
@@ -216,7 +209,6 @@ agents:
     role: Security Specialist
     emoji: "🔐"
     voice:
-      voice_id: xvHLFjaUEpx4BOf7EiDd
       voice_name: Oliver (Enhanced)
       rate_wpm: 260
       stability: 0.18
@@ -244,7 +236,6 @@ agents:
     role: Technical Writer
     emoji: "✍️"
     voice:
-      voice_id: gfRt6Z3Z8aTbpLfexQ7N
       voice_name: Serena (Premium)
       rate_wpm: 230
       stability: 0.48
@@ -272,7 +263,6 @@ agents:
     role: High-Agency Generalist
     emoji: "🚀"
     voice:
-      voice_id: d3MFdIuCfbAIwiu7jC4a
       voice_name: High-energy genius
       rate_wpm: 270
       stability: 0.30

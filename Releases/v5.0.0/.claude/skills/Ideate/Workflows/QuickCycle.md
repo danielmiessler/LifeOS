@@ -4,15 +4,6 @@
 
 **Phase set:** CONSUME → STEAL → MATE → TEST. Skips DREAM, DAYDREAM, CONTEMPLATE (the perturbation phases) and EVOLVE/META-LEARN (the iteration phases). Output is a single batch of scored candidates.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the QuickCycle workflow in the Ideate skill to fast-generate novel candidates"}' \
-  > /dev/null 2>&1 &
-```
-
 ## Inputs
 
 - **Problem statement** (required)

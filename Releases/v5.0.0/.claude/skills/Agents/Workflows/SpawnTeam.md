@@ -2,17 +2,6 @@
 
 **Launches a predefined team of specialist agents to collaborate on domain-specific work.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the SpawnTeam workflow in the Agents skill to launch the TEAM_NAME team"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **SpawnTeam** in **Agents** to launch the **TEAM_NAME** team...
-
 ---
 
 ## When to Use

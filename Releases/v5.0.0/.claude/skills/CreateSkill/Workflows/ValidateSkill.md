@@ -2,17 +2,6 @@
 
 **Purpose:** Check if an existing skill follows the canonical structure with proper TitleCase naming.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ValidateSkill workflow in the CreateSkill skill to validate skill structure"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **ValidateSkill** workflow in the **CreateSkill** skill to validate skill structure...
-
 ---
 
 ## Step 1: Read the Authoritative Source

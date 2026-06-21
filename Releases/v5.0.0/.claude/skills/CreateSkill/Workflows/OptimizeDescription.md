@@ -4,17 +4,6 @@ Optimize a skill's YAML description for accurate triggering — ensuring it fire
 
 The description field in SKILL.md frontmatter is the primary mechanism that determines whether a skill gets invoked. A brilliant skill that never triggers is useless. This workflow systematically tests and improves trigger accuracy.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the OptimizeDescription workflow in the CreateSkill skill to optimize skill triggering"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **OptimizeDescription** workflow in the **CreateSkill** skill to optimize skill triggering...
-
 ---
 
 ## Step 1: Read the Current Skill

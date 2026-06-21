@@ -1,16 +1,5 @@
 # Red Team Parallel Analysis Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ParallelAnalysis workflow in the RedTeam skill to red team arguments"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **ParallelAnalysis** workflow in the **RedTeam** skill to red team arguments...
-
 ## Overview
 
 Military-grade adversarial analysis using parallel agent deployment. Breaks arguments into atomic components, attacks from 32 different expert perspectives simultaneously, synthesizes findings, and produces the ultimate counter-argument.

@@ -2,17 +2,6 @@
 
 **Remove backgrounds from existing images using local rembg (no external API).**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the RemoveBackground workflow in the Art skill to remove image backgrounds"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **RemoveBackground** in **Art**...
-
 ---
 
 ## Purpose

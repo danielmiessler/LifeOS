@@ -441,17 +441,6 @@ core:
     built to help ${escYaml(data.principalName)} achieve their goals with a
     ${data.presetKey} personality style.
 
-# -- Voice ---------------------------------------------------------------
-voice:
-  provider: elevenlabs
-  main:
-    voice_id: ""
-    stability: 0.85
-    similarity_boost: 0.7
-    style: 0.3
-    speed: 1.1
-    volume: 1.2
-
 # -- Personality ---------------------------------------------------------
 personality:
   base_description: >

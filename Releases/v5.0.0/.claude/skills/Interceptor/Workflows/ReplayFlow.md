@@ -1,16 +1,5 @@
 # ReplayFlow Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ReplayFlow workflow in the Interceptor skill to replay a recorded flow"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **ReplayFlow** in **Interceptor**...
-
 ---
 
 Replay a previously recorded user flow to verify it still works after a deploy or code change. Executes the plan script step-by-step, captures the result at each stage, and reports any regressions.

@@ -2,17 +2,6 @@
 
 **Generate 256x256 transparent PNG icons for PAI packs.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the CreatePAIPackIcon workflow in the Art skill to generate pack icons"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **CreatePAIPackIcon** in **Art**...
-
 ---
 
 ## Purpose

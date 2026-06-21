@@ -35,7 +35,6 @@
 import { readFileSync, writeFileSync, appendFileSync, existsSync, readdirSync, mkdirSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { paiPath, getPaiDir } from '../lib/paths';
-import { getIdentity } from '../lib/identity';
 import { inference } from '../../PAI/TOOLS/Inference';
 import type { ParsedTranscript } from '../../PAI/TOOLS/TranscriptParser';
 
@@ -323,23 +322,6 @@ function checkHookCounts(docsToCheck: string[], actualCount: number): DriftItem[
     }
   }
   return drift;
-}
-
-// ============================================================================
-// Voice Notification (fire-and-forget)
-// ============================================================================
-
-async function notifyVoice(message: string): Promise<void> {
-  try {
-    await fetch('http://localhost:31337/notify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(3000),
-      body: JSON.stringify({ message, voice_id: getIdentity().mainDAVoiceID }),
-    });
-  } catch {
-    // Voice server may not be running — silent fail
-  }
 }
 
 // ============================================================================
@@ -805,18 +787,4 @@ export async function handleDocCrossRefIntegrity(
   }
   console.error(`${TAG} Wall time: ${totalElapsed}ms`);
   console.error(`${TAG} === Check complete ===`);
-
-  // Step 10: Voice notification — ONLY when actual documentation edits were applied
-  if (updatesApplied.length > 0) {
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    const affectedDocs = new Set<string>();
-    for (const update of updatesApplied) {
-      const docMatch = update.match(/(?:in |] )(\w+\.md)/);
-      if (docMatch) affectedDocs.add(docMatch[1].replace('.md', ''));
-    }
-
-    const docNames = Array.from(affectedDocs).slice(0, 3).join(', ') || 'system';
-    const reason = hasHookChanges ? 'hook system changes' : hasDocChanges ? 'system documentation changes' : 'system file changes';
-    await notifyVoice(`Updated ${docNames} documentation after detecting ${reason}.`);
-  }
 }

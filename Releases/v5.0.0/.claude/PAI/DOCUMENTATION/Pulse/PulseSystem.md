@@ -2,11 +2,11 @@
 
 **Pulse is the Life Dashboard.** It is the visible surface of the PAI Life Operating System — the place where you (and your DA) see and interact with everything the OS is doing. PAI is the OS; Pulse is how you watch it run.
 
-Every Pulse module is a sub-surface of the Dashboard: real-time observability, voice notifications, chat surfaces (iMessage/Telegram), scheduled work, background worker state, DA heartbeat, and — as the dashboard grows — live views of current state vs ideal state, goal progress, workflows, and day-in-the-life preview. A Life OS with no dashboard would still be a Life OS; Pulse is what keeps it visible.
+Every Pulse module is a sub-surface of the Dashboard: real-time observability, chat surfaces (iMessage/Telegram), scheduled work, background worker state, DA heartbeat, and — as the dashboard grows — live views of current state vs ideal state, goal progress, workflows, and day-in-the-life preview. A Life OS with no dashboard would still be a Life OS; Pulse is what keeps it visible.
 
 **Canonical thesis:** `PAI/DOCUMENTATION/LifeOs/LifeOsThesis.md` — the source of truth for what PAI is, what the DA is, and why Pulse exists.
 
-**Implementation:** The unified daemon of PAI — a single always-on process that handles cron jobs, voice notifications, hook validation, observability APIs + dashboard, Telegram chat, iMessage chat, and GitHub work polling. Pulse is THE local runtime for all PAI services. It absorbed VoiceServer, TelegramBot, iMessageBot, and the Observability server into crash-isolated modules running under one process, one port (31337), and one launchd plist (`com.pai.pulse`).
+**Implementation:** The unified daemon of PAI — a single always-on process that handles cron jobs, hook validation, observability APIs + dashboard, Telegram chat, iMessage chat, and GitHub work polling. Pulse is THE local runtime for all PAI services. It absorbed TelegramBot, iMessageBot, and the Observability server into crash-isolated modules running under one process, one port (31337), and one launchd plist (`com.pai.pulse`).
 
 **Version:** 2.0 (2026-04-01)
 **Location:** `~/.claude/PAI/PULSE/`
@@ -20,7 +20,6 @@ Each subsystem runs in its own crash-isolated loop within the single Pulse proce
 | Module | Description | Source |
 |--------|-------------|--------|
 | **Cron** | Scheduled jobs -- the original heartbeat loop | `pulse.ts` |
-| **Voice** | ElevenLabs TTS notifications | `VoiceServer/voice.ts` |
 | **Hooks** | Skill-guard and agent-guard validation | `modules/hooks.ts` |
 | **Observability** | Data APIs + Observatory dashboard + security management APIs (absorbed from observability-server.ts) | `Observability/observability.ts` |
 | **Telegram** | grammY polling bot with claude-agent-sdk sessions (absorbed from TelegramBot) | `modules/telegram.ts` |
@@ -33,7 +32,7 @@ Each subsystem runs in its own crash-isolated loop within the single Pulse proce
 
 ## Architecture
 
-Pulse is a single Bun process managed by launchd on port 31337. On startup, it initializes all enabled subsystem modules (voice, hooks, observability, telegram, imessage), starts the HTTP server, launches the menu bar app, then enters the cron heartbeat loop. It reads job definitions from `PULSE.toml`, evaluates cron schedules, executes due jobs (either shell scripts or Claude CLI invocations), and routes output through internal dispatch (voice is now an in-process function call, not a separate HTTP request). There is no queue, no AI triage layer, no channel abstraction -- just run jobs and route output.
+Pulse is a single Bun process managed by launchd on port 31337. On startup, it initializes all enabled subsystem modules (hooks, observability, telegram, imessage), starts the HTTP server, launches the menu bar app, then enters the cron heartbeat loop. It reads job definitions from `PULSE.toml`, evaluates cron schedules, executes due jobs (either shell scripts or Claude CLI invocations), and routes output through internal dispatch. There is no queue, no AI triage layer, no channel abstraction -- just run jobs and route output.
 
 ```
 launchd (com.pai.pulse)
@@ -116,7 +115,7 @@ All jobs are defined in a single TOML file. Each job is a `[[job]]` table array 
 | `command` | string | for script | -- | Shell command to run (supports `${ENV_VAR}` expansion) |
 | `prompt` | string | for claude | -- | Prompt text sent to Claude CLI |
 | `model` | string | no | `"sonnet"` | Claude model for claude-type jobs |
-| `output` | `"voice"` / `"telegram"` / `"ntfy"` / `"log"` | no | `"log"` | Dispatch target for non-sentinel output |
+| `output` | `"telegram"` / `"ntfy"` / `"log"` | no | `"log"` | Dispatch target for non-sentinel output |
 | `enabled` | boolean | no | `true` | Whether the job runs |
 
 ### Module Configuration Sections
@@ -125,7 +124,6 @@ In addition to `[[job]]` entries, `PULSE.toml` contains configuration sections f
 
 | Section | Purpose | Key Fields |
 |---------|---------|------------|
-| `[voice]` | ElevenLabs TTS | `enabled`, `voice_id`, `default_voice_enabled` |
 | `[telegram]` | Telegram bot | `enabled`, `bot_token` (or env var), `principal_chat_id` |
 | `[imessage]` | iMessage bot | `enabled` (default `false`), `poll_interval_ms` |
 | `[observability]` | Observatory dashboard + data/security APIs | `enabled`, `dashboard_path` (symlink to Observability/out) |
@@ -134,10 +132,6 @@ In addition to `[[job]]` entries, `PULSE.toml` contains configuration sections f
 ### Example
 
 ```toml
-[voice]
-enabled = true
-voice_id = "<YOUR_ELEVENLABS_VOICE_ID>"
-
 [telegram]
 enabled = true
 
@@ -155,7 +149,7 @@ name = "calendar-reminder"
 schedule = "*/10 * * * *"
 type = "script"
 command = "bun run checks/calendar.ts"
-output = "voice"
+output = "telegram"
 enabled = true
 
 [[job]]
@@ -164,7 +158,7 @@ schedule = "0 7 * * *"
 type = "claude"
 prompt = "Prepare a morning brief: today's calendar events..."
 model = "sonnet"
-output = "voice"
+output = "telegram"
 enabled = true
 ```
 
@@ -192,11 +186,10 @@ Claude jobs are for tasks that require reasoning: urgency assessment, summarizat
 
 ## Output Routing
 
-When a job produces output, it is dispatched to one of four targets:
+When a job produces output, it is dispatched to one of three targets:
 
 | Target | Destination | Max Length | Notes |
 |--------|-------------|------------|-------|
-| `voice` | Internal voice module (`http://localhost:31337/notify`) | 500 chars | Spoken aloud via ElevenLabs; same process, internal function call |
 | `telegram` | Telegram Bot API | 4096 chars | Requires `TELEGRAM_BOT_TOKEN` and `TELEGRAM_PRINCIPAL_CHAT_ID` in `.env` |
 | `ntfy` | ntfy.sh push notification | 4096 chars | Requires `NTFY_TOPIC` in `.env` |
 | `log` | stdout (already logged by main loop) | unlimited | Default; no external dispatch |
@@ -310,7 +303,7 @@ Logs go to `~/.claude/Pulse/logs/pulse-stdout.log` and `pulse-stderr.log`.
 1. launchd spawns `bun run pulse.ts`.
 2. Pulse writes its PID to `state/pulse.pid`.
 3. Loads `PULSE.toml` and `state/state.json`.
-4. Initializes all enabled subsystem modules (voice, hooks, observability, telegram, imessage).
+4. Initializes all enabled subsystem modules (hooks, observability, telegram, imessage).
 5. Starts the HTTP server on port 31337.
 6. Launches the menu bar app (`PAI Pulse.app`) automatically.
 7. Logs enabled job/module count and names.
@@ -389,7 +382,7 @@ Set `enabled = false` in `PULSE.toml` and restart. The job's state is preserved 
 ### email.ts -- Email Triage
 
 **Schedule:** Every 5 minutes
-**Output:** voice
+**Output:** telegram
 **Cost:** $0 when no new emails; ~$0.001 per triage (Haiku)
 
 Two-layer design:
@@ -399,10 +392,10 @@ Two-layer design:
 ### calendar.ts -- Calendar Reminders
 
 **Schedule:** Every 10 minutes
-**Output:** voice
+**Output:** telegram
 **Cost:** $0
 
-Fetches events from all Google Calendars within a 30-minute lookahead window via the Google Calendar API. Deduplicates by event ID across calendars. Formats up to 3 upcoming events as spoken notifications ("Team standup in 12 minutes. Design review in 25 minutes."). Outputs `NO_EVENTS` when the window is clear.
+Fetches events from all Google Calendars within a 30-minute lookahead window via the Google Calendar API. Deduplicates by event ID across calendars. Formats up to 3 upcoming events as notifications ("Team standup in 12 minutes. Design review in 25 minutes."). Outputs `NO_EVENTS` when the window is clear.
 
 ### github.ts -- GitHub PR Monitor
 
@@ -456,7 +449,7 @@ Pulse does the same useful work in ~1,050 lines across 9 files, with no abstract
 
 Pulse also replaces the ScheduledTasks system, which used individual shell scripts and multiple launchd plists for each task. Pulse consolidates all scheduled work into a single daemon with a single plist and a single configuration file.
 
-As of v2.0, Pulse also absorbed four previously standalone services into its module system: VoiceServer (ElevenLabs TTS, formerly port 8888), the Observability server (data APIs + Observatory dashboard), TelegramBot (grammY polling), and iMessageBot (SQLite polling). Each runs as a crash-isolated module under the single Pulse process on port 31337.
+As of v2.0, Pulse also absorbed three previously standalone services into its module system: the Observability server (data APIs + Observatory dashboard), TelegramBot (grammY polling), and iMessageBot (SQLite polling). Each runs as a crash-isolated module under the single Pulse process on port 31337.
 
 ---
 
@@ -514,7 +507,6 @@ tail -f ~/.claude/Pulse/logs/pulse-stdout.log | bun -e "process.stdin.on('data',
 | Job stuck in circuit breaker | 3+ consecutive failures | Fix the check script, then `manage.sh restart` |
 | "Telegram dispatch skipped" | Missing env vars | Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_PRINCIPAL_CHAT_ID` in `~/.claude/.env` |
 | "ntfy dispatch skipped" | Missing env var | Set `NTFY_TOPIC` in `~/.claude/.env` |
-| Voice notifications silent | Voice module not running or Pulse down | `manage.sh restart`; check `[voice] enabled = true` in PULSE.toml |
 | Calendar returns NO_EVENTS always | Missing or expired refresh token | Set `GOOGLE_CALENDAR_REFRESH_TOKEN` in `~/.claude/.env` |
 | State file corrupt | Interrupted write (unlikely, writes are atomic) | Delete `state/state.json` and restart |
 
@@ -543,7 +535,7 @@ bun run checks/github.ts
 ├── lib/
 │   ├── config.ts             # TOML loader, module config parsing
 │   ├── cron.ts               # Cron expression parser and schedule evaluation
-│   ├── dispatch.ts           # Output routing (voice, telegram, ntfy, log)
+│   ├── dispatch.ts           # Output routing (telegram, ntfy, log)
 │   ├── state.ts              # Atomic state persistence
 │   └── spawn.ts              # Script and Claude process spawning
 ├── modules/
@@ -555,8 +547,6 @@ bun run checks/github.ts
 │   └── imessage.ts           # SQLite polling bot + claude-agent-sdk sessions (disabled by default)
 ├── Assistant/
 │   └── module.ts             # Digital Assistant identity, heartbeat, scheduling (private — DA-specific)
-├── VoiceServer/
-│   └── voice.ts              # ElevenLabs TTS notifications
 ├── Observability/
 │   ├── observability.ts      # Data APIs + Observatory dashboard + security APIs
 │   ├── src/                  # Next.js 15.5 dashboard source
@@ -715,7 +705,7 @@ The observability module serves all dashboard data. Full API reference with all 
 
 | Category | Endpoints | Purpose |
 |----------|-----------|---------|
-| Core Observability | `/api/observability/*`, `/api/events/recent` | Session state, events, voice logs, tool failures |
+| Core Observability | `/api/observability/*`, `/api/events/recent` | Session state, events, tool failures |
 | Algorithm & Sessions | `/api/algorithm`, `/api/agents`, `/api/novelty`, `/api/ladder` | Work sessions, subagents, learning signals |
 | Life Dashboard | `/api/life/home`, `/api/life/health`, `/api/life/finances`, `/api/life/business`, `/api/life/work`, `/api/life/goals` | Narrative + domain data powering the `/life` biography dashboard |
 | Life OS Index | `/api/user-index[?filter=stats\|publish\|stale\|gaps]` | Typed JSON of USER/ tree produced by `modules/user-index.ts` — spec: `PAI/DOCUMENTATION/LifeOs/LifeOsSchema.md` |
@@ -723,7 +713,6 @@ The observability module serves all dashboard data. Full API reference with all 
 | Knowledge | `/api/knowledge`, `/api/knowledge/:domain/:slug` | Knowledge archive read/write |
 | Wiki | `/api/wiki`, `/api/wiki/search`, `/api/wiki/graph` | System docs, full-text search, knowledge graph (wikilink-based; CLI `KnowledgeGraph.ts` provides richer graph with tags + related fields) |
 | DA | `/assistant/*` | Identity, tasks, diary, opinions, personality |
-| Voice | `/notify`, `/voice` | ElevenLabs TTS notifications |
 | Hook Validation | `/hooks/skill-guard`, `/hooks/agent-guard` | PreToolUse HTTP hooks for Skill/Agent validation |
 
 ---
@@ -736,7 +725,7 @@ The DA module formalizes how Pulse instantiates, manages, and evolves a Digital 
 
 The DA module adds four capabilities to Pulse:
 
-1. **Identity Registry** -- Structured YAML identity per DA with personality traits, voice config, writing style, autonomy rules
+1. **Identity Registry** -- Structured YAML identity per DA with personality traits, writing style, autonomy rules
 2. **Heartbeat** -- Proactive "should I do something?" evaluation every 30 minutes (2-layer: free context + cheap Haiku eval, ~$0.05/day)
 3. **Scheduled Tasks** -- JSONL-based task store with natural language creation, persistent across restarts
 4. **Growth Engine** -- Daily diary, weekly opinion formation, bounded identity evolution
@@ -776,7 +765,7 @@ PAI/USER/DA/
 
 ### Identity Schema
 
-The DA_IDENTITY.yaml schema covers: core identity (name, role, color), voice config, 12 personality traits (0-100), writing style, relationship context, autonomy rules (can_initiate vs must_ask), companion, and growth anchors.
+The DA_IDENTITY.yaml schema covers: core identity (name, role, color), 12 personality traits (0-100), writing style, relationship context, autonomy rules (can_initiate vs must_ask), companion, and growth anchors.
 
 ### Heartbeat
 
@@ -792,7 +781,7 @@ Tasks are stored in `Pulse/Assistant/state/scheduled-tasks.jsonl`. Types:
 - **once** -- fires at a specific time, then completes
 - **recurring** -- fires on cron schedule until cancelled or expired
 
-Actions: notify (voice/telegram), prompt (LLM call), script (shell command).
+Actions: notify (telegram), prompt (LLM call), script (shell command).
 
 Natural language routing:
 - "remind me at 9am" --> Pulse local task (free)
@@ -816,7 +805,7 @@ bun PAI/TOOLS/DAInterview.ts --depth deep       # + companion, beliefs
 
 ### Multi-DA Support
 
-Registry tracks primary + worker DAs. Primary owns interactive channels (terminal, telegram, voice). Workers run background tasks only. Each DA has independent identity, growth, and opinions.
+Registry tracks primary + worker DAs. Primary owns interactive channels (terminal, telegram). Workers run background tasks only. Each DA has independent identity, growth, and opinions.
 
 ### HTTP API
 
@@ -847,6 +836,6 @@ This subsystem provides all features of OpenClaw's SOUL.md identity system plus:
 
 ## Related Documentation
 
-- **Notification System:** `THENOTIFICATIONSYSTEM.md` -- voice, push, Discord channels that Pulse dispatches to
+- **Notification System:** `THENOTIFICATIONSYSTEM.md` -- push, Discord channels that Pulse dispatches to
 - **Memory System:** `MEMORYSYSTEM.md` -- memory consolidation job runs via Pulse
 - **Hook System:** `THEHOOKSYSTEM.md` -- hooks are event-driven; Pulse is time-driven

@@ -2,17 +2,6 @@
 
 **Real screenshots with hand-drawn editorial annotations, arrows, and highlights using UL aesthetic.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the AnnotatedScreenshots workflow in the Art skill to annotate images"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **AnnotatedScreenshots** in **Art**...
-
 ---
 
 Creates **ANNOTATED SCREENSHOTS** — actual UI screenshots or code snippets with hand-drawn purple/teal commentary overlays.

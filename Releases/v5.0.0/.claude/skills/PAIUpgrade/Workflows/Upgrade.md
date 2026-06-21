@@ -1,16 +1,5 @@
 # Upgrade Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Upgrade workflow in the PAIUpgrade skill to check for upgrades"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **Upgrade** workflow in the **PAIUpgrade** skill to check for upgrades...
-
 **Primary workflow for PAIUpgrade skill.** Generates prioritized upgrade recommendations by running four parallel agent threads: prior-work audit, user context analysis, source collection, and internal reflection mining.
 
 **Trigger:** "check for upgrades", "upgrade", "any updates", "check Anthropic", "check YouTube", "pai upgrade"

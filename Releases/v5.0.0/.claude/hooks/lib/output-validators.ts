@@ -1,8 +1,8 @@
 /**
- * output-validators.ts - Validation for voice and tab title outputs
+ * output-validators.ts - Validation for tab title outputs
  *
  * Single source of truth for what constitutes valid/invalid output
- * in the voice and tab title systems. NOT related to Algorithm format.
+ * in the tab title system. NOT related to Algorithm format.
  *
  * Tab title validators enforce the state machine:
  *   - Working titles (⚙️): gerund start ("Fixing auth bug.")
@@ -11,54 +11,6 @@
  *
  * Renamed from response-format.ts (v0.2.32) — old name was misleading.
  */
-
-// Conversational filler — always invalid for voice output
-const GARBAGE_PATTERNS = [
-  /appreciate/i,
-  /thank/i,
-  /welcome/i,
-  /help(ing)? you/i,
-  /assist(ing)? you/i,
-  /reaching out/i,
-  /happy to/i,
-  /let me know/i,
-  /feel free/i,
-];
-
-// Conversational starters — not factual summaries
-const CONVERSATIONAL_STARTERS = [
-  /^I'm /i, /^I am /i, /^Sure[,.]?/i, /^OK[,.]?/i,
-  /^Got it[,.]?/i, /^Done\.?$/i, /^Yes[,.]?/i, /^No[,.]?/i,
-  /^Okay[,.]?/i, /^Alright[,.]?/i,
-];
-
-// Single-word garbage
-const SINGLE_WORD_BLOCKLIST = new Set([
-  'ready', 'done', 'ok', 'okay', 'yes', 'no', 'sure',
-  'hello', 'hi', 'hey', 'thanks', 'working', 'processing',
-]);
-
-/**
- * Check if a voice completion is valid for TTS.
- */
-export function isValidVoiceCompletion(text: string): boolean {
-  if (!text || text.length < 10) return false;
-  const wordCount = text.trim().split(/\s+/).length;
-  if (wordCount === 1) {
-    const lower = text.toLowerCase().replace(/[^a-z]/g, '');
-    if (SINGLE_WORD_BLOCKLIST.has(lower) || lower.length < 10) return false;
-  }
-  for (const p of GARBAGE_PATTERNS) if (p.test(text)) return false;
-  if (text.length < 40) {
-    if (/\bready\b/i.test(text) || /\bhello\b/i.test(text)) return false;
-  }
-  for (const p of CONVERSATIONAL_STARTERS) if (p.test(text)) return false;
-  return true;
-}
-
-export function getVoiceFallback(): string {
-  return ''; // Intentionally empty — invalid voice completions should be skipped, not spoken
-}
 
 // ─── Tab Title Validation ───────────────────────────────────────
 

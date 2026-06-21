@@ -2,17 +2,6 @@
 
 **Purpose:** Search aphorism database by theme, keyword, author, or topic to discover relevant quotes.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the SearchAphorisms workflow in the Aphorisms skill to search quotes"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **SearchAphorisms** in **Aphorisms**...
-
 ---
 
 **When to Use:**

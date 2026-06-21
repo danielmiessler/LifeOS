@@ -4,7 +4,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 
-type Args = { slug: string; prompt?: string; model: string; timeoutMs: number; pulseUrl: string; temperature: number; maxTokens: number };
+type Args = { slug: string; prompt?: string; model: string; timeoutMs: number; temperature: number; maxTokens: number };
 type JsonRecord = Record<string, unknown>;
 type Paths = { eventsFile: string; finalFile: string };
 type RunState = { timedOut: boolean; interrupted: boolean };
@@ -12,10 +12,9 @@ type TimeoutControl = { clear: () => void };
 type SignalControl = { clear: () => void };
 type RunResult = { verdict: "success"; accumulated: string } | { verdict: "error" | "timeout"; accumulated: string; reason: string };
 type FinalInput = { verdict: "success" | "error" | "timeout"; exitCode: number | null; eventsFile: string; finalFile: string; durationMs: number; finalMessage: string; reason?: string };
-const PULSE_TIMEOUT_MS = 2000;
 const HTTP_ERROR_BODY_TIMEOUT_MS = 2000;
 function parseArgs(argv: string[]): Args {
-  const args: Partial<Args> = { model: "kimi-k2.6", timeoutMs: 300000, pulseUrl: "http://localhost:31337/notify", temperature: 1, maxTokens: 16000 };
+  const args: Partial<Args> = { model: "kimi-k2.6", timeoutMs: 300000, temperature: 1, maxTokens: 16000 };
   const seen = new Set<string>();
   const valueFor = (flag: string, inline: string | undefined, index: number): [string, number] => {
     if (inline !== undefined) return [inline, index];
@@ -35,7 +34,6 @@ function parseArgs(argv: string[]): Args {
       case "--prompt": args.prompt = nonEmpty(flag, value); break;
       case "--model": args.model = nonEmpty(flag, value); break;
       case "--timeout-ms": args.timeoutMs = positiveInt(flag, value); break;
-      case "--pulse-url": args.pulseUrl = validUrl(flag, value); break;
       case "--temperature": args.temperature = nonNegativeNumber(flag, value); break;
       case "--max-tokens": args.maxTokens = positiveInt(flag, value); break;
       default: throw new Error(`unknown flag: ${flag}`);
@@ -56,10 +54,6 @@ function nonNegativeNumber(flag: string, value: string): number {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed < 0) throw new Error(`${flag} must be a non-negative finite number`);
   return parsed;
-}
-function validUrl(flag: string, value: string): string {
-  try { return new URL(nonEmpty(flag, value)).toString(); }
-  catch (error: unknown) { throw new Error(`${flag} must be a valid URL: ${String(error)}`); }
 }
 function homeDir(): string { const home = process.env.HOME; if (!home) throw new Error("HOME is not set"); return home; }
 async function ensureSlugDir(home: string, slug: string): Promise<Paths> {
@@ -125,22 +119,19 @@ function tailCollapsed(text: string, limit: number): string {
   const cleaned = collapse(text);
   return cleaned.length <= limit ? cleaned : cleaned.slice(cleaned.length - limit);
 }
-async function sendNotify(url: string, body: JsonRecord): Promise<void> {
-  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), PULSE_TIMEOUT_MS);
-  try {
-    const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, voice_enabled: false }), signal: controller.signal });
-    if (!response.ok) console.error(`AnvilProgress: Pulse notify failed with HTTP ${response.status}`);
-  } catch (error: unknown) { console.error(`AnvilProgress: Pulse notify failed: ${String(error)}`); }
-  finally { clearTimeout(timer); }
+function reportProgress(message: string): void {
+  // Text progress to stderr. Voice/Pulse emission was removed; the durable
+  // progress record is the JSONL events file and the final stdout line.
+  console.error(`AnvilProgress: ${message}`);
 }
-function startProgressPoller(accumulated: () => string, args: Args): () => void {
+function startProgressPoller(accumulated: () => string): () => void {
   let lastMessage = "", cleaned = false;
   const timer = setInterval(() => {
     try {
       const message = `[kimi-stream] ${tailCollapsed(accumulated(), 120)}`;
       if (message === lastMessage) return;
       lastMessage = message;
-      void sendNotify(args.pulseUrl, { message, voice_enabled: false, agent: "Anvil", slug: args.slug, phase: "ANVIL" });
+      reportProgress(message);
     } catch (error: unknown) { console.error(`AnvilProgress: progress poller failed: ${String(error)}`); }
   }, 8000);
   return () => { if (cleaned) return; cleaned = true; clearInterval(timer); };
@@ -148,7 +139,7 @@ function startProgressPoller(accumulated: () => string, args: Args): () => void 
 function wireTimeout(controller: AbortController, state: RunState, args: Args): TimeoutControl {
   const timer = setTimeout(() => {
     state.timedOut = true; controller.abort();
-    void sendNotify(args.pulseUrl, { message: `Anvil: Moonshot timed out after ${args.timeoutMs}ms`, voice_enabled: false, agent: "Anvil", slug: args.slug, phase: "ANVIL" });
+    reportProgress(`Anvil: Moonshot timed out after ${args.timeoutMs}ms`);
   }, args.timeoutMs);
   return { clear: () => clearTimeout(timer) };
 }
@@ -254,7 +245,7 @@ async function runMoonshot(args: Args, paths: Paths, apiKey: string, prompt: str
   const state: RunState = { timedOut: false, interrupted: false }, controller = new AbortController(), writer = createWriteStream(paths.eventsFile, { flags: "a" });
   const timeoutControl = wireTimeout(controller, state, args), signalControl = wireSignals(controller, state, timeoutControl);
   let accumulated = "", stage: "fetch" | "stream" = "fetch";
-  const cleanupPoller = startProgressPoller(() => accumulated, args);
+  const cleanupPoller = startProgressPoller(() => accumulated);
   try {
     const response = await postMoonshot(apiKey, args, prompt, controller.signal);
     if (!response.ok) { timeoutControl.clear(); cleanupPoller(); return { verdict: "error", accumulated, reason: `HTTP ${response.status} ${await readResponseBodyText(response, HTTP_ERROR_BODY_TIMEOUT_MS)}` }; }

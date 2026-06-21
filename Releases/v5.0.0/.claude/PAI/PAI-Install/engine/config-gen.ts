@@ -7,15 +7,13 @@
  */
 
 import type { PAIConfig } from "./types";
-import { DEFAULT_VOICES, PAI_VERSION, ALGORITHM_VERSION } from "./types";
+import { PAI_VERSION, ALGORITHM_VERSION } from "./types";
 
 /**
  * Generate a minimal fallback settings.json from installer-collected data.
  * This is merged into (not replacing) the release template.
  */
 export function generateSettingsJson(config: PAIConfig): Record<string, any> {
-  const voiceId = config.voiceId || DEFAULT_VOICES[config.voiceType as keyof typeof DEFAULT_VOICES] || DEFAULT_VOICES.female;
-
   return {
     env: {
       // PAI_DIR is the PAI subsystem directory (~/.claude/PAI) — where Memory,
@@ -29,27 +27,16 @@ export function generateSettingsJson(config: PAIConfig): Record<string, any> {
       PAI_CONFIG_DIR: config.configDir,
     },
 
-    contextFiles: [
-      "skills/PAI/SKILL.md",
-      "skills/PAI/AISTEERINGRULES.md",
-      "skills/PAI/USER/AISTEERINGRULES.md",
-      "skills/PAI/USER/DAIDENTITY.md",
-    ],
+    // Empty by design: the v5 release template ships the canonical contextFiles
+    // (loaded via CLAUDE.md @-imports). The old `skills/PAI/*` layout does not
+    // exist in v5, so listing it here would point Claude Code at nothing.
+    contextFiles: [],
 
     daidentity: {
       name: config.aiName,
       fullName: `${config.aiName} — Personal AI`,
       displayName: config.aiName.toUpperCase(),
       color: "#3B82F6",
-      voices: {
-        main: {
-          voiceId,
-          stability: 0.35,
-          similarityBoost: 0.80,
-          style: 0.90,
-          speed: 1.1,
-        },
-      },
       startupCatchphrase: config.catchphrase,
     },
 

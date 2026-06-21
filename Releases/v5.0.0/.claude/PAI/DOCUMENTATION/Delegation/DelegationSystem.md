@@ -58,7 +58,7 @@ Agent({ prompt: "Design the distributed caching strategy", subagent_type: "Archi
 
 **Default for parallel work: Custom agents via Agents skill (ComposeAgent).**
 
-Use the Agents skill to compose task-specific agents with unique traits, voices, and expertise:
+Use the Agents skill to compose task-specific agents with unique traits, personalities, and expertise:
 - Use a SINGLE message with MULTIPLE Agent tool calls
 - Each agent gets FULL CONTEXT and DETAILED INSTRUCTIONS via ComposeAgent prompt
 - Launch as many as needed (no artificial limit)
@@ -77,7 +77,7 @@ Use the Agents skill to compose task-specific agents with unique traits, voices,
 | Priority | User Says | System | Tool | What Happens |
 |----------|-----------|--------|------|-------------|
 | **1. DEFAULT** | "parallel work", "agents", "team", "swarm", or Algorithm selects delegation | **Agent Teams** | `TeamCreate` → `Agent` with `team_name` → `TaskCreate` → `SendMessage` | Persistent teammates, shared task list, peer messaging, task dependencies |
-| **2. EXPLICIT** | "**custom agents**", "spin up **custom** agents" | **Custom Agents** (ComposeAgent) | `Skill("Agents")` → `Agent(subagent_type="general-purpose", prompt=<composed>)` | Unique personalities, voices, one-shot parallel work |
+| **2. EXPLICIT** | "**custom agents**", "spin up **custom** agents" | **Custom Agents** (ComposeAgent) | `Skill("Agents")` → `Agent(subagent_type="general-purpose", prompt=<composed>)` | Unique personalities, one-shot parallel work |
 | **3. UNATTENDED** | "run overnight", "long-running", "CI trigger", or task exceeds session lifetime | **Managed Agents** (Anthropic cloud API) | `Skill("claude-api")` to build workflows | Durable sessions, sandboxed containers, vault credentials, $0.08/session-hour |
 
 **These are three distinct systems:**
@@ -102,7 +102,7 @@ Use the Agents skill to compose task-specific agents with unique traits, voices,
 **For Custom Agents (only when explicitly requested):**
 1. Invoke Agents skill → ComposeAgent for EACH agent with different trait combinations
 2. Launch with composed prompt as `subagent_type: "general-purpose"`
-3. Each agent gets a personality-matched ElevenLabs voice
+3. Each agent gets a personality matched to its trait combination
 
 **For research specifically:** Use the Research skill, which has dedicated researcher agents (ClaudeResearcher, GeminiResearcher, etc.)
 

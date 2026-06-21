@@ -4,7 +4,6 @@
  */
 
 import type { InstallState, EngineEvent, ServerMessage, ClientMessage } from "../engine/types";
-import { detectSystem, validateElevenLabsKey } from "../engine/detect";
 import {
   runSystemDetect,
   runPrerequisites,
@@ -12,7 +11,7 @@ import {
   runIdentity,
   runRepository,
   runConfiguration,
-  runVoiceSetup,
+  runPulseSetup,
   runTelegramSetup,
 } from "../engine/actions";
 import { runValidation, generateSummary } from "../engine/validate";
@@ -221,20 +220,20 @@ async function startInstallation(): Promise<void> {
     if (!installState.completedSteps.includes("configuration")) {
       await runConfiguration(installState, emit);
       completeStep(installState, "configuration");
-      installState.currentStep = "voice";
+      installState.currentStep = "pulse";
     }
 
-    // Step 7: Voice (handles key collection + voice selection + server test)
-    if (!installState.completedSteps.includes("voice") && !installState.skippedSteps.includes("voice")) {
+    // Step 7: Pulse (installs the Life Dashboard + observability runtime)
+    if (!installState.completedSteps.includes("pulse") && !installState.skippedSteps.includes("pulse")) {
       try {
-        await runVoiceSetup(installState, emit, requestChoice, requestInput);
-        if (!installState.skippedSteps.includes("voice")) {
-          completeStep(installState, "voice");
+        await runPulseSetup(installState, emit, requestChoice);
+        if (!installState.skippedSteps.includes("pulse")) {
+          completeStep(installState, "pulse");
         }
-      } catch (voiceErr: any) {
-        broadcast({ type: "error", message: `Voice setup error: ${voiceErr?.message || "Unknown error"}` });
-        broadcast({ type: "message", role: "assistant", content: "Voice setup encountered an error. Continuing with installation..." });
-        skipStep(installState, "voice", voiceErr?.message || "error");
+      } catch (pulseErr: any) {
+        broadcast({ type: "error", message: `Pulse setup error: ${pulseErr?.message || "Unknown error"}` });
+        broadcast({ type: "message", role: "assistant", content: "Pulse setup encountered an error. Continuing with installation..." });
+        skipStep(installState, "pulse", pulseErr?.message || "error");
       }
       installState.currentStep = "telegram";
     }

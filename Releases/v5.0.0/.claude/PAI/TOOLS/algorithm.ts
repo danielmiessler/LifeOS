@@ -59,8 +59,6 @@ const BASE_DIR = process.env.PAI_DIR || join(HOME, ".claude");
 const ALGORITHMS_DIR = join(BASE_DIR, "MEMORY", "STATE", "algorithms");
 const SESSION_NAMES_PATH = join(BASE_DIR, "MEMORY", "STATE", "session-names.json");
 const PROJECTS_DIR = process.env.PROJECTS_DIR || join(HOME, "Projects");
-const VOICE_URL = "http://localhost:31337/notify";
-const VOICE_ID = "fTtv3eikoepIosk8dTZ5";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -427,16 +425,12 @@ function removeSessionName(sessionId: string): void {
   writeFileSync(SESSION_NAMES_PATH, JSON.stringify(names, null, 2));
 }
 
-// ─── Voice Notifications ─────────────────────────────────────────────────────
+// ─── Progress Notifications (text) ───────────────────────────────────────────
+// Voice/TTS emission via Pulse was removed. Progress is now reported as text to
+// stderr so the Algorithm loop still surfaces status without an audio subsystem.
 
 function voiceNotify(message: string): void {
-  try {
-    fetch(VOICE_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, voice_id: VOICE_ID }),
-    }).catch(() => {});
-  } catch {}
+  console.error(`[algorithm] ${message}`);
 }
 
 // ─── ISA Title Extraction ────────────────────────────────────────────────────

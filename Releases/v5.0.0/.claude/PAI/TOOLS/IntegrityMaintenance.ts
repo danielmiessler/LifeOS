@@ -22,7 +22,6 @@ import { spawn } from 'child_process';
 import { readFileSync, existsSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { inference } from './Inference';
-import { getIdentity } from '../../../.claude/hooks/lib/identity';
 
 // ============================================================================
 // Types
@@ -781,50 +780,12 @@ function checkReferences(changes: FileChange[]): IntegrityResult {
 }
 
 // ============================================================================
-// Voice Notification
+// Completion Notification (text)
 // ============================================================================
 
-async function sendVoiceNotification(message: string): Promise<void> {
-  try {
-    const identity = getIdentity();
-    const personality = identity.personality;
-
-    if (!personality?.baseVoice) {
-      // Fall back to simple notify if no personality configured
-      await fetch('http://localhost:31337/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, play: true }),
-      });
-      return;
-    }
-
-    await fetch('http://localhost:31337/notify/personality', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        personality: {
-          name: identity.name.toLowerCase(),
-          base_voice: personality.baseVoice,
-          enthusiasm: personality.enthusiasm,
-          energy: personality.energy,
-          expressiveness: personality.expressiveness,
-          resilience: personality.resilience,
-          composure: personality.composure,
-          optimism: personality.optimism,
-          warmth: personality.warmth,
-          formality: personality.formality,
-          directness: personality.directness,
-          precision: personality.precision,
-          curiosity: personality.curiosity,
-          playfulness: personality.playfulness,
-        },
-      }),
-    });
-  } catch {
-    // Voice server might not be running - silent fail
-  }
+function reportCompletion(message: string): void {
+  // Text completion notice to stderr. Voice/TTS emission via Pulse was removed.
+  console.error(`[IntegrityMaintenance] ${message}`);
 }
 
 // ============================================================================
@@ -868,13 +829,6 @@ async function createUpdateEntry(data: UpdateData): Promise<void> {
 // ============================================================================
 // Main
 // ============================================================================
-
-/**
- * Sleep for a specified number of milliseconds.
- */
-function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
 
 async function main(): Promise<void> {
   console.error('[IntegrityMaintenance] Starting background integrity check...');
@@ -964,13 +918,8 @@ async function main(): Promise<void> {
 
   await createUpdateEntry(updateData);
 
-  // Wait 10 seconds before voice notification to avoid talking over the session completion voice
-  console.error('[IntegrityMaintenance] Waiting 10 seconds before voice notification...');
-  await sleep(10000);
-
-  // Send voice notification
-  const voiceMessage = `Documented ${significance} change: ${title}`;
-  await sendVoiceNotification(voiceMessage);
+  // Report completion (text)
+  reportCompletion(`Documented ${significance} change: ${title}`);
 
   console.error('[IntegrityMaintenance] Complete');
 }

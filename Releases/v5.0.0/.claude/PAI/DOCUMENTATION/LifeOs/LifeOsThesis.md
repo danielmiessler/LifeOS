@@ -104,7 +104,6 @@ PAI is the infrastructure that makes that future buildable. It is not a predicti
 
 Current Pulse modules (which are all sub-surfaces of the Dashboard):
 - **Observability** — real-time view into hooks, tools, skills, agents, memory
-- **Voice** — the audible channel for notifications and speech
 - **iMessage / Telegram** — external chat surfaces that pipe into the DA
 - **Cron / Assistant / Worker** — the scheduler, heartbeat, and background work handler
 

@@ -26,15 +26,6 @@ A markdown file at one of:
 
 ## Procedure
 
-### Step 1 — Voice notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Scaffold workflow in the ISA skill"}' \
-  > /dev/null 2>&1 &
-```
-
 ### Step 2 — Pick the canonical template
 
 Always start by reading `~/.claude/skills/ISA/Examples/canonical-isa.md` for section headers and tone. For E1 reference, read `e1-minimal.md`. For E5 reference, read `e5-comprehensive.md`.

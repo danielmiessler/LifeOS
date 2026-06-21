@@ -1,16 +1,5 @@
 # Automate Workflow — Recipe Template Engine
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Automate workflow in the Browser skill to execute a recipe template"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **Automate** in **Browser**...
-
 ---
 
 Load a parameterized recipe template, resolve its parameters, and execute it through the appropriate browser tool.

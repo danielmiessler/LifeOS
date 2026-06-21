@@ -36,8 +36,6 @@ const HOME = process.env.HOME || "";
 const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
 const STATE_FILE = join(PAI_DIR, "PULSE", "state", "notification-governor.json");
 const LOG_FILE = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "notification-governor.jsonl");
-const NOTIFY_URL = "http://localhost:31337/notify";
-const VOICE_ID = "fTtv3eikoepIosk8dTZ5";
 
 type Priority = "critical" | "event" | "light";
 type Channel = "voice" | "telegram" | "ntfy" | "email";
@@ -133,21 +131,10 @@ function shouldDispatch(
   return { allow: true };
 }
 
-async function dispatch(channel: Channel, message: string): Promise<boolean> {
-  if (channel === "voice") {
-    try {
-      const res = await fetch(NOTIFY_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, voice_id: VOICE_ID, voice_enabled: true }),
-      });
-      return res.ok;
-    } catch {
-      return false;
-    }
-  }
-  // Other channels: governor only rate-limits, actual dispatch still owned by pulse.ts.
-  // We return true here because the caller is expected to dispatch after governor approves.
+async function dispatch(_channel: Channel, _message: string): Promise<boolean> {
+  // The governor only rate-limits; actual dispatch is owned by pulse.ts (lib.ts
+  // dispatch) and the calling poller. We return true here because the caller is
+  // expected to dispatch after the governor approves.
   return true;
 }
 

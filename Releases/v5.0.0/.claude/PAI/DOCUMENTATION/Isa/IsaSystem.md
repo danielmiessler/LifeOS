@@ -101,7 +101,7 @@ The ISA skill at `~/.claude/skills/ISA/` owns six workflows. They map verb-in-th
 | **Seed** | "seed", "bootstrap from this repo", "draft an ISA from existing code" | Bootstrap a draft project ISA from a repository's README, code structure, and recent commits. |
 | **Append** | "append decision", "append changelog", "append verification" | Canonical writer for the three append-only sections; refuses partial Changelog C/R/L entries. |
 
-All six workflows share a single voice-notification block at the top of their procedure. Append exists specifically to prevent the Deutsch C/R/L Changelog format from degrading via free-form prose creep — the four-piece structure is the format invariant and Append refuses to write a partial entry.
+All six workflows share a single notification block at the top of their procedure. Append exists specifically to prevent the Deutsch C/R/L Changelog format from degrading via free-form prose creep — the four-piece structure is the format invariant and Append refuses to write a partial entry.
 
 ---
 
@@ -141,7 +141,7 @@ The ISA is the artifact every other PAI subsystem orbits.
 
 - **Algorithm** (`PAI/DOCUMENTATION/Algorithm/AlgorithmSystem.md`, `PAI/ALGORITHM/v6.3.0.md`) — invokes the ISA skill. OBSERVE invokes Scaffold; OBSERVE end + VERIFY invoke CheckCompleteness; PLAN may invoke ephemeral-extract; LEARN invokes Reconcile and Append. The Algorithm's seven phases are operational; the ISA is the durable artifact those phases write to.
 - **Memory** (`PAI/DOCUMENTATION/Memory/MemorySystem.md`) — task ISAs live under `MEMORY/WORK/{slug}/`. The Memory subsystem provides the directory structure and the WORK→LEARNING→KNOWLEDGE compaction lifecycle. Task ISAs are archived to KNOWLEDGE when their associated learnings have been harvested.
-- **Skills** (`PAI/DOCUMENTATION/Skills/SkillSystem.md`) — the ISA skill is one skill among many; it follows the same canonical form (TitleCase directory for public, `_ALLCAPS` for private; `Workflows/` + optional `Tools/` + optional `Examples/`; mandatory voice-notification block; mandatory Gotchas section).
+- **Skills** (`PAI/DOCUMENTATION/Skills/SkillSystem.md`) — the ISA skill is one skill among many; it follows the same canonical form (TitleCase directory for public, `_ALLCAPS` for private; `Workflows/` + optional `Tools/` + optional `Examples/`; mandatory notification block; mandatory Gotchas section).
 - **Hooks** (`PAI/DOCUMENTATION/Hooks/HookSystem.md`) — `ISASync.hook.ts` watches Edit/Write events on ISA frontmatter and syncs `phase` and `progress` to Pulse via `work.json`. `CheckpointPerISC.hook.ts` auto-commits per-ISC transitions. Hooks only read the ISA; the ISA is mutated by the AI directly via Edit/Write or via the ISA skill's workflows.
 - **CreateSkill** (`~/.claude/skills/CreateSkill/SKILL.md`) — the public-skill content rule that the ISA skill itself must obey. Public skills like ISA are stranger-safe; private skills like `<your-release-skill>` carry identity-bound content.
 - **Pulse** (`PAI/DOCUMENTATION/Pulse/PulseSystem.md`) — renders ISA `phase` and `progress` in real-time. The dashboard's phase widget reflects ISA frontmatter mutations as they happen.

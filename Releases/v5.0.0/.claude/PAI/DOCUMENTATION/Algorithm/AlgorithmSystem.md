@@ -40,7 +40,7 @@ PAI is not a static tool. The Algorithm continuously upgrades itself based on ac
 | **VERIFY** | Checkmark | Verify every criterion with evidence. Confirm capability invocations met tier minimums (HARD on thinking, soft on delegation). Apply the Verification Doctrine (Rules 1, 2, 2a, 3). Check preflight compliance. |
 | **LEARN** | Book | Reflect on what worked and what didn't. Route findings through the Learning Router (8 types). Append Decisions/Changelog/Verification via the ISA Skill — the Append workflow is the gate that keeps the Deutsch conjecture/refutation/learning Changelog format from degrading. |
 
-Each phase transition requires a voice announcement and ISA update. Phase headers are mandatory output. **Dual-source phase tracking:** the voice curl body includes `phase` and `slug` fields, and `hooks/lib/isa-utils.ts::appendPhase()` merges voice-sourced and ISA-sourced entries in `work.json` phaseHistory (dedup via upgrade to `source: "merged"`). Both sources also write top-level `session.phase` and drive `setPhaseTab()` for the terminal tab icon, so `/agents` UI and kitty tabs reflect the live phase even when only one source fires. Missing a voice call still records the phase via ISA edit; missing an ISA edit still records via voice.
+Each phase transition requires an ISA update. Phase headers are mandatory output. **Phase tracking:** `hooks/lib/isa-utils.ts::appendPhase()` records ISA-sourced entries in `work.json` phaseHistory. It also writes top-level `session.phase` and drives `setPhaseTab()` for the terminal tab icon, so `/agents` UI and kitty tabs reflect the live phase. The ISA edit is the single phase signal.
 
 ---
 

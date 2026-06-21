@@ -104,9 +104,7 @@ case "$1" in
     # behavior was silent success even when the daemon never came up.
     for _ in $(seq 1 20); do
       sleep 0.5
-      if curl -sS --max-time 1 -o /dev/null -X POST http://localhost:31337/notify \
-           -H "Content-Type: application/json" \
-           -d '{"message":"","voice_enabled":false}' 2>/dev/null; then
+      if curl -sS --max-time 1 -o /dev/null http://localhost:31337/api/pulse/health 2>/dev/null; then
         echo "PAI Pulse installed and verified on port 31337 (bun: $BUN_PATH)"
         exit 0
       fi

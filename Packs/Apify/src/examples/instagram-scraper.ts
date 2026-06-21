@@ -25,7 +25,9 @@ async function main() {
     actors.forEach((actor, i) => {
       console.log(`   ${i + 1}. ${actor.username}/${actor.name}`)
       console.log(`      ${actor.title}`)
-      console.log(`      Stats: ${actor.stats.runs.total} runs, ${actor.stats.users.total} users\n`)
+      console.log(
+        `      Stats: ${actor.stats?.totalRuns ?? 0} runs, ${actor.stats?.lastRunStartedAt ?? 'unknown'} last run\n`
+      )
     })
 
     // Select the most popular actor

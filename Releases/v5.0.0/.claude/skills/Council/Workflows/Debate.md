@@ -2,17 +2,6 @@
 
 Full structured multi-agent debate with 3 rounds and visible transcript.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Debate workflow in the Council skill to run multi-agent debate"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **Debate** workflow in the **Council** skill to run multi-agent debate...
-
 ## Prerequisites
 
 - Topic or question to debate

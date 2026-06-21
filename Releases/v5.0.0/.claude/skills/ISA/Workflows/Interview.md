@@ -19,15 +19,6 @@ Adaptive question-and-answer that fills in or deepens an ISA's prose sections. U
 
 ## Procedure
 
-### Step 1 — Voice notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Interview workflow in the ISA skill"}' \
-  > /dev/null 2>&1 &
-```
-
 ### Step 2 — Read the ISA
 
 Load the ISA at `isa_path` and identify which sections are populated, thin, or missing.

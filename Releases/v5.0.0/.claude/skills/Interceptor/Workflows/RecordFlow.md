@@ -1,16 +1,5 @@
 # RecordFlow Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the RecordFlow workflow in the Interceptor skill to record a user flow"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **RecordFlow** in **Interceptor**...
-
 ---
 
 Record a user workflow by capturing browser actions into a replayable script. Uses Interceptor's monitor system to observe clicks, typing, navigation, and network requests, then exports a replay plan using semantic selectors.

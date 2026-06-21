@@ -2,17 +2,6 @@
 
 Generate complete YouTube thumbnails from content input with dramatic tech backgrounds and AI-generated headshots.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the AdHocYouTubeThumbnail workflow in the Art skill to create thumbnails"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **AdHocYouTubeThumbnail** in **Art**...
-
 ---
 
 ## Explicit Criteria

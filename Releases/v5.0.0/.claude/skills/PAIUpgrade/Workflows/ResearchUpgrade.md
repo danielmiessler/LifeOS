@@ -1,16 +1,5 @@
 # Research Upgrade Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ResearchUpgrade workflow in the PAIUpgrade skill to research upgrades"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **ResearchUpgrade** workflow in the **PAIUpgrade** skill to research upgrades...
-
 Deep dive on a specific upgrade opportunity to understand implementation details and create an actionable plan.
 
 **Trigger:** "research this upgrade", "deep dive on [feature]", "dig deeper", "further research"

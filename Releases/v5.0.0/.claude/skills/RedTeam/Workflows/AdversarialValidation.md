@@ -1,16 +1,5 @@
 # Adversarial Validation Pattern (Battle of Bots)
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the AdversarialValidation workflow in the RedTeam skill to validate decisions"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **AdversarialValidation** workflow in the **RedTeam** skill to validate decisions...
-
 **Purpose:** Use competing agents + critic to produce superior synthesis through adversarial refinement.
 
 **When to Use:**

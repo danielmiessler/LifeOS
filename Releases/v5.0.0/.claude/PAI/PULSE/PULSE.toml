@@ -1,17 +1,14 @@
 # PAI Pulse — Unified Daemon Configuration
 #
 # Pulse is THE daemon for every PAI installation.
-# One process handles: cron jobs, voice, chat, observability, hooks, DA.
+# One process handles: cron jobs, chat, observability, hooks, DA.
 #
 # type = "script" → runs command, $0 cost
 # type = "claude" → spawns claude --print, costs tokens
-# output = voice | telegram | ntfy | email | log
+# output = telegram | ntfy | email | log
 # Sentinels: NO_ACTION, NO_URGENT, NO_EVENTS → suppress dispatch
 
 # ── Module Configuration ──
-
-[voice]
-enabled = true
 
 [telegram]
 enabled = true
@@ -102,7 +99,7 @@ name = "assistant-heartbeat"
 schedule = "*/30 * * * *"
 type = "script"
 command = "bun run Assistant/checks/heartbeat.ts"
-output = "voice"
+output = "log"
 enabled = true
 
 [[job]]
@@ -110,7 +107,7 @@ name = "assistant-tasks"
 schedule = "* * * * *"
 type = "script"
 command = "bun run Assistant/checks/tasks.ts"
-output = "voice"
+output = "log"
 enabled = true
 
 [[job]]
@@ -136,7 +133,7 @@ name = "life-morning-brief"
 schedule = "0 7 * * *"
 type = "script"
 command = "bun run checks/life-morning-brief.ts"
-output = "voice"
+output = "log"
 enabled = true
 
 # ── Current → Ideal Monitoring Spine (shipped 2026-04-15) ──
@@ -156,7 +153,7 @@ name = "poller-meta-monitor"
 schedule = "0 */4 * * *"
 type = "script"
 command = "bun run checks/poller-meta-monitor.ts"
-output = "voice"
+output = "log"
 enabled = false
 
 [[job]]
@@ -164,7 +161,7 @@ name = "staleness-review"
 schedule = "0 10 * * 0"
 type = "script"
 command = "bun run ~/.claude/PAI/TOOLS/StalenessReview.ts"
-output = "voice"
+output = "log"
 enabled = false
 
 [[job]]

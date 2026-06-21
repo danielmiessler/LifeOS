@@ -1,16 +1,5 @@
 # Reverse Lookup Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ReverseLookup workflow in the PrivateInvestigator skill to trace identifiers"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **ReverseLookup** workflow in the **PrivateInvestigator** skill to trace identifiers...
-
 **Purpose:** Identify a person from partial information (phone, email, image, username)
 
 **When to Use:**

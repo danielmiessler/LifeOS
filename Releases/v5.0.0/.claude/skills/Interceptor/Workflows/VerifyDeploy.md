@@ -1,16 +1,5 @@
 # VerifyDeploy Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the VerifyDeploy workflow in the Interceptor skill to verify a deployment"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **VerifyDeploy** in **Interceptor**...
-
 ---
 
 Verify a deployment by opening the target URL in real Chrome, checking for errors, and capturing screenshot evidence. Works with both authenticated and public pages since Interceptor uses your real browser sessions.

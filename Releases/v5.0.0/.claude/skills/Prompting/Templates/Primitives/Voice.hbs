@@ -14,7 +14,6 @@
   agents:
     agent_id:
       voice:
-        voice_id: string
         voice_name: string
         rate_wpm: number
         stability: number
@@ -38,7 +37,6 @@
   "voices": {
 {{#each agents}}
     "{{@key}}": {
-      "voice_id": "{{voice.voice_id}}",
       "voice_name": "{{voice.voice_name}}",
       "name": "{{name}}",
       "rate_wpm": {{voice.rate_wpm}},

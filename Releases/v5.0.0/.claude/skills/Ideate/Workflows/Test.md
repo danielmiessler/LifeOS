@@ -4,15 +4,6 @@
 
 **Phase invoked:** TEST only. Optionally invokes RedTeam for adversarial pass.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Test workflow in the Ideate skill to score candidate ideas"}' \
-  > /dev/null 2>&1 &
-```
-
 ## Inputs
 
 - **Candidates** (required): list of idea texts to score

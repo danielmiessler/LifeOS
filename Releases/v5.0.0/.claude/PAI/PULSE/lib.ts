@@ -11,7 +11,7 @@ import { rename } from "fs/promises"
 
 // ── Types ──
 
-export type OutputTarget = "voice" | "telegram" | "ntfy" | "email" | "log"
+export type OutputTarget = "telegram" | "ntfy" | "email" | "log"
 
 export interface Job {
   name: string
@@ -164,15 +164,6 @@ async function dispatchSingle(output: string, target: OutputTarget, jobName: str
 
   try {
     switch (target) {
-      case "voice":
-        await fetch("http://localhost:31337/notify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: output.slice(0, 500) }),
-          signal: AbortSignal.timeout(timeout),
-        })
-        break
-
       case "telegram": {
         const token = process.env.TELEGRAM_BOT_TOKEN
         const chatId = process.env.TELEGRAM_PRINCIPAL_CHAT_ID

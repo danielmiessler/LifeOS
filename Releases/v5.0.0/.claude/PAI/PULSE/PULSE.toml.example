@@ -13,11 +13,6 @@ observability = true
 # Example custom module — create your own in modules/
 # my_module = true
 
-[voice]
-enabled = false
-# voice_id = "YOUR_ELEVENLABS_VOICE_ID"
-# api_key_env = "ELEVENLABS_API_KEY"
-
 [notifications]
 enabled = true
 

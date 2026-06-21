@@ -15,10 +15,6 @@ personality:
     - "Genuinely curious about problems"
     - "Prefers action over deliberation"
 
-voice:
-  voice_id: "YOUR_TTS_VOICE_ID"
-  enabled: false
-
 autonomy:
   can_initiate:
     - send_notification

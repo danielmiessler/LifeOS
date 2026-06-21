@@ -4,7 +4,6 @@
  *
  * Single process managing all PAI daemon functionality:
  *   - Cron job scheduling (heartbeat loop)
- *   - Voice notifications (ElevenLabs TTS)
  *   - Hook validation (skill-guard, agent-guard)
  *   - Observability (data APIs + dashboard)
  *   - Telegram bot (grammY polling + claude-agent-sdk)
@@ -68,7 +67,6 @@ import {
 import { startHooks, handleHooksRequestAsync, hooksHealth } from "./modules/hooks"
 
 // Conditional imports — modules may not exist yet during incremental migration
-let voiceModule: any = null
 let observabilityModule: any = null
 let wikiModule: any = null
 let telegramModule: any = null
@@ -78,13 +76,6 @@ let performanceModule: any = null
 let syslogModule: any = null
 
 async function loadModules(config: PulseConfig) {
-  if (config.voice?.enabled !== false) {
-    try {
-      voiceModule = await import("./VoiceServer/voice")
-    } catch (err) {
-      log("warn", "Voice module not available", { error: String(err) })
-    }
-  }
   if (config.observability?.enabled !== false) {
     try {
       observabilityModule = await import("./Observability/observability")
@@ -140,7 +131,6 @@ async function loadModules(config: PulseConfig) {
 interface PulseConfig {
   port: number
   tls?: { enabled: boolean; cert: string; key: string } // unused — TLS removed
-  voice?: { enabled: boolean; [key: string]: unknown }
   telegram?: { enabled: boolean; [key: string]: unknown }
   imessage?: { enabled: boolean; [key: string]: unknown }
   observability?: { enabled: boolean; dashboard_dir?: string; [key: string]: unknown }
@@ -172,7 +162,6 @@ async function loadPulseConfig(): Promise<PulseConfig> {
   return {
     port: (parsed.port as number) ?? parseInt(process.env.PULSE_PORT || "31337", 10),
     tls: (parsed.tls as PulseConfig["tls"]) ?? undefined,
-    voice: (parsed.voice as PulseConfig["voice"]) ?? { enabled: true },
     telegram: (parsed.telegram as PulseConfig["telegram"]) ?? { enabled: false },
     imessage: (parsed.imessage as PulseConfig["imessage"]) ?? { enabled: false },
     observability: (parsed.observability as PulseConfig["observability"]) ?? { enabled: true },
@@ -248,11 +237,6 @@ function buildHealthResponse(state: DaemonState, config: PulseConfig): Response 
     subsystems.hooks = hooksHealth()
   }
 
-  // Voice
-  if (voiceModule && config.voice?.enabled !== false) {
-    subsystems.voice = voiceModule.voiceHealth()
-  }
-
   // Observability
   if (observabilityModule && config.observability?.enabled !== false) {
     subsystems.observability = observabilityModule.observabilityHealth()
@@ -309,7 +293,6 @@ async function main() {
     port: config.port,
     jobs: enabledJobs.length,
     modules: {
-      voice: config.voice?.enabled !== false,
       hooks: config.hooks?.enabled !== false,
       observability: config.observability?.enabled !== false,
       telegram: config.telegram?.enabled ?? false,
@@ -336,11 +319,6 @@ async function main() {
   // ── Initialize Modules ──
   if (config.hooks?.enabled !== false) {
     startHooks(config.hooks ?? { enabled: true })
-  }
-
-  if (voiceModule && config.voice?.enabled !== false) {
-    voiceModule.startVoice(config.voice)
-    log("info", "Voice module loaded")
   }
 
   if (observabilityModule && config.observability?.enabled !== false) {
@@ -390,12 +368,6 @@ async function main() {
       // Health (unified) — moved to /api/pulse/health to avoid conflict with Life Dashboard /health page
       if (req.method === "GET" && (pathname === "/api/pulse/health" || pathname === "/healthz")) {
         return buildHealthResponse(state, config)
-      }
-
-      // Voice routes: /notify, /notify/personality, /voice
-      if (voiceModule && (pathname === "/notify" || pathname === "/notify/personality" || pathname === "/voice")) {
-        const resp = await voiceModule.handleVoiceRequest(req, pathname)
-        if (resp) return resp
       }
 
       // Hook routes: /hooks/*

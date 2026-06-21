@@ -2,17 +2,6 @@
 
 **Purpose:** Analyze newsletter or article content to recommend the perfect thematically-aligned aphorism from the database.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the FindAphorism workflow in the Aphorisms skill to find quotes"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **FindAphorism** in **Aphorisms**...
-
 ---
 
 **When to Use:**

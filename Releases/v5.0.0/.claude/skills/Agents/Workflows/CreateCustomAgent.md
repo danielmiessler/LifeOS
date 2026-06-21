@@ -2,19 +2,6 @@
 
 **Creates custom agents with unique personalities, colors, and voices using ComposeAgent.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the CreateCustomAgent workflow in the Agents skill to create agents"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **CreateCustomAgent** in **Agents**...
-
----
-
 ## When to Use
 
 {PRINCIPAL.NAME} says:
@@ -104,25 +91,7 @@ Task({
 })
 ```
 
-**Note:** Store the voice_id from ComposeAgent output - you'll need it to voice the agent's results.
-
-### Step 5: Agent Voice Output
-
-**Agents voice their own completion.** The DynamicAgent template instructs each agent to call the voice server with their unique voice_id after completing their task.
-
-Each agent's prompt includes:
-- Their assigned voice_id from ComposeAgent
-- Instructions to call `curl -X POST http://localhost:31337/notify` with their voice_id
-- The requirement to voice their `🎯 COMPLETED:` message
-
-**Fallback:** If an agent fails to voice itself, you can manually voice their result:
-```bash
-curl -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message":"<COMPLETED line content>","voice_id":"<agent_voice_id>","title":"<agent_name>","voice_enabled":true}'
-```
-
-### Step 6: Spotcheck (Optional but Recommended)
+### Step 5: Spotcheck (Optional but Recommended)
 
 After all agents complete, launch one more to verify consistency:
 

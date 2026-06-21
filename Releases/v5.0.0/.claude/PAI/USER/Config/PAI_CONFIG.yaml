@@ -14,13 +14,11 @@ principal:
 
 da:
   name: "PAI"              # Your DA's name (e.g. {{DA_NAME}}, Aria, etc.)
-  voice_id: ""             # ElevenLabs voice_id for TTS
 
 services:
   # API key NAMES referenced from ~/.claude/.env — do NOT store keys here.
   anthropic_key_env: "ANTHROPIC_API_KEY"
   openai_key_env: "OPENAI_API_KEY"
-  elevenlabs_key_env: "ELEVENLABS_API_KEY"
 
 paths:
   # All paths are relative to ${HOME}/.claude unless absolute.
@@ -31,7 +29,6 @@ paths:
 
 pulse:
   port: 31337
-  voice_enabled: true
 
 # Add your own keys below as you customize. The DA respects everything
 # in this file but you decide what's worth tracking.

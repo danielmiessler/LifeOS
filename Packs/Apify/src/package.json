@@ -8,10 +8,10 @@
     "example": "bun run examples/instagram-scraper.ts"
   },
   "dependencies": {
-    "apify-client": "^2.22.3"
+    "apify-client": "^2.23.4"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "typescript": "^5.0.0"
+    "typescript": "^6.0.3"
   }
 }

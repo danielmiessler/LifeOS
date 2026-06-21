@@ -4,17 +4,6 @@ Test a skill's effectiveness by running it against real prompts and comparing wi
 
 Inspired by Anthropic's skill-creator methodology: the only way to know if a skill works is to run it on real prompts and compare outputs with and without the skill.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the TestSkill workflow in the CreateSkill skill to test skill effectiveness"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **TestSkill** workflow in the **CreateSkill** skill to test skill effectiveness...
-
 ---
 
 ## Step 1: Identify the Skill Under Test

@@ -670,8 +670,6 @@ Voice server automatically loads this configuration at startup. To update person
 
 1. Edit JSON configuration above
 2. Update character descriptions and backstories as personalities evolve
-3. Restart voice server to apply changes
-4. Test with: `curl -s -X POST http://localhost:31337/notify -H "Content-Type: application/json" -d '{"message":"Test","voice_id":"VOICE_ID"}'`
 
 ## Version History
 

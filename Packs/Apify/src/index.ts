@@ -92,7 +92,21 @@ export class Apify {
     })
 
     // Return requested number of matches
-    return filtered.slice(0, options?.limit ?? 10) as Actor[]
+    return filtered.slice(0, options?.limit ?? 10).map((actor: any) => ({
+      id: actor.id ?? '',
+      name: actor.name ?? '',
+      username: actor.username ?? '',
+      title: actor.title ?? '',
+      description: actor.description,
+      createdAt: actor.createdAt,
+      modifiedAt: actor.modifiedAt,
+      stats: actor.stats
+        ? {
+            totalRuns: actor.stats.totalRuns ?? actor.stats.runs?.total,
+            lastRunStartedAt: actor.stats.lastRunStartedAt
+          }
+        : undefined
+    }))
   }
 
   /**
@@ -118,7 +132,10 @@ export class Apify {
       build: options?.build
     })
 
-    return run as ActorRun
+    return {
+      ...(run as any),
+      actorId
+    } as ActorRun
   }
 
   /**
@@ -139,7 +156,10 @@ export class Apify {
    */
   async getRun(runId: string): Promise<ActorRun> {
     const run = await this.client.run(runId).get()
-    return run as ActorRun
+    return {
+      ...(run as any),
+      actorId: (run as any)?.actorId ?? ''
+    } as ActorRun
   }
 
   /**
@@ -158,7 +178,10 @@ export class Apify {
     const run = await this.client.run(runId).waitForFinish({
       waitSecs: options?.waitSecs
     })
-    return run as ActorRun
+    return {
+      ...(run as any),
+      actorId: (run as any)?.actorId ?? ''
+    } as ActorRun
   }
 }
 

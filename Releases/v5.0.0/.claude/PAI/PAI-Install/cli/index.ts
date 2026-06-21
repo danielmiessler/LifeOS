@@ -20,7 +20,7 @@ import {
   runIdentity,
   runRepository,
   runConfiguration,
-  runVoiceSetup,
+  runPulseSetup,
   runTelegramSetup,
 } from "../engine/actions";
 import { runValidation, generateSummary } from "../engine/validate";
@@ -39,43 +39,13 @@ import {
   progressBar,
   c,
 } from "./display";
-import { promptText, promptSecret, promptChoice, promptChoiceWithPreview, promptConfirm } from "./prompts";
+import { promptText, promptSecret, promptChoice, promptConfirm } from "./prompts";
 
 type CLIChoice = {
   label: string;
   value: string;
   description?: string;
-  voiceId?: string;
 };
-
-async function previewVoiceViaPulse(
-  choice: { label: string; value: string; voiceId?: string },
-  previewText: string
-): Promise<void> {
-  if (!choice.voiceId) {
-    throw new Error("no preview available");
-  }
-
-  try {
-    const response = await fetch("http://localhost:31337/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: previewText,
-        voice_id: choice.voiceId,
-        voice_settings: { stability: 0.35, similarity_boost: 0.80, style: 0.90, speed: 1.1 },
-      }),
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!response.ok) {
-      throw new Error(response.statusText ? `${response.status} ${response.statusText}` : `HTTP ${response.status}`);
-    }
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(reason);
-  }
-}
 
 /**
  * Handle engine events in CLI mode.
@@ -137,21 +107,6 @@ async function getChoice(
   daName?: string
 ): Promise<string> {
   return promptChoice(prompt, choices, daName);
-}
-
-async function getChoiceWithPreview(
-  id: string,
-  prompt: string,
-  choices: CLIChoice[],
-  previewText: string,
-  daName?: string
-): Promise<string> {
-  return promptChoiceWithPreview(
-    prompt,
-    choices,
-    async (choice) => previewVoiceViaPulse(choice, previewText),
-    daName
-  );
 }
 
 /**
@@ -241,15 +196,15 @@ export async function runCLI(): Promise<void> {
       printStep(step.number, 9, step.name);
       await runConfiguration(state, emit);
       completeStep(state, "configuration");
-      state.currentStep = "voice";
+      state.currentStep = "pulse";
     }
 
-    // ── Step 7: Voice ──
-    if (!state.completedSteps.includes("voice") && !state.skippedSteps.includes("voice")) {
+    // ── Step 7: Pulse ──
+    if (!state.completedSteps.includes("pulse") && !state.skippedSteps.includes("pulse")) {
       const step = STEPS[6];
       printStep(step.number, 9, step.name);
-      await runVoiceSetup(state, emit, getChoice, getInput, getChoiceWithPreview);
-      completeStep(state, "voice");
+      await runPulseSetup(state, emit, getChoice);
+      completeStep(state, "pulse");
       state.currentStep = "telegram";
     }
 
@@ -305,7 +260,7 @@ export async function runCLI(): Promise<void> {
     print(`  ${c.gray}Start with:${c.reset}`);
     print(`     ${c.bold}~/.claude/PAI/USER/README.md${c.reset}             ${c.gray}— full layout map${c.reset}`);
     print(`     ${c.bold}~/.claude/PAI/USER/TELOS/README.md${c.reset}       ${c.gray}— missions, goals, problems, strategies${c.reset}`);
-    print(`     ${c.bold}~/.claude/PAI/USER/DA/README.md${c.reset}          ${c.gray}— your DA's identity, voice, personality${c.reset}`);
+    print(`     ${c.bold}~/.claude/PAI/USER/DA/README.md${c.reset}          ${c.gray}— your DA's identity and personality${c.reset}`);
     print(`     ${c.bold}~/.claude/PAI/USER/PROJECTS/README.md${c.reset}    ${c.gray}— project registry + routing aliases${c.reset}`);
     print(`     ${c.bold}~/.claude/PAI/USER/SECURITY/README.md${c.reset}    ${c.gray}— bash/path rules (already has working defaults)${c.reset}`);
     print(`     ${c.bold}~/.claude/PAI/USER/Config/README.md${c.reset}      ${c.gray}— credentials and PAI config${c.reset}`);

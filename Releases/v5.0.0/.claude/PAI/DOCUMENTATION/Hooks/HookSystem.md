@@ -16,10 +16,9 @@ The PAI hook system is an event-driven automation infrastructure built on Claude
 
 **Core Capabilities:**
 - **Session Management** - Auto-load context, capture summaries, manage state
-- **Voice Notifications** - Text-to-speech announcements for task completions
 - **History Capture** - Automatic work/learning documentation to `~/.claude/PAI/MEMORY/`
 - **Security Validation** - Active (v4.0) — Inspector Pipeline: SecurityPipeline (PreToolUse), ContentScanner (PostToolUse), SmartApprover (PermissionRequest), PromptGuard (UserPromptSubmit). See `DOCUMENTATION/Security/SecuritySystem.md`
-- **Multi-Agent Support** - Agent-specific hooks with voice routing
+- **Multi-Agent Support** - Agent-specific lifecycle hooks
 - **Tab Titles** - Dynamic terminal tab updates with task context
 - **Unified Event Stream** - All hooks emit structured events to `events.jsonl` for real-time observability
 
@@ -67,7 +66,7 @@ Claude Code supports the following hook events:
 ```
 
 **What They Do:**
-- `KittyEnvPersist.hook.ts` - Persists Kitty terminal env vars both to the shared `MEMORY/STATE/kitty-env.json` and to a per-session `MEMORY/STATE/kitty-sessions/{sessionId}.json` (required by out-of-process consumers like Pulse voice daemon), then resets tab title to clean state
+- `KittyEnvPersist.hook.ts` - Persists Kitty terminal env vars both to the shared `MEMORY/STATE/kitty-env.json` and to a per-session `MEMORY/STATE/kitty-sessions/{sessionId}.json` (required by out-of-process consumers like the Pulse daemon), then resets tab title to clean state
 - `LoadContext.hook.ts` - Injects dynamic context (relationship, learning, work summary) as `<system-reminder>` at session start
 - `KVSync.hook.ts` - Pushes work.json to Cloudflare KV (`sync:work_state`) so admin.example.com activity dashboard has fresh data
 
@@ -198,9 +197,9 @@ Claude Code supports the following hook events:
 - Deterministic tab title set immediately (purple/thinking state)
 - Deterministic session name on first prompt (background Sonnet upgrade follows)
 - Sonnet inference returns the five outputs as a single JSON line written into additionalContext
-- Sets tab to orange/working state with inferred title + voice announcement
+- Sets tab to orange/working state with inferred title
 - Low ratings (<5) auto-capture as learning opportunities
-- Writes to: `ratings.jsonl`, `session-names.json`, `work.json`, tab state, voice server, `MEMORY/OBSERVABILITY/mode-classifier.jsonl`
+- Writes to: `ratings.jsonl`, `session-names.json`, `work.json`, tab state, `MEMORY/OBSERVABILITY/mode-classifier.jsonl`
 - **Inference:** `import { inference } from "~/.claude/PAI/TOOLS/Inference.ts"` → Sonnet level
 - **Performance:** Fast paths <50ms, inference path ~3-8s (deliberate cost of better mode/tier judgment than regex could provide)
 - **Failsafe:** any classifier error path (timeout 25s, non-zero exit, unparseable JSON) defaults to ALGORITHM E3 with `SOURCE: fail-safe`
@@ -217,7 +216,6 @@ Claude Code supports the following hook events:
 ### 4. **Stop**
 **When:** Main agent ({DA_IDENTITY.NAME}) completes a response
 **Use Cases:**
-- Voice notifications for task completion
 - Capture work summaries and learnings
 - **Update terminal tab with final state** (color + suffix based on outcome)
 
@@ -229,7 +227,6 @@ Claude Code supports the following hook events:
       "hooks": [
         { "type": "command", "command": "$HOME/.claude/hooks/LastResponseCache.hook.ts" },
         { "type": "command", "command": "$HOME/.claude/hooks/ResponseTabReset.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/VoiceCompletion.hook.ts" },
         { "type": "command", "command": "$HOME/.claude/hooks/DocIntegrity.hook.ts" }
       ]
     }
@@ -249,11 +246,6 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 - Calls `handlers/TabState.ts` to set completed state
 - Converts working gerund title to past tense
 
-**`VoiceCompletion.hook.ts`** — Send 🗣️ voice line to TTS server
-- Calls `handlers/VoiceNotification.ts` for voice delivery
-- Voice gate: only main sessions (checks `kitty-sessions/{sessionId}.json`)
-- Subagents have no kitty-sessions file → voice blocked
-
 **`DocIntegrity.hook.ts`** — Cross-reference + semantic drift checks + architecture summary regen
 - Calls `handlers/DocCrossRefIntegrity.ts` — deterministic + inference-powered doc updates
 - Calls `handlers/RebuildArchSummary.ts` — regenerates `PAI_ARCHITECTURE_SUMMARY.md` when system files change
@@ -266,7 +258,6 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 ### 5. **PreToolUse**
 **When:** Before Claude executes any tool
 **Use Cases:**
-- Voice curl gating (prevent background agents from speaking)
 - Security validation across file operations (Bash, Edit, Write, Read, MultiEdit) — SecurityPipeline (Pattern → Egress → Rules inspectors) blocks dangerous commands, protects credentials, enforces path tiers
 - Tab state updates on questions
 - Agent execution guardrails — Pulse HTTP route at localhost:31337/hooks/agent-guard
@@ -379,7 +370,7 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 - Syncs ISA frontmatter (status, title, effort) to `MEMORY/STATE/work.json`
 - Keeps work registry in sync without manual updates
 - Non-blocking, fire-and-forget
-- Uses `hooks/lib/isa-utils.ts::appendPhase()` (2026-04-16+) for phaseHistory with `source: "prd"` — the other source being voice notifications. Both feed the same phaseHistory array with dedup via upgrade to `source: "merged"`. See `PAI/MEMORY/KNOWLEDGE/Ideas/dual-source-event-tracking-pattern.md`.
+- Uses `hooks/lib/isa-utils.ts::appendPhase()` (2026-04-16+) for phaseHistory with `source: "prd"` — the other source being the `/notify` endpoint. Both feed the same phaseHistory array with dedup via upgrade to `source: "merged"`. See `PAI/MEMORY/KNOWLEDGE/Ideas/dual-source-event-tracking-pattern.md`.
 
 **TelosSummarySync.hook.ts** - Principal TELOS Sync
 - Fires after Write/Edit alongside ISASync
@@ -724,11 +715,7 @@ Hooks have access to all environment variables from `~/.claude/settings.json` `"
     "name": "PAI",
     "fullName": "Personal AI",
     "displayName": "PAI",
-    "color": "#3B82F6",
-    "voices": {
-      "main": { "voiceId": "{YourElevenLabsVoiceId}", "stability": 0.85, "similarityBoost": 0.7 },
-      "algorithm": { "voiceId": "{AlgorithmVoiceId}" }
-    }
+    "color": "#3B82F6"
   },
   "principal": {
     "name": "{YourName}",
@@ -740,16 +727,15 @@ Hooks have access to all environment variables from `~/.claude/settings.json` `"
 
 **Using the Identity Module:**
 ```typescript
-import { getIdentity, getPrincipal, getDAName, getPrincipalName, getVoiceId } from './lib/identity';
+import { getIdentity, getPrincipal, getDAName, getPrincipalName } from './lib/identity';
 
 // Get full identity objects
-const identity = getIdentity();    // { name, fullName, displayName, mainDAVoiceID, color, voice, personality }
+const identity = getIdentity();    // { name, fullName, displayName, color, personality }
 const principal = getPrincipal();  // { name, pronunciation, timezone }
 
 // Convenience functions
 const DA_NAME = getDAName();        // "PAI"
 const USER_NAME = getPrincipalName(); // "{YourName}"
-const VOICE_ID = getVoiceId();        // from settings.json daidentity.voices.main.voiceId
 ```
 
 **Why settings.json?**
@@ -805,38 +791,7 @@ All hooks receive JSON data on stdin:
 
 ## Common Patterns
 
-### 1. Voice Notifications
-
-**Pattern:** Extract completion message → Send to voice server
-
-```typescript
-// handlers/VoiceNotification.ts pattern
-import { getIdentity } from './lib/identity';
-
-const identity = getIdentity();
-const completionMessage = extractCompletionMessage(lastMessage);
-
-const payload = {
-  title: identity.name,
-  message: completionMessage,
-  voice_enabled: true,
-  voice_id: identity.mainDAVoiceID  // From settings.json
-};
-
-await fetch('http://localhost:31337/notify', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload)
-});
-```
-
-**Agent-Specific Voices:**
-Configure voice IDs via `settings.json` daidentity section or environment variables.
-Each agent can have a unique ElevenLabs voice configured. See the Agents skill for voice registry.
-
----
-
-### 2. History Capture (UOCS Pattern)
+### 1. History Capture (UOCS Pattern)
 
 **Pattern:** Parse structured response → Save to appropriate history directory
 
@@ -877,11 +832,11 @@ if (isLearning) {
 - `✅ RESULTS:` - Outcomes
 - `📊 STATUS:` - Current state
 - `➡️ NEXT:` - Follow-up actions
-- `🎯 COMPLETED:` - **Voice notification line**
+- `🎯 COMPLETED:` - **Completion summary line**
 
 ---
 
-### 3. Agent Type Detection
+### 2. Agent Type Detection
 
 **Pattern:** Identify which agent is executing → Route appropriately
 
@@ -917,7 +872,7 @@ else if (hookData.cwd && hookData.cwd.includes('/agents/')) {
 
 ---
 
-### 4. Tab Title + Color State Architecture
+### 3. Tab Title + Color State Architecture
 
 **Pattern:** Visual state feedback through tab colors and title suffixes
 
@@ -958,7 +913,7 @@ else if (hookData.cwd && hookData.cwd.includes('/agents/')) {
 
 ---
 
-### 5. Async Non-Blocking Execution
+### 4. Async Non-Blocking Execution
 
 **Pattern:** Hook executes quickly → Launch background processes for slow operations
 
@@ -981,7 +936,7 @@ process.exit(0);  // Exit immediately
 
 ---
 
-### 6. Graceful Failure
+### 5. Graceful Failure
 
 **Pattern:** Wrap everything in try/catch → Log errors → Exit successfully
 
@@ -1172,29 +1127,6 @@ setTimeout(() => {
 
 ---
 
-### Voice Notifications Not Working
-
-**Check:**
-1. Is voice server running? `curl http://localhost:31337/health`
-2. Is voice_id correct? See `settings.json` `daidentity.voices` for mappings
-3. Is message format correct? `{"message":"...", "voice_id":"...", "title":"..."}`
-4. Is ElevenLabs API key in `~/.claude/.env`?
-
-**Debug:**
-```bash
-# Test voice server directly
-curl -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message":"Test message","voice_id":"[YOUR_VOICE_ID]","title":"Test"}'
-```
-
-**Common Issues:**
-- Wrong voice_id → Silent failure (invalid ID)
-- Voice server offline → Hook continues (graceful failure)
-- No `🎯 COMPLETED:` line → No voice notification extracted
-
----
-
 ### Work Not Capturing
 
 **Check:**
@@ -1225,7 +1157,7 @@ tail ~/.claude/PAI/MEMORY/RAW/$(date +%Y-%m)/$(date +%Y-%m-%d)_all-events.jsonl
 
 ### Stop Event Not Firing (RESOLVED)
 
-**Original Issue:** Stop events were not firing consistently in earlier Claude Code versions, causing voice notifications and work capture to fail silently.
+**Original Issue:** Stop events were not firing consistently in earlier Claude Code versions, causing work capture to fail silently.
 
 **Resolution:** Fixed in Claude Code updates. The Stop hooks now fire reliably. The individual hook pattern (each `.hook.ts` delegating to `handlers/`) was implemented in part to work around this — and remains the production architecture.
 
@@ -1314,7 +1246,7 @@ Hooks in same event execute **sequentially** in order defined in settings.json:
   "Stop": [
     {
       "hooks": [
-        { "command": "$HOME/.claude/hooks/VoiceCompletion.hook.ts" }  // Example: one of several Stop hooks
+        { "command": "$HOME/.claude/hooks/ResponseTabReset.hook.ts" }  // Example: one of several Stop hooks
       ]
     }
   ]
@@ -1418,7 +1350,6 @@ Hooks in same event execute **sequentially** in order defined in settings.json:
 
 ## Related Documentation
 
-- **Voice System:** `~/.claude/`
 - **Agent System:** `~/.claude/skills/Agents/SKILL.md`
 - **History/Memory:** `~/.claude/PAI/DOCUMENTATION/Memory/MemorySystem.md`
 
@@ -1432,7 +1363,7 @@ HOOK LIFECYCLE:
 2. Claude Code writes hook data to stdin
 3. Hook script executes
 4. Hook reads stdin (with timeout)
-5. Hook performs actions (voice, capture, etc.)
+5. Hook performs actions (capture, tab updates, etc.)
 6. Hook exits 0 (always succeeds)
 7. Claude Code continues
 
@@ -1469,10 +1400,9 @@ POST TOOL USE (5 distinct hooks):
 POST TOOL USE FAILURE (1 hook):
   ToolFailureTracker.hook.ts     Error logging to OBSERVABILITY/
 
-STOP (4 hooks):
+STOP (3 hooks):
   LastResponseCache.hook.ts      Cache response for PromptProcessing bridge
   ResponseTabReset.hook.ts       Tab title/color reset after response
-  VoiceCompletion.hook.ts        Voice TTS (main sessions only)
   DocIntegrity.hook.ts           Cross-ref + arch summary regen
 
 STOP FAILURE (1 hook):
@@ -1548,11 +1478,6 @@ Awaiting:  ?    Teal   #0D4F4F  (needs input)
 Error:     !    Orange #B35A00  (problem detected)
 Active Tab: Always Dark Blue #002B80 (state colors = inactive only)
 
-VOICE SERVER:
-URL: http://localhost:31337/notify
-Payload: {"message":"...", "voice_id":"...", "title":"..."}
-Configure voice IDs in individual agent files (`agents/*.md` persona frontmatter)
-
 ```
 
 ---
@@ -1598,13 +1523,13 @@ import {
 Identity and principal configuration from settings.json.
 
 ```typescript
-import { getIdentity, getPrincipal, getDAName, getPrincipalName, getVoiceId } from './lib/identity';
+import { getIdentity, getPrincipal, getDAName, getPrincipalName } from './lib/identity';
 
-const identity = getIdentity();    // { name, fullName, displayName, mainDAVoiceID, color, voice, personality }
+const identity = getIdentity();    // { name, fullName, displayName, color, personality }
 const principal = getPrincipal();  // { name, pronunciation, timezone }
 ```
 
-**Used by:** handlers/VoiceNotification.ts, PromptProcessing, handlers/TabState.ts
+**Used by:** PromptProcessing, handlers/TabState.ts
 
 ### `PAI/TOOLS/Inference.ts`
 Unified AI inference with three run levels.
@@ -1672,7 +1597,7 @@ Every event has a common base shape plus type-specific fields:
 - `timestamp` (ISO 8601) -- auto-injected by `appendEvent()`
 - `session_id` -- auto-injected from `CLAUDE_SESSION_ID` env
 - `source` -- the hook or handler name that emitted the event
-- `type` -- dot-separated topic (e.g., `algorithm.phase`, `work.created`, `voice.sent`, `rating.captured`)
+- `type` -- dot-separated topic (e.g., `algorithm.phase`, `work.created`, `rating.captured`)
 
 Events use a dot-separated topic hierarchy for filtering. A `custom.*` escape hatch allows arbitrary extension without modifying the type system.
 
@@ -1684,7 +1609,6 @@ Events use a dot-separated topic hierarchy for filtering. A `custom.*` escape ha
 | `session.*` | named, completed | SessionCleanup |
 | `rating.*` | captured | SatisfactionCapture |
 | `learning.*` | captured | WorkCompletionLearning |
-| `voice.*` | sent | VoiceNotification |
 | `isa.*` | synced | ISASync |
 | `doc.*` | integrity | DocIntegrity |
 | `build.*` | rebuild | RebuildSkill (DocRebuild handler) |

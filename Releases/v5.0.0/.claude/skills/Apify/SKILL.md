@@ -11,26 +11,6 @@ effort: medium
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
-
-## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
-
-**You MUST send this notification BEFORE doing anything else when this skill is invoked.**
-
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:31337/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the Apify skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **Apify** skill to ACTION...
-   ```
-
-**This is not optional. Execute this curl command immediately upon skill invocation.**
-
 # Apify - Social Media & Web Scraping
 
 Direct TypeScript access to 9 popular Apify actors with 99% token savings.
@@ -40,7 +20,6 @@ Direct TypeScript access to 9 popular Apify actors with 99% token savings.
 This skill is a **file-based MCP** - a code-first API wrapper that replaces token-heavy MCP protocol calls.
 
 **Why file-based?** Filter data in code BEFORE returning to model context = 97.5% token savings.
-
 
 ## 🎯 Overview
 

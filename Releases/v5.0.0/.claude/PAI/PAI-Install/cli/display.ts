@@ -132,7 +132,7 @@ export function printBanner(): void {
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.gray}"${c.reset}${c.lightBlue}{{DA_NAME}} here, ready to go${c.reset}${c.gray}..."${c.reset}`);
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${bar}`);
   print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⬢${c.reset}  ${c.gray}PAI${c.reset}       ${c.silver}v5.0.0${c.reset}`);
-  print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⚙${c.reset}  ${c.gray}Algo${c.reset}      ${c.silver}v1.4.0${c.reset}`);
+  print(`           ${c.navy}████${c.reset}        ${c.navy}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.navy}⚙${c.reset}  ${c.gray}Algo${c.reset}      ${c.silver}v6.3.0${c.reset}`);
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${c.lightBlue}✦${c.reset}  ${c.gray}Installer${c.reset} ${c.silver}v5.0${c.reset}`);
   print(`           ${c.navy}████████████████${c.reset}${c.lightBlue}████${c.reset}   ${sep}  ${bar}`);
   print(`           ${c.navy}████${c.reset}        ${c.blue}████${c.reset}${c.lightBlue}████${c.reset}   ${sep}`);
@@ -191,7 +191,6 @@ export function printDetection(det: DetectionResult): void {
     printSuccess(`Detected DA name: ${det.existing.daName} (from prior install/backup)`);
   }
   const apiHits: string[] = [];
-  if (det.existing.apiKeys?.elevenLabs) apiHits.push("ElevenLabs");
   if (det.existing.apiKeys?.anthropic) apiHits.push("Anthropic");
   if (det.existing.apiKeys?.openai) apiHits.push("OpenAI");
   if (det.existing.apiKeys?.google) apiHits.push("Google");
@@ -199,9 +198,6 @@ export function printDetection(det: DetectionResult): void {
   if (det.existing.apiKeys?.perplexity) apiHits.push("Perplexity");
   if (apiHits.length > 0) {
     printSuccess(`Detected API keys: ${apiHits.join(", ")} (from shell rc files / .env)`);
-  }
-  if (det.voice?.systemDefault) {
-    printInfo(`System voice: ${det.voice.systemDefault}`);
   }
 
   printInfo(`Timezone: ${det.timezone}`);
@@ -238,7 +234,6 @@ export function printSummary(summary: InstallSummary): void {
   print(`${c.navy}║${c.reset}  Principal:    ${c.white}${summary.principalName}${c.reset}${" ".repeat(Math.max(0, 33 - summary.principalName.length))}${c.navy}║${c.reset}`);
   print(`${c.navy}║${c.reset}  AI Name:      ${c.white}${summary.aiName}${c.reset}${" ".repeat(Math.max(0, 33 - summary.aiName.length))}${c.navy}║${c.reset}`);
   print(`${c.navy}║${c.reset}  Timezone:     ${c.white}${summary.timezone}${c.reset}${" ".repeat(Math.max(0, 33 - summary.timezone.length))}${c.navy}║${c.reset}`);
-  print(`${c.navy}║${c.reset}  Voice:        ${c.white}${summary.voiceEnabled ? summary.voiceMode : "Disabled"}${c.reset}${" ".repeat(Math.max(0, 33 - (summary.voiceEnabled ? summary.voiceMode.length : 8)))}${c.navy}║${c.reset}`);
   print(`${c.navy}║${c.reset}  Install Type: ${c.white}${installTypeLabel}${c.reset}${" ".repeat(Math.max(0, 33 - installTypeLabel.length))}${c.navy}║${c.reset}`);
   print(`${c.navy}╠══════════════════════════════════════════════════╣${c.reset}`);
   print(`${c.navy}║${c.reset}                                                  ${c.navy}║${c.reset}`);

@@ -35,15 +35,6 @@ errors:
 
 ## Procedure
 
-### Step 1 — Voice notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Reconcile workflow in the ISA skill"}' \
-  > /dev/null 2>&1 &
-```
-
 ### Step 2 — Read both files
 
 Load ephemeral and master. Confirm ephemeral has the canonical header marker (`<!-- EPHEMERAL FEATURE FILE — derived from ... -->`); abort if not (refusing to merge anything that didn't come from Scaffold's ephemeral mode).

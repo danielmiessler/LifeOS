@@ -2,17 +2,6 @@
 
 **Clean Excalidraw-style technical diagrams with custom typography aesthetic.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the TechnicalDiagrams workflow in the Art skill to create diagrams"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **TechnicalDiagrams** in **Art**...
-
 ---
 
 ## Purpose
@@ -61,7 +50,6 @@ When a diagram comes back bleached, thin, or pastel: regenerate immediately with
 ### Title/Subtitle Rule
 
 The workflow template below includes a title + subtitle block. **Override this when the diagram is being used as a blog header where the page already has the title.** For blog headers specifically, remove the title and subtitle from the prompt entirely — the image is visual only. For standalone diagrams (slides, presentations, social images), include title + subtitle as the template specifies.
-
 
 # Example image
 # Ignore for now

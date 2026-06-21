@@ -1,6 +1,6 @@
 # PAI Hook System
 
-> **Lifecycle event handlers that extend Claude Code with voice, memory, and security.**
+> **Lifecycle event handlers that extend Claude Code with memory and security.**
 
 This document is the authoritative reference for PAI's hook system. When modifying any hook, update both the hook's inline documentation AND this README.
 
@@ -24,7 +24,6 @@ This document is the authoritative reference for PAI's hook system. When modifyi
 
 Hooks are TypeScript scripts that execute at specific lifecycle events in Claude Code. They enable:
 
-- **Voice Feedback**: Spoken announcements of tasks and completions
 - **Memory Capture**: Session summaries, work tracking, learnings
 - **Security Validation**: Command filtering, path protection, prompt injection defense
 - **Context Injection**: Identity, preferences, format specifications
@@ -70,7 +69,6 @@ Hooks are TypeScript scripts that execute at specific lifecycle events in Claude
 │                                                                     │
 │  Stop ──┬──► LastResponseCache (cache response for ratings)         │
 │         ├──► ResponseTabReset (tab title/color reset)              │
-│         ├──► VoiceCompletion (TTS voice line)                      │
 │         ├──► DocIntegrity (cross-refs + arch summary regen)        │
 │         └──► StopNotify (push notification)                        │
 │                                                                     │
@@ -101,7 +99,7 @@ Hooks are TypeScript scripts that execute at specific lifecycle events in Claude
 | `PreToolUse` | Before a tool executes | Security validation, context reduction, UI state |
 | `PostToolUse` | After a tool executes | ISA sync, tab state reset |
 | `PostToolUseFailure` | Tool execution fails | Error tracking, debugging observability |
-| `Stop` | Claude responds | Voice feedback, tab updates, doc integrity |
+| `Stop` | Claude responds | Tab updates, doc integrity |
 | `SubagentStart` | Subagent spawned | Agent start tracking, timing |
 | `SubagentStop` | Subagent finishes | Duration calculation, hung agent detection |
 | `TeammateIdle` | Teammate goes idle | Idle event logging |
@@ -153,7 +151,7 @@ interface StopPayload extends BasePayload {
 
 | Hook | Purpose | Blocking | Dependencies |
 |------|---------|----------|--------------|
-| `SessionAnalysis.hook.ts` | Unified analysis: rating capture + tab title + session naming | No | Inference API, `ratings.jsonl`, `session-names.json`, Voice Server |
+| `SessionAnalysis.hook.ts` | Unified analysis: rating capture + tab title + session naming | No | Inference API, `ratings.jsonl`, `session-names.json` |
 
 > **Consolidation note:** SessionAnalysis replaces the former RatingCapture + UpdateTabTitle + SessionAutoName (3 hooks → 1, single Haiku call). The old hooks remain on disk as reference.
 
@@ -188,7 +186,6 @@ interface StopPayload extends BasePayload {
 |------|---------|----------|--------------|
 | `LastResponseCache.hook.ts` | Cache last response for SessionAnalysis bridge | No | None |
 | `ResponseTabReset.hook.ts` | Reset Kitty tab title/color after response | No | Kitty terminal |
-| `VoiceCompletion.hook.ts` | Send voice line to TTS server | No | Voice Server |
 | `DocIntegrity.hook.ts` | Cross-ref + semantic drift checks + arch summary regen | No | Inference API |
 | `StopNotify.hook.ts` | Push notification on completion | No | ntfy/Discord |
 
@@ -251,7 +248,6 @@ SessionAnalysis ─── explicit rating "8 - great"? ──► write rating + 
     │
     ├── Write rating → ratings.jsonl
     ├── Set orange/working tab title
-    ├── Voice announce via localhost:31337
     ├── Store session name → session-names.json
     └── Background Sonnet upgrade (first prompt only)
 ```
@@ -301,7 +297,7 @@ UserPromptSubmit ─► PromptGuard ─► PromptInspector (95) heuristic-only
 All events logged to: MEMORY/SECURITY/YYYY/MM/
 ```
 
-### Voice + Tab State Flow
+### Tab State Flow
 
 ```
 UserPromptSubmit
@@ -312,9 +308,7 @@ SessionAnalysis
     │
     ├─► Single Haiku inference (sentiment + title + name)
     │
-    ├─► Sets tab to ORANGE (#B35A00) ─► "⚙️ Fixing auth..."
-    │
-    └─► Voice announces: "Fixing auth bug"
+    └─► Sets tab to ORANGE (#B35A00) ─► "⚙️ Fixing auth..."
 
 PreToolUse (AskUserQuestion)
     │
@@ -325,8 +319,7 @@ Stop
     │
     ▼
 Stop hooks:
-    ├─► ResponseTabReset → DEFAULT (UL blue)
-    └─► VoiceCompletion → Voice announces completion
+    └─► ResponseTabReset → DEFAULT (UL blue)
 ```
 
 ---
@@ -378,7 +371,7 @@ Located in `hooks/lib/`:
 | `time.ts` | PST timestamps, ISO formatting | Rating hooks, work hooks |
 | `paths.ts` | Canonical path construction | Work hooks, security |
 | `notifications.ts` | ntfy push notifications | SessionEnd hooks, StopNotify |
-| `output-validators.ts` | Tab title + voice output validation | SessionAnalysis, TabState, VoiceNotification, SetQuestionTab |
+| `output-validators.ts` | Tab title output validation | SessionAnalysis, TabState, SetQuestionTab |
 | `isa-utils.ts` | ISA/work.json manipulation | SessionAnalysis, ISASync, KVSync |
 | `isa-template.ts` | ISA markdown template | Algorithm |
 | `hook-io.ts` | Shared stdin reader + transcript parser | All Stop hooks |

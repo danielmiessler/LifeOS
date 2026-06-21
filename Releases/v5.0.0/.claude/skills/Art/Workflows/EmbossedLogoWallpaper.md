@@ -2,17 +2,6 @@
 
 **Generate sophisticated wallpapers with logo physically embossed into the design.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the EmbossedLogoWallpaper workflow in the Art skill to create wallpapers"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **EmbossedLogoWallpaper** in **Art**...
-
 ---
 
 Creates wallpapers where the <brand> logo is integrated as an embossed texture within the visual content — not overlaid, not floating in empty space.

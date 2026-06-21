@@ -2,17 +2,6 @@
 
 Improve an existing skill based on test feedback, user observations, or quality concerns. This is the revision half of the test-iterate loop.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the ImproveSkill workflow in the CreateSkill skill to improve skill quality"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **ImproveSkill** workflow in the **CreateSkill** skill to improve skill quality...
-
 ---
 
 ## Step 1: Gather Context

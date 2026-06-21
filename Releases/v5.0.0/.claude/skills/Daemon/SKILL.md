@@ -11,15 +11,6 @@ effort: medium
 
 If this directory exists, load and apply any SecurityOverrides.md or PREFERENCES.md found there. These override default security classification. If the directory does not exist, proceed with skill defaults.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the WORKFLOWNAME workflow in the Daemon skill to ACTION"}' \
-  > /dev/null 2>&1 &
-```
-
 # Daemon Skill
 
 Manages your public daemon profile — a living digital representation of what you're working on, thinking about, reading, and building. Automatically aggregates data from your PAI system with deterministic security filtering to ensure only publicly safe content is published.

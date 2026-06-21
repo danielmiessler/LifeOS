@@ -1,16 +1,5 @@
 # StandardCreativity Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the StandardCreativity workflow in the BeCreative skill to apply creative thinking"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **StandardCreativity** in **BeCreative**...
-
 ---
 
 **When to use:** Most creative tasks requiring depth and quality

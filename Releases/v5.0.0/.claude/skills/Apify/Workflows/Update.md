@@ -2,17 +2,6 @@
 
 Check Apify API and actor ecosystem for updates.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Update workflow in the Apify skill to check updates"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **Update** in **Apify**...
-
 ---
 
 ## When to Use

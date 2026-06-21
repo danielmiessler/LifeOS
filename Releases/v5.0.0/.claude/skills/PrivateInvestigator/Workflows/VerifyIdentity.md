@@ -1,16 +1,5 @@
 # Verify Identity Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the VerifyIdentity workflow in the PrivateInvestigator skill to confirm identity"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **VerifyIdentity** workflow in the **PrivateInvestigator** skill to confirm identity...
-
 **Purpose:** Confirm that discovered information belongs to the correct person
 
 **When to Use:**

@@ -6,7 +6,7 @@ import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
 
-type Args = { slug: string; prompt?: string; model: string; effort: string; sandbox: string; timeoutMs: number; pulseUrl: string };
+type Args = { slug: string; prompt?: string; model: string; effort: string; sandbox: string; timeoutMs: number };
 type JsonRecord = Record<string, unknown>;
 type RingEntry = { raw: JsonRecord; type: string };
 type RunState = { startMs: number; childAlive: boolean; timedOut: boolean; interrupted: boolean };
@@ -16,10 +16,9 @@ type SignalControl = { clear: () => void };
 type Paths = { eventsFile: string; finalFile: string };
 type FinalInput = { verdict: "success" | "error" | "timeout"; exitCode: number | null; eventsFile: string; finalFile: string; durationMs: number; finalMessage: string };
 const RING_SIZE = 5;
-const PULSE_TIMEOUT_MS = 2000;
 const ESCALATE_MS = 5000;
 function parseArgs(argv: string[]): Args {
-  const args: Partial<Args> = { model: "gpt-5.4", effort: "high", sandbox: "workspace-write", timeoutMs: 300000, pulseUrl: "http://localhost:31337/notify" };
+  const args: Partial<Args> = { model: "gpt-5.4", effort: "high", sandbox: "workspace-write", timeoutMs: 300000 };
   const seen = new Set<string>();
   const valueFor = (flag: string, inline: string | undefined, index: number): [string, number] => {
     if (inline !== undefined) return [inline, index];
@@ -41,7 +40,6 @@ function parseArgs(argv: string[]): Args {
       case "--reasoning-effort": args.effort = nonEmpty(flag, value); break;
       case "--sandbox": args.sandbox = nonEmpty(flag, value); break;
       case "--timeout-ms": args.timeoutMs = positiveInt(flag, value); break;
-      case "--pulse-url": args.pulseUrl = validUrl(flag, value); break;
       default: throw new Error(`unknown flag: ${flag}`);
     }
   }
@@ -55,10 +53,6 @@ function positiveInt(flag: string, value: string): number {
   const parsed = Number(value);
   if (!Number.isSafeInteger(parsed) || parsed <= 0) throw new Error(`${flag} must be a positive safe integer`);
   return parsed;
-}
-function validUrl(flag: string, value: string): string {
-  try { return new URL(nonEmpty(flag, value)).toString(); }
-  catch (error: unknown) { throw new Error(`${flag} must be a valid URL: ${String(error)}`); }
 }
 function homeDir(): string { const home = process.env.HOME; if (!home) throw new Error("HOME is not set"); return home; }
 function preflightCodex(home: string): string | null {
@@ -93,7 +87,7 @@ async function writeLine(stream: WriteStream, line: string): Promise<void> {
 async function endStream(stream: WriteStream): Promise<void> {
   await new Promise<void>((resolve, reject) => { stream.once("error", reject); stream.end(resolve); });
 }
-async function wireStdout(child: ChildProcessWithoutNullStreams, eventsFile: string, ring: RingEntry[], args: Args): Promise<void> {
+async function wireStdout(child: ChildProcessWithoutNullStreams, eventsFile: string, ring: RingEntry[]): Promise<void> {
   const writer = createWriteStream(eventsFile, { flags: "a" });
   const rl = createInterface({ input: child.stdout, crlfDelay: Infinity });
   let warnedNoise = false, sentOpening = false;
@@ -114,7 +108,7 @@ async function wireStdout(child: ChildProcessWithoutNullStreams, eventsFile: str
       while (ring.length > RING_SIZE) ring.shift();
       if (!sentOpening && type === "thread.started") {
         sentOpening = true;
-        void sendNotify(args.pulseUrl, { message: "Forge: spinning up codex", agent: "Forge", slug: args.slug, voice_enabled: false });
+        reportProgress("Forge: spinning up codex");
       }
     }
   } finally { await endStream(writer); }
@@ -130,7 +124,7 @@ function eventType(record: JsonRecord): string | null {
   if (msg && typeof msg.type === "string") return msg.type;
   return null;
 }
-function startProgressPoller(ring: RingEntry[], args: Args): () => void {
+function startProgressPoller(ring: RingEntry[]): () => void {
   let lastSummary = "", cleaned = false;
   const timer = setInterval(() => {
     try {
@@ -139,7 +133,7 @@ function startProgressPoller(ring: RingEntry[], args: Args): () => void {
       const summary = buildSummary(entry);
       if (!summary || summary.message === lastSummary) return;
       lastSummary = summary.message;
-      void sendNotify(args.pulseUrl, { message: summary.message, voice_enabled: false, agent: "Forge", slug: args.slug, phase: "FORGE", item_type: summary.itemType });
+      reportProgress(summary.message);
     } catch (error: unknown) { console.error(`ForgeProgress: progress poller failed: ${String(error)}`); }
   }, 8000);
   return () => { if (cleaned) return; cleaned = true; clearInterval(timer); };
@@ -165,20 +159,17 @@ function extractText(value: unknown): string | null {
 }
 function collapse(text: string): string { return text.replace(/\s+/g, " ").trim() || "completed"; }
 function truncate(text: string, limit: number): string { return text.length <= limit ? text : `${text.slice(0, Math.max(0, limit - 3))}...`; }
-async function sendNotify(url: string, body: JsonRecord): Promise<void> {
-  const controller = new AbortController(), timer = setTimeout(() => controller.abort(), PULSE_TIMEOUT_MS);
-  try {
-    const response = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, voice_enabled: false }), signal: controller.signal });
-    if (!response.ok) console.error(`ForgeProgress: Pulse notify failed with HTTP ${response.status}`);
-  } catch (error: unknown) { console.error(`ForgeProgress: Pulse notify failed: ${String(error)}`); }
-  finally { clearTimeout(timer); }
+function reportProgress(message: string): void {
+  // Text progress to stderr. Voice/Pulse emission was removed; the durable
+  // progress record is the JSONL events file and the final stdout line.
+  console.error(`ForgeProgress: ${message}`);
 }
 function wireTimeout(child: ChildProcessWithoutNullStreams, state: RunState, args: Args, cleanupPoller: () => void): TimeoutControl {
   let killTimer: ReturnType<typeof setTimeout> | undefined;
   const timeoutTimer = setTimeout(() => {
     state.timedOut = true; cleanupPoller(); sendChildSignal(child, "SIGTERM", "timeout");
     killTimer = setTimeout(() => { if (state.childAlive) sendChildSignal(child, "SIGKILL", "timeout escalation"); }, ESCALATE_MS);
-    void sendNotify(args.pulseUrl, { message: `Forge: codex timed out after ${args.timeoutMs}ms`, voice_enabled: false, agent: "Forge", slug: args.slug });
+    reportProgress(`Forge: codex timed out after ${args.timeoutMs}ms`);
   }, args.timeoutMs);
   return {
     clearNaturalExit: () => { if (!state.timedOut) clearTimeout(timeoutTimer); if (killTimer) clearTimeout(killTimer); },
@@ -228,13 +219,13 @@ export default async function main(argv: string[]): Promise<number> {
     const paths = await ensureSlugDir(home, args.slug), state: RunState = { startMs: Date.now(), childAlive: true, timedOut: false, interrupted: false }, ring: RingEntry[] = [];
     const child = spawnCodex(codexPath, args, paths.finalFile, prompt);
     child.stderr.pipe(process.stderr);
-    const cleanupPoller = startProgressPoller(ring, args), timeoutControl = wireTimeout(child, state, args, cleanupPoller), signalControl = wireSignals(child, state, timeoutControl, cleanupPoller);
+    const cleanupPoller = startProgressPoller(ring), timeoutControl = wireTimeout(child, state, args, cleanupPoller), signalControl = wireSignals(child, state, timeoutControl, cleanupPoller);
     let stdoutError: Error | null = null;
-    const stdoutTask = wireStdout(child, paths.eventsFile, ring, args).catch((error: unknown) => { stdoutError = error instanceof Error ? error : new Error(String(error)); console.error(`ForgeProgress: stdout wiring failed: ${String(error)}`); sendChildSignal(child, "SIGTERM", "stdout failure"); });
+    const stdoutTask = wireStdout(child, paths.eventsFile, ring).catch((error: unknown) => { stdoutError = error instanceof Error ? error : new Error(String(error)); console.error(`ForgeProgress: stdout wiring failed: ${String(error)}`); sendChildSignal(child, "SIGTERM", "stdout failure"); });
     const exitInfo = await waitForChild(child);
     state.childAlive = false; timeoutControl.clearNaturalExit(); cleanupPoller(); signalControl.clear(); await stdoutTask;
     const durationMs = Date.now() - state.startMs;
-    void sendNotify(args.pulseUrl, { message: `Forge: codex complete (${durationMs}ms, exit ${exitInfo.code})`, voice_enabled: false, agent: "Forge", slug: args.slug });
+    reportProgress(`Forge: codex complete (${durationMs}ms, exit ${exitInfo.code})`);
     if (exitInfo.error) console.error(`ForgeProgress: codex spawn failed: ${exitInfo.error.message}`);
     const finalMessage = await readFinalMessage(paths.finalFile);
     const verdict: "success" | "error" | "timeout" = state.timedOut ? "timeout" : exitInfo.code === 0 && !stdoutError && !exitInfo.error && !state.interrupted ? "success" : "error";

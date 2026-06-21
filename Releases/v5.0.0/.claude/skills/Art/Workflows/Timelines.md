@@ -2,17 +2,6 @@
 
 **Hand-drawn timelines showing evolution, trends, and transformations using UL aesthetic.**
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Timelines workflow in the Art skill to create timelines"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **Timelines** in **Art**...
-
 ---
 
 Creates **ILLUSTRATED TIMELINES** — chronological progressions with visual metaphors for each stage, combining narrative arc with temporal information.

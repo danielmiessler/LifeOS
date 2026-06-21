@@ -1,16 +1,5 @@
 # Reproduce Workflow
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Reproduce workflow in the Interceptor skill to reproduce a bug"}' \
-  > /dev/null 2>&1 &
-```
-
-Running **Reproduce** in **Interceptor**...
-
 ---
 
 Reproduce a reported bug by opening the affected page in real Chrome BEFORE reading any code. Captures console errors, network failures, and visual state as primary evidence. Code analysis comes after reproduction, never before.

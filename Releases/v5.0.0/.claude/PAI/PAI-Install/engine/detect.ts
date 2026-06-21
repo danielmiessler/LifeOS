@@ -71,7 +71,6 @@ function detectExisting(
   const result: DetectionResult["existing"] = {
     paiInstalled: false,
     hasApiKeys: false,
-    elevenLabsKeyFound: false,
     backupPaths: [],
     apiKeys: {},
   };
@@ -126,7 +125,6 @@ export function scanApiKeys(
   ];
 
   const patterns: Array<[keyof NonNullable<DetectionResult["existing"]["apiKeys"]>, RegExp]> = [
-    ["elevenLabs", /(?:^|\n)\s*(?:export\s+)?ELEVENLABS_API_KEY\s*=\s*["']?([^"'\s#]+)/],
     ["anthropic", /(?:^|\n)\s*(?:export\s+)?ANTHROPIC_API_KEY\s*=\s*["']?([^"'\s#]+)/],
     ["openai", /(?:^|\n)\s*(?:export\s+)?OPENAI_API_KEY\s*=\s*["']?([^"'\s#]+)/],
     ["google", /(?:^|\n)\s*(?:export\s+)?(?:GEMINI_API_KEY|GOOGLE_API_KEY|GOOGLE_GENAI_API_KEY)\s*=\s*["']?([^"'\s#]+)/],
@@ -323,16 +321,6 @@ function detectPrincipal(): DetectionResult["principal"] {
 }
 
 /**
- * macOS-only: read the system speech default voice. Skipped on Linux.
- */
-function detectVoice(): DetectionResult["voice"] {
-  if (process.platform !== "darwin") return undefined;
-  const v = tryExec("defaults read com.apple.speech.synthesis.general.prefs SelectedVoiceName 2>/dev/null");
-  if (!v) return undefined;
-  return { systemDefault: v };
-}
-
-/**
  * Run full system detection. Safe, read-only, non-destructive.
  */
 export function detectSystem(): DetectionResult {
@@ -355,7 +343,6 @@ export function detectSystem(): DetectionResult {
     },
     existing: detectExisting(home, paiDir, configDir),
     principal: detectPrincipal(),
-    voice: detectVoice(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     homeDir: home,
     paiDir,
@@ -363,35 +350,3 @@ export function detectSystem(): DetectionResult {
   };
 }
 
-/**
- * Validate an ElevenLabs API key.
- * Uses /v1/voices endpoint (requires only xi-api-key header, no specific scope)
- * instead of /v1/user (requires user_read permission, which many keys lack).
- * Also handles 401 with missing_permissions as "valid key, limited scope" —
- * TTS works fine with a known voice_id even without voices_read permission.
- */
-export async function validateElevenLabsKey(key: string): Promise<{ valid: boolean; error?: string }> {
-  try {
-    const res = await fetch("https://api.elevenlabs.io/v1/voices", {
-      headers: { "xi-api-key": key },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (res.ok) return { valid: true };
-
-    // 401 with missing_permissions means the key IS valid but lacks a specific scope.
-    // TTS still works (doesn't need voices_read to use a known voice_id).
-    if (res.status === 401) {
-      try {
-        const body = await res.json();
-        if (body?.detail?.status === "missing_permissions") {
-          return { valid: true };
-        }
-      } catch { /* fall through to error */ }
-    }
-
-    return { valid: false, error: `HTTP ${res.status}` };
-  } catch (e: any) {
-    return { valid: false, error: e.message || "Network error" };
-  }
-}

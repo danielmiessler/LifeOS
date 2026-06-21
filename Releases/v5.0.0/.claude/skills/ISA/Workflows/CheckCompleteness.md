@@ -57,15 +57,6 @@ isc_quality:
 
 ## Procedure
 
-### Step 1 — Voice notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the CheckCompleteness workflow in the ISA skill"}' \
-  > /dev/null 2>&1 &
-```
-
 ### Step 2 — Read the ISA
 
 Load `isa_path`. Parse frontmatter and section headers.

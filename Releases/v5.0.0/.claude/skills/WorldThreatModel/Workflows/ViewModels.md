@@ -15,20 +15,12 @@ Read and display the current state of world threat models.
 
 ## Workflow Steps
 
-### Step 1: Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Checking current world model state", "voice_id": "fTtv3eikoepIosk8dTZ5"}'
-```
-
-### Step 2: Read INDEX
+### Step 1: Read INDEX
 
 Read `~/.claude/PAI/MEMORY/RESEARCH/WorldModels/INDEX.md`.
 If it doesn't exist: "No world models found. Run 'update world models' to create them."
 
-### Step 3: Determine View Scope
+### Step 2: Determine View Scope
 
 **Overview** (default — no specific horizon mentioned):
 - Display the INDEX table with all horizons, dates, versions, confidence
@@ -43,7 +35,7 @@ If it doesn't exist: "No world models found. Run 'update world models' to create
 - Side-by-side key themes from selected horizons
 - Highlight where short-term and long-term trends conflict
 
-### Step 4: Staleness Check
+### Step 3: Staleness Check
 
 For each model, compare `last_updated` to today:
 - **< 7 days**: 🟢 Fresh
@@ -51,7 +43,7 @@ For each model, compare `last_updated` to today:
 - **30-90 days**: 🟠 Aging — recommend refresh
 - **> 90 days**: 🔴 Stale — strongly recommend update
 
-### Step 5: Output
+### Step 4: Output
 
 ```markdown
 # 🌍 World Threat Model Status

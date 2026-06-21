@@ -11,17 +11,14 @@ import { PAI_VERSION } from "./types";
 import { homedir } from "os";
 
 /**
- * Check if Pulse is running. PAI 5.0 absorbed the standalone voice server
- * into Pulse on port 31337 — Pulse serves /notify for voice + the Life
- * Dashboard + observability. Probe /notify with an empty silent payload.
- * Any 2xx-4xx response means Pulse is up and the route is registered.
+ * Check if Pulse is running. PAI 5.0 ships Pulse on port 31337 — the Life
+ * Dashboard + observability runtime. Probe the health endpoint; any
+ * 2xx-4xx response means Pulse is up and the route is registered.
  */
 async function checkPulseHealth(): Promise<boolean> {
   try {
-    const res = await fetch("http://localhost:31337/notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message: "", voice_enabled: false }),
+    const res = await fetch("http://localhost:31337/api/pulse/health", {
+      method: "GET",
       signal: AbortSignal.timeout(2000),
     });
     return res.status >= 200 && res.status < 500;
@@ -93,7 +90,6 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
   }
 
   const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
-  const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
   const checks: ValidationCheck[] = [];
 
   // 1. settings.json exists and is valid JSON
@@ -182,51 +178,11 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     critical: false,
   });
 
-  // 5. ElevenLabs key stored — check all three possible locations
-  const envPaths = [
-    join(configDir, ".env"),
-    join(paiDir, ".env"),
-    join(homedir(), ".env"),
-  ];
-  let elevenLabsKeyStored = false;
-  let elevenLabsKeyLocation = "";
-  for (const ep of envPaths) {
-    if (existsSync(ep)) {
-      try {
-        const envContent = readFileSync(ep, "utf-8");
-        if (envContent.includes("ELEVENLABS_API_KEY=") &&
-            !envContent.includes("ELEVENLABS_API_KEY=\n")) {
-          elevenLabsKeyStored = true;
-          elevenLabsKeyLocation = ep;
-          break;
-        }
-      } catch {}
-    }
-  }
-
-  checks.push({
-    name: "ElevenLabs API key",
-    passed: elevenLabsKeyStored,
-    detail: elevenLabsKeyStored ? `Stored in ${elevenLabsKeyLocation}` : state.collected.elevenLabsKey ? "Collected but not saved" : "Not configured",
-    critical: false,
-  });
-
-  // 6. DA voice configured in settings (nested under voices.main.voiceId)
-  const voiceId = settings?.daidentity?.voices?.main?.voiceId;
-  const voiceIdConfigured = !!voiceId;
-
-  checks.push({
-    name: "DA voice ID",
-    passed: voiceIdConfigured,
-    detail: voiceIdConfigured ? `Voice ID: ${voiceId.substring(0, 8)}...` : "Not configured",
-    critical: false,
-  });
-
-  // 7. Pulse running — embeds voice + dashboard + observability (PAI 5.0)
+  // 5. Pulse running — Life Dashboard + observability (PAI 5.0)
   const pulseHealthy = await checkPulseHealth();
 
   checks.push({
-    name: "Pulse (voice + dashboard)",
+    name: "Pulse (Life Dashboard)",
     passed: pulseHealthy,
     detail: pulseHealthy
       ? "Running on localhost:31337"
@@ -287,8 +243,6 @@ export function generateSummary(state: InstallState): InstallSummary {
     principalName: state.collected.principalName || "User",
     aiName: state.collected.aiName || "PAI",
     timezone: state.collected.timezone || "UTC",
-    voiceEnabled: state.completedSteps.includes("voice"),
-    voiceMode: state.collected.elevenLabsKey ? "elevenlabs" : state.completedSteps.includes("voice") ? "macos-say" : "none",
     catchphrase: state.collected.catchphrase || "",
     installType: state.installType || "fresh",
     completedSteps: state.completedSteps.length,

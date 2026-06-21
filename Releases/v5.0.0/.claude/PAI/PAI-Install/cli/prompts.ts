@@ -9,7 +9,7 @@
  */
 
 import * as readline from "readline";
-import { c, print, printError, printQuestion, printWarning } from "./display";
+import { c, print, printQuestion } from "./display";
 
 const ANSWER_PREFIX = `  ${c.green}❯ you:${c.reset} `;
 
@@ -17,7 +17,6 @@ type PromptChoiceOption = {
   label: string;
   value: string;
   description?: string;
-  voiceId?: string;
 };
 
 function isAutomated(): boolean {
@@ -116,83 +115,6 @@ export async function promptChoice(
       }
     });
   });
-}
-
-export async function promptChoiceWithPreview(
-  question: string,
-  choices: { label: string; value: string; description?: string; voiceId?: string }[],
-  onPreview: (choice: { label: string; value: string; voiceId?: string }) => Promise<void>,
-  daName?: string,
-): Promise<string> {
-  if (isAutomated()) return choices[0]?.value ?? "";
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const ask = (prompt: string): Promise<string> => new Promise((resolve) => {
-    rl.question(prompt, resolve);
-  });
-
-  printQuestion(question, daName);
-  for (let i = 0; i < choices.length; i++) {
-    const choice = choices[i];
-    print(`  ${c.lightBlue}┌────────────────────────────────────────────────────────────┐${c.reset}`);
-    print(`  ${c.lightBlue}│${c.reset} ${c.blue}${i + 1})${c.reset} ${c.bold}${choice.label}${c.reset}${choice.voiceId ? ` ${c.gray}— ${choice.voiceId}${c.reset}` : ""}`);
-    if (choice.description) {
-      print(`  ${c.lightBlue}│${c.reset} ${c.gray}${choice.description}${c.reset}`);
-    }
-    print(`  ${c.lightBlue}│${c.reset} ${choice.voiceId ? `${c.lightBlue}▶ p${i + 1} to preview${c.reset}` : `${c.gray}No preview available${c.reset}`}`);
-    print(`  ${c.lightBlue}└────────────────────────────────────────────────────────────┘${c.reset}`);
-  }
-
-  try {
-    while (true) {
-      const trimmed = (await ask(ANSWER_PREFIX)).trim();
-
-      if (trimmed === "") {
-        continue;
-      }
-
-      const selectedMatch = /^(\d+)$/.exec(trimmed);
-      if (selectedMatch) {
-        const idx = parseInt(selectedMatch[1], 10) - 1;
-        if (idx >= 0 && idx < choices.length) {
-          return choices[idx].value;
-        }
-        printWarning(`pick a number between 1 and ${choices.length}`);
-        continue;
-      }
-
-      const previewMatch = /^p(\d+)$/i.exec(trimmed);
-      if (previewMatch) {
-        const idx = parseInt(previewMatch[1], 10) - 1;
-        if (idx < 0 || idx >= choices.length) {
-          printWarning(`preview number must be between 1 and ${choices.length}`);
-          continue;
-        }
-
-        const choice = choices[idx];
-        if (!choice.voiceId) {
-          printWarning("no preview available");
-          continue;
-        }
-
-        try {
-          await onPreview({ label: choice.label, value: choice.value, voiceId: choice.voiceId });
-        } catch (error) {
-          const reason = error instanceof Error ? error.message : String(error);
-          printError(`preview unavailable: ${reason}`);
-        }
-        continue;
-      }
-
-      printWarning(`didn't understand ${trimmed}`);
-    }
-  } finally {
-    rl.close();
-  }
 }
 
 /**

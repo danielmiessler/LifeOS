@@ -134,8 +134,7 @@ These define user-specific preferences. If the directory does not exist, proceed
 │   └── SceneConstruction.md     # Scene building guidelines
 ├── Agents/                      # Agents skill customizations
 │   ├── EXTEND.yaml              # Extension manifest
-│   ├── PREFERENCES.md           # Named agent summary
-│   └── VoiceConfig.json         # ElevenLabs voice mappings
+│   └── PREFERENCES.md           # Named agent summary
 ├── Webdesign/                   # Webdesign customizations
 │   ├── EXTEND.yaml              # Extension manifest
 │   └── PREFERENCES.md           # Design tokens, palette
@@ -173,7 +172,7 @@ description: "What this customization adds"
 | Content Type | Location | Example |
 |--------------|----------|---------|
 | User preferences | `SKILLCUSTOMIZATIONS/{Skill}/PREFERENCES.md` | Art style, color palette |
-| Named configurations | `SKILLCUSTOMIZATIONS/{Skill}/[name].md` | Character specs, voice configs |
+| Named configurations | `SKILLCUSTOMIZATIONS/{Skill}/[name].md` | Character specs, agent rosters |
 | Skill logic | `skills/{Skill}/SKILL.md` | Generic, shareable skill code |
 
 ### Creating a Customization
@@ -251,22 +250,13 @@ science_cycle_time: meso
 
 [Brief description of what the skill does]
 
-## Voice Notification
+## Workflow Notification
 
-**When executing a workflow, do BOTH:**
+**When executing a workflow, output a text notification:**
 
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:31337/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running the WORKFLOWNAME workflow in the SKILLNAME skill to ACTION"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **SkillName** skill to ACTION...
-   ```
+```
+Running the **WorkflowName** workflow in the **SkillName** skill to ACTION...
+```
 
 **Full documentation:** `~/.claude/PAI/DOCUMENTATION/Notifications/NotificationSystem.md`
 
@@ -619,22 +609,13 @@ description: Complete blog workflow. USE WHEN user mentions doing anything with 
 
 Complete blog workflow.
 
-## Voice Notification
+## Workflow Notification
 
-**When executing a workflow, do BOTH:**
+**When executing a workflow, output a text notification:**
 
-1. **Send voice notification**:
-   ```bash
-   curl -s -X POST http://localhost:31337/notify \
-     -H "Content-Type: application/json" \
-     -d '{"message": "Running WORKFLOWNAME in Blogging"}' \
-     > /dev/null 2>&1 &
-   ```
-
-2. **Output text notification**:
-   ```
-   Running the **WorkflowName** workflow in the **Blogging** skill to ACTION...
-   ```
+```
+Running the **WorkflowName** workflow in the **Blogging** skill to ACTION...
+```
 
 **Full documentation:** `~/.claude/PAI/DOCUMENTATION/Notifications/NotificationSystem.md`
 
@@ -996,7 +977,7 @@ bun Generate.ts \
 When a skill is invoked, follow the SKILL.md instructions step-by-step rather than analyzing the skill structure.
 
 **The pattern:**
-1. Execute voice notification (if present)
+1. Output the workflow notification (if present)
 2. Use the routing table to find the right workflow
 3. Follow the workflow instructions in order
 4. Your behavior should match the Examples section

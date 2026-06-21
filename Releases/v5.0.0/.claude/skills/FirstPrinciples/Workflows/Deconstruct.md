@@ -2,17 +2,6 @@
 
 **Purpose**: Break down any problem, system, or concept into its fundamental constituent parts and irreducible truths.
 
-## Voice Notification
-
-```bash
-curl -s -X POST http://localhost:31337/notify \
-  -H "Content-Type: application/json" \
-  -d '{"message": "Running the Deconstruct workflow in the FirstPrinciples skill to break down components"}' \
-  > /dev/null 2>&1 &
-```
-
-Running the **Deconstruct** workflow in the **FirstPrinciples** skill to break down components...
-
 ---
 
 **When to Use**:
