@@ -353,7 +353,7 @@ const SESSION_NOISE = new Set([
 /**
  * Extract up to 4 representative words from a session name.
  * "Surface Filter Bar Redesign" → "SURFACE FILTER BAR REDESIGN"
- * "Voice Server Phase Announcements" → "VOICE SERVER PHASE ANNOUNCEMENTS"
+ * "Git Server Phase Announcements" → "GIT SERVER PHASE ANNOUNCEMENTS"
  * Returns uppercase. Filters noise words but keeps up to 4 meaningful ones.
  */
 export function getSessionOneWord(sessionId: string): string | null {

@@ -1,6 +1,6 @@
 # CreateCustomAgent Workflow
 
-**Creates custom agents with unique personalities, colors, and voices using ComposeAgent.**
+**Creates custom agents with unique personalities and colors using ComposeAgent.**
 
 ## When to Use
 
@@ -23,7 +23,7 @@ Extract from {PRINCIPAL.NAME}'s request:
 
 ### Step 2: For EACH Agent, Run ComposeAgent with DIFFERENT Traits
 
-**CRITICAL: Each agent MUST have different trait combinations to get unique voices and colors.**
+**CRITICAL: Each agent MUST have different trait combinations to get unique personalities and colors.**
 
 ```bash
 # Example for 3 custom research agents:
@@ -47,14 +47,12 @@ bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts \
   --output json
 ```
 
-### Step 3: Extract Prompt, Voice ID, and Color from Each
+### Step 3: Extract Prompt and Color from Each
 
 ComposeAgent returns JSON with:
 ```json
 {
   "name": "Research Enthusiastic Explorer",
-  "voice": "Jeremy",
-  "voice_id": "bVMeCyTHy58xNoL34h3p",
   "color": "#FF6B35",
   "traits": ["research", "enthusiastic", "exploratory"],
   "prompt": "# Dynamic Agent: Research Enthusiastic Explorer\n\nYou are a specialized agent..."
@@ -106,24 +104,24 @@ Task({
 
 ## Trait Variation Strategies
 
-When creating multiple custom agents, vary traits to ensure different voices:
+When creating multiple custom agents, vary traits to ensure distinct personalities:
 
 **For Research Tasks:**
-- Agent 1: research + enthusiastic + exploratory → Jeremy (energetic)
-- Agent 2: research + skeptical + thorough → George (intellectual)
-- Agent 3: research + analytical + systematic → Drew (professional)
-- Agent 4: research + creative + bold → Fin (charismatic)
-- Agent 5: research + empathetic + synthesizing → Thomas (gentle)
+- Agent 1: research + enthusiastic + exploratory
+- Agent 2: research + skeptical + thorough
+- Agent 3: research + analytical + systematic
+- Agent 4: research + creative + bold
+- Agent 5: research + empathetic + synthesizing
 
 **For Security Analysis:**
-- Agent 1: security + adversarial + bold → Callum (edgy hacker)
-- Agent 2: security + skeptical + meticulous → Sam (gritty authentic)
-- Agent 3: security + cautious + systematic → Bill (trustworthy)
+- Agent 1: security + adversarial + bold
+- Agent 2: security + skeptical + meticulous
+- Agent 3: security + cautious + systematic
 
 **For Business Strategy:**
-- Agent 1: business + bold + rapid → Domi (assertive CEO)
-- Agent 2: business + analytical + comparative → Drew (balanced news)
-- Agent 3: business + pragmatic + consultative → Charlie (casual laid-back)
+- Agent 1: business + bold + rapid
+- Agent 2: business + analytical + comparative
+- Agent 3: business + pragmatic + consultative
 
 ## Timing & Model Selection
 
@@ -153,46 +151,41 @@ If `--timing` is omitted, agents get no scope section (backward compatible).
 ```bash
 # Agent 1 - Climate Science Enthusiast
 bun run ComposeAgent.ts --traits "research,enthusiastic,thorough" --task "Analyze climate data patterns" --output json
-# Returns: voice="Jeremy", voice_id="bVMeCyTHy58xNoL34h3p"
 
 # Agent 2 - Skeptical Data Analyst
 bun run ComposeAgent.ts --traits "data,skeptical,systematic" --task "Analyze climate data patterns" --output json
-# Returns: voice="Baron", voice_id="onwK4e9ZLuTAKqWW03F9"
 
 # Agent 3 - Creative Pattern Finder
 bun run ComposeAgent.ts --traits "data,creative,exploratory" --task "Analyze climate data patterns" --output json
-# Returns: voice="Freya", voice_id="jsCqWAovK2LkecY7zXl4"
 
 # Agent 4 - Meticulous Validator
 bun run ComposeAgent.ts --traits "research,meticulous,comparative" --task "Analyze climate data patterns" --output json
-# Returns: voice="Charlotte", voice_id="XB0fDUnXU5powFXDhCwa"
 
 # Agent 5 - Synthesizing Strategist
 bun run ComposeAgent.ts --traits "research,analytical,synthesizing" --task "Analyze climate data patterns" --output json
-# Returns: voice="Charlotte", voice_id="XB0fDUnXU5powFXDhCwa"
 
 # Launch all 5 in parallel (single message, 5 Task calls)
-# Each agent has unique personality and voice
+# Each agent has a unique personality
 ```
 
-**Result:** 5 distinct agents with different analytical approaches and unique voices analyzing the data from different perspectives.
+**Result:** 5 distinct agents with different analytical approaches and unique personalities analyzing the data from different perspectives.
 
 ## Common Mistakes to Avoid
 
 **❌ WRONG: Using same traits for all agents**
 ```bash
-# All agents get same voice!
+# All agents get the same personality!
 bun run ComposeAgent.ts --traits "research,analytical" # Agent 1
-bun run ComposeAgent.ts --traits "research,analytical" # Agent 2 (same voice!)
-bun run ComposeAgent.ts --traits "research,analytical" # Agent 3 (same voice!)
+bun run ComposeAgent.ts --traits "research,analytical" # Agent 2 (same personality!)
+bun run ComposeAgent.ts --traits "research,analytical" # Agent 3 (same personality!)
 ```
 
-**✅ RIGHT: Varying traits for unique voices**
+**✅ RIGHT: Varying traits for unique personalities**
 ```bash
-# Each agent gets different voice
-bun run ComposeAgent.ts --traits "research,enthusiastic,exploratory"  # Jeremy
-bun run ComposeAgent.ts --traits "research,skeptical,systematic"      # George
-bun run ComposeAgent.ts --traits "research,creative,synthesizing"     # Freya
+# Each agent gets a different personality
+bun run ComposeAgent.ts --traits "research,enthusiastic,exploratory"
+bun run ComposeAgent.ts --traits "research,skeptical,systematic"
+bun run ComposeAgent.ts --traits "research,creative,synthesizing"
 ```
 
 **❌ WRONG: Launching agents sequentially**
@@ -211,35 +204,18 @@ Task({ ... })  // Agent 2
 Task({ ... })  // Agent 3
 ```
 
-## Voice Assignment Logic
+## Color Assignment Logic
 
-ComposeAgent automatically maps trait combinations to voices:
-
-1. **Exact combination matches** (highest priority)
-   - `["contrarian", "skeptical"]` → Clyde (gravelly intensity)
-   - `["enthusiastic", "creative"]` → Jeremy (high energy)
-
-2. **Personality fallbacks** (medium priority)
-   - `skeptical` → George (academic warmth)
-   - `enthusiastic` → Jeremy (excited)
-   - `bold` → Domi (assertive CEO)
-
-3. **Expertise fallbacks** (low priority)
-   - `security` → Callum (hacker character)
-   - `legal` → Alice (news authority)
-   - `research` → Adam (narratorial)
-
-4. **Default** (no matches)
-   - the user (BBC anchor authority)
+ComposeAgent deterministically derives a unique color from the sorted trait combination — the same trait set always maps to the same color, and different trait sets map to visually distinct colors for terminal distinction.
 
 ## Related Workflows
 
 - **ListTraits** - Show available traits for composition
-- **SpawnParallelAgents** - Launch parallel agents for grunt work (same voice, no custom identity)
+- **SpawnParallelAgents** - Launch parallel agents for grunt work (same identity, no custom personality)
 
 ## References
 
 - Trait definitions: `~/.claude/skills/Agents/Data/Traits.yaml`
 - Agent template: `~/.claude/skills/Agents/Templates/DynamicAgent.hbs`
 - ComposeAgent tool: `~/.claude/skills/Agents/Tools/ComposeAgent.ts`
-- Voice mappings: `~/.claude/skills/Agents/AgentPersonalities.md`
+- Agent personalities: `~/.claude/skills/Agents/AgentPersonalities.md`

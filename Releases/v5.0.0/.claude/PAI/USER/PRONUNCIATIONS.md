@@ -1,11 +1,8 @@
 # Pronunciations — User
 
-> Bootstrap default. Run `/interview` to capture words the DA must say
-> correctly.
+> Bootstrap default. Run `/interview` to capture pronunciation notes for reference.
 
-Words, names, and acronyms the TTS layer needs to pronounce specifically.
-The voice subsystem (ElevenLabs and on-device fallbacks) reads this list
-and applies phonetic overrides.
+Pronunciation guide for words, names, and acronyms for reference.
 
 ## Names
 

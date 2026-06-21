@@ -9,7 +9,7 @@
  *   GET  /api/algorithm              — Work sessions from work.json
  *   GET  /api/agents                 — Subagent events from JSONL
  *   GET  /api/events/recent          — Merged recent events
- *   GET  /api/observability/*        — Voice events, tool failures, state, events
+ *   GET  /api/observability/*        — Tool failures, state, events
  *   GET  /api/novelty                — Novelty state
  *   GET  /api/ladder                 — Ladder pipeline data
  *   GET  /api/knowledge               — Knowledge archive state (domains, notes, tags)
@@ -57,7 +57,6 @@ const MEMORY_DIR = join(PAI_DIR, "MEMORY")
 const WORK_JSON_PATH = join(MEMORY_DIR, "STATE", "work.json")
 const NOVELTY_STATE_PATH = join(MEMORY_DIR, "STATE", "novelty-state.json")
 const SUBAGENT_EVENTS_PATH = join(MEMORY_DIR, "OBSERVABILITY", "subagent-events.jsonl")
-const VOICE_EVENTS_PATH = join(MEMORY_DIR, "VOICE", "voice-events.jsonl")
 const TOOL_FAILURES_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-failures.jsonl")
 const TOOL_ACTIVITY_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-activity.jsonl")
 const PATTERNS_PATH = join(PAI_DIR, "USER", "SECURITY", "PATTERNS.yaml")
@@ -244,7 +243,7 @@ function handleAlgorithmApi(): Response {
             criteriaCount: p.criteriaCount || 0,
             agentCount: p.agentCount || 0,
             phaseNarrative: p.phaseNarrative || undefined,
-            source: p.source || undefined, // 'voice' | 'prd' | 'merged' | undefined (legacy)
+            source: p.source || undefined, // 'prd' | 'merged' | undefined (legacy)
           }))
         : []
 
@@ -350,11 +349,6 @@ function handleAgentsApi(): Response {
 // ── /api/events/recent ──
 
 function handleEventsRecentApi(): Response {
-  const voiceEvents = readJsonlTail(VOICE_EVENTS_PATH, 50).map((e) => ({
-    ...e,
-    source: "voice",
-    type: e.event || e.type || "voice",
-  }))
   const toolFailures = readJsonlTail(TOOL_FAILURES_PATH, 50).map((e) => ({
     ...e,
     source: "tool-failure",
@@ -371,7 +365,7 @@ function handleEventsRecentApi(): Response {
     type: e.event || e.type || "tool_use",
   }))
 
-  const all = [...voiceEvents, ...toolFailures, ...subagentEvents, ...toolActivity]
+  const all = [...toolFailures, ...subagentEvents, ...toolActivity]
   all.sort((a, b) => {
     const ta = new Date(a.timestamp || 0).getTime()
     const tb = new Date(b.timestamp || 0).getTime()
@@ -379,12 +373,6 @@ function handleEventsRecentApi(): Response {
   })
 
   return Response.json({ events: all.slice(0, 200) })
-}
-
-// ── /api/observability/voice-events ──
-
-function handleVoiceEventsApi(): Response {
-  return Response.json(readJsonlTail(VOICE_EVENTS_PATH, 100).reverse())
 }
 
 // ── /api/observability/tool-failures ──
@@ -2585,7 +2573,6 @@ export async function handleObservabilityRequest(req: Request): Promise<Response
     if (pathname === "/api/observability/life-card") return handleLifeCardApi()
 
     // Individual observability sources
-    if (pathname === "/api/observability/voice-events") return handleVoiceEventsApi()
     if (pathname === "/api/observability/tool-failures") return handleToolFailuresApi()
 
     // Onboarding state — drives TemplateOnboarding banner on fresh installs

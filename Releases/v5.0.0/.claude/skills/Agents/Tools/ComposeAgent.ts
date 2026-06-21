@@ -404,7 +404,7 @@ ${body}
  * Matches the structural format of built-in agents in ~/.claude/agents/*.md:
  * - Character heading with name and archetype
  * - Domain expertise, personality, approach sections
- * - Startup sequence, voice notifications, output format
+ * - Startup sequence, output format
  * - Core identity and key practices
  */
 function buildSavedAgentBody(

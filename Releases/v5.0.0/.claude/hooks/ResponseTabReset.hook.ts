@@ -8,7 +8,7 @@
  *
  * TRIGGER: Stop
  *
- * NEEDS TRANSCRIPT: Yes (for response state and voice line extraction)
+ * NEEDS TRANSCRIPT: Yes (for response state and completion line extraction)
  *
  * HANDLER: handlers/TabState.ts
  */

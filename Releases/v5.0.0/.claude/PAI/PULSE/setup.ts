@@ -174,7 +174,7 @@ async function generateConfigs(opts: {
 #
 # type = "script" → runs command, $0 cost
 # type = "claude" → spawns claude --print, costs tokens
-# output = voice | telegram | ntfy | email | log
+# output = telegram | ntfy | email | log
 # Sentinels: NO_ACTION, NO_URGENT, NO_EVENTS → suppress dispatch
 
 [worker]

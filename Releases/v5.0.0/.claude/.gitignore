@@ -79,8 +79,6 @@ PAI/MEMORY/OBSERVABILITY/
 PAI/MEMORY/SECURITY/
 # Runtime state (ephemeral, regenerated)
 PAI/MEMORY/STATE/
-# Voice event logs (runtime)
-PAI/MEMORY/VOICE/
 # Archived data
 PAI/MEMORY/ARCHIVE/
 # Generated vector embeddings (regenerated)
@@ -112,7 +110,6 @@ PAI/helios/
 PAI/Releases/
 PAI/ide/
 PAI/IDE/
-PAI/voice-server
 PAI/PAIWorker/
 
 # Wrangler/Playwright caches (inside Arbol and elsewhere)

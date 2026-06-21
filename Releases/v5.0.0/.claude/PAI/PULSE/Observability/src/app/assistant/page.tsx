@@ -37,7 +37,6 @@ interface Personality {
   relationship: { dynamic: string; interaction_style: string };
   autonomy: { can_initiate: string[]; must_ask: string[] };
   writing: { style: string; avoid: string[]; prefer: string[] };
-  voice: { provider: string } | null;
 }
 
 interface UnifiedTask {
@@ -252,7 +251,7 @@ export default function AssistantPage() {
         {isFreshInstall && (
           <EmptyStateGuide
             section="DA Identity"
-            description="Your DA's name, voice, personality, and the diary they keep about your work together."
+            description="Your DA's name, personality, and the diary they keep about your work together."
             userDir="DA"
             daPromptExample="set up my DA's identity and personality"
           />
@@ -370,7 +369,7 @@ export default function AssistantPage() {
                         createTask.mutate({
                           description: newTaskDesc.trim(),
                           schedule: newTaskSchedule.trim() ? { type: "recurring", cron: newTaskSchedule.trim() } : undefined,
-                          action: { type: "notify", message: newTaskDesc.trim(), channel: "voice" },
+                          action: { type: "notify", message: newTaskDesc.trim(), channel: "telegram" },
                         });
                       }}
                       className="pill pill-creative"

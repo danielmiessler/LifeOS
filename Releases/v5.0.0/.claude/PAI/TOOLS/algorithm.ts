@@ -24,7 +24,7 @@
  *   - Creates a persistent algorithm state entry in MEMORY/STATE/algorithms/
  *   - Syncs criteria status from ISA checkboxes after each iteration (loop mode)
  *   - Registers in session-names.json for dashboard display
- *   - Sends voice notifications at key moments
+ *   - Sends status notifications at key moments
  *   - Same state store a web interface would read — unified mechanism
  *
  * USAGE:
@@ -426,10 +426,9 @@ function removeSessionName(sessionId: string): void {
 }
 
 // ─── Progress Notifications (text) ───────────────────────────────────────────
-// Voice/TTS emission via Pulse was removed. Progress is now reported as text to
-// stderr so the Algorithm loop still surfaces status without an audio subsystem.
+// Progress is reported as text to stderr so the Algorithm loop surfaces status.
 
-function voiceNotify(message: string): void {
+function statusNotify(message: string): void {
   console.error(`[algorithm] ${message}`);
 }
 
@@ -1089,9 +1088,9 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
   const sessionNameSuffix = agentCount > 1 ? ` (${agentCount} agents)` : "";
   writeSessionName(loopSessionId, `Loop: ${isaTitle}${sessionNameSuffix}`);
 
-  // ── Voice: Loop starting ──
+  // ── Status: Loop starting ──
   const agentMsg = agentCount > 1 ? ` ${agentCount} parallel agents.` : "";
-  voiceNotify(`Starting loop on ${isaTitle}. ${initialCriteria.total} criteria, ${initialCriteria.passing} already passing.${agentMsg}`);
+  statusNotify(`Starting loop on ${isaTitle}. ${initialCriteria.total} criteria, ${initialCriteria.passing} already passing.${agentMsg}`);
 
   // Initialize Loop in ISA
   updateFrontmatter(absPath, {
@@ -1133,7 +1132,7 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
       writeAlgorithmState(state);
       writeSessionName(loopSessionId, `Loop: ${isaTitle} [COMPLETE]`);
       const totalTime = ((Date.now() - state.algorithmStartedAt) / 1000).toFixed(0);
-      voiceNotify(`Loop complete! All ${criteria.total} criteria passing after ${frontmatter.iteration} iterations.`);
+      statusNotify(`Loop complete! All ${criteria.total} criteria passing after ${frontmatter.iteration} iterations.`);
 
       console.log("");
       console.log(`\x1b[32m╔${"═".repeat(66)}╗\x1b[0m`);
@@ -1153,7 +1152,7 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
       finalizeLoopState(state, "blocked", criteria);
       writeAlgorithmState(state);
       writeSessionName(loopSessionId, `Loop: ${isaTitle} [BLOCKED]`);
-      voiceNotify(`Loop blocked. ${criteria.passing} of ${criteria.total} passing. Remaining criteria need human review.`);
+      statusNotify(`Loop blocked. ${criteria.passing} of ${criteria.total} passing. Remaining criteria need human review.`);
 
       console.log("");
       console.log(`\x1b[33m\u26A0 THE ALGORITHM \u2014 BLOCKED\x1b[0m`);
@@ -1168,7 +1167,7 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
       finalizeLoopState(state, "failed", criteria);
       writeAlgorithmState(state);
       writeSessionName(loopSessionId, `Loop: ${isaTitle} [FAILED]`);
-      voiceNotify(`Loop reached max iterations. ${criteria.passing} of ${criteria.total} passing after ${max} iterations.`);
+      statusNotify(`Loop reached max iterations. ${criteria.passing} of ${criteria.total} passing after ${max} iterations.`);
 
       console.log("");
       console.log(`\x1b[33m\u26A0 THE ALGORITHM \u2014 Max iterations reached (${max})\x1b[0m`);
@@ -1186,7 +1185,7 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
       delete state.completedAt;
       writeAlgorithmState(state);
       writeSessionName(loopSessionId, `Loop: ${isaTitle} [PAUSED]`);
-      voiceNotify(`Loop paused at ${criteria.passing} of ${criteria.total} criteria.`);
+      statusNotify(`Loop paused at ${criteria.passing} of ${criteria.total} criteria.`);
 
       console.log("");
       console.log(`\x1b[33m\u23F8 THE ALGORITHM \u2014 Paused\x1b[0m`);
@@ -1199,7 +1198,7 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
       finalizeLoopState(state, "stopped", criteria);
       writeAlgorithmState(state);
       writeSessionName(loopSessionId, `Loop: ${isaTitle} [STOPPED]`);
-      voiceNotify(`Loop stopped.`);
+      statusNotify(`Loop stopped.`);
 
       console.log("");
       console.log(`\x1b[31m\u25A0 THE ALGORITHM \u2014 Stopped\x1b[0m`);
@@ -1279,9 +1278,9 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
       const gained = postCriteria.passing - criteria.passing;
       const iterElapsed = ((iterEndTime - iterStartTime) / 1000).toFixed(0);
       if (gained > 0) {
-        voiceNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total} passing. Gained ${gained}.`);
+        statusNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total} passing. Gained ${gained}.`);
       } else {
-        voiceNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total}. No new criteria passed.`);
+        statusNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total}. No new criteria passed.`);
       }
 
       const pct = postCriteria.total > 0 ? Math.round((postCriteria.passing / postCriteria.total) * 100) : 0;
@@ -1367,12 +1366,12 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
     state.loopIteration = newIteration;
     writeAlgorithmState(state);
 
-    // Voice: Progress update
+    // Status: Progress update
     const gained = postCriteria.passing - criteria.passing;
     if (gained > 0) {
-      voiceNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total} passing. Gained ${gained}.`);
+      statusNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total} passing. Gained ${gained}.`);
     } else {
-      voiceNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total}. No new criteria passed.`);
+      statusNotify(`Iteration ${newIteration} complete. ${postCriteria.passing} of ${postCriteria.total}. No new criteria passed.`);
     }
 
     // Log output summary
@@ -1412,7 +1411,7 @@ function runInteractive(isaPath: string): void {
   const criteria = countCriteria(content);
   const prompt = buildInteractivePrompt(absPath);
 
-  voiceNotify(`Starting interactive session on ${isaTitle}.`);
+  statusNotify(`Starting interactive session on ${isaTitle}.`);
 
   console.log(`\x1b[36m\u25CB\x1b[0m THE ALGORITHM (interactive mode) \u2014 ${isaTitle}`);
   console.log(`  ISA: ${absPath}`);
@@ -1473,7 +1472,7 @@ function runIdeate(
     userOverrides.length > 0 ? `overrides=${userOverrides.join(",")}` : null,
   ].filter(Boolean).join(" ");
 
-  voiceNotify(`Starting ideation on ${isaTitle}. ${configSummary || "Default parameters."}`);
+  statusNotify(`Starting ideation on ${isaTitle}. ${configSummary || "Default parameters."}`);
 
   console.log(`\x1b[35m\u25CB\x1b[0m THE ALGORITHM (ideate mode) \u2014 ${isaTitle}`);
   console.log(`  ISA: ${absPath}`);
@@ -1678,7 +1677,7 @@ function pauseLoop(isaPath: string): void {
     return;
   }
   updateFrontmatter(absPath, { loopStatus: "paused" });
-  voiceNotify(`Loop paused on ${frontmatter.id}.`);
+  statusNotify(`Loop paused on ${frontmatter.id}.`);
   console.log(`\x1b[33m\u23F8 Paused\x1b[0m Loop on ${frontmatter.id}`);
   console.log(`  Resume with: algorithm resume -p ${absPath}`);
 }
@@ -1691,7 +1690,7 @@ async function resumeLoop(isaPath: string): Promise<void> {
     return;
   }
   updateFrontmatter(absPath, { loopStatus: "running" });
-  voiceNotify(`Resuming loop on ${frontmatter.id}.`);
+  statusNotify(`Resuming loop on ${frontmatter.id}.`);
   console.log(`\x1b[36m\u25B6 Resuming\x1b[0m Loop on ${frontmatter.id}`);
   await runLoop(absPath);
 }
@@ -1700,7 +1699,7 @@ function stopLoop(isaPath: string): void {
   const absPath = resolve(isaPath);
   const { frontmatter } = readISA(absPath);
   updateFrontmatter(absPath, { loopStatus: "stopped" });
-  voiceNotify(`Loop stopped on ${frontmatter.id}.`);
+  statusNotify(`Loop stopped on ${frontmatter.id}.`);
   console.log(`\x1b[31m\u25A0 Stopped\x1b[0m Loop on ${frontmatter.id}`);
 }
 

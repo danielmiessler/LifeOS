@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { localOnlyApiCall } from "@/lib/local-api";
-import { Volume2, Terminal, FileText, Zap } from "lucide-react";
+import { Terminal, FileText, Zap } from "lucide-react";
 
 // ─── System Health Vitals (Widget 18) ───
 // Persistent bar at top of Activity page, visible across all tabs.
-// Polls voice, hooks, docs, and session health every 30s.
+// Polls hooks, docs, and session health every 30s.
 
 interface HealthData {
-  voiceHealth: { rate: number; status: "healthy" | "degraded" | "failing" };
   hookReliability: {
     failsPerHour: number;
     status: "healthy" | "degraded" | "failing";
@@ -41,12 +40,6 @@ export default function SystemHealthVitals() {
 
   const fetchHealth = useCallback(async () => {
     try {
-      // Fetch voice events
-      const voice = await localOnlyApiCall<{
-        summary?: { successRate?: number };
-      }>("/api/observability/voice-events").catch(() => null);
-      const voiceRate = voice?.summary?.successRate ?? 100;
-
       // Fetch tool failures
       const failures = await localOnlyApiCall<{
         summary?: { recent24h?: number };
@@ -62,15 +55,6 @@ export default function SystemHealthVitals() {
         algo?.algorithms?.filter((a) => a.active)?.length ?? 0;
 
       setHealth({
-        voiceHealth: {
-          rate: voiceRate,
-          status:
-            voiceRate >= 90
-              ? "healthy"
-              : voiceRate >= 70
-                ? "degraded"
-                : "failing",
-        },
         hookReliability: {
           failsPerHour: Math.round(failsPerHour * 10) / 10,
           status:
@@ -104,12 +88,6 @@ export default function SystemHealthVitals() {
 
   return (
     <div className="flex items-center gap-6 px-4 py-1.5 bg-zinc-900/50 border-b border-white/[0.04] shrink-0">
-      <VitalMetric
-        icon={Volume2}
-        label="Voice"
-        value={`${Math.round(health.voiceHealth.rate)}%`}
-        status={health.voiceHealth.status}
-      />
       <VitalMetric
         icon={Terminal}
         label="Hooks"

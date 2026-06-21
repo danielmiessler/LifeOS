@@ -22,7 +22,7 @@
  *   bun CostTracker.ts status              — human-readable snapshot
  *   bun CostTracker.ts scan                — static scan, prints call sites
  *   bun CostTracker.ts log                 — append JSONL entry (for cron)
- *   bun CostTracker.ts alert-check         — threshold check, voice-alert if exceeded
+ *   bun CostTracker.ts alert-check         — threshold check, alert if exceeded
  *   bun CostTracker.ts baseline            — snapshot current call sites as "known good"
  *
  * Designed to be called hourly by Pulse cron. Zero AI cost — pure data aggregation.
@@ -314,8 +314,8 @@ async function takeSnapshot(): Promise<{ snapshot: CostSnapshot; sites: CallSite
 // ──────────────────────────────────────────────────────────────────────────
 
 async function emitAlert(message: string): Promise<void> {
-  // Text alert to stderr. Voice/TTS emission via Pulse was removed; callers
-  // also print the message to stdout for log/ntfy/telegram dispatch upstream.
+  // Text alert to stderr; callers also print the message to stdout for
+  // log/ntfy/telegram dispatch upstream.
   console.error(`[CostTracker] alert: ${message}`);
 }
 

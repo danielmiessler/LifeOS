@@ -2,10 +2,10 @@
 /**
  * Calendar Check — Script-type job
  *
- * Zero AI cost: Google Calendar API → format → voice notification.
+ * Zero AI cost: Google Calendar API → format → notification.
  * Checks for events in the next 30 minutes.
  *
- * Output: spoken notification or NO_EVENTS
+ * Output: notification text or NO_EVENTS
  */
 
 import { readFileSync } from "fs"

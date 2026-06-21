@@ -1,7 +1,7 @@
 # Custom Agent Template
 
 > Canonical identity schema for all PAI agents — built-in and custom.
-> Every agent is a full entity with name, backstory, personality, voice, and visual identity.
+> Every agent is a full entity with name, backstory, personality, and visual identity.
 
 ## Template Usage
 
@@ -20,16 +20,6 @@ name: ""                    # Agent type name (e.g., "Engineer", "SecurityAnalys
 description: ""             # One-line functional description
 model: opus                 # opus | sonnet | haiku
 color: ""                   # Hex color for terminal output (e.g., "#9B59B6")
-
-# === Voice Profile (matches settings.json daidentity.voices schema) ===
-voiceId: ""                 # ElevenLabs voice ID
-voice:
-  stability: 0.50           # 0.0-1.0 — Low = expressive/varied, High = consistent
-  similarity_boost: 0.75    # 0.0-1.0 — Voice identity preservation
-  style: 0.00               # 0.0-1.0 — Style exaggeration (higher = more dramatic)
-  speed: 1.00               # 0.7-1.2 — Speech rate
-  use_speaker_boost: true   # Enhanced clarity (adds latency)
-  volume: 0.80              # 0.0-2.0 — Playback volume
 
 # === Persona (Character Identity) ===
 persona:
@@ -70,7 +60,6 @@ source: "ComposeAgent"      # Creation method
 
 **Real Name**: {persona.name}
 **Character Archetype**: "{persona.title}"
-**Voice Settings**: Stability {voice.stability}, Similarity Boost {voice.similarity_boost}, Speed {voice.speed}
 
 ## Backstory
 
@@ -115,12 +104,6 @@ Preferences that color their work. Written as bullet points.]
 
 [Brief description of how they communicate — speed, formality, verbal tics,
 characteristic expressions, emotional range.]
-
-## Voice Profile Rationale
-
-[Why these specific voice parameters match this personality.
-Explain stability level, speed, similarity boost choices.
-How the voice embodies the character.]
 ```
 
 ### Section 2: Operational Context
@@ -143,32 +126,10 @@ SUMMARY, ANALYSIS, ACTIONS, RESULTS, STATUS, CAPTURE, NEXT, STORY EXPLANATION, C
 
 ---
 
-## Voice Profile Guidelines
-
-### Personality-to-Prosody Mapping
-
-| Personality Type | Stability | Style | Speed | Rationale |
-|------------------|-----------|-------|-------|-----------|
-| Skeptical/Analytical | 0.55-0.70 | 0.05-0.15 | 0.90-1.00 | Measured, precise, deliberate |
-| Enthusiastic/Energetic | 0.25-0.40 | 0.30-0.45 | 1.05-1.15 | Expressive, animated, fast |
-| Professional/Steady | 0.50-0.65 | 0.08-0.20 | 0.95-1.05 | Reliable, consistent, engaged |
-| Creative/Artistic | 0.15-0.30 | 0.25-0.40 | 0.90-1.00 | Wandering, tangential, variable |
-| Authoritative/Wise | 0.65-0.80 | 0.05-0.12 | 0.85-0.95 | Measured, weighty, deliberate |
-| Bold/Confident | 0.40-0.55 | 0.25-0.40 | 1.00-1.10 | Dynamic, assertive, forward |
-
-### Voice Selection Principles
-
-1. **Match personality first** — voice parameters should embody the character
-2. **Unique per agent** — no two agents should share the same voiceId
-3. **Gender alignment** — voice should match character gender identity
-4. **Consistency** — same agent always sounds the same (high similarity_boost for authority, lower for creativity)
-
----
-
 ## Custom Agent vs Built-in Agent Differences
 
 | Aspect | Built-in (`agents/*.md`) | Custom (`custom-agents/*.md`) |
-|--------|-------------------------|-------------------------------|
+| -------- | ------------------------- | ------------------------------- |
 | Location | `~/.claude/agents/` | `~/.claude/custom-agents/` |
 | `custom_agent` field | Omitted | `true` |
 | `created` field | Omitted | ISO date |

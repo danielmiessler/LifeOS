@@ -58,7 +58,6 @@ function mapEventType(type: string, source: string): string {
   if (type.includes("tool_use") || source === "tool-activity") return "PostToolUse";
   if (type.includes("subagent") || source === "subagent") return "PreToolUse";
   if (type.includes("config") || source === "config") return "Notification";
-  if (type.includes("voice") || source === "voice") return "UserPromptSubmit";
   if (type.includes("session")) return "SessionStart";
   return "Notification";
 }

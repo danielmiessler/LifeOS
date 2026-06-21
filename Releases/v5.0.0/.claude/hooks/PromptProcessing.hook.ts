@@ -17,7 +17,7 @@
  * 3. Deterministic tab title → set purple/thinking immediately
  * 4. Deterministic session name (first prompt only)
  * 5. Haiku inference → tab title + session name
- * 6. Set tab, store name, voice announce
+ * 6. Set tab, store name
  *
  * PERFORMANCE:
  * - Deterministic path: <50ms (no inference)
@@ -728,7 +728,7 @@ Examples of separating instruction from subject:
 - "Is 20% fair?" → goal is fairness evaluation → "Evaluate Twenty Percent Commission Fairness"
 
 QUESTIONS: If the message is a question (not a task command), use "Research [4 noun-phrase words]" or "Analyze [4 noun-phrase words]".
-GOOD: "Fix Session Naming Word Count", "Build PAI TUI Dataviz Module", "Deploy Voice Server Update Hook", "Research South Bay Pet Stores", "Refactor Algorithm Phase Transition Logic"
+GOOD: "Fix Session Naming Word Count", "Build PAI TUI Dataviz Module", "Deploy Git Server Update Hook", "Research South Bay Pet Stores", "Refactor Algorithm Phase Transition Logic"
 BAD: "Fix" (one word), "Make Sure" (two words, not a task), "Analyze ISD ISC BPE" (four words, missing subject completion), "Create PAI TELOS Seriously Soon" (filler adverbs), "Pull Work See Continue Now" (instruction words), "Show Latest Build Status Page" (meta-instruction), "Pet Stores South Bay Area" (no verb), "Okay Recently Unified Session Name" (random fragments)` : ''}
 
 ## TASK 3: MODE + TIER CLASSIFICATION

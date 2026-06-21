@@ -22,7 +22,7 @@ Every file has YAML frontmatter. This is what makes Pulse, Daemon, and Interview
 
 ```yaml
 ---
-category: taste           # identity | voice | mind | taste | shape | ops | domain
+category: taste           # identity | mind | taste | shape | ops | domain
 kind: collection          # collection | narrative | reference | index
 publish: false            # false | daemon-summary | daemon | public
 review_cadence: 180d
@@ -35,7 +35,6 @@ Full spec: `PAI/DOCUMENTATION/LifeOs/LifeOsSchema.md`.
 ## Categories
 
 - **identity** — who you are (`PrincipalIdentity.md`, `DaIdentity.md`, `Resume.md`, `Contacts.md`)
-- **voice** — how you communicate (`WritingStyle.md`, `RhetoricalStyle.md`, `Pronunciations.md`)
 - **mind** — how you think (`Beliefs.md`, `Wisdom.md`, `Models.md`, `Definitions.md`)
 - **taste** — what you love (`Books.md`, `Movies.md`, `Music.md`, `Restaurants.md`, `Food.md`)
 - **shape** — how your life runs (`Rhythms.md`, `Sparks.md`, `Current.md`, `Ideal.md`)

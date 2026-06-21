@@ -850,7 +850,7 @@ function main(): void {
     role: isFirst ? "primary" : (registry.das[slug]?.role ?? "worker"),
     enabled: true,
     created: registry.das[slug]?.created ?? today,
-    channels: registry.das[slug]?.channels ?? (isFirst ? ["terminal", "voice"] : ["background"]),
+    channels: registry.das[slug]?.channels ?? (isFirst ? ["terminal"] : ["background"]),
   };
 
   if (isFirst || !registry.primary) {

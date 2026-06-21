@@ -60,7 +60,7 @@ accomplishing any task: Current State to Ideal State via verifiable iteration (I
 12. Goal -> Code -> CLI -> Prompts -> Agents
 13. Custom Skill Management
 14. Custom Memory System
-15. Custom Agent Personalities / Voices
+15. Custom Agent Personalities
 16. Science as Cognitive Loop
 17. Permission to Fail
 

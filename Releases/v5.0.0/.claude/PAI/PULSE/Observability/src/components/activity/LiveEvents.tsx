@@ -15,7 +15,6 @@ import {
   CheckCircle2,
   BookOpen,
   MessageSquare,
-  Bell,
   GitBranch,
   FileText,
   Box,
@@ -26,7 +25,6 @@ import {
 const TYPE_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   "algorithm": { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20" },
   "work": { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
-  "voice": { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20" },
   "hook": { bg: "bg-cyan-500/10", text: "text-cyan-400", border: "border-cyan-500/20" },
   "session": { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
   "rating": { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20" },
@@ -50,7 +48,6 @@ function getTypeIcon(type: string) {
   switch (prefix) {
     case "algorithm": return Brain;
     case "work": return Hammer;
-    case "voice": return Bell;
     case "hook": return GitBranch;
     case "session": return MessageSquare;
     case "rating": return CheckCircle2;
@@ -100,7 +97,6 @@ const FILTER_PRESETS = [
   { label: "All", value: "" },
   { label: "Algorithm", value: "algorithm.*" },
   { label: "Work", value: "work.*" },
-  { label: "Voice", value: "voice.*" },
   { label: "Hook", value: "hook.*" },
   { label: "Session", value: "session.*" },
   { label: "Rating", value: "rating.*" },

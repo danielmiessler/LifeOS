@@ -110,14 +110,13 @@ function cleanStaleSessions(): boolean {
 
 /**
  * Collect recent events from JSONL sources.
- * Reads voice-events.jsonl and tool-failures.jsonl, takes last 50 per source,
+ * Reads tool-failures.jsonl, takes last 50 per source,
  * merges with normalized fields, sorts ascending by timestamp, keeps last 200.
  */
 function collectEvents(): any[] {
   const HOME = process.env.HOME || '';
   // Per-source counts match Observability/observability.ts handleEventsRecentApi()
   const sources = [
-    { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'VOICE', 'voice-events.jsonl'), source: 'voice', count: 50 },
     { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'OBSERVABILITY', 'tool-failures.jsonl'), source: 'tool-failure', count: 50 },
     { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'OBSERVABILITY', 'tool-activity.jsonl'), source: 'tool-activity', count: 100 },
     { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'OBSERVABILITY', 'subagent-events.jsonl'), source: 'subagent', count: 50 },

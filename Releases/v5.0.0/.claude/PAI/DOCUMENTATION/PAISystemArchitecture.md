@@ -95,7 +95,7 @@ Skills are the organizational unit for all domain expertise. Self-activating, se
 
 Automatic capture and preservation of valuable work. Every session, every insight, every decision -- captured automatically. Memory makes intelligence compound. Without memory, every session starts from zero.
 
-### 14. Custom Agent Personalities / Voices
+### 14. Custom Agent Personalities
 
 Specialized agents with distinct personalities for different tasks. Persona identity, personality calibration, specialization, autonomy levels. Personality is functional, not decorative.
 

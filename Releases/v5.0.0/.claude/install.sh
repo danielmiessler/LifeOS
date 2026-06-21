@@ -152,7 +152,7 @@ fi
 # curl installer puts bun at ~/.bun/bin/bun and adds an export line to
 # .zshrc — but .zshrc is only sourced for interactive shells. Hooks
 # spawned by Claude Code inherit a non-interactive PATH where ~/.bun/bin
-# is missing, so every .hook.ts silently fails to launch (voice doesn't
+# is missing, so every .hook.ts silently fails to launch (hooks don't
 # fire, statusline can't run bun-based scripts, etc).
 #
 # Two-prong fix: (1) symlink to a system-wide location that's in every

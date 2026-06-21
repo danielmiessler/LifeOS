@@ -47,7 +47,7 @@ if (kittyListenOn && kittyWindowId) {
     join(stateDir, 'kitty-env.json'),
     JSON.stringify({ KITTY_LISTEN_ON: kittyListenOn, KITTY_WINDOW_ID: kittyWindowId }, null, 2)
   );
-  // Per-session file — required by out-of-process consumers (Pulse voice daemon) that
+  // Per-session file — required by out-of-process consumers (Pulse daemon) that
   // can't inherit KITTY_* env vars but have session_id. See hooks/lib/tab-setter.ts.
   if (sessionId) persistKittySession(sessionId, kittyListenOn, kittyWindowId);
 }

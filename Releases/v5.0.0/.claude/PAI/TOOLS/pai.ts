@@ -79,7 +79,7 @@ function error(message: string) {
 }
 
 function notifyStatus(message: string) {
-  // Text status to stderr. Voice/TTS emission via Pulse was removed.
+  // Text status to stderr.
   console.error(message);
 }
 

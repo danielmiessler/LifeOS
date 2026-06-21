@@ -25,10 +25,9 @@ export default function InsightsDashboard() {
         </div>
 
         {/* Row 3: Error & Health */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <WidgetCard id="tool-failure" title="Tool Failure Leaderboard" />
           <WidgetCard id="error-heatmap" title="Error Heatmap" />
-          <WidgetCard id="voice-waveform" title="Voice Activity" />
         </div>
 
         {/* Row 4: Agents & Config */}

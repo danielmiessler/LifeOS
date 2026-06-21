@@ -1,6 +1,6 @@
 ---
 name: Agents
-description: "Compose CUSTOM agents from Base Traits + Voice + Specialization, and manage predefined functional TEAMS. Traits combine expertise (security, technical, research), personality (skeptical, analytical, enthusiastic), and approach (thorough, rapid, systematic). ComposeAgent.ts merges base + user config, outputs unique prompt + ElevenLabs voice + prosody. Predefined teams: engineering, architecture, marketing, design, security, research, content, strategy — each YAML-configured with roles, tensions, and specialist members. Observer team variant: read-only oversight agents that vote continue/halt/escalate against the tool-activity audit log (high-blast-radius or unattended runs only). USE WHEN create custom agents, spin up agents, specialized agents, agent personalities, available traits, list traits, agent voices, compose agent, spawn parallel agents, launch agents, engineering team, architecture team, marketing team, design team, security team, research team, content team, strategy team, get the team on this, observer team, audit agents. NOT FOR ad-hoc swarms or TeamCreate coordination (use Delegation). NOT FOR single-threaded delegation without unique identities (use Delegation Task)."
+description: "Compose CUSTOM agents from Base Traits + Specialization, and manage predefined functional TEAMS. Traits combine expertise (security, technical, research), personality (skeptical, analytical, enthusiastic), and approach (thorough, rapid, systematic). ComposeAgent.ts merges base + user config, outputs a unique prompt + color. Predefined teams: engineering, architecture, marketing, design, security, research, content, strategy — each YAML-configured with roles, tensions, and specialist members. Observer team variant: read-only oversight agents that vote continue/halt/escalate against the tool-activity audit log (high-blast-radius or unattended runs only). USE WHEN create custom agents, spin up agents, specialized agents, agent personalities, available traits, list traits, compose agent, spawn parallel agents, launch agents, engineering team, architecture team, marketing team, design team, security team, research team, content team, strategy team, get the team on this, observer team, audit agents. NOT FOR ad-hoc swarms or TeamCreate coordination (use Delegation). NOT FOR single-threaded delegation without unique identities (use Delegation Task)."
 effort: medium
 ---
 
@@ -34,8 +34,8 @@ The Agents skill uses the standard PAI SYSTEM/USER two-tier pattern:
 
 | Location | Purpose | Updates With PAI? |
 |----------|---------|-------------------|
-| `Data/Traits.yaml` | Base traits, example voices | Yes |
-| `USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml` | Your voices, prosody, agents | No |
+| `Data/Traits.yaml` | Base traits | Yes |
+| `USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml` | Your traits, agents | No |
 
 **How it works:** ComposeAgent.ts loads base traits, then merges user customizations over them. Your customizations are never overwritten by PAI updates.
 
@@ -44,69 +44,16 @@ The Agents skill uses the standard PAI SYSTEM/USER two-tier pattern:
 Create your customizations at:
 ```
 ~/.claude/PAI/USER/SKILLCUSTOMIZATIONS/Agents/
-├── Traits.yaml       # Your traits, voices, prosody settings
-├── NamedAgents.md    # Your named agent backstories (optional)
-└── VoiceConfig.json  # Voice server configuration (optional)
+├── Traits.yaml       # Your traits (expertise, personality, approach)
+└── NamedAgents.md    # Your named agent backstories (optional)
 ```
-
-## Voice Prosody Settings
-
-Each voice can have prosody settings that control how it sounds. These are passed to ElevenLabs API.
-
-### Prosody Parameters
-
-| Parameter | Range | Default | Effect |
-|-----------|-------|---------|--------|
-| `stability` | 0.0-1.0 | 0.5 | Low = expressive/varied, High = consistent/monotone |
-| `similarity_boost` | 0.0-1.0 | 0.75 | Voice identity preservation |
-| `style` | 0.0-1.0 | 0.0 | Style exaggeration (higher = more dramatic) |
-| `speed` | 0.7-1.2 | 1.0 | Speech rate |
-| `use_speaker_boost` | boolean | true | Enhanced clarity (adds latency) |
-
-### Example Voice Configuration
-
-In your `USER/SKILLCUSTOMIZATIONS/Agents/Traits.yaml`:
-
-```yaml
-voice_mappings:
-  voice_registry:
-    # Add a new voice with full prosody settings
-    MyCustomVoice:
-      voice_id: "your-elevenlabs-voice-id"
-      characteristics: ["energetic", "warm", "professional"]
-      description: "Custom voice for enthusiastic agents"
-      prosody:
-        stability: 0.40
-        similarity_boost: 0.75
-        style: 0.30
-        speed: 1.05
-        use_speaker_boost: true
-
-    # Override prosody for an existing base voice
-    Baron:
-      prosody:
-        stability: 0.65
-        style: 0.10
-        speed: 0.92
-```
-
-### Personality → Prosody Guidelines
-
-| Personality | stability | style | speed | Rationale |
-|-------------|-----------|-------|-------|-----------|
-| Skeptical | 0.60 | 0.10 | 0.95 | Measured, precise |
-| Enthusiastic | 0.35 | 0.40 | 1.10 | High energy |
-| Analytical | 0.65 | 0.08 | 0.95 | Clear, structured |
-| Bold | 0.45 | 0.35 | 1.05 | Confident, dynamic |
-| Cautious | 0.70 | 0.05 | 0.90 | Careful, deliberate |
-
 
 ## Overview
 
 The Agents skill is a complete agent composition and management system:
 - Dynamic agent composition from traits (expertise + personality + approach)
-- Voice mappings with full prosody control
-- Custom agent creation with unique voices
+- Unique per-combination color assignment
+- Custom agent creation with distinct identities
 - Parallel agent orchestration patterns
 
 ## Workflow Routing
@@ -149,7 +96,7 @@ Distinct from functional teams (engineering, design, etc.). An Observer team wat
 
 | User Says | Workflow | What Happens |
 |-----------|----------|-------------|
-| "**custom agents**", "**specialized agents**", "create **custom** agents" | CreateCustomAgent | ComposeAgent → unique personalities, voices, colors |
+| "**custom agents**", "**specialized agents**", "create **custom** agents" | CreateCustomAgent | ComposeAgent → unique personalities, colors |
 | "agents", "launch agents", "bunch of agents" | SpawnParallel | Same identity, parallel grunt work |
 | "**engineering team**", "**security team**", "**[name] team: do X**" | **SpawnTeam** | Load YAML config → compose specialist members → parallel launch |
 | "just the **QA lead and senior engineer**" | **SpawnTeam (subset)** | Filter to named members from team config |
@@ -172,7 +119,7 @@ Distinct from functional teams (engineering, design, etc.). An Observer team wat
 
 ### 🚫 ANTI-PATTERN: Using Built-In Types for Custom Work
 
-Built-in agent types (Designer, Architect, Engineer, etc.) are for INTERNAL workflow routing only. They have no unique identity, voice, or personality.
+Built-in agent types (Designer, Architect, Engineer, etc.) are for INTERNAL workflow routing only. They have no unique identity or personality.
 
 | Scenario | ❌ WRONG | ✅ RIGHT |
 |----------|---------|---------|
@@ -188,14 +135,13 @@ Built-in agent types (Designer, Architect, Engineer, etc.) are for INTERNAL work
 - Core expertise areas: security, technical, research
 - Core personalities: skeptical, analytical, enthusiastic
 - Core approaches: thorough, rapid, systematic
-- Example voice mappings with prosody
 
 ### Tools
 
 **ComposeAgent.ts** (`Tools/ComposeAgent.ts`)
 - Dynamic agent composition engine
 - Merges base + user configurations
-- Outputs complete agent prompt with voice settings
+- Outputs complete agent prompt with a unique color
 - Supports persistent custom agents via `--save` / `--load` / `--delete`
 
 ```bash
@@ -218,15 +164,8 @@ bun run ${CLAUDE_SKILL_DIR}/Tools/ComposeAgent.ts --output json
 ```json
 {
   "name": "Security Expert Skeptical Thorough",
-  "voice": "Baron",
-  "voice_id": "onwK4e9ZLuTAKqWW03F9",
-  "voice_settings": {
-    "stability": 0.70,
-    "similarity_boost": 0.85,
-    "style": 0.05,
-    "speed": 0.95,
-    "use_speaker_boost": true
-  },
+  "traits": ["security", "skeptical", "thorough"],
+  "color": "#FF6B35",
   "prompt": "..."
 }
 ```
@@ -235,7 +174,7 @@ bun run ${CLAUDE_SKILL_DIR}/Tools/ComposeAgent.ts --output json
 
 **DynamicAgent.hbs** (`Templates/DynamicAgent.hbs`)
 - Handlebars template for dynamic agent prompts
-- Composes: expertise + personality + approach + voice assignment
+- Composes: expertise + personality + approach
 - Includes operational guidelines and response format
 
 ## Architecture
@@ -267,7 +206,7 @@ bun run ${CLAUDE_SKILL_DIR}/Tools/ComposeAgent.ts --output json
 User: "Spin up 3 custom security agents"
 → Invokes CREATECUSTOMAGENT workflow
 → Runs ComposeAgent 3 times with DIFFERENT trait combinations
-→ Each agent gets unique personality + matched voice + prosody
+→ Each agent gets unique personality + color
 → Launches agents in parallel
 ```
 
@@ -276,7 +215,6 @@ User: "Spin up 3 custom security agents"
 User: "What agent personalities can you create?"
 → Invokes LISTTRAITS workflow
 → Shows merged base + user traits
-→ Displays voices with prosody settings
 ```
 
 ## Extending the Skill
@@ -314,9 +252,6 @@ In `USER/SKILLCUSTOMIZATIONS/Agents/NamedAgents.md`:
 ```markdown
 ## Alex - The Strategist
 
-**Voice ID:** your-voice-id
-**Prosody:** stability: 0.55, style: 0.20, speed: 0.95
-
 Alex is a strategic thinker who sees patterns others miss...
 ```
 
@@ -330,7 +265,7 @@ Alex is a strategic thinker who sees patterns others miss...
 
 ## Version History
 
-- **v2.0.0** (2026-01): Restructured to base + user merge pattern, added prosody support
+- **v2.0.0** (2026-01): Restructured to base + user merge pattern
 - **v1.0.0** (2025-12): Initial creation
 
 ## Gotchas

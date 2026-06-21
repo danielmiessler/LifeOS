@@ -8,14 +8,13 @@
  *
  * Other Pulse pollers route their proactive notifications through this governor
  * instead of hitting /notify directly. The governor enforces:
- *   - Max 3 voice pings per day
  *   - Max 1 telegram per hour
  *   - 24h dedup by content fingerprint
- *   - Quiet hours 22:00–07:00 (no voice; telegram queued for morning)
+ *   - Quiet hours 22:00–07:00 (telegram queued for morning)
  *   - Per-source auto-suppression: 2 false alerts in 7d → that source suppressed 7d
  *
  * Usage:
- *   bun notification-governor.ts --channel voice --source monitor-band-tours \
+ *   bun notification-governor.ts --channel telegram --source monitor-band-tours \
  *     --message "Tool is playing at the Fillmore Friday" --priority event
  *
  *   bun notification-governor.ts --status
@@ -38,7 +37,7 @@ const STATE_FILE = join(PAI_DIR, "PULSE", "state", "notification-governor.json")
 const LOG_FILE = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "notification-governor.jsonl");
 
 type Priority = "critical" | "event" | "light";
-type Channel = "voice" | "telegram" | "ntfy" | "email";
+type Channel = "telegram" | "ntfy" | "email";
 
 type GovernorState = {
   dispatched: Array<{ ts: string; channel: Channel; source: string; fingerprint: string; priority: Priority }>;
@@ -109,18 +108,11 @@ function shouldDispatch(
   if (priority === "critical") return { allow: true };
 
   // Quiet hours
-  if (channel === "voice" && inQuietHours()) {
+  if (channel === "telegram" && inQuietHours()) {
     return { allow: false, reason: "quiet-hours (22:00-07:00)" };
   }
 
   // Rate limits
-  if (channel === "voice") {
-    const today = new Date().toISOString().slice(0, 10);
-    const voiceToday = state.dispatched.filter(
-      (d) => d.channel === "voice" && d.ts.startsWith(today) && d.priority !== "critical"
-    ).length;
-    if (voiceToday >= 3) return { allow: false, reason: "voice daily cap (3) reached" };
-  }
   if (channel === "telegram") {
     const telegramLastHour = state.dispatched.filter(
       (d) => d.channel === "telegram" && hoursSince(d.ts) < 1 && d.priority !== "critical"
@@ -156,7 +148,7 @@ function pruneOld(state: GovernorState): void {
 // ─── Commands ───
 
 async function cmdNotify(args: string[]): Promise<number> {
-  const channel = (args[args.indexOf("--channel") + 1] as Channel) || "voice";
+  const channel = (args[args.indexOf("--channel") + 1] as Channel) || "telegram";
   const source = args[args.indexOf("--source") + 1] || "unknown";
   const message = args[args.indexOf("--message") + 1] || "";
   const priority = (args[args.indexOf("--priority") + 1] as Priority) || "light";
@@ -198,13 +190,10 @@ async function cmdNotify(args: string[]): Promise<number> {
 function cmdStatus(): void {
   const state = loadState();
   pruneOld(state);
-  const today = new Date().toISOString().slice(0, 10);
-  const voiceToday = state.dispatched.filter((d) => d.channel === "voice" && d.ts.startsWith(today)).length;
   const telegramLastHour = state.dispatched.filter(
     (d) => d.channel === "telegram" && hoursSince(d.ts) < 1
   ).length;
   console.log("═══ Notification Governor ═══");
-  console.log(`Voice today:     ${voiceToday}/3`);
   console.log(`Telegram last h: ${telegramLastHour}/1`);
   console.log(`Quiet hours:     ${inQuietHours() ? "YES" : "no"}`);
   const sups = Object.entries(state.sourceSuppressions);
@@ -266,7 +255,7 @@ async function main(): Promise<void> {
     process.exit(await cmdNotify(args));
   }
   console.log("Usage:");
-  console.log("  bun notification-governor.ts --channel voice --source X --message 'text' --priority light");
+  console.log("  bun notification-governor.ts --channel telegram --source X --message 'text' --priority light");
   console.log("  bun notification-governor.ts --status");
   console.log("  bun notification-governor.ts --report-false-alert <source>");
   console.log("  bun notification-governor.ts --clear-source <source>");

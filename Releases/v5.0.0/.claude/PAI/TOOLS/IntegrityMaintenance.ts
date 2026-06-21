@@ -15,7 +15,7 @@
  *
  * Output:
  * - Creates PAISYSTEMUPDATES entry with AI-generated narrative
- * - Sends voice notification with summary
+ * - Sends status notification with summary
  */
 
 import { spawn } from 'child_process';
@@ -784,7 +784,7 @@ function checkReferences(changes: FileChange[]): IntegrityResult {
 // ============================================================================
 
 function reportCompletion(message: string): void {
-  // Text completion notice to stderr. Voice/TTS emission via Pulse was removed.
+  // Text completion notice to stderr.
   console.error(`[IntegrityMaintenance] ${message}`);
 }
 

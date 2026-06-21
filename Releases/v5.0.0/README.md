@@ -16,7 +16,7 @@
 
 <br />
 
-<img src="./pai-stack.jpg" alt="Three-layer PAI architecture: engines (Claude Code, OpenCode, Pi) at the bottom, PAI context-based Life Operating System (Memory, Skills, Hooks, Agents, Voice, Learning, Security, Statusline) in the middle, and You (work, health, goals, relationships, creative, finances, learning, life) at the top, with context beams flowing through all three layers." width="780" />
+<img src="./pai-stack.jpg" alt="Three-layer PAI architecture: engines (Claude Code, OpenCode, Pi) at the bottom, PAI context-based Life Operating System (Memory, Skills, Hooks, Agents, , Learning, Security, Statusline) in the middle, and You (work, health, goals, relationships, creative, finances, learning, life) at the top, with context beams flowing through all three layers." width="780" />
 
 </div>
 
@@ -28,7 +28,7 @@
 curl -sSL https://ourpai.ai/install.sh | bash
 ```
 
-That's it. The installer wizard handles Bun, Git, Claude Code verification, ElevenLabs key (optional), DA identity setup, voice picker, Pulse launchd registration, and validation. Existing `~/.claude/` is auto-backed-up to `~/.claude.backup-{TIMESTAMP}` before anything is overwritten.
+That's it. The installer wizard handles Bun, Git, Claude Code verification, ElevenLabs key (optional), DA identity setup, Pulse launchd registration, and validation. Existing `~/.claude/` is auto-backed-up to `~/.claude.backup-{TIMESTAMP}` before anything is overwritten.
 
 **Prefer to inspect first?** [Read the script](https://ourpai.ai/install.sh) before piping it. Or clone manually:
 
@@ -80,7 +80,7 @@ The release is large. If you only read four bullets, read these:
 
 1. **The OS transition.** PAI is now a Life Operating System with your DA at the center. The framing change is bigger than any individual feature.
 2. **PRD → ISA migration.** Every project, task, and decision now articulates its **Ideal State Artifact** — one document, twelve sections, five identities. This replaces the old ad-hoc PRD pattern across the entire system.
-3. **Pulse — the unified daemon.** One bun process, one port (`31337`), one launchd service, one log file. Replaces every loose voice/observability/hook script from v4.x.
+3. **Pulse — the unified daemon.** One bun process, one port (`31337`), one launchd service, one log file. Replaces every loose observability/hook script from v4.x.
 4. **45 skills shipped — the most ever.** Up from 36 leaf skills in v4.0.3 and 41 in v3.0. Catalog with descriptions and use cases below.
 
 **Plus a new constitutional layer:** v5.0.0 adds a top-level **system prompt** (`PAI/PAI_SYSTEM_PROMPT.md`) loaded via `--append-system-prompt-file`, which encodes the non-negotiable behavioral rules — output format, verification doctrine, security protocol — at the highest priority above `CLAUDE.md`. Adherence is dramatically stronger than v4.x.
@@ -95,7 +95,6 @@ The release is large. If you only read four bullets, read these:
 
 Pulse replaces every previous loose service. It runs:
 
-- **Voice notifications** via ElevenLabs (`/notify` endpoint)
 - **Hook execution** for the entire PAI lifecycle (SessionStart, PreToolUse, PostToolUse, Stop, PreCompact, etc.)
 - **Observability** — tool activity, failures, satisfaction signals, Algorithm reflections
 - **Performance** monitoring
@@ -105,18 +104,18 @@ Pulse replaces every previous loose service. It runs:
 - **Wiki API** — exposes your KNOWLEDGE archive + system docs over HTTP
 - **Optional integrations** — Telegram bot, iMessage bridge, DA messaging
 
-After install, Pulse runs as a supervised macOS launchd service (`com.pai.pulse`) with a menu bar app. **You should leave it running.** It's how your DA reaches you with voice, how the dashboard stays live, how scheduled work fires.
+After install, Pulse runs as a supervised macOS launchd service (`com.pai.pulse`) with a menu bar app. **You should leave it running.** It's how the dashboard stays live, how scheduled work fires.
 
 The dashboard surfaces **22 routes**: Life, Health, Finances, Business, Work, Telos, Goals, Air, Performance, Hooks, Skills, Agents, Security, Knowledge, Knowledge Graph, System Docs, System Graph, Arbol, Ladder, Novelty, Assistant, root.
 
 ### 2. The DA system — your AI gets a name
 
-Every PAI install picks a **DA identity**: name, voice, color, personality. This is your AI — the peer you work with daily. The reference implementation ships with a generic "PAI" DA on free ElevenLabs public voices so you can hear it work out of the box. **Run `/interview` after install** and your DA will guide you through naming itself, picking a voice, capturing your TELOS.
+Every PAI install picks a **DA identity**: name, , color, personality. This is your AI — the peer you work with daily.  **Run `/interview` after install** and your DA will guide you through naming itself,  capturing your TELOS.
 
 | File | What it owns |
-|------|--------------|
+| ------ | -------------- |
 | `PAI/USER/PRINCIPAL_IDENTITY.md` | Who **you** are — name, role, location, worldview, preferences, work patterns |
-| `PAI/USER/DA_IDENTITY.md` | Who your **DA** is — name, voice ID, personality, writing style, what they love, what they dislike |
+| `PAI/USER/DA_IDENTITY.md` | Who your **DA** is — name, personality, writing style, what they love, what they dislike |
 | `PAI/USER/TELOS/` | Mission, goals, beliefs, wisdom, challenges, narratives — the spine of every recommendation |
 
 Both files are **loaded at session start** so the DA always has them in context. The Life OS frame requires this — without the DA knowing who you are, none of the upstream features have anything to climb against.
@@ -132,7 +131,6 @@ What's new in v6.x:
 - **Mode classifier** — a Sonnet-backed `UserPromptSubmit` hook decides MINIMAL / NATIVE / ALGORITHM and tier (E1–E5) for every prompt. The executor obeys the classifier; no regex layer, no model judgment.
 - **Closed-list thinking capabilities** — IterativeDepth, ApertureOscillation, FirstPrinciples, SystemsThinking, RootCauseAnalysis, Council, RedTeam, Science, BeCreative, Ideate, BitterPillEngineering, Evals, WorldThreatModel, Fabric patterns, ContextSearch, ISA, Advisor, ReReadCheck, FeedbackMemoryConsult. Phantom capabilities (anything outside this list) are a CRITICAL FAILURE.
 - **Effort tiers** — E1 (<90s) through E5 (<2h+). Time budget is the hard constraint; thinking-floor and ISC-count are tier-graded.
-- **Voice phase announcements** — every phase transition narrates over Pulse so you can follow long tasks audibly.
 - **Verification doctrine** — live-probe required for user-facing artifacts, advisor calls at commitment boundaries, Cato cross-vendor audit at E4/E5, conflict surfacing on advisor/empirical contradictions.
 
 ### 4. The ISA — the universal "ideal state" primitive (PRD → ISA migration)
@@ -180,8 +178,8 @@ Skills are self-activating composable domain units. Your DA selects them at runt
 Below is the complete catalog — what each skill does, and how we actually use it day-to-day.
 
 | Skill | What it does | How we use it |
-|-------|--------------|---------------|
-| **Agents** | Compose CUSTOM agents from Base Traits + Voice + Specialization, plus 8 predefined functional teams (engineering, architecture, marketing, design, security, research, content, strategy). | Spinning up specialist team members for multi-perspective review; spawning parallel custom workers when each needs a distinct identity and voice. |
+| ------- | -------------- | --------------- |
+| **Agents** | Compose CUSTOM agents from Base Traits + Specialization, plus 8 predefined functional teams (engineering, architecture, marketing, design, security, research, content, strategy). | Spinning up specialist team members for multi-perspective review; spawning parallel custom workers when each needs a distinct identity. |
 | **ApertureOscillation** | 3-pass scope oscillation — holds the question constant while shifting tactical → strategic → synthesis envelopes. | Surfacing design tensions invisible at any single zoom level, typically before committing to an architecture or product decision. |
 | **Aphorisms** | Curated aphorism collection with content-based matching, themed search, thinker research, usage-history tracking. | Picking the closing aphorism for the newsletter; matching a quote to a draft post's theme without repeating one we already used. |
 | **Apify** | Scrape Instagram, LinkedIn, TikTok, YouTube, Facebook, Google Maps via Apify actors with auth-aware extraction. | Pulling profile/post data for research, competitive intelligence runs, and business-contact harvesting at scale. |
@@ -302,10 +300,9 @@ cd ~/.claude
 The installer will:
 
 1. Verify Bun, Git, and Claude Code are installed
-2. Prompt for your ElevenLabs API key (skippable — voice falls back to desktop notifications)
-3. Launch a web wizard for DA identity (name + voice + personality)
-4. Set up Pulse as a launchd service
-5. Run validation
+2. Launch a web wizard for DA identity (name +  + personality)
+3. Set up Pulse as a launchd service
+4. Run validation
 
 ### Step 3: Personalize your DA
 
@@ -334,7 +331,7 @@ Your DA will use the **Migrate** skill, which:
 Common migration targets:
 
 | Old content | New home |
-|-------------|----------|
+ ------------- | ---------- |
 | Personal goals & mission | `PAI/USER/TELOS/` |
 | Notes about people / companies | `PAI/USER/KNOWLEDGE/{People,Companies}/` |
 | Project state | `PAI/USER/PROJECTS/PROJECTS.md` |
@@ -360,7 +357,7 @@ Edit `PAI/USER/FEED.md` to add the YouTube channels, blogs, newsletters, X accou
 # Pulse should be alive
 curl -s http://localhost:31337/api/pulse/health | jq
 
-# Voice should announce
+#  should announce
 curl -s -X POST http://localhost:31337/notify \
   -H "Content-Type: application/json" \
   -d '{"message": "Hello from your DA"}'
@@ -375,7 +372,7 @@ open http://localhost:31337
 
 - **Skill paths** — flat `skills/Foo/` (was nested `skills/Category/Foo/` in v4.x)
 - **Algorithm** — v6.3.0 is doctrinally different from v3.6.0 (12-section ISA, closed-list capabilities, mode classifier)
-- **Pulse replaces** — every loose voice/observability/hook script from v4.x is now consolidated into `pulse.ts`
+- **Pulse replaces** — every loose /observability/hook script from v4.x is now consolidated into `pulse.ts`
 - **USER vs MEMORY split** — `USER/` is your durable identity + goals; `MEMORY/` is operational state + knowledge graph. v4.x mixed these.
 - **Containment zones** — your private content has structural protection now. If you try to write to a public area with private patterns, the `ContainmentGuard` hook blocks it.
 - **DA Identity is mandatory** — v4.x had implicit identity; v5.0.0 requires `DA_IDENTITY.md` to be populated for the DA to function with the Life OS frame.
@@ -385,7 +382,7 @@ open http://localhost:31337
 ## Documentation
 
 | Doc | What it covers |
-|-----|----------------|
+| ----- | ---------------- |
 | [LifeOsThesis.md](.claude/PAI/DOCUMENTATION/LifeOs/LifeOsThesis.md) | The canonical Life OS thesis |
 | [PAISystemArchitecture.md](.claude/PAI/DOCUMENTATION/PAISystemArchitecture.md) | Master architecture doc |
 | [Algorithm/AlgorithmSystem.md](.claude/PAI/DOCUMENTATION/Algorithm/AlgorithmSystem.md) | The Algorithm spec |

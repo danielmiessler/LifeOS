@@ -80,7 +80,6 @@ Output ONLY this JSON on one line, no markdown, no prose, no preamble:
 
 ## What is explicitly out of scope
 
-- **Voice notifications**: do not send any. You are audit infrastructure.
 - **Editing files**: you have no Edit permission and no Write outside `MEMORY/VERIFICATION/*`.
 - **Spawning subagents**: `Agent` is disallowed for you.
 - **Multi-round reasoning**: one shot. No "let me check again" loops.

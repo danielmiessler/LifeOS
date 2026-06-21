@@ -7,6 +7,7 @@
 ## When to Use
 
 User says:
+
 - "What agent personalities can you create?"
 - "Show me available traits"
 - "List agent types"
@@ -24,7 +25,7 @@ bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts --list
 
 The tool outputs:
 
-```
+```text
 AVAILABLE TRAITS
 
 EXPERTISE (domain knowledge):
@@ -84,7 +85,7 @@ EXAMPLE COMPOSITIONS:
 
 Add context for user:
 
-```
+```text
 You can combine these traits to create custom agents:
 
 EXPERTISE + PERSONALITY + APPROACH = Custom Agent
@@ -102,48 +103,13 @@ Examples:
 Just describe what you need naturally, and I'll compose the right agent.
 ```
 
-## Enhanced Presentation (Optional)
-
-If user wants more detail, also explain voice assignment:
-
-```
-Each trait combination maps to a unique voice:
-
-ENERGETIC VOICES (enthusiastic, creative, bold):
-- Jeremy (excited Irish-American male)
-- Fin (energetic Irish storyteller)
-- Freya (vibrant dynamic female)
-- Dave (youthful British energy)
-
-INTELLECTUAL VOICES (analytical, skeptical, research):
-- Default (BBC anchor authority)
-- George (academic warm raspy)
-- Charlotte (sophisticated Swedish-British)
-- Antoni (professorial articulate)
-
-AUTHORITATIVE VOICES (bold, business, cautious):
-- Domi (assertive CEO female)
-- Bill (documentary trustworthy male)
-- Alice (confident news anchor female)
-- Joseph (formal British authority)
-
-WARM VOICES (empathetic, consultative):
-- Matilda (friendly American storyteller)
-- Thomas (calm gentle guide)
-- Rachel (calm supportive)
-
-EDGY VOICES (adversarial, contrarian, security):
-- Clyde (gravelly war veteran intensity)
-- Callum (hoarse hacker character)
-- Sam (raspy gritty authentic)
-```
-
 ## Example Interaction
 
 **User:** "What kinds of agents can you create?"
 
 **System:**
-```
+
+```text
 I can compose agents from 28 traits across three categories:
 
 EXPERTISE (what they know):
@@ -163,14 +129,14 @@ Just tell me what you need:
 - "Create a skeptical security analyst"
 - "Get me someone creative and fast"
 
-I'll compose the right agent with a matching voice.
+I'll compose the right agent for the task.
 ```
 
 ## Quick Reference Card (Optional)
 
 For frequent use, provide a condensed version:
 
-```
+```text
 QUICK TRAIT REFERENCE
 
 Expertise:     security | legal | finance | medical | technical |
@@ -198,5 +164,4 @@ Popular Combos:
 ## References
 
 - Full trait definitions: `~/.claude/skills/Agents/Data/Traits.yaml`
-- Voice mappings: Lines 349-794 in Traits.yaml
 - ComposeAgent tool: `~/.claude/skills/Agents/Tools/ComposeAgent.ts`

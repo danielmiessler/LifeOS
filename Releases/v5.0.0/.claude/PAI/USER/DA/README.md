@@ -1,6 +1,6 @@
 # DA — Digital Assistant Identity
 
-This directory holds the identity, voice, and personality of every Digital
+This directory holds the identity and personality of every Digital
 Assistant (DA) in your PAI. Most users have one DA; advanced users can run
 multiple (e.g., a primary DA plus a specialist).
 
@@ -15,7 +15,7 @@ multiple (e.g., a primary DA plus a specialist).
 
 ## Creating a DA
 
-The installer's voice step launches the DA interview. If you skipped it,
+The installer launches the DA interview. If you skipped it,
 or want to add another DA later:
 
 ```bash
@@ -27,10 +27,8 @@ bun ~/.claude/PAI/TOOLS/DAInterview.ts --depth deep     # Every phase
 The interview asks for:
 
 - **Name** — what you call your DA (and what they call themselves).
-- **Voice** — the ElevenLabs voice ID. Pick from the public library or
-  use a custom voice if you have one trained.
 - **Personality traits** — twelve sliders (enthusiasm, warmth, precision,
-  etc.) that shape how the DA writes and speaks.
+  etc.) that shape how the DA writes.
 - **Catchphrase** — the phrase the DA says at session start.
 
 Output lands in `<your-da-name>/`:
