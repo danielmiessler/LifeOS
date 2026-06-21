@@ -1,11 +1,11 @@
 # Writing Style — User
 
-> Bootstrap default. Run `/interview` to capture your real voice.
+> Bootstrap default. Run `/interview` to capture your real writing style.
 
 The DA references this file when writing **as you** — blog posts, emails,
-social media, anything in your voice.
+social media, anything in your style.
 
-## Voice fingerprint
+## Style fingerprint
 
 (interview — three to five sentences describing how you write. Paragraph
 rhythm, sentence length, openings you favor, endings you avoid. The

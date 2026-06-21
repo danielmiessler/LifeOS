@@ -28,7 +28,7 @@
 curl -sSL https://ourpai.ai/install.sh | bash
 ```
 
-That's it. The installer wizard handles Bun, Git, Claude Code verification, ElevenLabs key (optional), DA identity setup, Pulse launchd registration, and validation. Existing `~/.claude/` is auto-backed-up to `~/.claude.backup-{TIMESTAMP}` before anything is overwritten.
+That's it. The installer wizard handles Bun, Git, Claude Code verification, DA identity setup, Pulse launchd registration, and validation. Existing `~/.claude/` is auto-backed-up to `~/.claude.backup-{TIMESTAMP}` before anything is overwritten.
 
 **Prefer to inspect first?** [Read the script](https://ourpai.ai/install.sh) before piping it. Or clone manually:
 

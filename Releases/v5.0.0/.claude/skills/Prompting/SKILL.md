@@ -76,12 +76,12 @@ bun run RenderTemplate.ts \
   --data phased-analysis.yaml
 ```
 
-### Example 3: Custom Agent with Voice Mapping
+### Example 3: Custom Agent Composition
 
 ```typescript
-// Generate specialized agent with appropriate voice
+// Generate specialized agent from traits
 const agent = composeAgent(['security', 'skeptical', 'thorough'], task, traits);
-// Returns: { name, traits, voice: 'default', voiceId: 'VOICE_ID...' }
+// Returns: { name, traits, color, prompt }
 ```
 
 ## Integration with Other Skills
@@ -109,7 +109,6 @@ The templating system eliminated **~35,000 tokens (65% reduction)** across PAI:
 |------|--------|-------|---------|
 | SKILL.md Frontmatter | 20,750 | 8,300 | 60% |
 | Agent Briefings | 6,400 | 1,900 | 70% |
-| Voice Notifications | 6,225 | 725 | 88% |
 | Workflow Steps | 7,500 | 3,000 | 60% |
 | **TOTAL** | ~53,000 | ~18,000 | **65%** |
 

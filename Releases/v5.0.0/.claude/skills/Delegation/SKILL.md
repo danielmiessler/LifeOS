@@ -12,7 +12,7 @@ effort: medium
 
 | the user Says | System | Tool | What Happens |
 |-------------|--------|------|-------------|
-| "**custom agents**", "**specialized agents**", "spin up agents", "launch agents" | **Agents Skill** (ComposeAgent) | `Task(subagent_type="general-purpose", prompt=<ComposeAgent output>)` | Unique personalities, voices, colors via trait composition |
+| "**custom agents**", "**specialized agents**", "spin up agents", "launch agents" | **Agents Skill** (ComposeAgent) | `Task(subagent_type="general-purpose", prompt=<ComposeAgent output>)` | Unique personalities, colors via trait composition |
 | "**create an agent team**", "**agent team**", "**swarm**" | **Claude Code Teams** | `TeamCreate` → `TaskCreate` → `SendMessage` | Persistent team with shared task list, message coordination, multi-turn collaboration |
 
 **These are NOT the same thing:**
@@ -33,7 +33,7 @@ effort: medium
 
 ### 1. Built-In Agents
 
-**⚠️ Built-in agents are for internal workflow routing ONLY.** When the user asks for custom, specialized, or uniquely-voiced agents, use the Agents skill (section 4 below) instead.
+**⚠️ Built-in agents are for internal workflow routing ONLY.** When the user asks for custom, specialized, or uniquely-identified agents, use the Agents skill (section 4 below) instead.
 
 Use `Task(subagent_type="AgentType")` with these specialized agents:
 
@@ -94,8 +94,8 @@ bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts --traits "security,skeptic
 Task(subagent_type="general-purpose", prompt=<ComposeAgent JSON .prompt field>)
 ```
 
-- Each agent gets unique personality, voice, and color via ComposeAgent
-- Use DIFFERENT trait combinations for each agent to get unique voices
+- Each agent gets unique personality and color via ComposeAgent
+- Use DIFFERENT trait combinations for each agent to get unique identities
 - Never use built-in agent types (Engineer, Architect) for custom work
 - Ideal for: domain experts, adversarial reviewers, creative brainstormers, parallel analysis
 

@@ -7,19 +7,21 @@
 ## When to Use
 
 {PRINCIPAL.NAME} says:
+
 - "Launch 5 agents to research these companies"
 - "Spin up agents to process this list"
 - "Create agents to analyze these files" (no "custom")
 
 **KEY: No "custom" keyword = simple parallel workers for grunt work (fast execution)**
 
-**NOT the same as custom agents** - for unique personalities/voices/colors, use the CreateCustomAgent workflow.
+**NOT the same as custom agents** - for unique personalities/colors, use the CreateCustomAgent workflow.
 
 ## The Workflow
 
 ### Step 1: Identify Task List
 
 Extract what needs to be done in parallel:
+
 - List of companies to research
 - Files to analyze
 - URLs to check
@@ -118,7 +120,7 @@ Provide a brief assessment and any issues found.`,
 **Timing flows from the Algorithm.** The main agent validates a timing tier (fast|standard|deep) in the THINK phase. Every agent prompt MUST include a `## Scope` section:
 
 | Timing | Model | Scope |
-|--------|-------|-------|
+| -------- | ------- | ------- |
 | `fast` | `haiku` | Under 500 words, direct answer only |
 | `standard` | `sonnet` | Focused work, under 1500 words |
 | `deep` | `opus` | Comprehensive analysis, no limit |
@@ -126,7 +128,7 @@ Provide a brief assessment and any issues found.`,
 **Choose model based on timing tier AND task complexity:**
 
 | Task Type | Model | Reason |
-|-----------|-------|--------|
+| -----------  | ------- | -------- |
 | Simple checks (URL validation, file existence, basic lookups) | `haiku` | 10-20x faster, more than sufficient |
 | Standard research/analysis (company research, code review) | `sonnet` | Balanced capability and speed |
 | Deep reasoning (strategic analysis, architectural decisions) | `opus` | Maximum intelligence required |
@@ -138,6 +140,7 @@ Provide a brief assessment and any issues found.`,
 **{PRINCIPAL.NAME}:** "Launch agents to research these 5 AI security companies"
 
 **{DA_IDENTITY.NAME}'s Execution:**
+
 ```typescript
 // Single message with 5 Task calls:
 Task({
@@ -257,6 +260,7 @@ questions.forEach(q => {
 **WHEN:** After EVERY parallel agent batch completes
 
 **HOW:**
+
 ```typescript
 Task({
   description: "Spotcheck results",
@@ -281,6 +285,7 @@ Flag any issues for follow-up.`,
 ## Common Mistakes to Avoid
 
 **❌ WRONG: Sequential execution**
+
 ```typescript
 await Task({ ... }); // Agent 1 (blocks)
 await Task({ ... }); // Agent 2 (waits for 1)
@@ -289,6 +294,7 @@ await Task({ ... }); // Agent 3 (waits for 2)
 ```
 
 **✅ RIGHT: Parallel execution**
+
 ```typescript
 // Send ONE message with multiple Task calls:
 Task({ ... })  // Agent 1
@@ -298,6 +304,7 @@ Task({ ... })  // Agent 3
 ```
 
 **❌ WRONG: Using the deprecated Intern agent type**
+
 ```typescript
 // Intern type has been removed from the system
 Task({
@@ -309,6 +316,7 @@ Task({
 ```
 
 **✅ RIGHT: Use general-purpose agents or agents composed via ComposeAgent**
+
 ```typescript
 // For simple parallel work, use general-purpose type
 Task({
@@ -322,12 +330,14 @@ Task({
 ```
 
 **❌ WRONG: Skipping spotcheck**
+
 ```typescript
 // Launch agents, get results, done
 // No validation = potential inconsistencies
 ```
 
 **✅ RIGHT: Always spotcheck**
+
 ```typescript
 // Launch agents
 // Get results
@@ -336,6 +346,7 @@ Task({
 ```
 
 **❌ WRONG: Using opus for simple parallel tasks**
+
 ```typescript
 // Each agent uses opus = slow + expensive
 Task({ ..., model: "opus" })
@@ -344,6 +355,7 @@ Task({ ..., model: "opus" })
 ```
 
 **✅ RIGHT: Use haiku for grunt work**
+
 ```typescript
 // 10-20x faster, sufficient for simple tasks
 Task({ ..., model: "haiku" })
@@ -351,24 +363,18 @@ Task({ ..., model: "haiku" })
 Task({ ..., model: "haiku" })
 ```
 
-## Voice Output
-
-## Voice Output
-
-For grunt work, voice output is optional. If enabled, all parallel agents use the default voice configuration.
-
-This is intentional - for parallel grunt work, we prioritize speed over personality diversity. **For unique voices and identities, use the CreateCustomAgent workflow instead.**
-
 ## When to Use Custom Agents Instead
 
 Use **CreateCustomAgent workflow** when:
+
 - User says "custom agents" (the key trigger)
 - You need distinct personalities/perspectives
-- Voice and color diversity matters
+- Color and identity diversity matters
 - Different analytical approaches required
 - Each agent brings unique expertise
 
 Use **SpawnParallelAgents workflow** when:
+
 - Simple parallel processing (no "custom" keyword)
 - Same task, different inputs
 - Speed matters more than personality
@@ -376,7 +382,7 @@ Use **SpawnParallelAgents workflow** when:
 
 ## Related Workflows
 
-- **CreateCustomAgent** - For agents with unique personalities, voices, and colors
+- **CreateCustomAgent** - For agents with unique personalities and colors
 - **ListTraits** - Show available traits for custom agents
 
 ## References

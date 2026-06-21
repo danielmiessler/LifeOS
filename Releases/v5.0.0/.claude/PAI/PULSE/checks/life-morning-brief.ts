@@ -3,10 +3,10 @@
  * Life Morning Brief — Phase 0 Pulse Life Dashboard
  *
  * Reads TELOS/GOALS.md (top-3 goals), TELOS/SPARKS.md (random spark),
- * and TELOS/CURRENT.md (next likely actions). Outputs a voice-ready
- * morning brief narration.
+ * and TELOS/CURRENT.md (next likely actions). Outputs a
+ * morning brief narration text.
  *
- * Output: voice narration or NO_ACTION if files missing
+ * Output: narration text or NO_ACTION if files missing
  */
 
 import { join } from "path"

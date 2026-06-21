@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 // Arthur — Credential Custodian
 // Thin, deterministic TypeScript client + policy engine for PAI credential access.
-// Backed by GCP Secret Manager. Persona and voice live in PAI/USER/DA/arthur/.
+// Backed by GCP Secret Manager. Persona lives in PAI/USER/DA/arthur/.
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";

@@ -1,6 +1,6 @@
 ---
 name: Interview
-description: "Runs a phased conversational interview across all PAI context files using InterviewScan.ts, which orders targets by PHASE and assigns conversation mode per file. Phase 1 (foundational TELOS) always runs first regardless of completeness: MISSION, GOALS, PROBLEMS, STRATEGIES, CHALLENGES, NARRATIVES, SPARKS, BELIEFS, WISDOM, MODELS, FRAMES in leverage order. Phase 2: IDEAL_STATE (HEALTH, MONEY, FREEDOM, RELATIONSHIPS, CREATIVE) in Fill mode. Phase 3: preferences (BOOKS, AUTHORS, BANDS, MOVIES, RESTAURANTS, FOOD_PREFERENCES, LEARNING, MEETUPS, CIVIC) in mixed mode. Phase 4: light touch on CURRENT_STATE/SNAPSHOT and PRINCIPAL_IDENTITY. Phase 9 (RHYTHMS) deferred. Review mode (≥80%) reads file then asks targeted questions one at a time — still accurate, outdated, missing, sharpen? Fill mode (<80%) walks scanner prompts one at a time. The principal answers in natural language; the DA formats into file structure. Voice confirms on actual changes only. Stop signals respected immediately. Target vs. north-star type confirmed per entry. Timestamped backup to TELOS/Backups/ before multi-edit at ≥50% of a file. TelosRenderer.ts regenerates PRINCIPAL_TELOS.md after foundational changes. USE WHEN /interview, resume interview, continue interview, start the interview, review TELOS, fill in context, what's missing in setup, conversational review, phased review, TELOS walkthrough, quarterly context refresh. NOT FOR single-file edits (use Telos Update workflow), intaking external content (use Migrate), identity edits (use _PROFILE)."
+description: "Runs a phased conversational interview across all PAI context files using InterviewScan.ts, which orders targets by PHASE and assigns conversation mode per file. Phase 1 (foundational TELOS) always runs first regardless of completeness: MISSION, GOALS, PROBLEMS, STRATEGIES, CHALLENGES, NARRATIVES, SPARKS, BELIEFS, WISDOM, MODELS, FRAMES in leverage order. Phase 2: IDEAL_STATE (HEALTH, MONEY, FREEDOM, RELATIONSHIPS, CREATIVE) in Fill mode. Phase 3: preferences (BOOKS, AUTHORS, BANDS, MOVIES, RESTAURANTS, FOOD_PREFERENCES, LEARNING, MEETUPS, CIVIC) in mixed mode. Phase 4: light touch on CURRENT_STATE/SNAPSHOT and PRINCIPAL_IDENTITY. Phase 9 (RHYTHMS) deferred. Review mode (≥80%) reads file then asks targeted questions one at a time — still accurate, outdated, missing, sharpen? Fill mode (<80%) walks scanner prompts one at a time. The principal answers in natural language; the DA formats into file structure. Confirm on actual changes only. Stop signals respected immediately. Target vs. north-star type confirmed per entry. Timestamped backup to TELOS/Backups/ before multi-edit at ≥50% of a file. TelosRenderer.ts regenerates PRINCIPAL_TELOS.md after foundational changes. USE WHEN /interview, resume interview, continue interview, start the interview, review TELOS, fill in context, what's missing in setup, conversational review, phased review, TELOS walkthrough, quarterly context refresh. NOT FOR single-file edits (use Telos Update workflow), intaking external content (use Migrate), identity edits (use _PROFILE)."
 ---
 
 ## What this skill does
@@ -60,30 +60,30 @@ For each file:
 
 **Review mode** (for Phase 1 files at ≥80%):
 1. Read the file with the Read tool.
-2. Summarize what's there to the principal in 2-3 sentences. No voice here — text only.
+2. Summarize what's there to the principal in 2-3 sentences (text).
 3. Ask targeted review questions ONE AT A TIME:
    - "Is <specific item> still accurate?"
    - "Anything outdated to retire?"
    - "Any recent thinking that belongs here but isn't captured?"
    - "Anything you'd sharpen, reframe, or expand?"
-4. The principal answers by voice or text.
+4. The principal answers.
 5. If the principal wants a change, the DA writes it via Edit tool — precise old_string/new_string, preserve surrounding structure.
 6. Confirm in text only on actual changes: "Updated <FILE> — captured the refinement."
 7. Ask: "Anything else for <FILE>, or move on?"
 
 **Fill mode** (for files below 80%):
 1. Ask the first scanner prompt — one at a time, never a firehose.
-2. The principal answers (voice or typed).
+2. The principal answers.
 3. The DA writes the answer into the correct slot in the file — replacing TBD markers, filling empty sections, appending items.
-4. Voice-confirm what got captured.
+4. Confirm what got captured.
 5. Next prompt. Repeat until done with this file or the principal says "next."
 
 ### Step 4 — Phase transitions
 
 After Phase 1 completes:
-1. Voice: "Phase 1 done. Ready for Phase 2 IDEAL_STATE, or break here?"
+1. Tell the principal: "Phase 1 done. Ready for Phase 2 IDEAL_STATE, or break here?"
 2. If the principal says continue, proceed to Phase 2 top priority (usually HEALTH).
-3. If the principal says stop, run final scan, voice a summary of what changed, say goodbye.
+3. If the principal says stop, run final scan, give a summary of what changed, say goodbye.
 
 Same pattern Phase 2 → Phase 3 → Phase 4.
 
@@ -99,7 +99,7 @@ bun ~/.claude/PAI/TOOLS/TelosRenderer.ts 2>/dev/null || true
 
 - **One question at a time.** Never dump all prompts at once.
 - **The principal never types schema.** They speak/type the answer in their own words; the DA formats it into the file's structure.
-- **Always show the principal what got written** before moving on. Brief voice + one line text.
+- **Always show the principal what got written** before moving on. One brief line of text.
 - **Respect stop signals.** "Enough" / "stop" / "later" → save progress (state is already persistent in the files themselves), end gracefully.
 - **Don't ask again about filled fields.** The scanner's completeness score decides what's still gap-worthy.
 - **Narrative dimensions stay narrative.** For CREATIVE/RELATIONSHIPS, don't coerce answers into metrics — write prose that matches the principal's words.

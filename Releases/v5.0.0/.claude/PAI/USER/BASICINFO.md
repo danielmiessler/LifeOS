@@ -3,7 +3,7 @@
 > Bootstrap default — functional before interview. Run `/interview` to personalize.
 
 **Name:** User
-**Pronunciation:** User (phonetic — used by voice system)
+**Pronunciation:** User (phonetic spelling)
 **Pronouns:** (interview)
 **Location:** (interview)
 **Timezone:** America/Los_Angeles

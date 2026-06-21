@@ -1,6 +1,6 @@
 # USER/ — Your Identity Layer
 
-This directory holds everything PAI knows about you: identity, voice,
+This directory holds everything PAI knows about you: identity,
 goals, projects, work context. Files here are loaded by `CLAUDE.md`
 @-imports at every session start, so the DA boots aware of who you
 are and what you're working on.
@@ -10,7 +10,7 @@ are and what you're working on.
 ```
 PAI/USER/
 ├── PRINCIPAL_IDENTITY.md   # Concise identity (loaded at startup)
-├── DA_IDENTITY.md          # Your DA's name, voice, personality (loaded at startup)
+├── DA_IDENTITY.md          # Your DA's name and personality (loaded at startup)
 ├── PROJECTS/PROJECTS.md    # Project registry + routing aliases (loaded at startup)
 ├── TELOS/PRINCIPAL_TELOS.md # Goals, missions, strategies (loaded at startup)
 ├── Config/PAI_CONFIG.yaml  # Credentials and config keys

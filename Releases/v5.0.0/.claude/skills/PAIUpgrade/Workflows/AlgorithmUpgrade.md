@@ -44,7 +44,7 @@ Reflections map to Algorithm sections. This is the routing table for where fixes
 | Plan mode, exploration depth | PLAN phase, Plan Mode | `━━━ PLAN ━━━`, `## Plan Mode Integration` |
 | ISA issues, sync problems | ISA Integration | `## ISA Integration` |
 | Phase merging, discrete violations | Phase Discipline | `## Discrete Phase Enforcement`, `## Phase Discipline Checklist` |
-| Voice, notifications | Voice Announcements | `## Voice Phase Announcements` |
+| Notifications | System Notifications | `## System Notifications` |
 | Loop mode, iteration | Loop Mode, ISA Status | `### Multi-Iteration`, ISA status progression |
 | Silent stalls, hanging | No Silent Stalls | `## No Silent Stalls` |
 
@@ -70,7 +70,7 @@ The algorithm changes frequently. Every upgrade analysis MUST start by reading a
    Capability System: [how capabilities are selected]
    Agent Rules: [when/how subagents are spawned]
    ISA Integration: [how ISAs are created and tracked]
-   Voice/Notification: [announcement rules]
+   Notification: [notification rules]
    Loop Mode: [multi-iteration rules]
    Key Guardrails: [rules that constrain behavior — phase discipline, no silent stalls, etc.]
 
@@ -156,7 +156,7 @@ SECTION ROUTING:
 - Plan mode issues → 'PLAN'
 - ISA/sync issues → 'ISA'
 - Phase discipline issues → 'PHASE_DISCIPLINE'
-- Voice/notification issues → 'VOICE'
+- Notification issues → 'NOTIFICATIONS'
 - Loop/iteration issues → 'LOOP'
 - Silent stall issues → 'NO_STALLS'
 - Other → 'OTHER'

@@ -46,7 +46,7 @@ bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts \
   --output json
 ```
 
-Each agent gets a unique name, voice, voice_id, color, and personality prompt.
+Each agent gets a unique name, color, and personality prompt.
 
 ### Step 1: Announce the Council
 
@@ -66,7 +66,8 @@ Launch 4 parallel Agent calls (one per composed council member).
 **CRITICAL: Use `subagent_type: "general-purpose"` for ALL agents. NEVER use built-in types.**
 
 **Each agent prompt includes the composed agent's full prompt PLUS:**
-```
+
+```markdown
 COUNCIL DEBATE - ROUND 1: INITIAL POSITIONS
 
 Topic: [The topic being debated]
@@ -81,6 +82,7 @@ Give your initial position on this topic from your specialized perspective.
 ```
 
 **Output each response as it completes:**
+
 ```markdown
 ### Round 1: Initial Positions
 
@@ -102,7 +104,8 @@ Give your initial position on this topic from your specialized perspective.
 Launch 4 parallel Agent calls with Round 1 transcript included.
 
 **Each agent prompt includes the composed agent's full prompt PLUS:**
-```
+
+```markdown
 COUNCIL DEBATE - ROUND 2: RESPONSES & CHALLENGES
 
 Topic: [The topic being debated]
@@ -125,7 +128,8 @@ The value is in genuine intellectual friction -- engage with their actual argume
 Launch 4 parallel Agent calls with Round 1 + Round 2 transcripts.
 
 **Each agent prompt includes the composed agent's full prompt PLUS:**
-```
+
+```markdown
 COUNCIL DEBATE - ROUND 3: SYNTHESIS
 
 Topic: [The topic being debated]
@@ -169,7 +173,7 @@ After all rounds complete, synthesize the debate:
 - Round 3: ~10-20 seconds (parallel)
 - Synthesis: ~5 seconds
 
-**Total: 40-90 seconds for full debate**
+**Total: 40-90 seconds for full debate
 
 ## Done
 

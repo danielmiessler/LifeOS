@@ -1001,7 +1001,7 @@ PAI uses Handlebars notation for template variables:
 | Syntax | Purpose | Example |
 |--------|---------|---------|
 | `{{variable}}` | Simple interpolation | `Hello {{name}}` |
-| `{{object.property}}` | Nested access | `{{agent.voice_id}}` |
+| `{{object.property}}` | Nested access | `{{agent.role}}` |
 | `{{#each items}}...{{/each}}` | Iteration | List generation |
 | `{{#if condition}}...{{/if}}` | Conditional | Optional sections |
 | `{{> partial}}` | Include partial | Reusable components |
@@ -1014,7 +1014,7 @@ PAI uses Handlebars notation for template variables:
 
 ---
 
-## Five Templating Primitives
+## Four Templating Primitives
 
 ### 1. ROSTER — Agent & Skill Definitions
 
@@ -1023,7 +1023,7 @@ Data-driven generation of structured definitions from YAML.
 **Use Cases:**
 - Agent personality definitions (32 RedTeam analysts, 10 core agents)
 - Skill frontmatter generation (83 skills)
-- Voice configuration presets
+- Team composition overviews
 
 **Example:**
 ```yaml
@@ -1044,38 +1044,7 @@ agents:
 {{/each}}
 ```
 
-### 2. VOICE — Personality Calibration
-
-Parameterized voice and tone settings for agents.
-
-**Use Cases:**
-- Voice parameters (stability, similarity_boost, rate_wpm)
-- Character archetype mapping
-- Personality trait presets
-
-**Example:**
-```yaml
-# Data: voice_presets.yaml
-presets:
-  enthusiast:
-    stability: 0.38
-    similarity_boost: 0.70
-    archetype: "Eager, celebratory, partner energy"
-  analyst:
-    stability: 0.60
-    similarity_boost: 0.92
-    archetype: "Confident, authoritative, evidence-based"
-```
-
-```handlebars
-{{!-- Template: voice_config.hbs --}}
-"{{agent.id}}": {
-  "stability": {{presets.[agent.archetype].stability}},
-  "similarity_boost": {{presets.[agent.archetype].similarity_boost}}
-}
-```
-
-### 3. STRUCTURE — Workflow Patterns
+### 2. STRUCTURE — Workflow Patterns
 
 Standardized multi-step execution patterns.
 
@@ -1101,7 +1070,7 @@ Standardized multi-step execution patterns.
 {{/each}}
 ```
 
-### 4. BRIEFING — Agent Context Handoff
+### 3. BRIEFING — Agent Context Handoff
 
 How agents receive tasks and context for delegation.
 
@@ -1129,7 +1098,7 @@ You are {{agent.personality}}. Your perspective is: "{{agent.perspective}}"
 {{briefing.output_format}}
 ```
 
-### 5. GATE — Validation Checklists
+### 4. GATE — Validation Checklists
 
 Reusable quality and completion checks.
 
@@ -1164,14 +1133,12 @@ skills/Prompting/
 ├── Templates/
 │   ├── Primitives/       # Core template files (.hbs)
 │   │   ├── Roster.hbs
-│   │   ├── Voice.hbs
 │   │   ├── Structure.hbs
 │   │   ├── Briefing.hbs
 │   │   └── Gate.hbs
 │   ├── Data/             # YAML data sources
 │   │   ├── Agents.yaml
 │   │   ├── Skills.yaml
-│   │   ├── VoicePresets.yaml
 │   │   └── ValidationGates.yaml
 │   └── Compiled/         # Generated output
 └── Tools/                # Rendering utilities
@@ -1238,7 +1205,6 @@ const output = renderTemplate('Primitives/Briefing.hbs', {
 |--------|--------------|
 | **Agent Delegation** | BRIEFING templates standardize context handoff |
 | **Skill System** | ROSTER templates generate SKILL.md files |
-| **Voice Server** | VOICE templates configure agent personalities |
 | **Validation** | GATE templates standardize quality checks |
 | **Fabric Patterns** | Templates can generate pattern-specific prompts |
 
@@ -1251,7 +1217,6 @@ The templating system reduces duplication by ~65% across the skill system:
 | Area | Before | After | Savings |
 |------|--------|-------|---------|
 | Agent Briefings | 6,400 tokens | 1,900 tokens | 70% |
-| Voice Notifications | 6,225 tokens | 725 tokens | 88% |
 | SKILL.md Files | 20,750 tokens | 8,300 tokens | 60% |
 | Workflow Steps | 7,500 tokens | 3,000 tokens | 60% |
 

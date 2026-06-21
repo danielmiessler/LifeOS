@@ -3,8 +3,8 @@
 /**
  * Recommend — recency-aware picker for restaurants, movies, books.
  *
- * Per plan §7 and §15.7: called as a CLI (not import) from the briefing composer
- * and from voice queries. Returns JSON or human-readable pick respecting recency,
+ * Per plan §7 and §15.7: called as a CLI (not import) from the briefing composer.
+ * Returns JSON or human-readable pick respecting recency,
  * cuisine/genre match, rating, blocklist.
  *
  * Usage:

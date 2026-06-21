@@ -217,7 +217,6 @@ const OUTBOUND_ICON: Record<string, LucideIcon> = {
   cloudflare: Server,
   anthropic: Cpu,
   openai: Cpu,
-  elevenlabs: Cpu,
   mortgage: Home,
   property_tax: Home,
   home_insurance: Home,

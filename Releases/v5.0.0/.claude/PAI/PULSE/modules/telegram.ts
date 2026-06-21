@@ -190,7 +190,7 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
       const sdkOptions: Record<string, unknown> = {
         cwd: CWD,
         tools: { type: "preset", preset: "claude_code" },
-        settingSources: ["user", "project"],  // NO "local" — skip CLAUDE.md to avoid Algorithm/format/voice curls
+        settingSources: ["user", "project"],  // NO "local" — skip CLAUDE.md to avoid Algorithm/format loops
         maxTurns,
         includePartialMessages: true,
         permissionMode: "bypassPermissions",

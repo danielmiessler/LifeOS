@@ -38,7 +38,7 @@ bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts \
   --output json
 ```
 
-Each call returns: name, voice, voice_id, color, traits, and a full prompt with unique personality.
+Each call returns: name, color, traits, and a full prompt with unique personality.
 
 ### Step 3: Launch with general-purpose
 

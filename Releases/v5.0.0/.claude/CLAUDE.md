@@ -101,7 +101,7 @@ Startup context is `@`-imported above (PRINCIPAL_IDENTITY, DA_IDENTITY, PROJECTS
 | ISA format spec | `~/.claude/PAI/DOCUMENTATION/IsaFormat.md` |
 | Claude Code knowledge | `Agent(subagent_type="claude-code-guide")` |
 
-## {PRINCIPAL.NAME} — Identity & Voice
+## {PRINCIPAL.NAME} — Identity & Style
 
 | Topic | Path |
 |-------|------|

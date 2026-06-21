@@ -460,7 +460,7 @@ personality:
     curiosity: ${data.traits.curiosity}
     playfulness: ${data.traits.playfulness}
 
-# -- Writing Voice -------------------------------------------------------
+# -- Writing Style -------------------------------------------------------
 writing:
   style: >
     ${writingDesc}

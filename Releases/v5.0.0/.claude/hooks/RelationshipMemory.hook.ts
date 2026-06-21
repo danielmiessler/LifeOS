@@ -24,7 +24,7 @@
  *
  * EXAMPLES:
  * - W @Principal: Currently focused on PAI infrastructure improvements
- * - B @DA: Successfully debugged voice notifications after 5 attempts
+ * - B @DA: Successfully debugged the hook pipeline after 5 attempts
  * - O(c=0.85) @Principal: Appreciates when I admit mistakes early
  */
 

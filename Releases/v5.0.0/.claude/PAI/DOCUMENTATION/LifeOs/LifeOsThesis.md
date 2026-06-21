@@ -51,7 +51,7 @@ The confusion most people have when they start building in this space: they thin
 
 **PAI** is the OS. **Pulse** is one window onto that OS — the dashboard where you watch it run, see current state vs ideal state, monitor your goals and workflows. **The DA** is the interface you talk to. Different layers. Different jobs.
 
-Everyone running PAI names their own DA. The DA is personal — a name, a voice, a personality, an identity. The OS is the framework that the DA runs on top of. Different layers. Different lifespans. Different jobs.
+Everyone running PAI names their own DA. The DA is personal — a name, a personality, an identity. The OS is the framework that the DA runs on top of. Different layers. Different lifespans. Different jobs.
 
 ---
 

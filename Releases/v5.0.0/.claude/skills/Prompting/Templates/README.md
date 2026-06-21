@@ -9,18 +9,16 @@ The PAI templating system enables **prompts that write prompts**—dynamic compo
 
 ## Directory Structure
 
-```
+```markdown
 Templates/
 ├── Primitives/       # Core template files (.hbs)
 │   ├── Roster.hbs    # Agent/skill definitions
-│   ├── Voice.hbs     # Personality calibration
 │   ├── Structure.hbs # Workflow patterns
 │   ├── Briefing.hbs  # Agent context handoff
 │   └── Gate.hbs      # Validation checklists
 ├── Data/             # YAML data sources
 │   ├── Agents.yaml   # All agent definitions
 │   ├── Skills.yaml   # All skill definitions
-│   ├── VoicePresets.yaml    # Voice calibration presets
 │   └── ValidationGates.yaml # Standard validation gates
 ├── Evals/            # Eval-specific templates
 │   ├── Judge.hbs     # LLM-as-Judge prompt template
@@ -39,56 +37,51 @@ Templates/
 PAI uses Handlebars notation for template variables:
 
 | Syntax | Purpose | Example |
-|--------|---------|---------|
+| -------- | --------- | --------- |
 | `{{variable}}` | Simple interpolation | `Hello {{name}}` |
-| `{{object.property}}` | Nested access | `{{agent.voice_id}}` |
+| `{{object.property}}` | Nested access | `{{agent.role}}` |
 | `{{#each items}}...{{/each}}` | Iteration | List generation |
 | `{{#if condition}}...{{/if}}` | Conditional | Optional sections |
 | `{{> partial}}` | Include partial | Reusable components |
 
-## Five Core Primitives
+## Four Core Primitives
 
 ### 1. ROSTER — Agent & Skill Definitions
 
 Data-driven generation of structured definitions from YAML.
 
 **Use Cases:**
+
 - 32 RedTeam agent personalities
 - 83 skill frontmatter definitions
-- Voice configuration presets
+- Team composition overviews
 
-### 2. VOICE — Personality Calibration
-
-Parameterized voice and tone settings.
-
-**Use Cases:**
-- Agent voice parameters (stability, similarity_boost)
-- Speaking rate calibration
-- Character archetype mapping
-
-### 3. STRUCTURE — Workflow Patterns
+### 2. STRUCTURE — Workflow Patterns
 
 Standardized multi-step execution patterns.
 
 **Use Cases:**
+
 - Phased analysis (RedTeam 5-phase)
 - Round-based debate (Council 3-round)
 - Sequential pipeline (Development gates)
 
-### 4. BRIEFING — Agent Context Handoff
+### 3. BRIEFING — Agent Context Handoff
 
 How agents receive tasks and context.
 
 **Use Cases:**
+
 - Research agent queries
 - RedTeam analyst prompts
 - Delegation context packages
 
-### 5. GATE — Validation Checklists
+### 4. GATE — Validation Checklists
 
 Reusable quality and completion checks.
 
 **Use Cases:**
+
 - Art mandatory elements
 - Development completion gates
 - Research source verification
@@ -174,12 +167,11 @@ git checkout v2.5.0 -- PAI/Prompting.md
 ## Token Savings
 
 | Area | Before | After | Savings |
-|------|--------|-------|---------|
+| ------ | -------- | ------- | --------- |
 | SKILL.md Frontmatter | 20,750 | 8,300 | 60% |
 | Agent Personalities | 3,000 | 1,200 | 60% |
 | Workflow Steps | 7,500 | 3,000 | 60% |
 | Agent Briefings | 6,400 | 1,900 | 70% |
-| Voice Notifications | 6,225 | 725 | 88% |
 | **TOTAL** | ~53,000 | ~18,000 | **65%** |
 
 ## Available Helpers
@@ -187,38 +179,43 @@ git checkout v2.5.0 -- PAI/Prompting.md
 The RenderTemplate.ts engine provides these custom Handlebars helpers:
 
 ### String Helpers
+
 | Helper | Example | Output |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | `uppercase` | `{{uppercase "hello"}}` | `HELLO` |
 | `lowercase` | `{{lowercase "HELLO"}}` | `hello` |
 | `titlecase` | `{{titlecase "hello world"}}` | `Hello World` |
 | `truncate` | `{{truncate text 50}}` | First 50 chars... |
 
 ### Formatting Helpers
+
 | Helper | Example | Output |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | `indent` | `{{indent text 2}}` | Indented by 2 spaces |
 | `join` | `{{join items ", "}}` | `a, b, c` |
 | `json` | `{{json object}}` | JSON string |
 | `codeblock` | `{{codeblock code "ts"}}` | Fenced code block |
 
 ### Logic Helpers
+
 | Helper | Example | Purpose |
-|--------|---------|---------|
+| -------- | --------- | --------- |
 | `eq` | `{{#if (eq a b)}}` | Equality check |
 | `gt` | `{{#if (gt a b)}}` | Greater than |
 | `lt` | `{{#if (lt a b)}}` | Less than |
 | `includes` | `{{#if (includes arr item)}}` | Array contains |
 
 ### Number Helpers
+
 | Helper | Example | Output |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | `formatNumber` | `{{formatNumber 1234567}}` | `1,234,567` |
 | `percent` | `{{percent 0.85 1}}` | `85.0` |
 
 ### Utility Helpers
+
 | Helper | Example | Output |
-|--------|---------|--------|
+| -------- | --------- | -------- |
 | `now` | `{{now "YYYY-MM-DD"}}` | `2025-12-09` |
 | `pluralize` | `{{pluralize count "item"}}` | `items` or `item` |
 | `default` | `{{default value "fallback"}}` | Value or fallback |
@@ -257,9 +254,8 @@ bun run ~/.claude/skills/Prompting/Tools/ValidateTemplate.ts \
 ### Template Selection Guide
 
 | I want to... | Use Template | With Data |
-|--------------|--------------|-----------|
+| -------------- | -------------- | ----------- |
 | Generate agent roster | `Roster.hbs` | `Agents.yaml` |
-| Configure voice settings | `Voice.hbs` | `VoicePresets.yaml` |
 | Create workflow structure | `Structure.hbs` | Custom YAML |
 | Brief an agent | `Briefing.hbs` | Task context |
 | Create validation checklist | `Gate.hbs` | `ValidationGates.yaml` |
@@ -271,6 +267,7 @@ bun run ~/.claude/skills/Prompting/Tools/ValidateTemplate.ts \
 ### Common Patterns
 
 **Iterate over agents:**
+
 ```handlebars
 {{#each agents}}
 - **{{name}}**: {{description}}
@@ -278,6 +275,7 @@ bun run ~/.claude/skills/Prompting/Tools/ValidateTemplate.ts \
 ```
 
 **Conditional sections:**
+
 ```handlebars
 {{#if reasoning_required}}
 Provide your reasoning BEFORE giving a score.
@@ -285,18 +283,21 @@ Provide your reasoning BEFORE giving a score.
 ```
 
 **Include partial:**
+
 ```handlebars
 {{> validation-gate gate=art_validation}}
 ```
 
 **Nested property access:**
+
 ```handlebars
-{{agent.voice.settings.stability}}
+{{agent.config.settings.timeout}}
 ```
 
 ## Research Foundation
 
 This system is based on research from:
+
 - **Anthropic**: `{{handlebars}}` syntax, context engineering patterns
 - **OpenAI**: Structured Outputs, meta-prompting
 - **LangChain**: LCEL composition, prompt templates

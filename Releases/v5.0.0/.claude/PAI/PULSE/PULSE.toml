@@ -71,7 +71,7 @@ command = "bun run checks/airgradient-poll.ts"
 output = "log"
 enabled = true
 
-# Anthropic cost observability — appends JSONL ledger every hour, voice-alerts
+# Anthropic cost observability — appends JSONL ledger every hour, alerts
 # on leak regressions (new API-billing call sites, API spend > $5/mo, sub >95%).
 # Added 2026-04-22 after the April invoice incident ($498.45 Sonnet 4.5 +
 # Web Search). Zero AI cost — pure static scan + OAuth cache read.

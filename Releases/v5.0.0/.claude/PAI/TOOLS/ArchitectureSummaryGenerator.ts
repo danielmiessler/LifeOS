@@ -113,7 +113,7 @@ function extractSections(content: string): Array<{ heading: string; level: numbe
 /** Extract subsystem entries from CLAUDE.md routing — supports legacy table and current bullet-list formats.
  *
  * Section-aware: tracks the current `## ...` heading so bullets under `{{PRINCIPAL_NAME}} — ...`
- * sections (which document personal identity/voice files) resolve to PAI/USER/, not
+ * sections (which document personal identity/style files) resolve to PAI/USER/, not
  * PAI/DOCUMENTATION/. The downstream `USER/` filter then correctly drops them.
  */
 function extractSubsystems(): Array<{ name: string; description: string; docPath: string }> {
@@ -126,7 +126,7 @@ function extractSubsystems(): Array<{ name: string; description: string; docPath
   const tableLegacy1 = /^\| \*\*(.+?)\*\* \| `(.+?)` .*/;
   const tableLegacy2 = /^\| (.+?) \| `(.+?)`/;
   const bulletLine = /^\s*-\s+(?:\*\*([^*]+?)\*\*|([A-Za-z][^—–\-`\n]*?))\s*[—–-]\s*`([^`]+?\.md)`/;
-  // Section heading: `## {{PRINCIPAL_NAME}} — Identity & Voice (paths under PAI/USER/)` etc.
+  // Section heading: `## {{PRINCIPAL_NAME}} — Identity & Style (paths under PAI/USER/)` etc.
   // Captures the optional "paths under <X>" hint to override the default section root.
   const headingPathHint = /paths under\s+`?([A-Za-z_/.0-9-]+?)`?(?:\s|\)|$)/;
 

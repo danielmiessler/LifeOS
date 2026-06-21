@@ -7,7 +7,7 @@ Create a new skill following the canonical structure with proper TitleCase namin
 **REQUIRED FIRST:**
 
 1. Read the skill system documentation: `~/.claude/PAI/DOCUMENTATION/Skills/SkillSystem.md`
-2. Read a canonical example skill — pick any existing public skill in `~/.claude/skills/` (e.g. `Research/SKILL.md`, `Daemon/SKILL.md`) and study its frontmatter, voice notification, workflow routing, and examples sections.
+2. Read a canonical example skill — pick any existing public skill in `~/.claude/skills/` (e.g. `Research/SKILL.md`, `Daemon/SKILL.md`) and study its frontmatter, workflow routing, and examples sections.
 
 ## Step 2: Understand the Request
 
