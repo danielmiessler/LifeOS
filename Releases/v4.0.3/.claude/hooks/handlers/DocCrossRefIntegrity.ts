@@ -745,13 +745,13 @@ export async function handleDocCrossRefIntegrity(
   // ============================================================================
   // Step 6: Inference-powered semantic analysis
   // ============================================================================
-  let inferenceEditsCount = 0; [span_5](start_span)// Pre-initialized function-scoped safety tracker[span_5](end_span)
+  let inferenceEditsCount = 0; // Pre-initialized function-scoped safety tracker
 
   if (allDrift.length > 0) {
     console.error(`${TAG} === Running inference analysis ===`);
     const inferenceEdits = await runInferenceAnalysis(modifiedFiles, docsToCheck);
     if (inferenceEdits && inferenceEdits.length > 0) {
-      inferenceEditsCount = inferenceEdits.length; [span_6](start_span)// Assigned safely inside valid tier execution path[span_6](end_span)
+      inferenceEditsCount = inferenceEdits.length; // Assigned safely inside valid tier execution path
       const inferenceApplied = applyInferenceEdits(inferenceEdits);
       updatesApplied.push(...inferenceApplied);
     } else {
@@ -794,7 +794,7 @@ export async function handleDocCrossRefIntegrity(
   console.error(`${TAG} Docs checked: ${docsToCheck.length}`);
   console.error(`${TAG} Drift items found: ${allDrift.length}`);
   
-  [span_7](start_span)// FIXED LOGGING SUMMARY: Always reads a guaranteed numerical scalar value[span_7](end_span)
+  // FIXED LOGGING SUMMARY: Always reads a guaranteed numerical scalar value
   console.error(`${TAG} Updates applied: ${updatesApplied.length} (${updatesApplied.length - inferenceEditsCount} deterministic, ${inferenceEditsCount} inference)`);
 
   if (allDrift.length > 0) {
