@@ -23,9 +23,9 @@ bash:
   # BLOCKED — Hard deny via exit(2). No prompt, no workaround.
   blocked:
     # ── Filesystem destruction ────────────────────────────────────
-    - pattern: "rm\\s.*-\\w*r.*\\s+/(\\s|$)"
+    - pattern: "\\brm\\s.*-\\w*r.*\\s+/(\\s|$)"
       reason: "Recursive deletion of system root"
-    - pattern: "rm\\s.*-\\w*r.*\\s+~/?(\\s|$)"
+    - pattern: "\\brm\\s.*-\\w*r.*\\s+~/?(\\s|$)"
       reason: "Recursive deletion of home directory"
 
     # ── Credential access via shell ──────────────────────────────
