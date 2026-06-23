@@ -182,6 +182,9 @@ Plugins/marketplaces/.chrome-profile/
 # get a working dashboard immediately (no `bun run build` step required).
 # Broad un-ignore covers the entire built tree including pai-logo.png at root.
 !PAI/PULSE/Observability/out/**
+# Pulse Observability static assets: logo must be in public/ so bun run build
+# picks it up and copies it into out/. Without this the header shows a broken image.
+!PAI/PULSE/Observability/public/pai-logo.png
 
 # Pulse Observability lockfile — ship for reproducible installs
 !PAI/PULSE/Observability/bun.lock
