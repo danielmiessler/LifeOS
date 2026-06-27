@@ -10,7 +10,7 @@ import type { InstallState, StepId } from "./types";
 import { INSTALLER_VERSION } from "./types";
 
 const STATE_FILE = join(
-  process.env.PAI_CONFIG_DIR || join(homedir(), ".config", "PAI"),
+  process.env.PAI_CONFIG_DIR || process.env.PAI_DIR || join(homedir(), ".pai"),
   "PAI-Install",
   "install-state.json"
 );
@@ -27,6 +27,7 @@ export function createFreshState(mode: "cli" | "web"): InstallState {
     completedSteps: [],
     skippedSteps: [],
     mode,
+    selectedHarness: undefined,
     detection: null,
     collected: {},
     installType: null,

@@ -17,7 +17,7 @@ export const STEPS: StepDefinition[] = [
   {
     id: "prerequisites",
     name: "Prerequisites",
-    description: "Install required tools: Git, Bun, Claude Code",
+    description: "Install required tools for the selected harness",
     number: 2,
     required: true,
     dependsOn: ["system-detect"],
@@ -41,7 +41,7 @@ export const STEPS: StepDefinition[] = [
   {
     id: "repository",
     name: "PAI Repository",
-    description: "Clone or update the PAI repository into ~/.claude",
+    description: "Install or update PAI core and harness files",
     number: 5,
     required: true,
     dependsOn: ["identity"],
@@ -49,7 +49,7 @@ export const STEPS: StepDefinition[] = [
   {
     id: "configuration",
     name: "Configuration",
-    description: "Generate settings.json, environment files, and directory structure",
+    description: "Generate harness config, environment files, and directory structure",
     number: 6,
     required: true,
     dependsOn: ["repository"],

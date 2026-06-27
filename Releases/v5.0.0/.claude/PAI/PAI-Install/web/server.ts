@@ -18,6 +18,7 @@ import { handleWsMessage, addClient, removeClient } from "./routes";
 
 const PORT = parseInt(process.env.PAI_INSTALL_PORT || "1337");
 const PUBLIC_DIR = join(import.meta.dir, "..", "public");
+const ALLOWED_WS_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
 
 // ─── MIME Types ──────────────────────────────────────────────────
 
@@ -49,6 +50,18 @@ function resetInactivity(): void {
   }, INACTIVITY_MS);
 }
 
+function isAllowedWsOrigin(req: Request): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return true;
+
+  try {
+    const parsed = new URL(origin);
+    return ALLOWED_WS_HOSTS.has(parsed.hostname) && parsed.port === String(PORT);
+  } catch {
+    return false;
+  }
+}
+
 // ─── Server ──────────────────────────────────────────────────────
 
 const server = Bun.serve({
@@ -62,6 +75,9 @@ const server = Bun.serve({
 
     // WebSocket upgrade
     if (url.pathname === "/ws") {
+      if (!isAllowedWsOrigin(req)) {
+        return new Response("Forbidden", { status: 403 });
+      }
       const upgraded = server.upgrade(req);
       if (!upgraded) {
         return new Response("WebSocket upgrade failed", { status: 400 });

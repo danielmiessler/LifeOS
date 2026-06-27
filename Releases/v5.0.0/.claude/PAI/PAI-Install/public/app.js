@@ -205,12 +205,23 @@ function renderDetection(data) {
   const chat = document.getElementById('chat-messages');
   if (!chat) return;
 
+  const selectedHarness = data.adapter?.harness === 'codex' ? 'Codex' : 'Claude Code';
+  const needsClaudeCode = data.adapter?.harness !== 'codex';
+  const claudeValue = data.tools?.claude?.installed
+    ? 'v' + data.tools.claude.version
+    : 'Will install';
+  const codexValue = data.tools?.codex?.installed
+    ? 'v' + data.tools.codex.version
+    : 'Not detected — configuring files only';
+
   const items = [
+    { icon: 'check', label: 'Selected Harness', value: selectedHarness },
     { icon: 'check', label: 'OS', value: data.os?.name + ' (' + data.os?.arch + ')' },
     { icon: 'check', label: 'Shell', value: data.shell?.name },
     { icon: data.tools?.bun?.installed ? 'check' : 'cross', label: 'Bun', value: data.tools?.bun?.installed ? 'v' + data.tools.bun.version : 'Not found' },
     { icon: data.tools?.git?.installed ? 'check' : 'cross', label: 'Git', value: data.tools?.git?.installed ? 'v' + data.tools.git.version : 'Not found' },
-    { icon: data.tools?.claude?.installed ? 'check' : 'info', label: 'Claude Code', value: data.tools?.claude?.installed ? 'v' + data.tools.claude.version : 'Will install' },
+    ...(needsClaudeCode ? [{ icon: data.tools?.claude?.installed ? 'check' : 'info', label: 'Claude Code', value: claudeValue }] : []),
+    ...(!needsClaudeCode ? [{ icon: data.tools?.codex?.installed ? 'check' : 'info', label: 'Codex CLI', value: codexValue }] : []),
     { icon: 'info', label: 'Timezone', value: data.timezone },
     { icon: data.existing?.paiInstalled ? 'info' : 'check', label: 'Existing PAI', value: data.existing?.paiInstalled ? 'v' + (data.existing.paiVersion || '?') : 'Fresh install' },
     { icon: data.existing?.hasApiKeys ? 'check' : 'info', label: 'ElevenLabs Key', value: data.existing?.elevenLabsKeyFound ? 'Found' : 'Not found' },

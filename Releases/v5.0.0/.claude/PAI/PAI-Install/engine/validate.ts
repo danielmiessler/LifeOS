@@ -9,6 +9,7 @@ import { spawnSync } from "child_process";
 import type { InstallState, ValidationCheck, InstallSummary, EngineEventHandler } from "./types";
 import { PAI_VERSION } from "./types";
 import { homedir } from "os";
+import { selectHarnessAdapter } from "./adapters";
 
 /**
  * Check if Pulse is running. PAI 5.0 absorbed the standalone voice server
@@ -40,12 +41,12 @@ async function checkPulseHealth(): Promise<boolean> {
  * Returns { passed, detail }. `passed=false` is CRITICAL: every Bash call
  * the user makes will be denied until this is fixed.
  */
-function checkSecurityHookSmoke(paiDir: string): { passed: boolean; detail: string } {
-  const hookPath = join(paiDir, "hooks", "SecurityPipeline.hook.ts");
+function checkSecurityHookSmoke(paiDir: string, harnessHome: string): { passed: boolean; detail: string } {
+  const hookPath = join(harnessHome, "hooks", "SecurityPipeline.hook.ts");
   if (!existsSync(hookPath)) {
     return { passed: false, detail: "Hook not found at hooks/SecurityPipeline.hook.ts" };
   }
-  const patternsPath = join(paiDir, "PAI", "USER", "SECURITY", "PATTERNS.yaml");
+  const patternsPath = join(paiDir, "USER", "SECURITY", "PATTERNS.yaml");
   if (!existsSync(patternsPath)) {
     return { passed: false, detail: `PATTERNS.yaml not found at ${patternsPath} — hook will fail-close on every Bash call` };
   }
@@ -92,12 +93,18 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     });
   }
 
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
-  const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
+  const selectedHarness = state.detection?.adapter?.harness ?? state.selectedHarness ?? "claude";
+  const homeDir = state.detection?.adapter?.homeDir ?? state.detection?.homeDir ?? homedir();
+  const harnessHome = state.detection?.adapter?.harnessHome
+    ?? join(homeDir, selectedHarness === "codex" ? ".codex" : ".claude");
+  const paiDir = state.detection?.adapter?.paiDir ?? join(homeDir, ".pai");
+  const configDir = state.detection?.configDir || paiDir;
   const checks: ValidationCheck[] = [];
 
   // 1. settings.json exists and is valid JSON
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = selectedHarness === "codex"
+    ? join(paiDir, "settings.json")
+    : join(harnessHome, "settings.json");
   const settingsExists = existsSync(settingsPath);
   let settingsValid = false;
   let settings: any = null;
@@ -155,16 +162,16 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
 
   // 3. Directory structure
   const requiredDirs = [
-    { path: "skills", name: "Skills directory" },
-    { path: "MEMORY", name: "Memory directory" },
-    { path: "MEMORY/STATE", name: "State directory" },
-    { path: "MEMORY/WORK", name: "Work directory" },
-    { path: "hooks", name: "Hooks directory" },
-    { path: "Plans", name: "Plans directory" },
+    { root: harnessHome, path: "skills", name: "Skills directory" },
+    { root: paiDir, path: "MEMORY", name: "Memory directory" },
+    { root: paiDir, path: "MEMORY/STATE", name: "State directory" },
+    { root: paiDir, path: "MEMORY/WORK", name: "Work directory" },
+    { root: harnessHome, path: "hooks", name: "Hooks directory" },
+    { root: harnessHome, path: "Plans", name: "Plans directory" },
   ];
 
   for (const dir of requiredDirs) {
-    const fullPath = join(paiDir, dir.path);
+    const fullPath = join(dir.root, dir.path);
     checks.push({
       name: dir.name,
       passed: existsSync(fullPath),
@@ -173,13 +180,17 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     });
   }
 
-  // 4. PAI skill present
-  const skillPath = join(paiDir, "skills", "PAI", "SKILL.md");
+  // 4. Representative PAI skill present in the selected harness.
+  // PAIUpgrade is a stable release sentinel without requiring an exhaustive
+  // inventory of every skill in the bundle.
+  const skillPath = join(harnessHome, "skills", "PAIUpgrade", "SKILL.md");
   checks.push({
-    name: "PAI core skill",
+    name: "PAIUpgrade skill",
     passed: existsSync(skillPath),
-    detail: existsSync(skillPath) ? "Present" : "Not found — clone PAI repo to enable",
-    critical: false,
+    detail: existsSync(skillPath)
+      ? "Present at skills/PAIUpgrade/SKILL.md"
+      : "Missing skills/PAIUpgrade/SKILL.md",
+    critical: true,
   });
 
   // 5. ElevenLabs key stored — check all three possible locations
@@ -230,7 +241,7 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     passed: pulseHealthy,
     detail: pulseHealthy
       ? "Running on localhost:31337"
-      : "Not reachable — install via: bash ~/.claude/PAI/PULSE/manage.sh install",
+      : `Not reachable — install via: bash ${join(paiDir, "PULSE", "manage.sh")} install`,
     critical: false,
   });
 
@@ -263,11 +274,31 @@ export async function runValidation(state: InstallState, emit?: EngineEventHandl
     critical: true,
   });
 
-  // 9. SecurityPipeline smoke test — runs the actual hook with a benign Bash
+  // 9. Selected harness adapter state — validates adapter-local manifest,
+  // compatibility link, and adapter-managed files such as config.toml,
+  // hooks.json, and AGENTS.md for Codex.
+  const adapter = selectHarnessAdapter(selectedHarness);
+  const adapterValidation = await adapter.validate({
+    harness: selectedHarness,
+    homeDir: state.detection?.adapter?.homeDir ?? state.detection?.homeDir ?? homedir(),
+    harnessHome,
+    paiDir: state.detection?.adapter?.paiDir,
+    expectedPaiVersion: PAI_VERSION,
+  });
+  checks.push({
+    name: `${selectedHarness === "codex" ? "Codex" : "Claude Code"} adapter state`,
+    passed: adapterValidation.valid,
+    detail: adapterValidation.valid
+      ? "Compatibility link, manifest, and managed files are valid"
+      : adapterValidation.issues.map((issue) => `${issue.check}: ${issue.message}`).join("; "),
+    critical: true,
+  });
+
+  // 10. SecurityPipeline smoke test — runs the actual hook with a benign Bash
   // payload. Catches the v5.0 fail-closed regression where PATTERNS.yaml was
   // missing from the public template, leaving every fresh install unable to
   // execute Bash commands. CRITICAL — if this fails, the install is broken.
-  const securitySmoke = checkSecurityHookSmoke(paiDir);
+  const securitySmoke = checkSecurityHookSmoke(paiDir, harnessHome);
   checks.push({
     name: "SecurityPipeline hook (smoke test)",
     passed: securitySmoke.passed,

@@ -12,6 +12,10 @@ import type { InstallState, EngineEventHandler, DetectionResult, ExistingUserCon
 import { PAI_VERSION, ALGORITHM_VERSION, DEFAULT_VOICES } from "./types";
 import { detectSystem, detectExistingUserContent, scanApiKeys, validateElevenLabsKey } from "./detect";
 import { generateSettingsJson } from "./config-gen";
+import { requiresClaudeCodePrerequisite, resolveInstallerHarness } from "./install-targets";
+import { installBundleForAdapter } from "./bundle-install";
+import { findBundleRoot, resolveInstallSource, type InstallSource } from "./install-source";
+import { selectHarnessAdapter, type PaiHarness } from "./adapters";
 
 type ChoiceOption = {
   label: string;
@@ -76,13 +80,62 @@ const USER_MIGRATION_FULL_ENTRIES = [
   "BELIEFS.md",
 ] as const;
 
+const HARNESS_CHOICES: ChoiceOption[] = [
+  {
+    label: "Claude Code",
+    value: "claude",
+    description: "Connect PAI to Claude Code using settings.json, CLAUDE.md, and Claude hooks.",
+  },
+  {
+    label: "Codex",
+    value: "codex",
+    description: "Connect PAI to Codex using config.toml, hooks.json, and AGENTS.md.",
+  },
+];
+
+function isPaiHarness(value: string): value is PaiHarness {
+  return value === "claude" || value === "codex";
+}
+
+function harnessDisplayName(harness: PaiHarness): string {
+  return harness === "codex" ? "Codex" : "Claude Code";
+}
+
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
 function isPlaceholderValue(value: string): boolean {
   return /^\{.+\}$/.test(value) || /^e\.g\./i.test(value.trim()) || PLACEHOLDER_LITERALS.has(value.trim());
 }
 
-function computeBackupPath(home: string): string {
+function computeBackupPath(harnessHome: string): string {
   const ts = new Date().toISOString().replace(/[:.]/g, "-");
-  return join(home, `.claude.backup-${ts}`);
+  return join(dirname(harnessHome), `${basename(harnessHome)}.backup-${ts}`);
+}
+
+function displayPath(path: string): string {
+  return path.replace(homedir(), "~");
+}
+
+function selectedHarness(state: InstallState): PaiHarness {
+  return state.detection?.adapter?.harness ?? state.selectedHarness ?? "claude";
+}
+
+function selectedHarnessHome(state: InstallState, homeDir = state.detection?.homeDir || homedir()): string {
+  return state.detection?.adapter?.harnessHome
+    || join(homeDir, selectedHarness(state) === "codex" ? ".codex" : ".claude");
+}
+
+function canonicalPaiDir(state: InstallState, homeDir = state.detection?.homeDir || homedir()): string {
+  return state.detection?.adapter?.paiDir || join(homeDir, ".pai");
+}
+
+function paiSettingsPath(state: InstallState): string {
+  const homeDir = state.detection?.homeDir || homedir();
+  return selectedHarness(state) === "codex"
+    ? join(canonicalPaiDir(state, homeDir), "settings.json")
+    : join(selectedHarnessHome(state, homeDir), "settings.json");
 }
 
 async function emitSectionHeader(
@@ -215,15 +268,24 @@ function readKeyFromFile(envPath: string, keyName: string): string {
 }
 
 /**
- * Check primary key locations only — current process env, ~/.claude/.env,
- * ~/.config/PAI/.env. These are the user's own active install; no permission
- * prompt needed.
+ * Check active key locations only: current process env, selected harness .env,
+ * and PAI_DIR/.env. Legacy config is opt-in and only read during prior-config
+ * import.
  */
-function findExistingEnvKey(keyName: string): string {
+function findExistingEnvKey(
+  keyName: string,
+  harnessHome?: string,
+  paiDir?: string,
+  includeLegacyConfig = false
+): string {
   const home = homedir();
+  const harnessEnvPaths = harnessHome
+    ? [join(harnessHome, ".env")]
+    : [join(home, ".claude", ".env")];
   const primary = [
-    join(home, ".claude", ".env"),
-    join(home, ".config", "PAI", ".env"),
+    ...harnessEnvPaths,
+    ...(paiDir ? [join(paiDir, ".env")] : []),
+    ...(includeLegacyConfig ? [join(home, ".config", "PAI", ".env")] : []),
   ];
   for (const envPath of primary) {
     const value = readKeyFromFile(envPath, keyName);
@@ -232,18 +294,96 @@ function findExistingEnvKey(keyName: string): string {
   return process.env[keyName] || "";
 }
 
+function ensureEnvLinks(envPath: string, harnessHome: string, paiDir: string, homeDir: string): void {
+  const symlinkPaths = [
+    join(harnessHome, ".env"),    // selected harness .env
+    join(paiDir, ".env"),         // canonical PAI .env
+    join(homeDir, ".env"),        // ~/.env fallback for older voice/Pulse consumers
+  ];
+  for (const symlinkPath of symlinkPaths) {
+    try {
+      if (symlinkPath === envPath) continue;
+      if (existsSync(symlinkPath)) {
+        const stat = lstatSync(symlinkPath);
+        if (stat.isSymbolicLink()) {
+          unlinkSync(symlinkPath);
+        } else {
+          continue; // Don't overwrite a real file
+        }
+      }
+      symlinkSync(envPath, symlinkPath);
+    } catch {
+      // Permission error or path conflict
+    }
+  }
+}
+
+function isSensitiveEnvPath(filePath: string): boolean {
+  const name = basename(filePath);
+  return name === ".env" || name.startsWith(".env.");
+}
+
+function applyInstallPermissions(rootPath: string): void {
+  const visit = (currentPath: string) => {
+    let stat;
+    try {
+      stat = lstatSync(currentPath);
+    } catch {
+      return;
+    }
+
+    if (stat.isSymbolicLink()) return;
+
+    if (stat.isDirectory()) {
+      try {
+        chmodSync(currentPath, 0o755);
+      } catch {}
+
+      let entries: string[];
+      try {
+        entries = readdirSync(currentPath);
+      } catch {
+        return;
+      }
+
+      for (const entry of entries) {
+        visit(join(currentPath, entry));
+      }
+      return;
+    }
+
+    if (isSensitiveEnvPath(currentPath)) {
+      try {
+        chmodSync(currentPath, 0o600);
+      } catch {}
+    }
+  };
+
+  if (existsSync(rootPath)) {
+    visit(rootPath);
+  }
+}
+
+function backupHarnessPrefixes(state?: InstallState): string[] {
+  const primary = state ? selectedHarness(state) : "claude";
+  return primary === "codex" ? [".codex", ".claude"] : [".claude", ".codex"];
+}
+
+function isPriorHarnessBackupDir(entry: string, state?: InstallState): boolean {
+  return backupHarnessPrefixes(state).some((prefix) => entry.startsWith(prefix) && entry !== prefix);
+}
+
 /**
- * List backup .claude* directories that have an .env containing the key.
- * Returns paths only — does NOT read or use the values until the caller
- * gets explicit user permission. Used by setupVoice to ask before scanning.
+ * List prior harness backup directories that have an .env containing the key.
+ * Only called after the user explicitly permits the prior-config scan.
  */
-function findKeyInBackupDirs(keyName: string): { path: string; value: string }[] {
+function findKeyInBackupDirs(keyName: string, state?: InstallState): { path: string; value: string }[] {
   const home = homedir();
   const found: { path: string; value: string }[] = [];
   try {
     const homeEntries = readdirSync(home);
     for (const entry of homeEntries) {
-      if (!entry.startsWith(".claude") || entry === ".claude") continue;
+      if (!isPriorHarnessBackupDir(entry, state)) continue;
       for (const candidate of [
         join(home, entry, ".env"),
         join(home, entry, ".config", "PAI", ".env"),
@@ -263,79 +403,87 @@ function findKeyInBackupDirs(keyName: string): { path: string; value: string }[]
  * WITHOUT importing anything. Read-only check used to decide whether to
  * ask the user permission before proceeding with import.
  *
- * Scope (deliberately narrow — the just-installed `~/.claude/` is excluded):
- *   1. `~/.config/PAI/.env` — PAI's canonical key store. Lives outside
- *      `~/.claude/` so it survives `rm -rf ~/.claude` between installs.
- *      This is where a prior install's key actually persists.
- *   2. ANY directory in `$HOME` whose name starts with `.claude` EXCEPT
- *      `~/.claude/` itself — covers `.claude.bak`, `.claude-bak`,
- *      `.claude.backup.20260101`, `.claude.previous`, `.claude_old`, etc.
+ * Scope (deliberately narrow — the just-installed selected harness home is excluded):
+ *   1. `~/.config/PAI/.env` — legacy key store from older installs.
+ *      New installs write to PAI_DIR/.env and keep harness .env as a link.
+ *   2. ANY prior harness backup directory in `$HOME` EXCEPT the active
+ *      selected harness home — covers `.claude.bak`, `.codex.bak`,
+ *      `.claude.previous`, `.codex_old`, etc.
  *      Inside each, both `<dir>/.env` AND `<dir>/.config/PAI/.env` are
  *      checked, plus `<dir>/settings.json` for the voice ID.
  *
- * The active `~/.claude/.env` and `~/.claude/settings.json` are NOT
- * inventoried — they're the install we just built, not prior state to ask
- * about importing. Returns a list of human-readable signals — a fresh
+ * The active selected-harness `.env` and settings file are NOT inventoried —
+ * they're the install we just built, not prior state to ask about importing.
+ * Returns a list of human-readable signals — a fresh
  * machine returns []. Any non-empty result triggers the upfront "may I
  * import?" prompt at the top of runVoiceSetup. The user must explicitly
  * opt in before any prior key or voice ID gets pulled into the new install.
  */
-function inventoryExistingConfig(): { signals: string[] } {
+function priorSettingsCandidates(state?: InstallState): string[] {
+  const home = homedir();
+  const candidates: string[] = [];
+
+  if (state?.backupPath) {
+    candidates.push(join(state.backupPath, "PAI", "settings.json"));
+    candidates.push(join(state.backupPath, "settings.json"));
+  }
+
+  try {
+    for (const entry of readdirSync(home)) {
+      if (isPriorHarnessBackupDir(entry, state)) {
+        candidates.push(join(home, entry, "settings.json"));
+      }
+    }
+  } catch {
+    // Ignore permission errors.
+  }
+
+  return [...new Set(candidates)];
+}
+
+function inventoryExistingConfig(state?: InstallState): { signals: string[] } {
   const home = homedir();
   const signals: string[] = [];
-  // (1) `~/.config/PAI/.env` — outside `~/.claude/`, often holds the prior key.
+  // (1) `~/.config/PAI/.env` — legacy location that may hold a prior key.
   const configEnv = join(home, ".config", "PAI", ".env");
   if (readKeyFromFile(configEnv, "ELEVENLABS_API_KEY")) {
     signals.push(`ElevenLabs key in ${configEnv.replace(home, "~")}`);
   }
-  // (2) Every `.claude*` directory in $HOME EXCEPT `~/.claude/` itself.
-  //     Pattern matches `.claude.bak`, `.claude-bak`, `.claude.backup.20260101`,
-  //     `.claude.previous`, `.claude_old`, `.claude20251215`, etc.
+  // (2) Every prior settings.json candidate from the installer backup or
+  //     prior harness backup directories in $HOME.
   try {
     for (const entry of readdirSync(home)) {
-      if (!entry.startsWith(".claude") || entry === ".claude") continue;
+      if (!isPriorHarnessBackupDir(entry, state)) continue;
       for (const candidate of [join(home, entry, ".env"), join(home, entry, ".config", "PAI", ".env")]) {
         if (readKeyFromFile(candidate, "ELEVENLABS_API_KEY")) {
           signals.push(`ElevenLabs key in ${candidate.replace(home, "~")}`);
         }
       }
-      const settingsPath = join(home, entry, "settings.json");
-      if (existsSync(settingsPath)) {
-        try {
-          const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
-          const voiceId = settings.daidentity?.voices?.main?.voiceId || settings.daidentity?.voiceId;
-          if (voiceId && !/^\{.+\}$/.test(voiceId)) {
-            signals.push(`voice ID in ${settingsPath.replace(home, "~")}`);
-          }
-        } catch { /* malformed settings.json — skip */ }
-      }
     }
   } catch { /* permission errors on home listing — return what we have */ }
+
+  for (const settingsPath of priorSettingsCandidates(state)) {
+    if (existsSync(settingsPath)) {
+      try {
+        const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+        const voiceId = settings.daidentity?.voices?.main?.voiceId || settings.daidentity?.voiceId;
+        if (voiceId && !/^\{.+\}$/.test(voiceId)) {
+          signals.push(`voice ID in ${settingsPath.replace(home, "~")}`);
+        }
+      } catch { /* malformed settings.json — skip */ }
+    }
+  }
+
   return { signals };
 }
 
 /**
- * Search existing .claude directories for settings.json voice configuration.
+ * Search prior settings.json files for voice configuration.
  * Returns { voiceId, aiName, source } if found, or null.
  */
-function findExistingVoiceConfig(): { voiceId: string; aiName: string; source: string } | null {
+function findExistingVoiceConfig(state?: InstallState): { voiceId: string; aiName: string; source: string } | null {
   const home = homedir();
-  const candidates: string[] = [];
-
-  // Primary location first
-  candidates.push(join(home, ".claude", "settings.json"));
-
-  // Scan all .claude* directories (backups, renamed, etc.)
-  try {
-    const homeEntries = readdirSync(home);
-    for (const entry of homeEntries) {
-      if (entry.startsWith(".claude") && entry !== ".claude") {
-        candidates.push(join(home, entry, "settings.json"));
-      }
-    }
-  } catch {
-    // Ignore permission errors
-  }
+  const candidates = priorSettingsCandidates(state);
 
   for (const settingsPath of candidates) {
     try {
@@ -344,7 +492,9 @@ function findExistingVoiceConfig(): { voiceId: string; aiName: string; source: s
       const voiceId = settings.daidentity?.voices?.main?.voiceId
         || settings.daidentity?.voiceId;
       if (voiceId && !/^\{.+\}$/.test(voiceId)) {
-        const dirName = basename(join(settingsPath, ".."));
+        const dirName = settingsPath.startsWith(state?.backupPath || "\0")
+          ? settingsPath.replace(state!.backupPath!, "backup")
+          : basename(join(settingsPath, ".."));
         return {
           voiceId,
           aiName: settings.daidentity?.name || "",
@@ -360,7 +510,7 @@ function findExistingVoiceConfig(): { voiceId: string; aiName: string; source: s
 
 function tryExec(cmd: string, timeout = 30000): string | null {
   try {
-    return execSync(cmd, { timeout, stdio: ["pipe", "pipe", "pipe"] }).toString().trim();
+    return execSync(cmd, { timeout, stdio: ["pipe", "pipe", "pipe"], env: process.env }).toString().trim();
   } catch {
     return null;
   }
@@ -473,15 +623,16 @@ function copyOverwriteTemplates(src: string, dst: string): { copied: number; fai
  * with a symlink so the skill's relative USER/ paths still resolve.
  */
 async function migrateUserContext(
+  harnessHome: string,
   paiDir: string,
   emit: EngineEventHandler
 ): Promise<void> {
-  const newUserDir = join(paiDir, "PAI", "USER");
-  if (!existsSync(newUserDir)) return; // PAI/USER/ not set up yet
+  const newUserDir = join(paiDir, "USER");
+  if (!existsSync(newUserDir)) return; // USER/ not set up yet
 
   const legacyPaths = [
-    join(paiDir, "skills", "PAI", "USER"),   // v2.5–v3.0
-    join(paiDir, "skills", "CORE", "USER"),  // v2.4 and earlier
+    join(harnessHome, "skills", "PAI", "USER"),   // v2.5–v3.0
+    join(harnessHome, "skills", "CORE", "USER"),  // v2.4 and earlier
   ];
 
   for (const legacyDir of legacyPaths) {
@@ -499,15 +650,14 @@ async function migrateUserContext(
 
     const copied = copyMissing(legacyDir, newUserDir);
     if (copied > 0) {
-      await emit({ event: "message", content: `Migrated ${copied} user context files from ${label} to PAI/USER.` });
+      await emit({ event: "message", content: `Migrated ${copied} user context files from ${label} to USER in PAI_DIR.` });
     }
 
     // Replace legacy dir with symlink so skill-relative paths still work
     try {
       rmSync(legacyDir, { recursive: true });
-      // Symlink target is relative: from skills/PAI/ or skills/CORE/ → ../../PAI/USER
-      symlinkSync(join("..", "..", "PAI", "USER"), legacyDir);
-      await emit({ event: "message", content: `Replaced ${label} with symlink to PAI/USER.` });
+      symlinkSync(newUserDir, legacyDir);
+      await emit({ event: "message", content: `Replaced ${label} with symlink to USER in PAI_DIR.` });
     } catch {
       await emit({ event: "message", content: `Could not replace ${label} with symlink. User files were copied but old directory remains.` });
     }
@@ -553,7 +703,7 @@ export async function migrateUserContentFromBackup(
     return;
   }
 
-  const targetUserDir = join(state.detection?.paiDir || join(homedir(), ".claude"), "PAI", "USER");
+  const targetUserDir = join(canonicalPaiDir(state), "USER");
   if (!existsSync(targetUserDir)) mkdirSync(targetUserDir, { recursive: true });
 
   const entries =
@@ -598,34 +748,44 @@ export async function migrateUserContentFromBackup(
   await emit({ event: "message", content: `Migrated ${totalCopied} files from backup to fresh install.${failureSuffix}` });
 }
 
-function pathLooksLikeExistingClaudeRoot(claudeDir: string): boolean {
-  return existsSync(join(claudeDir, "settings.json")) || existsSync(join(claudeDir, "skills"));
+function pathLooksLikeExistingHarnessRoot(harnessDir: string): boolean {
+  return existsSync(join(harnessDir, "settings.json")) ||
+    existsSync(join(harnessDir, "config.toml")) ||
+    existsSync(join(harnessDir, "hooks.json")) ||
+    existsSync(join(harnessDir, "skills"));
 }
 
-export async function moveExistingClaudeToBackup(
+export async function moveExistingHarnessToBackup(
   state: InstallState,
   emit: EngineEventHandler
 ): Promise<void> {
   if (!state.backupPath) return;
 
-  const claudeDir = state.detection?.paiDir || join(homedir(), ".claude");
-  if (!existsSync(claudeDir) || !pathLooksLikeExistingClaudeRoot(claudeDir)) return;
+  const harnessDir = selectedHarnessHome(state);
+  const paiCoreDir = canonicalPaiDir(state);
+  const harnessLabel = harnessDir.replace(homedir(), "~");
+  if (!existsSync(harnessDir) || !pathLooksLikeExistingHarnessRoot(harnessDir)) return;
 
   try {
     mkdirSync(dirname(state.backupPath), { recursive: true });
-    cpSync(claudeDir, state.backupPath, { recursive: true });
+    cpSync(harnessDir, state.backupPath, { recursive: true });
+    if (existsSync(paiCoreDir)) {
+      const backupPaiDir = join(state.backupPath, "PAI");
+      rmSync(backupPaiDir, { recursive: true, force: true });
+      cpSync(paiCoreDir, backupPaiDir, { recursive: true, dereference: true });
+    }
     await emit({
       event: "message",
-      content: `Copied existing ~/.claude to ${state.backupPath.replace(homedir(), "~")} before installing the fresh tree.`,
+      content: `Copied existing ${harnessLabel} to ${state.backupPath.replace(homedir(), "~")} before installing the fresh tree.`,
     });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
-    await emit({ event: "message", content: `Could not back up ~/.claude before reinstall: ${reason}` });
+    await emit({ event: "message", content: `Could not back up ${harnessLabel} before reinstall: ${reason}` });
     throw err instanceof Error ? err : new Error(reason);
   }
 
-  // The installer is executing from ~/.claude/PAI/PAI-Install right now.
-  // Never remove ~/.claude wholesale here; instead clear only the parts the
+  // The installer may be executing from the selected harness during reinstall.
+  // Never remove the harness home wholesale here; instead clear only the parts the
   // fresh install will replace and explicitly preserve PAI/PAI-Install.
   const removableRoots = [
     "skills",
@@ -639,7 +799,7 @@ export async function moveExistingClaudeToBackup(
   ];
 
   for (const relPath of removableRoots) {
-    const fullPath = join(claudeDir, relPath);
+    const fullPath = join(harnessDir, relPath);
     if (!existsSync(fullPath)) continue;
     try {
       rmSync(fullPath, { recursive: true, force: true });
@@ -649,16 +809,14 @@ export async function moveExistingClaudeToBackup(
     }
   }
 
-  const paiRoot = join(claudeDir, "PAI");
+  const paiRoot = join(harnessDir, "PAI");
   if (existsSync(paiRoot)) {
     try {
-      for (const entry of readdirSync(paiRoot)) {
-        if (entry === "PAI-Install") continue;
-        rmSync(join(paiRoot, entry), { recursive: true, force: true });
-      }
+      if (lstatSync(paiRoot).isSymbolicLink()) return;
+      rmSync(paiRoot, { recursive: true, force: true });
     } catch (err) {
       const reason = err instanceof Error ? err.message : String(err);
-      await emit({ event: "message", content: `Could not fully clear ~/.claude/PAI before reinstall: ${reason}` });
+      await emit({ event: "message", content: `Could not fully clear ${harnessLabel}/PAI before reinstall: ${reason}` });
     }
   }
 }
@@ -673,6 +831,46 @@ export async function runSystemDetect(
   await emit({ event: "step_start", step: "system-detect" });
   await emitSectionHeader(
     emit,
+    "CHOOSE-HARNESS",
+    "CHOOSE HARNESS",
+    "Selecting which agent app PAI should connect to",
+    1
+  );
+
+  if (process.env.PAI_HARNESS) {
+    state.selectedHarness = resolveInstallerHarness(process.env);
+    await emit({
+      event: "message",
+      content: `Using ${harnessDisplayName(state.selectedHarness)} from PAI_HARNESS.`,
+    });
+  } else if (state.selectedHarness) {
+    await emit({
+      event: "message",
+      content: `Using selected harness: ${harnessDisplayName(state.selectedHarness)}.`,
+    });
+  } else {
+    if (getChoice) {
+      const selected = await getChoice(
+        "harness-selection",
+        "Which agent harness should PAI connect to?",
+        HARNESS_CHOICES,
+        state.collected.aiName,
+      );
+      if (!isPaiHarness(selected)) {
+        throw new Error(`Unsupported PAI harness: ${selected}`);
+      }
+      state.selectedHarness = selected;
+    } else {
+      state.selectedHarness = resolveInstallerHarness({});
+      await emit({
+        event: "message",
+        content: `No interactive harness prompt available; using ${harnessDisplayName(state.selectedHarness)}.`,
+      });
+    }
+  }
+
+  await emitSectionHeader(
+    emit,
     "DETECTING-YOUR-SYSTEM",
     "DETECTING YOUR SYSTEM",
     "Reading OS, tools, and prior installs (no writes yet)",
@@ -680,7 +878,9 @@ export async function runSystemDetect(
   );
   await emit({ event: "progress", step: "system-detect", percent: 10, detail: "Detecting operating system..." });
 
-  const detection = detectSystem();
+  const detection = detectSystem({
+    env: { ...process.env, PAI_HARNESS: state.selectedHarness },
+  });
   state.detection = detection;
 
   await emit({ event: "progress", step: "system-detect", percent: 50, detail: "Checking installed tools..." });
@@ -688,18 +888,19 @@ export async function runSystemDetect(
   // Determine install type
   if (detection.existing.paiInstalled) {
     state.installType = "upgrade";
-    state.backupPath = computeBackupPath(detection.homeDir);
+    state.backupPath = computeBackupPath(detection.adapter.harnessHome);
+    const harnessLabel = detection.adapter.harnessHome.replace(detection.homeDir, "~");
     await emitSectionHeader(
       emit,
       "EXISTING-INSTALLATION-FOUND",
       "EXISTING INSTALLATION FOUND",
-      `Will copy ~/.claude → ${state.backupPath.replace(detection.homeDir, "~")} before installing fresh`
+      `Will copy ${harnessLabel} → ${state.backupPath.replace(detection.homeDir, "~")} before installing fresh`
     );
 
     const consent = getChoice
       ? await getChoice(
           "backup-and-scan-consent",
-          `Found existing PAI installation (v${detection.existing.paiVersion || "unknown"}). I'll copy ~/.claude to ${state.backupPath.replace(detection.homeDir, "~")} (your old install stays there until you remove it manually), then install a fresh tree.\n\nHow much of the old install should I read for pre-fill and migration?`,
+          `Found existing PAI installation (v${detection.existing.paiVersion || "unknown"}). I'll copy ${harnessLabel} to ${state.backupPath.replace(detection.homeDir, "~")} (your old install stays there until you remove it manually), then install a fresh tree.\n\nHow much of the old install should I read for pre-fill and migration?`,
           [
             {
               label: "Yes — full scan and migrate USER content",
@@ -772,7 +973,7 @@ export async function runSystemDetect(
     }
 
     if (state.collected.scanConsent === "yes-full" && state.backupPath) {
-      const liveUserDir = join(detection.paiDir, "PAI", "USER");
+      const liveUserDir = join(detection.adapter.paiDir, "USER");
       const backupUserDir = join(state.backupPath, "PAI", "USER");
       if (existsSync(liveUserDir)) {
         try {
@@ -827,7 +1028,7 @@ export async function runPrerequisites(
     emit,
     "INSTALLING-PREREQUISITES",
     "INSTALLING PREREQUISITES",
-    "Making sure Bun, Git, and Claude Code are available",
+    "Making sure Bun, Git, and the selected harness prerequisites are available",
     2
   );
   const det = state.detection!;
@@ -899,8 +1100,10 @@ export async function runPrerequisites(
     await emit({ event: "progress", step: "prerequisites", percent: 50, detail: `Bun found: v${det.tools.bun.version}` });
   }
 
-  // Install Claude Code if missing
-  if (!det.tools.claude.installed) {
+  const needsClaudeCode = requiresClaudeCodePrerequisite(det.adapter?.harness ?? "claude");
+
+  // Install Claude Code if the selected harness needs it.
+  if (needsClaudeCode && !det.tools.claude.installed) {
     await emit({ event: "progress", step: "prerequisites", percent: 70, detail: "Installing Claude Code..." });
 
     // Try npm first (most common), then bun
@@ -919,8 +1122,17 @@ export async function runPrerequisites(
         });
       }
     }
-  } else {
+  } else if (needsClaudeCode) {
     await emit({ event: "progress", step: "prerequisites", percent: 80, detail: `Claude Code found: v${det.tools.claude.version}` });
+  } else if (det.tools.codex.installed) {
+    await emit({ event: "progress", step: "prerequisites", percent: 80, detail: `Codex CLI found: v${det.tools.codex.version}` });
+  } else {
+    await emit({
+      event: "progress",
+      step: "prerequisites",
+      percent: 80,
+      detail: "Codex CLI not detected; continuing with Codex file configuration.",
+    });
   }
 
   await emit({ event: "progress", step: "prerequisites", percent: 100, detail: "All prerequisites ready" });
@@ -1053,7 +1265,7 @@ export async function runIdentity(
 
 // ─── Step 5: Repository ──────────────────────────────────────────
 
-// ─── Local Bundle Detection & Install ───────────────────────────
+// ─── Source Detection & Adapter Install ─────────────────────────
 //
 // install.sh exports PAI_BUNDLE_DIR pointing to its own directory — the
 // root of the v5 release bundle. The wizard prefers installing from this
@@ -1064,88 +1276,20 @@ export async function runIdentity(
 // Marker files prove the bundle is complete; missing markers fall back
 // to git clone so users who run main.ts directly (no bundle) still work.
 
-const BUNDLE_MARKERS = [
-  "install.sh",
-  "settings.json",
-  "hooks/SecurityPipeline.hook.ts",
-  "PAI/PAI-Install/main.ts",
-];
-
-const BUNDLE_COPY_EXCLUDES = new Set([
-  ".git",
-  "node_modules",
-  "PAI_RELEASES",
-  "install-state.json",
-  ".DS_Store",
-  ".tmp",
-  ".quote-cache",
-]);
-
-function detectLocalBundle(): string | null {
-  const bundleRoot = process.env.PAI_BUNDLE_DIR;
-  if (!bundleRoot || !existsSync(bundleRoot)) return null;
-  for (const marker of BUNDLE_MARKERS) {
-    if (!existsSync(join(bundleRoot, marker))) return null;
-  }
-  return bundleRoot;
+function adapterManagedFiles(harness: PaiHarness): string[] {
+  return harness === "codex"
+    ? ["config.toml", "hooks.json", "AGENTS.md"]
+    : ["settings.json", "CLAUDE.md"];
 }
 
-function copyBundleTree(
-  src: string,
-  dst: string,
-  stats: { files: number; bytes: number } = { files: 0, bytes: 0 }
-): { files: number; bytes: number } {
-  if (!existsSync(dst)) mkdirSync(dst, { recursive: true });
-
-  for (const entry of readdirSync(src, { withFileTypes: true })) {
-    if (BUNDLE_COPY_EXCLUDES.has(entry.name)) continue;
-
-    const srcPath = join(src, entry.name);
-    const dstPath = join(dst, entry.name);
-
-    if (entry.isDirectory()) {
-      copyBundleTree(srcPath, dstPath, stats);
-    } else if (entry.isSymbolicLink()) {
-      try {
-        const target = readlinkSync(srcPath);
-        if (existsSync(dstPath)) unlinkSync(dstPath);
-        symlinkSync(target, dstPath);
-      } catch {
-        // skip broken symlinks
-      }
-    } else if (entry.isFile()) {
-      try {
-        cpSync(srcPath, dstPath);
-        stats.files++;
-        stats.bytes += lstatSync(srcPath).size;
-      } catch {
-        // permission errors are non-fatal
-      }
-    }
+function describeInstallSource(source: InstallSource): string {
+  if (source.kind === "clone") {
+    return `Cloned PAI repository to ${source.sourceDir}. Installing through the selected harness adapter.`;
   }
-  return stats;
-}
-
-async function installFromLocalBundle(
-  bundleDir: string,
-  targetDir: string,
-  emit: EngineEventHandler
-): Promise<{ files: number; bytes: number }> {
-  await emit({
-    event: "progress",
-    step: "repository",
-    percent: 30,
-    detail: `Installing from local v5 bundle...`,
-  });
-  if (!existsSync(targetDir)) mkdirSync(targetDir, { recursive: true });
-  const stats = copyBundleTree(bundleDir, targetDir);
-  await emit({
-    event: "progress",
-    step: "repository",
-    percent: 90,
-    detail: `Copied ${stats.files} files (${(stats.bytes / 1024 / 1024).toFixed(1)} MB).`,
-  });
-  return stats;
+  if (source.reason === "backup") {
+    return `Using your backup as the install source — no GitHub clone needed.`;
+  }
+  return `Local v5 bundle detected at ${source.sourceDir}. Installing from bundle (skipping git clone).`;
 }
 
 export async function runRepository(
@@ -1157,105 +1301,116 @@ export async function runRepository(
     emit,
     "INSTALLING-THE-PAI-TREE",
     "INSTALLING THE PAI TREE",
-    "Laying down a fresh ~/.claude tree and restoring any consented content",
+    "Laying down the PAI core and selected harness adapter",
     5
   );
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
+  const homeDir = state.detection?.homeDir || homedir();
+  const adapterPaths = state.detection?.adapter;
+  const selectedAdapter = selectHarnessAdapter(adapterPaths?.harness ?? state.selectedHarness ?? "claude");
+  const paths = adapterPaths ?? selectedAdapter.resolvePaths({
+    homeDir,
+    harnessHome: selectedHarnessHome(state, homeDir),
+  });
+  const harnessHome = paths.harnessHome;
 
-  await moveExistingClaudeToBackup(state, emit);
+  await moveExistingHarnessToBackup(state, emit);
 
-  if (!existsSync(paiDir)) {
-    mkdirSync(paiDir, { recursive: true });
+  if (!existsSync(harnessHome)) {
+    mkdirSync(harnessHome, { recursive: true });
   }
 
-  // The backup we just created IS a complete v5 bundle (it's a copy of the
-  // staging tree this installer shipped with). Use it as the install source
-  // — never reach out to GitHub when we already have the tree on disk.
-  // Falls through to PAI_BUNDLE_DIR / git-clone only if the backup path is
-  // missing markers (e.g. user explicitly skipped backup, or partial copy).
-  if (state.backupPath && existsSync(state.backupPath)) {
-    const backupHasMarkers = BUNDLE_MARKERS.every((m) =>
-      existsSync(join(state.backupPath!, m))
-    );
-    if (backupHasMarkers) {
-      process.env.PAI_BUNDLE_DIR = state.backupPath;
-      await emit({
-        event: "message",
-        content: `Using your backup as the install source — no GitHub clone needed.`,
-      });
-    }
-  }
-
-  const localBundle = detectLocalBundle();
-  let bundleInstalled = false;
-
-  if (localBundle) {
-    await emit({
-      event: "message",
-      content: `Local v5 bundle detected at ${localBundle}. Installing from bundle (skipping git clone).`,
-    });
+  const installFromSource = async (source: InstallSource): Promise<boolean> => {
+    await emit({ event: "message", content: describeInstallSource(source) });
     try {
-      const stats = await installFromLocalBundle(localBundle, paiDir, emit);
+      await emit({
+        event: "progress",
+        step: "repository",
+        percent: 30,
+        detail: `Installing ${selectedAdapter.harness} adapter from ${source.kind} source...`,
+      });
+      const stats = await installBundleForAdapter({
+        bundleDir: source.sourceDir,
+        adapter: selectedAdapter,
+        paths,
+        paiVersion: PAI_VERSION,
+        managedFiles: adapterManagedFiles(selectedAdapter.harness),
+      });
+      const totalFiles = stats.core.files + stats.harness.files;
+      const totalBytes = stats.core.bytes + stats.harness.bytes;
+      await emit({
+        event: "progress",
+        step: "repository",
+        percent: 90,
+        detail: `Copied ${totalFiles} files (${(totalBytes / 1024 / 1024).toFixed(1)} MB) across PAI core and harness.`,
+      });
       await emit({
         event: "message",
-        content: `Installed ${stats.files} files from local bundle (${(stats.bytes / 1024 / 1024).toFixed(1)} MB).`,
+        content: `Installed ${stats.core.files} PAI core files and ${stats.harness.files} ${selectedAdapter.harness} harness files from ${source.kind} source.`,
       });
-      bundleInstalled = true;
+      return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       await emit({
         event: "message",
-        content: `Local bundle install failed: ${msg}. Falling back to git clone.`,
+        content: `${source.kind === "bundle" ? "Local bundle" : "Cloned source"} install failed: ${msg}.`,
       });
+      return false;
     }
-  } else if (process.env.PAI_BUNDLE_DIR) {
+  };
+
+  if (process.env.PAI_BUNDLE_DIR && !findBundleRoot(process.env.PAI_BUNDLE_DIR)) {
     await emit({
       event: "message",
       content: `PAI_BUNDLE_DIR set but bundle is incomplete (missing marker files). Falling back to git clone.`,
     });
   }
 
-  if (!bundleInstalled) {
+  let source = resolveInstallSource({
+    env: process.env,
+    backupPath: state.backupPath,
+    runCommand: tryExec,
+  });
+
+  let sourceInstalled = source ? await installFromSource(source) : false;
+  if (!sourceInstalled && source?.kind === "bundle") {
     await emit({ event: "progress", step: "repository", percent: 20, detail: "Cloning PAI repository..." });
-
-    const cloneResult = tryExec(
-      `git clone https://github.com/danielmiessler/PAI.git "${paiDir}" 2>&1`,
-      120000
-    );
-
-    if (cloneResult !== null) {
-      await emit({ event: "message", content: "PAI repository cloned successfully." });
-    } else {
-      await emit({ event: "progress", step: "repository", percent: 50, detail: "Directory exists, trying alternative approach..." });
-
-      const initResult = tryExec(`cd "${paiDir}" && git init && git remote add origin https://github.com/danielmiessler/PAI.git && git fetch origin && git checkout -b main origin/main 2>&1`, 120000);
-      if (initResult !== null) {
-        await emit({ event: "message", content: "PAI repository initialized and synced." });
-      } else {
-        await emit({
-          event: "message",
-          content: "Could not clone PAI repo automatically. You can clone it manually later: git clone https://github.com/danielmiessler/PAI.git ~/.claude",
-        });
-      }
-    }
+    source = resolveInstallSource({ env: {}, runCommand: tryExec });
+    sourceInstalled = source ? await installFromSource(source) : false;
   }
 
-  // Create required directories regardless of clone result
-  const requiredDirs = [
+  if (!sourceInstalled) {
+    const message = "Could not clone PAI repo automatically. Clone it manually, then rerun the installer with PAI_BUNDLE_DIR pointing at the release bundle.";
+    await emit({
+      event: "message",
+      content: message,
+    });
+    throw new Error(message);
+  }
+
+  // Create required directories regardless of clone result.
+  const requiredPaiDirs = [
     "MEMORY",
     "MEMORY/STATE",
     "MEMORY/LEARNING",
     "MEMORY/WORK",
     "MEMORY/RELATIONSHIP",
     "MEMORY/VOICE",
+  ];
+  const requiredHarnessDirs = [
     "Plans",
     "hooks",
     "skills",
     "tasks",
   ];
 
-  for (const dir of requiredDirs) {
-    const fullPath = join(paiDir, dir);
+  for (const dir of requiredPaiDirs) {
+    const fullPath = join(paths.paiDir, dir);
+    if (!existsSync(fullPath)) {
+      mkdirSync(fullPath, { recursive: true });
+    }
+  }
+  for (const dir of requiredHarnessDirs) {
+    const fullPath = join(harnessHome, dir);
     if (!existsSync(fullPath)) {
       mkdirSync(fullPath, { recursive: true });
     }
@@ -1271,7 +1426,7 @@ export async function runRepository(
     await migrateUserContentFromBackup(state, emit);
   }
 
-  await migrateUserContext(paiDir, emit);
+  await migrateUserContext(harnessHome, paths.paiDir, emit);
 
   await emit({ event: "progress", step: "repository", percent: 100, detail: "Repository ready" });
   await emit({ event: "step_complete", step: "repository" });
@@ -1291,8 +1446,11 @@ export async function runConfiguration(
     "Writing settings, env files, aliases, and identity templates",
     6
   );
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
-  const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
+  const homeDir = state.detection?.homeDir || homedir();
+  const harness = selectedHarness(state);
+  const harnessHome = selectedHarnessHome(state, homeDir);
+  const paiDir = canonicalPaiDir(state, homeDir);
+  const configDir = state.detection?.configDir || paiDir;
 
   // Generate settings.json
   await emit({ event: "progress", step: "configuration", percent: 20, detail: "Generating settings.json..." });
@@ -1310,7 +1468,7 @@ export async function runConfiguration(
     configDir,
   });
 
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = paiSettingsPath(state);
 
   // The release ships a complete settings.json with hooks, statusLine, spinnerVerbs, etc.
   // We only update user-specific fields — never overwrite the whole file.
@@ -1350,7 +1508,7 @@ export async function runConfiguration(
   // lacked PAI/ALGORITHM/) with no LATEST file at all, and the statusline
   // displayed `ALG: —` forever. Always ensure both directory and a non-empty
   // LATEST exist by the time configuration completes.
-  const latestDir = join(paiDir, "PAI", "ALGORITHM");
+  const latestDir = join(paiDir, "ALGORITHM");
   const latestPath = join(latestDir, "LATEST");
   let latestExisting = "";
   try { latestExisting = readFileSync(latestPath, "utf-8").trim(); } catch {}
@@ -1390,14 +1548,14 @@ export async function runConfiguration(
       } catch { return 0; }
     };
 
-    const skillCount = countDirs(join(paiDir, "skills"), (name) =>
-      existsSync(join(paiDir, "skills", name, "SKILL.md")));
-    const hookCount = countFiles(join(paiDir, "hooks"), ".ts");
+    const skillCount = countDirs(join(harnessHome, "skills"), (name) =>
+      existsSync(join(harnessHome, "skills", name, "SKILL.md")));
+    const hookCount = countFiles(join(harnessHome, "hooks"), ".ts");
     const signalCount = countFiles(join(paiDir, "MEMORY", "LEARNING"), ".md");
-    const fileCount = countFiles(join(paiDir, "skills", "PAI", "USER"));
+    const fileCount = countFiles(join(paiDir, "USER"));
     // Count workflows by scanning skill Tools directories for .ts files
     let workflowCount = 0;
-    const skillsDir = join(paiDir, "skills");
+    const skillsDir = join(harnessHome, "skills");
     if (existsSync(skillsDir)) {
       try {
         for (const s of readdirSync(skillsDir, { withFileTypes: true })) {
@@ -1436,17 +1594,21 @@ export async function runConfiguration(
   const aiName = state.collected.aiName || "PAI";
   const principalName = state.collected.principalName || "User";
 
-  const claudeMdPath = join(paiDir, "CLAUDE.md");
-  if (existsSync(claudeMdPath)) {
+  const startupInstructionPaths = [
+    join(harnessHome, "CLAUDE.md"),
+    ...(state.detection?.adapter?.harness === "codex" ? [join(harnessHome, "AGENTS.md")] : []),
+  ];
+  for (const startupPath of startupInstructionPaths) {
+    if (!existsSync(startupPath)) continue;
     try {
-      const content = readFileSync(claudeMdPath, "utf-8")
+      const content = readFileSync(startupPath, "utf-8")
         .replace(/\{DA_IDENTITY\.NAME\}/g, aiName)
         .replace(/\{PRINCIPAL\.NAME\}/g, principalName);
-      writeFileSync(claudeMdPath, content);
+      writeFileSync(startupPath, content);
     } catch {}
   }
 
-  const daIdentityPath = join(paiDir, "PAI", "USER", "DA_IDENTITY.md");
+  const daIdentityPath = join(paiDir, "USER", "DA_IDENTITY.md");
   if (existsSync(daIdentityPath)) {
     try {
       const content = readFileSync(daIdentityPath, "utf-8")
@@ -1466,7 +1628,7 @@ export async function runConfiguration(
     } catch {}
   }
 
-  const principalIdPath = join(paiDir, "PAI", "USER", "PRINCIPAL_IDENTITY.md");
+  const principalIdPath = join(paiDir, "USER", "PRINCIPAL_IDENTITY.md");
   if (existsSync(principalIdPath)) {
     try {
       const content = readFileSync(principalIdPath, "utf-8")
@@ -1482,7 +1644,7 @@ export async function runConfiguration(
     mkdirSync(configDir, { recursive: true });
   }
 
-  const envPath = join(configDir, ".env");
+  const envPath = join(paiDir, ".env");
   let envContent = "";
 
   if (state.collected.elevenLabsKey) {
@@ -1494,29 +1656,9 @@ export async function runConfiguration(
     await emit({ event: "message", content: "API keys saved securely." });
   }
 
-  // Create symlinks so all consumers can find the .env
-  // Voice server reads ~/.env, hooks read ~/.claude/.env
+  // Create symlinks so older consumers can find the canonical PAI_DIR/.env.
   if (existsSync(envPath)) {
-    const symlinkPaths = [
-      join(paiDir, ".env"),         // ~/.claude/.env
-      join(homedir(), ".env"),      // ~/.env (voice server reads this)
-    ];
-    for (const symlinkPath of symlinkPaths) {
-      try {
-        // Remove stale symlink or file before creating
-        if (existsSync(symlinkPath)) {
-          const stat = lstatSync(symlinkPath);
-          if (stat.isSymbolicLink()) {
-            unlinkSync(symlinkPath);
-          } else {
-            continue; // Don't overwrite a real file
-          }
-        }
-        symlinkSync(envPath, symlinkPath);
-      } catch {
-        // Permission error or path conflict
-      }
-    }
+    ensureEnvLinks(envPath, harnessHome, paiDir, homeDir);
   }
 
   // Set up shell alias (detect bash/zsh/fish)
@@ -1524,8 +1666,16 @@ export async function runConfiguration(
 
   const userShell = process.env.SHELL || "/bin/zsh";
   const rcFile = userShell.includes("bash") ? ".bashrc" : userShell.includes("fish") ? ".config/fish/config.fish" : ".zshrc";
-  const rcPath = join(homedir(), rcFile);
-  const aliasLine = `alias pai='bun ${join(paiDir, "PAI", "TOOLS", "pai.ts")}'`;
+  const rcPath = join(homeDir, rcFile);
+  const paiCommand = [
+    "env",
+    `PAI_DIR=${shellQuote(paiDir)}`,
+    `HARNESS_HOME=${shellQuote(harnessHome)}`,
+    `PAI_HARNESS=${harness}`,
+    "bun",
+    shellQuote(join(paiDir, "TOOLS", "pai.ts")),
+  ].join(" ");
+  const aliasLine = `alias pai=${shellQuote(paiCommand)}`;
   const marker = "# PAI alias";
 
   if (existsSync(rcPath)) {
@@ -1543,7 +1693,8 @@ export async function runConfiguration(
   // Fix permissions
   await emit({ event: "progress", step: "configuration", percent: 90, detail: "Setting permissions..." });
   try {
-    tryExec(`chmod -R 755 "${paiDir}"`, 10000);
+    applyInstallPermissions(paiDir);
+    applyInstallPermissions(harnessHome);
   } catch {
     // Non-fatal
   }
@@ -1576,8 +1727,17 @@ async function isPulseRunning(): Promise<boolean> {
 // Install Pulse as a launchd agent via the canonical `PULSE/manage.sh install`.
 // Manage.sh substitutes __HOME__ in the public plist template, copies it to
 // ~/Library/LaunchAgents/com.pai.pulse.plist, and `launchctl load`s it.
-async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<boolean> {
-  const pulseDir = join(paiDir, "PAI", "PULSE");
+function harnessEnv(paiDir: string, harnessHome: string, harness: PaiHarness): Record<string, string | undefined> {
+  return {
+    ...process.env,
+    PAI_DIR: paiDir,
+    HARNESS_HOME: harnessHome,
+    PAI_HARNESS: harness,
+  };
+}
+
+async function installPulse(paiDir: string, harnessHome: string, harness: PaiHarness, emit: EngineEventHandler): Promise<boolean> {
+  const pulseDir = join(paiDir, "PULSE");
   const manageScript = join(pulseDir, "manage.sh");
 
   if (!existsSync(manageScript)) {
@@ -1592,6 +1752,7 @@ async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<b
       const child = spawn("bash", [manageScript, "install"], {
         cwd: pulseDir,
         stdio: ["ignore", "pipe", "pipe"],
+        env: harnessEnv(paiDir, harnessHome, harness),
       });
       const timer = setTimeout(() => { child.kill(); resolve(false); }, 30000);
       child.on("close", (code) => { clearTimeout(timer); resolve(code === 0); });
@@ -1613,7 +1774,10 @@ async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<b
     // Pulse plist installed but never bound :31337. Surface this as an install
     // failure rather than silently reporting success — the user will hit
     // mysterious 'voice not working' / 'pulse not starting' otherwise.
-    await emit({ event: "message", content: "Pulse plist installed but port 31337 did not bind within 10s. Check ~/.claude/PAI/PULSE/logs/pulse-stderr.log. Voice and dashboard will not work until this is resolved." });
+    await emit({
+      event: "message",
+      content: `Pulse plist installed but port 31337 did not bind within 10s. Check ${displayPath(join(paiDir, "PULSE", "logs", "pulse-stderr.log"))}. Voice and dashboard will not work until this is resolved.`,
+    });
     return false;
   } catch {
     await emit({ event: "message", content: "Could not install Pulse. Voice notifications will not be available." });
@@ -1631,8 +1795,8 @@ async function installPulse(paiDir: string, emit: EngineEventHandler): Promise<b
 // hits Pulse's stale cached default instead of the user's chosen DA voice.
 // `manage.sh restart` is idempotent: unloads the launchd plist, kills any
 // stale `bun pulse.ts`, reloads, waits up to 10s for :31337 to bind.
-async function reloadPulse(paiDir: string, emit: EngineEventHandler): Promise<void> {
-  const manageScript = join(paiDir, "PAI", "PULSE", "manage.sh");
+async function reloadPulse(paiDir: string, harnessHome: string, harness: PaiHarness, emit: EngineEventHandler): Promise<void> {
+  const manageScript = join(paiDir, "PULSE", "manage.sh");
   if (!existsSync(manageScript)) return;
   const homeLaunchAgent = join(homedir(), "Library", "LaunchAgents", "com.pai.pulse.plist");
   if (!existsSync(homeLaunchAgent)) return;
@@ -1641,6 +1805,7 @@ async function reloadPulse(paiDir: string, emit: EngineEventHandler): Promise<vo
     const child = spawn("bash", [manageScript, "restart"], {
       cwd: dirname(manageScript),
       stdio: ["ignore", "pipe", "pipe"],
+      env: harnessEnv(paiDir, harnessHome, harness),
     });
     const timer = setTimeout(() => { child.kill(); resolve(); }, 30000);
     child.on("close", () => { clearTimeout(timer); resolve(); });
@@ -1649,8 +1814,8 @@ async function reloadPulse(paiDir: string, emit: EngineEventHandler): Promise<vo
 }
 
 // Optional menu bar app — separate launchd plist + macOS .app bundle.
-async function installPulseMenuBar(paiDir: string, emit: EngineEventHandler): Promise<boolean> {
-  const menuBarInstall = join(paiDir, "PAI", "PULSE", "MenuBar", "install.sh");
+async function installPulseMenuBar(paiDir: string, harnessHome: string, harness: PaiHarness, emit: EngineEventHandler): Promise<boolean> {
+  const menuBarInstall = join(paiDir, "PULSE", "MenuBar", "install.sh");
   if (!existsSync(menuBarInstall)) {
     await emit({ event: "message", content: "Menu bar installer not found — skipping." });
     return false;
@@ -1663,6 +1828,7 @@ async function installPulseMenuBar(paiDir: string, emit: EngineEventHandler): Pr
       const child = spawn("bash", [menuBarInstall], {
         cwd: dirname(menuBarInstall),
         stdio: ["ignore", "pipe", "pipe"],
+        env: harnessEnv(paiDir, harnessHome, harness),
       });
       const timer = setTimeout(() => { child.kill(); resolve(false); }, 120000);
       child.on("close", (code) => { clearTimeout(timer); resolve(code === 0); });
@@ -1673,7 +1839,10 @@ async function installPulseMenuBar(paiDir: string, emit: EngineEventHandler): Pr
       await emit({ event: "message", content: "Menu bar app installed — look for the Pulse icon in your menu bar." });
       return true;
     }
-    await emit({ event: "message", content: "Menu bar install did not complete. You can run it later: bash ~/.claude/PAI/PULSE/MenuBar/install.sh" });
+    await emit({
+      event: "message",
+      content: `Menu bar install did not complete. You can run it later: bash ${displayPath(menuBarInstall)}`,
+    });
     return false;
   } catch {
     return false;
@@ -1698,13 +1867,21 @@ export async function runVoiceSetup(
     7
   );
   const daName = state.collected.aiName;
+  const homeDir = state.detection?.homeDir || homedir();
+  const harness = selectedHarness(state);
+  const harnessHome = selectedHarnessHome(state, homeDir);
+  const paiDir = canonicalPaiDir(state, homeDir);
+  const envDisplayPath = displayPath(join(paiDir, ".env"));
+  const harnessEnvDisplayPath = displayPath(join(harnessHome, ".env"));
+  const pulseManagePath = displayPath(join(paiDir, "PULSE", "manage.sh"));
+  const pulseMenuBarInstallPath = displayPath(join(paiDir, "PULSE", "MenuBar", "install.sh"));
 
   // ── Upfront scan permission gate (UNCONDITIONAL) ──
   //
   // The very first prompt of the voice step. Fires regardless of whether
   // anything is found — the user authorizes the scan BEFORE any read
-  // happens. This is the point: don't silently touch `~/.config/PAI/.env`,
-  // `~/.claude*` backup dirs, or stale settings.json voice configs without
+  // happens. This is the point: don't silently touch legacy `~/.config/PAI/.env`,
+  // prior harness backup dirs, or stale settings.json voice configs without
   // the user's explicit OK, even when the read would return nothing.
   //
   // If the user says yes → run `inventoryExistingConfig()` and present
@@ -1715,7 +1892,7 @@ export async function runVoiceSetup(
     "scan-prior-config",
     "Look in backup directories and your prior PAI config for existing ElevenLabs voice IDs and API keys?",
     [
-      { label: "Yes — scan and let me confirm anything found", value: "yes", description: "Reads ~/.config/PAI/.env and any ~/.claude.bak / ~/.claude-bak / ~/.claude.backup.* / ~/.claude.previous etc. Per-item confirmation before anything is imported." },
+      { label: "Yes — scan and let me confirm anything found", value: "yes", description: "Reads legacy ~/.config/PAI/.env and prior Claude/Codex harness backup dirs. Per-item confirmation before anything is imported." },
       { label: "No — start completely fresh", value: "no", description: "Skip the scan. I'll either enter a new ElevenLabs key or skip voice entirely." },
     ],
     daName
@@ -1724,7 +1901,7 @@ export async function runVoiceSetup(
 
   // Surface the inventory ONLY if the user authorized it.
   if (allowImportPriorConfig) {
-    const inventory = inventoryExistingConfig();
+    const inventory = inventoryExistingConfig(state);
     if (inventory.signals.length > 0) {
       await emit({
         event: "message",
@@ -1746,11 +1923,11 @@ export async function runVoiceSetup(
     let elevenLabsKey = "";
 
     if (allowImportPriorConfig) {
-      // Step 1: Check active locations (~/.claude/.env, ~/.config/PAI/.env).
+      // Step 1: Check active locations (selected harness .env, PAI_DIR/.env, and legacy config if opted in).
       await emit({ event: "progress", step: "voice", percent: 5, detail: "Checking existing ElevenLabs key locations..." });
-      const candidate = findExistingEnvKey("ELEVENLABS_API_KEY");
+      const candidate = findExistingEnvKey("ELEVENLABS_API_KEY", harnessHome, paiDir, true);
       if (candidate) {
-        const useIt = await getChoice("confirm-active-key", `Found ElevenLabs API key in ~/.claude/.env or ~/.config/PAI/.env. Use it?`, [
+        const useIt = await getChoice("confirm-active-key", `Found ElevenLabs API key in ${envDisplayPath}, ${harnessEnvDisplayPath}, or legacy ~/.config/PAI/.env. Use it?`, [
           { label: "Yes — validate and use", value: "yes" },
           { label: "No — skip this one", value: "no" },
         ], daName);
@@ -1767,9 +1944,9 @@ export async function runVoiceSetup(
         }
       }
 
-      // Step 2: Check backup .claude* directories with per-finding confirmation.
+      // Step 2: Check prior harness backup directories with per-finding confirmation.
       if (!elevenLabsKey) {
-        const backupHits = findKeyInBackupDirs("ELEVENLABS_API_KEY");
+        const backupHits = findKeyInBackupDirs("ELEVENLABS_API_KEY", state);
         for (const hit of backupHits) {
           const useThis = await getChoice(`confirm-backup-${hit.path}`, `Found ElevenLabs key in ${hit.path.replace(homedir(), "~")}. Use it?`, [
             { label: "Yes — validate and use", value: "yes" },
@@ -1795,7 +1972,7 @@ export async function runVoiceSetup(
     if (!elevenLabsKey) {
       const wantsVoice = await getChoice("voice-enable", "Voice requires an ElevenLabs API key. Get one free at elevenlabs.io — without a key, voice notifications are disabled.", [
         { label: "I have a key — let me enter it", value: "yes" },
-        { label: "Skip voice for now", value: "skip", description: "You can add a key later: edit ~/.config/PAI/.env" },
+        { label: "Skip voice for now", value: "skip", description: `You can add a key later: edit ${envDisplayPath}` },
       ], daName);
 
       if (wantsVoice === "yes") {
@@ -1823,18 +2000,17 @@ export async function runVoiceSetup(
 
   const hasElevenLabsKey = !!state.collected.elevenLabsKey;
   if (!hasElevenLabsKey) {
-    await emit({ event: "message", content: "No ElevenLabs key — voice will fall back to macOS text-to-speech. You can add a key later in ~/.claude/.env" });
+    await emit({ event: "message", content: `No ElevenLabs key — voice will fall back to macOS text-to-speech. You can add a key later in ${envDisplayPath}` });
   }
 
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
-
-  // ── Write ELEVENLABS_API_KEY to ~/.claude/.env BEFORE Pulse starts ──
+  // ── Write ELEVENLABS_API_KEY before Pulse starts ──
   // Pulse loads .env at boot. If we install Pulse before writing the key,
   // the daemon comes up without ELEVENLABS_API_KEY in process.env and voice
   // silently falls back to macOS `say` — even after the configuration step
   // writes .env later. The fix: write the key now, then start Pulse.
   if (hasElevenLabsKey) {
     try {
+      mkdirSync(paiDir, { recursive: true });
       const envPath = join(paiDir, ".env");
       let envContent = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
       if (envContent.includes("ELEVENLABS_API_KEY=")) {
@@ -1843,7 +2019,8 @@ export async function runVoiceSetup(
         envContent = (envContent.trimEnd() + `\nELEVENLABS_API_KEY=${state.collected.elevenLabsKey}\n`).trimStart();
       }
       writeFileSync(envPath, envContent, { mode: 0o600 });
-      await emit({ event: "message", content: "ElevenLabs key written to ~/.claude/.env (Pulse will read it on boot)." });
+      ensureEnvLinks(envPath, harnessHome, paiDir, homeDir);
+      await emit({ event: "message", content: `ElevenLabs key written to ${envDisplayPath} (Pulse will read it on boot).` });
     } catch (err: any) {
       await emit({ event: "message", content: `Could not write .env: ${err?.message || err}. Voice may fall back to macOS say.` });
     }
@@ -1861,14 +2038,14 @@ export async function runVoiceSetup(
 
   const installPulseChoice = await getChoice("install-pulse", "Install Pulse as a system launchd service?", [
     { label: "Yes — install Pulse (recommended)", value: "yes", description: "Auto-starts on login. Voice + Dashboard + Observability." },
-    { label: "Skip — don't install Pulse now", value: "skip", description: "Voice notifications will not work until you run: bash ~/.claude/PAI/PULSE/manage.sh install" },
+    { label: "Skip — don't install Pulse now", value: "skip", description: `Voice notifications will not work until you run: bash ${pulseManagePath} install` },
   ], daName);
 
   let voiceServerReady = false;
   if (installPulseChoice === "yes") {
-    voiceServerReady = await installPulse(paiDir, emit);
+    voiceServerReady = await installPulse(paiDir, harnessHome, harness, emit);
   } else {
-    await emit({ event: "message", content: "Pulse skipped. Voice not enabled — install later via: bash ~/.claude/PAI/PULSE/manage.sh install" });
+    await emit({ event: "message", content: `Pulse skipped. Voice not enabled — install later via: bash ${pulseManagePath} install` });
   }
 
   // ── Optional menu bar app (Y/n) — separate launchd plist + .app bundle ──
@@ -1882,13 +2059,13 @@ export async function runVoiceSetup(
     });
     const installMenuBarChoice = await getChoice("install-menubar", "Install the Pulse menu bar app?", [
       { label: "Yes — install menu bar app", value: "yes", description: "Adds an icon to your menu bar. Auto-starts on login." },
-      { label: "Skip — Pulse runs without menu bar", value: "skip", description: "Pulse keeps running. You can install the menu bar later: bash ~/.claude/PAI/PULSE/MenuBar/install.sh" },
+      { label: "Skip — Pulse runs without menu bar", value: "skip", description: `Pulse keeps running. You can install the menu bar later: bash ${pulseMenuBarInstallPath}` },
     ], daName);
 
     if (installMenuBarChoice === "yes") {
-      await installPulseMenuBar(paiDir, emit);
+      await installPulseMenuBar(paiDir, harnessHome, harness, emit);
     } else {
-      await emit({ event: "message", content: "Menu bar skipped. Install later: bash ~/.claude/PAI/PULSE/MenuBar/install.sh" });
+      await emit({ event: "message", content: `Menu bar skipped. Install later: bash ${pulseMenuBarInstallPath}` });
     }
   }
 
@@ -1901,7 +2078,7 @@ export async function runVoiceSetup(
   // the upfront import permission. Without that consent we never read prior
   // settings.json files.
   if (allowImportPriorConfig) {
-    const existingVoice = findExistingVoiceConfig();
+    const existingVoice = findExistingVoiceConfig(state);
     if (existingVoice) {
       const sourceLabel = existingVoice.aiName
         ? `${existingVoice.aiName}'s voice (${existingVoice.voiceId.substring(0, 8)}...)`
@@ -1979,13 +2156,13 @@ export async function runVoiceSetup(
       event: "message",
       content:
         "Voice ID saved, but voice is disabled until you add an ElevenLabs API key. " +
-        "Edit ~/.config/PAI/.env and set ELEVENLABS_API_KEY=sk_...",
+        `Edit ${envDisplayPath} and set ELEVENLABS_API_KEY=sk_...`,
     });
   }
 
   // ── Update settings.json with voice ID ──
   await emit({ event: "progress", step: "voice", percent: 60, detail: "Saving voice configuration..." });
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = paiSettingsPath(state);
 
   if (existsSync(settingsPath)) {
     try {
@@ -2017,9 +2194,8 @@ export async function runVoiceSetup(
 
   // ── Save ElevenLabs key to .env (if provided) ──
   if (hasElevenLabsKey) {
-    const configDir = state.detection?.configDir || join(homedir(), ".config", "PAI");
-    const envPath = join(configDir, ".env");
-    if (!existsSync(configDir)) mkdirSync(configDir, { recursive: true });
+    const envPath = join(paiDir, ".env");
+    if (!existsSync(paiDir)) mkdirSync(paiDir, { recursive: true });
 
     let envContent = existsSync(envPath) ? readFileSync(envPath, "utf-8") : "";
     if (envContent.includes("ELEVENLABS_API_KEY=")) {
@@ -2029,20 +2205,8 @@ export async function runVoiceSetup(
     }
     writeFileSync(envPath, envContent.trim() + "\n", { mode: 0o600 });
 
-    // Ensure symlinks exist at both ~/.claude/.env and ~/.env
-    const symlinkTargets = [
-      join(paiDir, ".env"),
-      join(homedir(), ".env"),
-    ];
-    for (const sp of symlinkTargets) {
-      try {
-        if (existsSync(sp)) {
-          if (lstatSync(sp).isSymbolicLink()) unlinkSync(sp);
-          else continue;
-        }
-        symlinkSync(envPath, sp);
-      } catch { /* non-fatal */ }
-    }
+    // Ensure compatibility links exist at selected harness .env and ~/.env.
+    ensureEnvLinks(envPath, harnessHome, paiDir, homeDir);
   }
 
   // ── Test TTS and confirm with user ──
@@ -2125,7 +2289,7 @@ export async function runVoiceSetup(
   // honored at runtime (Pulse caches defaultVoiceId at init — without this
   // restart, every skill curl that omits voice_id stays on the stale template
   // default until the next manual restart).
-  await reloadPulse(paiDir, emit);
+  await reloadPulse(paiDir, harnessHome, harness, emit);
 
   await emit({ event: "step_complete", step: "voice" });
 }
@@ -2134,10 +2298,10 @@ export async function runVoiceSetup(
 //
 // Optional step. If the user wants Pulse's Telegram bot to work, we collect
 // the bot token + allowed user/chat ID, validate via Telegram getMe, write
-// to ~/.claude/.env, then ask Pulse to restart so it picks up the env vars.
+// to the selected harness .env, then ask Pulse to restart so it picks up the env vars.
 //
 // Same key-discovery pattern as the voice step: check primary .env first,
-// ask permission before scanning .claude* backup directories, fall back to
+// ask permission before scanning prior harness backup directories, fall back to
 // manual entry.
 
 interface TelegramValidation { valid: boolean; username?: string; error?: string }
@@ -2160,11 +2324,15 @@ async function validateTelegramBotToken(token: string): Promise<TelegramValidati
   }
 }
 
-async function restartPulse(paiDir: string): Promise<boolean> {
-  const manage = join(paiDir, "PAI", "PULSE", "manage.sh");
+async function restartPulse(paiDir: string, harnessHome: string, harness: PaiHarness): Promise<boolean> {
+  const manage = join(paiDir, "PULSE", "manage.sh");
   if (!existsSync(manage)) return false;
   return new Promise<boolean>((resolve) => {
-    const child = spawn("bash", [manage, "restart"], { cwd: dirname(manage), stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("bash", [manage, "restart"], {
+      cwd: dirname(manage),
+      stdio: ["ignore", "pipe", "pipe"],
+      env: harnessEnv(paiDir, harnessHome, harness),
+    });
     const timer = setTimeout(() => { child.kill(); resolve(false); }, 15000);
     child.on("close", (code) => { clearTimeout(timer); resolve(code === 0); });
     child.on("error", () => { clearTimeout(timer); resolve(false); });
@@ -2189,6 +2357,12 @@ export async function runTelegramSetup(
   getInput: (id: string, prompt: string, type: "text" | "password" | "key", placeholder?: string) => Promise<string>
 ): Promise<void> {
   await emit({ event: "step_start", step: "telegram" });
+  const homeDir = state.detection?.homeDir || homedir();
+  const harness = selectedHarness(state);
+  const harnessHome = selectedHarnessHome(state, homeDir);
+  const paiDir = canonicalPaiDir(state, homeDir);
+  const envDisplayPath = displayPath(join(paiDir, ".env"));
+  const pulseRestartCommand = `bash ${displayPath(join(paiDir, "PULSE", "manage.sh"))} restart`;
   await emitSectionHeader(
     emit,
     "TELEGRAM-OPTIONAL",
@@ -2207,19 +2381,17 @@ export async function runTelegramSetup(
 
   const wantsTelegram = await getChoice("telegram-enable", "Set up Telegram now?", [
     { label: "Yes — I have a bot token from BotFather", value: "yes" },
-    { label: "Skip — I'll set this up later (or never)", value: "skip", description: "Pulse runs fine without Telegram. Add later via ~/.claude/.env" },
+    { label: "Skip — I'll set this up later (or never)", value: "skip", description: `Pulse runs fine without Telegram. Add later via ${envDisplayPath}` },
   ]);
 
   if (wantsTelegram !== "yes") {
-    await emit({ event: "message", content: "Skipped Telegram setup. Add later: TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in ~/.claude/.env, then bash ~/.claude/PAI/PULSE/manage.sh restart" });
+    await emit({ event: "message", content: `Skipped Telegram setup. Add later: TELEGRAM_BOT_TOKEN and TELEGRAM_ALLOWED_USERS in ${envDisplayPath}, then ${pulseRestartCommand}` });
     skipStep(state, "telegram", "user-skipped");
     return;
   }
 
-  const paiDir = state.detection?.paiDir || join(homedir(), ".claude");
-
   // ── Step 1: Check primary .env locations (no permission needed) ──
-  let token = findExistingEnvKey("TELEGRAM_BOT_TOKEN");
+  let token = findExistingEnvKey("TELEGRAM_BOT_TOKEN", harnessHome, paiDir);
   let validation: TelegramValidation = { valid: false };
 
   if (token) {
@@ -2231,9 +2403,9 @@ export async function runTelegramSetup(
     }
   }
 
-  // ── Step 2: Offer to scan backup .claude* dirs (with permission) ──
+  // ── Step 2: Offer to scan prior harness backup dirs (with permission) ──
   if (!token) {
-    const backupHits = findKeyInBackupDirs("TELEGRAM_BOT_TOKEN");
+    const backupHits = findKeyInBackupDirs("TELEGRAM_BOT_TOKEN", state);
     if (backupHits.length > 0) {
       const sources = backupHits.map(h => h.path.replace(homedir(), "~")).join(", ");
       const allow = await getChoice("telegram-scan-backup", `Found Telegram bot tokens in backup directories: ${sources}. Use one of them?`, [
@@ -2285,7 +2457,9 @@ export async function runTelegramSetup(
 
   // ── Step 4: Allowed users / chat ID ──
   // Reuse from primary .env first, fall back to prompt.
-  let allowedUsers = findExistingEnvKey("TELEGRAM_ALLOWED_USERS") || findExistingEnvKey("TELEGRAM_PRINCIPAL_CHAT_ID");
+  let allowedUsers =
+    findExistingEnvKey("TELEGRAM_ALLOWED_USERS", harnessHome, paiDir) ||
+    findExistingEnvKey("TELEGRAM_PRINCIPAL_CHAT_ID", harnessHome, paiDir);
   if (!allowedUsers) {
     const entered = await getInput(
       "telegram-allowed-users",
@@ -2301,16 +2475,18 @@ export async function runTelegramSetup(
     return;
   }
 
-  // ── Step 5: Persist to ~/.claude/.env and restart Pulse ──
+  // ── Step 5: Persist to harness .env and restart Pulse ──
   state.collected.telegramBotToken = token;
   state.collected.telegramAllowedUsers = allowedUsers;
   state.collected.telegramBotUsername = validation.username;
 
   try {
     const envPath = join(paiDir, ".env");
+    if (!existsSync(paiDir)) mkdirSync(paiDir, { recursive: true });
     writeEnvKey(envPath, "TELEGRAM_BOT_TOKEN", token);
     writeEnvKey(envPath, "TELEGRAM_ALLOWED_USERS", allowedUsers);
-    await emit({ event: "message", content: "Telegram credentials written to ~/.claude/.env." });
+    ensureEnvLinks(envPath, harnessHome, paiDir, homeDir);
+    await emit({ event: "message", content: `Telegram credentials written to ${envDisplayPath}.` });
   } catch (err: any) {
     await emit({ event: "message", content: `Could not write .env: ${err?.message || err}. Telegram bot will not start.` });
     skipStep(state, "telegram", "env-write-failed");
@@ -2319,12 +2495,12 @@ export async function runTelegramSetup(
 
   // Pulse may already be running from the voice step; restart so it picks up env.
   await emit({ event: "progress", step: "telegram", percent: 80, detail: "Restarting Pulse to pick up Telegram credentials..." });
-  const restarted = await restartPulse(paiDir);
+  const restarted = await restartPulse(paiDir, harnessHome, harness);
   await emit({
     event: "message",
     content: restarted
       ? `Pulse restarted. Telegram bot @${validation.username} is now polling.`
-      : `Pulse not restarted automatically — run: bash ~/.claude/PAI/PULSE/manage.sh restart`,
+      : `Pulse not restarted automatically — run: ${pulseRestartCommand}`,
   });
 
   await emit({ event: "step_complete", step: "telegram" });

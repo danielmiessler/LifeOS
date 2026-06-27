@@ -10,3 +10,6 @@ export * from "./state";
 export * from "./actions";
 export * from "./config-gen";
 export * from "./validate";
+export * from "./adapters";
+export * from "./install-targets";
+export * from "./bundle-install";

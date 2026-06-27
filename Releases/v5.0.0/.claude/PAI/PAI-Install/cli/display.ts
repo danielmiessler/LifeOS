@@ -152,6 +152,10 @@ export function printBanner(): void {
 import type { DetectionResult } from "../engine/types";
 
 export function printDetection(det: DetectionResult): void {
+  const selectedHarness = det.adapter?.harness === "codex" ? "Codex" : "Claude Code";
+  const needsClaudeCode = det.adapter?.harness !== "codex";
+
+  printSuccess(`Selected Harness: ${selectedHarness}`);
   printSuccess(`Operating System: ${det.os.name} (${det.os.arch})`);
   printSuccess(`Shell: ${det.shell.name} ${det.shell.version ? `v${det.shell.version.substring(0, 20)}` : ""}`);
 
@@ -167,10 +171,14 @@ export function printDetection(det: DetectionResult): void {
     printError("Git: not found — will install");
   }
 
-  if (det.tools.claude.installed) {
+  if (needsClaudeCode && det.tools.claude.installed) {
     printSuccess(`Claude Code: v${det.tools.claude.version}`);
-  } else {
+  } else if (needsClaudeCode) {
     printWarning("Claude Code: not found — will install");
+  } else if (det.tools.codex.installed) {
+    printSuccess(`Codex CLI: v${det.tools.codex.version}`);
+  } else {
+    printInfo("Codex CLI: not detected — configuring Codex files only");
   }
 
   if (det.existing.paiInstalled) {

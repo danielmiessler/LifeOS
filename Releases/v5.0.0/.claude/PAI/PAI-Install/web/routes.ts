@@ -3,7 +3,7 @@
  * HTTP + WebSocket API for the web installer.
  */
 
-import type { InstallState, EngineEvent, ServerMessage, ClientMessage } from "../engine/types";
+import type { DetectionResult, InstallState, EngineEvent, ServerMessage, ClientMessage } from "../engine/types";
 import { detectSystem, validateElevenLabsKey } from "../engine/detect";
 import {
   runSystemDetect,
@@ -46,6 +46,24 @@ function broadcast(msg: ServerMessage): void {
       wsClients.delete(ws);
     }
   }
+}
+
+function redactApiKeys(
+  apiKeys: DetectionResult["existing"]["apiKeys"],
+): DetectionResult["existing"]["apiKeys"] {
+  return Object.fromEntries(
+    Object.entries(apiKeys).filter(([, value]) => Boolean(value)).map(([key]) => [key, "found"]),
+  ) as DetectionResult["existing"]["apiKeys"];
+}
+
+function publicDetectionResult(detection: DetectionResult): DetectionResult {
+  return {
+    ...detection,
+    existing: {
+      ...detection.existing,
+      apiKeys: redactApiKeys(detection.existing.apiKeys),
+    },
+  };
 }
 
 // ─── Engine Event → WebSocket ────────────────────────────────────
@@ -184,7 +202,7 @@ async function startInstallation(): Promise<void> {
     // Step 1: System Detection
     if (!installState.completedSteps.includes("system-detect")) {
       await runSystemDetect(installState, emit, requestChoice);
-      broadcast({ type: "detection_result", data: installState.detection! });
+      broadcast({ type: "detection_result", data: publicDetectionResult(installState.detection!) });
       completeStep(installState, "system-detect");
       installState.currentStep = "prerequisites";
     }

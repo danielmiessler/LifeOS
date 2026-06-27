@@ -6,22 +6,32 @@
  * Usage: bun generate-welcome.ts
  *
  * Requires: ELEVENLABS_API_KEY environment variable
- * Uses voice clone ID from settings.json principal.voiceClone
+ * Uses voice clone ID from PAI settings.json principal.voiceClone.
+ * Codex uses config.toml for Codex settings; voice IDs remain PAI state.
  */
 
 import { writeFileSync, readFileSync, existsSync } from "fs";
-import { join, dirname } from "path";
-import { homedir } from "os";
+import { join } from "path";
+import { getHarnessHome, getPaiDir } from "../TOOLS/lib/runtime-paths";
 
 const OUTPUT_PATH = join(import.meta.dir, "public", "assets", "welcome.mp3");
 
-// Voice ID — check env var, then settings.json voices, then default
+function candidateSettingsPaths(): string[] {
+  const paths = [
+    process.env.PAI_SETTINGS_PATH || "",
+    join(getPaiDir(import.meta.dir), "settings.json"),
+    join(getHarnessHome(), "settings.json"),
+  ].filter(Boolean);
+  return [...new Set(paths)];
+}
+
+// Voice ID — check env var, then selected harness settings.json voices, then default
 function getVoiceId(): string {
   // Environment variable takes priority
   if (process.env.ELEVENLABS_VOICE_ID) return process.env.ELEVENLABS_VOICE_ID;
 
-  const settingsPath = join(homedir(), ".claude", "settings.json");
-  if (existsSync(settingsPath)) {
+  for (const settingsPath of candidateSettingsPaths()) {
+    if (!existsSync(settingsPath)) continue;
     try {
       const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
       // Use principal's voice clone (the installer speaks in the user's voice)
@@ -40,18 +50,23 @@ function getVoiceId(): string {
 async function generateWelcome() {
   const apiKey = process.env.ELEVENLABS_API_KEY;
   if (!apiKey) {
-    // Try to read from config
-    const envPath = join(homedir(), ".config", "PAI", ".env");
-    if (existsSync(envPath)) {
+    // Try to read from canonical PAI env, then selected harness compatibility env.
+    const envPaths = [
+      join(getPaiDir(import.meta.dir), ".env"),
+      join(getHarnessHome(), ".env"),
+    ];
+    for (const envPath of envPaths) {
+      if (!existsSync(envPath)) continue;
       const envContent = readFileSync(envPath, "utf-8");
       const match = envContent.match(/ELEVENLABS_API_KEY=(.+)/);
       if (match) {
         process.env.ELEVENLABS_API_KEY = match[1].trim();
+        break;
       }
     }
 
     if (!process.env.ELEVENLABS_API_KEY) {
-      console.error("Error: ELEVENLABS_API_KEY not found in environment or ~/.claude/PAI/.env");
+      console.error("Error: ELEVENLABS_API_KEY not found in environment, PAI_DIR/.env, or selected harness .env");
       console.error("Set it with: export ELEVENLABS_API_KEY=your-key-here");
       process.exit(1);
     }

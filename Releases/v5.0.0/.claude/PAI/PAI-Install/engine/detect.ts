@@ -8,11 +8,16 @@ import { execSync } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
-import type { DetectionResult, ExistingUserContentDetection } from "./types";
+import type { AdapterPathDetection, DetectionResult, ExistingUserContentDetection } from "./types";
+import { resolveInstallerAdapterPaths } from "./install-targets";
 
-function tryExec(cmd: string): string | null {
+function tryExec(cmd: string, env?: Record<string, string | undefined>): string | null {
   try {
-    return execSync(cmd, { timeout: 5000, stdio: ["pipe", "pipe", "pipe"] })
+    return execSync(cmd, {
+      timeout: 5000,
+      stdio: ["pipe", "pipe", "pipe"],
+      env: env ? { ...process.env, ...env } : process.env,
+    })
       .toString()
       .trim();
   } catch {
@@ -50,12 +55,13 @@ function detectShell(): DetectionResult["shell"] {
 
 function detectTool(
   name: string,
-  versionCmd: string
+  versionCmd: string,
+  env?: Record<string, string | undefined>,
 ): { installed: boolean; version?: string; path?: string } {
-  const path = tryExec(`which ${name}`);
+  const path = tryExec(`command -v ${name}`, env);
   if (!path) return { installed: false };
 
-  const versionOutput = tryExec(versionCmd);
+  const versionOutput = tryExec(versionCmd, env);
   // Extract version number from output
   const versionMatch = versionOutput?.match(/(\d+\.\d+[\.\d]*)/);
   const version = versionMatch?.[1] || versionOutput || undefined;
@@ -65,7 +71,7 @@ function detectTool(
 
 function detectExisting(
   home: string,
-  paiDir: string,
+  adapter: AdapterPathDetection,
   _configDir: string
 ): DetectionResult["existing"] {
   const result: DetectionResult["existing"] = {
@@ -76,15 +82,20 @@ function detectExisting(
     apiKeys: {},
   };
 
-  // Check for existing PAI installation
-  const settingsPath = join(paiDir, "settings.json");
+  const settingsPath = adapter.harness === "codex"
+    ? join(adapter.paiDir, "settings.json")
+    : join(adapter.harnessHome, "settings.json");
   if (existsSync(settingsPath)) {
     result.paiInstalled = true;
     result.settingsPath = settingsPath;
   }
 
   // Check for existing PAI skill
-  if (existsSync(join(paiDir, "skills", "PAI", "SKILL.md"))) {
+  if (
+    existsSync(join(adapter.harnessHome, "skills", "PAI", "SKILL.md")) ||
+    existsSync(join(adapter.harnessHome, "skills", "PAIUpgrade", "SKILL.md")) ||
+    existsSync(join(adapter.paiDir, "ALGORITHM", "LATEST"))
+  ) {
     result.paiInstalled = true;
   }
 
@@ -121,8 +132,6 @@ export function scanApiKeys(
     join(home, ".profile"),
     join(configDir, ".env"),
     join(configDir, "credentials.env"),
-    join(home, ".config", "PAI", ".env"),
-    join(home, ".config", "PAI", "credentials.env"),
   ];
 
   const patterns: Array<[keyof NonNullable<DetectionResult["existing"]["apiKeys"]>, RegExp]> = [
@@ -168,6 +177,9 @@ export function scanApiKeys(
 function detectDaName(paiDir: string, backupPaths: string[]): string | undefined {
   const roots = [paiDir, ...backupPaths];
   const relCandidates = [
+    "USER/DA_IDENTITY.md",
+    "USER/DA_IDENTITY.yaml",
+    "USER/DA/IDENTITY.md",
     "PAI/USER/DA_IDENTITY.md",
     "PAI/USER/DA_IDENTITY.yaml",
     "PAI/USER/DA/IDENTITY.md",
@@ -332,28 +344,41 @@ function detectVoice(): DetectionResult["voice"] {
   return { systemDefault: v };
 }
 
+export interface DetectSystemInput {
+  env?: Record<string, string | undefined>;
+  homeDir?: string;
+}
+
 /**
  * Run full system detection. Safe, read-only, non-destructive.
  */
-export function detectSystem(): DetectionResult {
-  const home = homedir();
-  const paiDir = join(home, ".claude");
-  const configDir = process.env.PAI_CONFIG_DIR || join(home, ".config", "PAI");
+export function detectSystem(input: DetectSystemInput = {}): DetectionResult {
+  const env = input.env ?? process.env;
+  const home = input.homeDir ?? homedir();
+  const adapter = resolveInstallerAdapterPaths({ env, homeDir: home });
+  const paiDir = adapter.paiDir;
+  const configDir = env.PAI_CONFIG_DIR || paiDir;
 
   return {
     os: detectOS(),
     shell: detectShell(),
     tools: {
-      bun: detectTool("bun", "bun --version"),
-      git: detectTool("git", "git --version"),
-      claude: detectTool("claude", "claude --version 2>&1"),
-      node: detectTool("node", "node --version"),
+      bun: detectTool("bun", "bun --version", env),
+      git: detectTool("git", "git --version", env),
+      claude: adapter.harness === "claude"
+        ? detectTool("claude", "claude --version 2>&1", env)
+        : { installed: false },
+      codex: adapter.harness === "codex"
+        ? detectTool("codex", "codex --version 2>&1", env)
+        : { installed: false },
+      node: detectTool("node", "node --version", env),
       brew: {
-        installed: tryExec("which brew") !== null,
-        path: tryExec("which brew") || undefined,
+        installed: tryExec("command -v brew", env) !== null,
+        path: tryExec("command -v brew", env) || undefined,
       },
     },
-    existing: detectExisting(home, paiDir, configDir),
+    adapter,
+    existing: detectExisting(home, adapter, configDir),
     principal: detectPrincipal(),
     voice: detectVoice(),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,

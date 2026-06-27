@@ -18,13 +18,11 @@ export function generateSettingsJson(config: PAIConfig): Record<string, any> {
 
   return {
     env: {
-      // PAI_DIR is the PAI subsystem directory (~/.claude/PAI) — where Memory,
-      // Algorithm, USER, TOOLS, PULSE live. NOT the install root (~/.claude).
-      // statusline-command.sh, hooks, and tools read PAI_DIR expecting the /PAI
-      // suffix; if we write just `~/.claude` here the statusline can't find
-      // ALGORITHM/LATEST and falls back to "—". The variable name `config.paiDir`
-      // is misleading — it's actually the INSTALL ROOT.
-      PAI_DIR: `${config.paiDir}/PAI`,
+      // PAI_DIR is the canonical PAI subsystem directory, where MEMORY,
+      // ALGORITHM, USER, TOOLS, and PULSE live. Harness homes only hold the
+      // agent app's native files such as hooks, skills, config, and startup
+      // instructions.
+      PAI_DIR: config.paiDir,
       ...(config.projectsDir ? { PROJECTS_DIR: config.projectsDir } : {}),
       PAI_CONFIG_DIR: config.configDir,
     },

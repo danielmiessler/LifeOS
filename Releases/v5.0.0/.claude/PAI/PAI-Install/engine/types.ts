@@ -5,6 +5,17 @@
 
 // ─── System Detection ────────────────────────────────────────────
 
+export type PaiHarness = "claude" | "codex";
+
+export interface AdapterPathDetection {
+  harness: PaiHarness;
+  homeDir: string;
+  harnessHome: string;
+  paiDir: string;
+  compatibilityLink: string;
+  manifestPath: string;
+}
+
 export interface DetectionResult {
   os: {
     platform: "darwin" | "linux";
@@ -21,6 +32,7 @@ export interface DetectionResult {
     bun: { installed: boolean; version?: string; path?: string };
     git: { installed: boolean; version?: string; path?: string };
     claude: { installed: boolean; version?: string; path?: string };
+    codex: { installed: boolean; version?: string; path?: string };
     node: { installed: boolean; version?: string; path?: string };
     brew: { installed: boolean; path?: string }; // macOS only
   };
@@ -43,6 +55,8 @@ export interface DetectionResult {
       perplexity?: string;
     };
   };
+  /** Selected harness adapter paths for this install run. */
+  adapter: AdapterPathDetection;
   existingUserContent?: ExistingUserContentDetection;
   /** Principal identity scanned from the local machine (git config, macOS dscl, $USER). */
   principal: {
@@ -60,8 +74,8 @@ export interface DetectionResult {
   };
   timezone: string;
   homeDir: string;
-  paiDir: string; // resolved ~/.claude
-  configDir: string; // resolved ~/.claude/PAI
+  paiDir: string; // canonical PAI_DIR; harness-native files live under adapter.harnessHome
+  configDir: string; // resolved PAI_DIR unless PAI_CONFIG_DIR is explicitly overridden
 }
 
 export interface ExistingUserContentDetection {
@@ -147,6 +161,7 @@ export interface InstallState {
   completedSteps: StepId[];
   skippedSteps: StepId[];
   mode: "cli" | "web";
+  selectedHarness?: PaiHarness;
 
   // Detection cache
   detection: DetectionResult | null;

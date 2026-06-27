@@ -22,7 +22,7 @@ That's it. The script handles everything:
 - macOS or Linux
 - Internet connection
 
-Everything else (Bun, Git, Claude Code) is installed automatically.
+The installer can install Bun and Git. For Claude installs it can also install Claude Code; Codex installs expect Codex to already be available on the host.
 
 ---
 
@@ -32,12 +32,12 @@ The installer runs 8 steps in dependency order:
 
 | # | Step | What It Does |
 |---|------|-------------|
-| 1 | **System Detection** | Detects OS, architecture, shell, installed tools (Bun, Git, Claude Code), timezone, and any existing PAI installation |
-| 2 | **Prerequisites** | Installs missing tools: Git via Xcode CLT or package manager, Bun via official installer, Claude Code via npm |
+| 1 | **System Detection** | Detects OS, architecture, shell, installed tools (Bun, Git, Claude Code or Codex), timezone, and any existing PAI installation |
+| 2 | **Prerequisites** | Installs missing tools: Git via Xcode CLT or package manager, Bun via official installer, and Claude Code when the Claude harness is selected |
 | 3 | **API Keys** | Auto-completes — key collection happens during the Voice step |
 | 4 | **Identity** | Prompts for your name, AI assistant name, timezone, and a personal catchphrase |
-| 5 | **PAI Repository** | Clones the PAI repo to `~/.claude/` (or updates if already present) |
-| 6 | **Configuration** | Generates `settings.json`, `.env`, directory structure, `pai` shell alias, and patches version files |
+| 5 | **PAI Repository** | Installs the PAI core to `~/.pai/` by default, with harness files in `~/.claude/` or `~/.codex/` |
+| 6 | **Configuration** | Generates PAI runtime config, harness-native config, `.env`, directory structure, `pai` shell alias, and patches version files |
 | 7 | **DA Voice + Pulse** | Collects ElevenLabs API key, selects voice type (Female/Male/Custom), prompts to install Pulse (voice + Life Dashboard + observability on port 31337) and the Pulse menu bar app via launchd |
 | 8 | **Validation** | Verifies directory structure, settings file, API keys, Pulse health on 31337, launchd plist, shell alias — reports pass/fail for each |
 
@@ -45,7 +45,7 @@ The installer runs 8 steps in dependency order:
 
 The voice step handles Digital Assistant voice configuration **and** Pulse install in one cohesive step:
 
-1. Collects or auto-discovers your ElevenLabs API key (checks `~/.claude/PAI/.env`)
+1. Collects or auto-discovers your ElevenLabs API key (checks `~/.pai/.env` and the selected harness `.env`; older PAI config can be imported only when you approve prior-config import)
 2. Validates the key against the ElevenLabs API
 3. **Asks (Y/n) to install Pulse** as a launchd service — Pulse is the unified PAI runtime that serves the Life Dashboard at `http://localhost:31337`, handles voice notifications (TTS via ElevenLabs), and runs observability + scheduled jobs. Installing as a launchd agent makes it auto-start on login.
 4. Presents voice selection: **Female** (Rachel), **Male** (Adam), or **Custom Voice ID** with audio previews
@@ -54,7 +54,7 @@ The voice step handles Digital Assistant voice configuration **and** Pulse insta
 
 In PAI 5.0 the standalone voice server was absorbed into Pulse: there is no separate process — Pulse on port 31337 embeds the voice module, the Life Dashboard, observability, and scheduled jobs in one launchd-managed runtime.
 
-Voice + Pulse are optional. Skip the ElevenLabs key and the installer continues without voice. Skip the Pulse install and you can run it later: `bash ~/.claude/PAI/PULSE/manage.sh install`.
+Voice + Pulse are optional. Skip the ElevenLabs key and the installer continues without voice. Skip the Pulse install and you can run it later: `bash ~/.pai/PULSE/manage.sh install`.
 
 ### Graceful Degradation
 
@@ -64,7 +64,8 @@ The installer is designed to recover from partial failures:
 - No existing PAI → fresh install (vs. upgrade if detected)
 - Pulse install declined or fails → configuration saved, voice notifications unavailable until Pulse is installed manually
 - Menu bar install declined or fails → Pulse keeps running; menu bar can be installed later
-- Claude Code not installed → attempts installation, continues if it fails
+- Claude Code not installed during a Claude install -> attempts installation, continues if it fails
+- Codex not installed during a Codex install -> continues with PAI files installed; install or sign in to Codex before using the Codex harness
 - Port conflicts → installer port configurable via `PAI_INSTALL_PORT` environment variable
 
 ---
@@ -191,16 +192,16 @@ Client                          Server
 
 ### Settings Merge Strategy
 
-PAI ships a complete `settings.json` template in the release repository. This template includes:
+PAI ships a complete `settings.json` template in the release repository. For Codex installs this remains PAI runtime configuration under `PAI_DIR`; Codex-native configuration is generated separately. The template includes:
 
 - **Hooks** — 20+ event hooks for session management, security, voice, etc.
 - **Status line** — Terminal status bar configuration
 - **Spinner verbs** — Activity indicator messages
-- **Context files** — Files loaded into Claude Code context
+- **Context files** — Files loaded into the selected harness context
 
 The installer **does NOT generate hooks or status line config**. Instead, it:
 
-1. Clones the PAI repository (which includes the full `settings.json` template)
+1. Installs the PAI repository or bundled release (which includes the full `settings.json` template)
 2. Merges only user-specific fields into the existing template:
    - `principal` — user name, timezone
    - `daidentity` — AI name, voice ID, personality
@@ -214,25 +215,29 @@ This ensures fresh installs get the full PAI configuration without the installer
 
 | File | Location | Contents |
 |------|----------|----------|
-| `settings.json` | `~/.claude/settings.json` | Merged config (template + user fields) |
-| `.env` | `~/.claude/PAI/.env` | `ELEVENLABS_API_KEY=...` |
-| `LATEST` | `~/.claude/PAI/Algorithm/LATEST` | Algorithm version (patched to current) |
-| Shell alias | `~/.zshrc` | `alias pai='cd ~/.claude && claude'` |
+| `settings.json` | Claude: `~/.claude/settings.json`; Codex: `~/.pai/settings.json` | Merged PAI runtime config (template + user fields) |
+| Codex native config | `~/.codex/config.toml`, `~/.codex/hooks.json`, `~/.codex/AGENTS.md` | Codex feature flags, hooks, and startup instructions |
+| `.env` | `~/.pai/.env`, linked from the selected harness `.env` | `ELEVENLABS_API_KEY=...` |
+| `LATEST` | `~/.pai/ALGORITHM/LATEST` | Algorithm version (patched to current) |
+| Shell alias | `~/.zshrc` | `pai` runs `~/.pai/TOOLS/pai.ts` with the selected harness environment |
 
 ### Directory Structure Created
 
 ```
-~/.claude/
+~/.pai/
 ├── settings.json
+├── ALGORITHM/
+├── MEMORY/
+├── PULSE/
+├── TOOLS/
+├── USER/
+└── TELIOS/
+
+~/.claude/ or ~/.codex/
+├── PAI -> ~/.pai
 ├── hooks/
 ├── skills/
-├── MEMORY/
-│   ├── WORK/
-│   ├── STATE/
-│   ├── LEARNING/
-│   └── VOICE/
-├── Plans/
-└── Projects/
+└── harness-native config files
 ```
 
 ### Banner and Counts
@@ -240,7 +245,7 @@ This ensures fresh installs get the full PAI configuration without the installer
 On first launch after installation, the PAI banner displays system statistics (skills, hooks, workflows, signals, files). These counts are:
 
 1. **Calculated by the installer** during the Configuration step (initial values)
-2. **Updated by the StopOrchestrator hook** at the end of each Claude Code session
+2. **Updated by the StopOrchestrator hook** at the end of each selected harness session
 
 The Algorithm version displayed in the banner reads from `PAI/Algorithm/LATEST`.
 
@@ -296,12 +301,12 @@ Each section is skippable. If you have existing data (Obsidian, Notion, journals
 | `bun: command not found` | Run `curl -fsSL https://bun.sh/install \| bash` then restart terminal |
 | Port 1337 in use | Set `PAI_INSTALL_PORT=8080` before running install.sh |
 | ElevenLabs key invalid | Verify at elevenlabs.io — ensure no trailing spaces, key starts with `xi-` or `sk_` |
-| Permission denied | Run `chmod -R 755 ~/.claude` |
+| Permission denied | Run `chmod -R 755 ~/.pai` and check selected harness permissions |
 | `pai` command not found | Run `source ~/.zshrc` to reload shell config |
-| Pulse / voice notifications not working | Check port 31337 is free: `lsof -ti:31337`. Restart Pulse: `bash ~/.claude/PAI/PULSE/manage.sh restart`. Check status: `bash ~/.claude/PAI/PULSE/manage.sh status`. |
-| Pulse menu bar icon missing | Install or reinstall: `bash ~/.claude/PAI/PULSE/MenuBar/install.sh`. Verify launchd plist: `ls ~/Library/LaunchAgents/com.pai.pulse-menubar.plist`. |
-| Banner shows wrong algorithm version | Check `~/.claude/PAI/Algorithm/LATEST` contains correct version |
-| Banner counts all show 0 | Normal on first launch — counts populate after your first Claude Code session ends |
+| Pulse / voice notifications not working | Check port 31337 is free: `lsof -ti:31337`. Restart Pulse: `bash ~/.pai/PULSE/manage.sh restart`. Check status: `bash ~/.pai/PULSE/manage.sh status`. |
+| Pulse menu bar icon missing | Install or reinstall: `bash ~/.pai/PULSE/MenuBar/install.sh`. Verify launchd plist: `ls ~/Library/LaunchAgents/com.pai.pulse-menubar.plist`. |
+| Banner shows wrong algorithm version | Check `~/.pai/ALGORITHM/LATEST` contains correct version |
+| Banner counts all show 0 | Normal on first launch — counts populate after your first selected harness session ends |
 | WebSocket "Connection lost" | The installer auto-reconnects. If persistent, check if another process is using port 1337 |
 | Electron window blank | Try `--mode web` instead and open `http://localhost:1337` in your browser |
 
@@ -341,7 +346,7 @@ bun run PAI-Install/main.ts --mode gui
 - **macOS and Linux only** — Windows is not supported
 - **Internet connection required** — Downloads tools, clones repository, validates API keys
 - **Voice requires ElevenLabs** — Voice synthesis is optional but needs an ElevenLabs API key
-- **Single-user** — Installs to `~/.claude/` for the current user only
+- **Single-user** — Installs to `~/.pai/` and the selected harness home for the current user only
 - **Electron optional** — If Electron fails to install, use `--mode web` as fallback
 
 ## License
