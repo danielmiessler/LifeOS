@@ -6,7 +6,7 @@
  * MEMORY/WORK/<slug>/.
  *
  * For each newly-checked ISC, iterates through the allowlist of opted-in repos
- * (~/.claude/checkpoint-repos.txt per spec) and creates one git commit per
+ * (<harness-home>/checkpoint-repos.txt per spec) and creates one git commit per
  * repo that has uncommitted changes. Commit subject:
  *   "<ISC-id> (<slug>): <sanitized description>"
  *
@@ -24,13 +24,14 @@ import { execFileSync } from 'node:child_process';
 import { basename, dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { parseFrontmatter, parseCriteriaList, ARTIFACT_FILENAME, LEGACY_ARTIFACT_FILENAME } from './lib/isa-utils';
+import { getHarnessDir } from './lib/paths';
 
-// Allowlist path: top of ~/.claude per spec. We only READ this file (never
-// write to it), so ContainmentGuard's write restriction on bare ~/.claude
-// doesn't apply. One absolute repo path per line; '#' comments and blank
+// Allowlist path: top of the selected harness home. We only READ this file
+// (never write to it), so ContainmentGuard's write restriction on harness
+// homes doesn't apply. One absolute repo path per line; '#' comments and blank
 // lines are ignored. Tilde and $HOME prefixes are expanded as a quality-of-
 // life feature so users can write `~/Projects/foo` instead of the long form.
-const ALLOWLIST_PATH = join(homedir(), '.claude', 'checkpoint-repos.txt');
+const ALLOWLIST_PATH = join(getHarnessDir(), 'checkpoint-repos.txt');
 const GIT_TIMEOUT_MS = 5000;
 
 interface CheckpointState {

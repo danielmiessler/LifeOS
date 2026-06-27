@@ -26,7 +26,7 @@ When detected:
 **Triggers:** `ideate [problem]` | `id8 [problem]` | `generate ideas for` | `dream up solutions for`
 
 1. Set `mode: ideate` in ISA frontmatter
-2. Load `~/.claude/PAI/ALGORITHM/ideate-loop.md`
+2. Load `${PAI_DIR}/ALGORITHM/ideate-loop.md`
 3. Map effort tier to `time_scale` per ideate-loop.md
 
 ## Optimize Mode

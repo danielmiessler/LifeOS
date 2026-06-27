@@ -5,8 +5,8 @@
  * Blocks writes that would leak sensitive identity/infra strings into
  * files outside the Z1-Z4 containment zones used by ShadowRelease.
  *
- * Z1 USER/**            Z3 PAI/MEMORY/**
- * Z2 settings*.json     Z4 skills/_*
+ * Z1 PAI_DIR/USER/**       Z3 PAI_DIR/MEMORY/**
+ * Z2 settings/env files    Z4 harness skills/_*
  *
  * Anything outside those zones must stay clean of:
  *   /Users/daniel, daniel@, kai@unsupervised-learning, danielmiessler.com,
@@ -21,7 +21,8 @@
  */
 
 import { readFileSync } from 'fs';
-import { isContained, isPatternAllowlisted, relativeToClaudeRoot } from './lib/containment-zones';
+import { isContained, isPatternAllowlisted } from './lib/containment-zones';
+import { getClaudeDir, getPaiDir } from './lib/paths';
 
 interface HookInput {
   session_id?: string;
@@ -45,20 +46,22 @@ const IDENTITY_PATTERNS: readonly string[] = [
   '0baeb281c44f46878a4650ee3ff26b5b',
 ];
 
-const CLAUDE_ROOT = `${process.env.HOME ?? ''}/.claude`;
+const HARNESS_ROOT = getClaudeDir();
+const PAI_ROOT = getPaiDir();
 
-function isUnderClaudeRoot(filePath: string): boolean {
-  const prefix = CLAUDE_ROOT.endsWith('/') ? CLAUDE_ROOT : CLAUDE_ROOT + '/';
-  return filePath === CLAUDE_ROOT || filePath.startsWith(prefix);
+function isUnderRoot(filePath: string, root: string): boolean {
+  const prefix = root.endsWith('/') ? root : root + '/';
+  return filePath === root || filePath.startsWith(prefix);
 }
 
 function isFileContained(filePath: string): boolean {
-  // Files outside ~/.claude/ are personal project repos (~/Projects, ~/LocalProjects, etc.)
-  // and are not part of the PAI release tree that ShadowRelease scrubs. The containment
-  // guard exists to keep PAI public-release content clean — not to police Daniel's own projects.
-  if (!isUnderClaudeRoot(filePath)) return true;
-  if (isPatternAllowlisted(relativeToClaudeRoot(filePath, CLAUDE_ROOT))) return true;
-  return isContained(filePath, CLAUDE_ROOT);
+  // Files outside the selected harness and PAI_DIR are personal project repos
+  // (~/Projects, ~/LocalProjects, etc.) and are not part of the PAI release
+  // tree that ShadowRelease scrubs. The containment guard exists to keep PAI
+  // public-release content clean — not to police Daniel's own projects.
+  if (!isUnderRoot(filePath, HARNESS_ROOT) && !isUnderRoot(filePath, PAI_ROOT)) return true;
+  if (isPatternAllowlisted(filePath, HARNESS_ROOT, PAI_ROOT)) return true;
+  return isContained(filePath, HARNESS_ROOT, PAI_ROOT);
 }
 
 function extractScanTargets(toolName: string, toolInput: Record<string, unknown>): ScanTarget[] {

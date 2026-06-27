@@ -12,7 +12,7 @@ import { readRegistry, writeRegistry, WORK_JSON } from './isa-utils';
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import type { ObservabilityTarget } from './identity';
-import { getEnvPath } from './paths';
+import { getEnvPath, paiPath } from './paths';
 
 function readEnvOrPaiEnv(keys: readonly string[]): string {
   for (const k of keys) {
@@ -42,7 +42,7 @@ function readEnvOrPaiEnv(keys: readonly string[]): string {
 /**
  * Resolve Cloudflare API token.
  * Tries CLOUDFLARE_API_TOKEN_WORKERS_EDIT first, then falls back to
- * CLOUDFLARE_API_TOKEN (the one main token). Checks env vars, then ~/.claude/.env.
+ * CLOUDFLARE_API_TOKEN (the one main token). Checks env vars, then PAI_DIR/.env.
  */
 function getCFToken(): string {
   const KEYS = ['CLOUDFLARE_API_TOKEN_WORKERS_EDIT', 'CLOUDFLARE_API_TOKEN'] as const;
@@ -114,13 +114,12 @@ function cleanStaleSessions(): boolean {
  * merges with normalized fields, sorts ascending by timestamp, keeps last 200.
  */
 function collectEvents(): any[] {
-  const HOME = process.env.HOME || '';
   // Per-source counts match Observability/observability.ts handleEventsRecentApi()
   const sources = [
-    { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'VOICE', 'voice-events.jsonl'), source: 'voice', count: 50 },
-    { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'OBSERVABILITY', 'tool-failures.jsonl'), source: 'tool-failure', count: 50 },
-    { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'OBSERVABILITY', 'tool-activity.jsonl'), source: 'tool-activity', count: 100 },
-    { path: join(HOME, '.claude', 'PAI', 'MEMORY', 'OBSERVABILITY', 'subagent-events.jsonl'), source: 'subagent', count: 50 },
+    { path: paiPath('MEMORY', 'VOICE', 'voice-events.jsonl'), source: 'voice', count: 50 },
+    { path: paiPath('MEMORY', 'OBSERVABILITY', 'tool-failures.jsonl'), source: 'tool-failure', count: 50 },
+    { path: paiPath('MEMORY', 'OBSERVABILITY', 'tool-activity.jsonl'), source: 'tool-activity', count: 100 },
+    { path: paiPath('MEMORY', 'OBSERVABILITY', 'subagent-events.jsonl'), source: 'subagent', count: 50 },
   ];
 
   const allEvents: any[] = [];
@@ -189,9 +188,9 @@ async function pushToCFKV(key: string, body: string): Promise<void> {
 
   const token = getCFToken();
   if (!token) {
-    process.stderr.write(
-      `[pushToCFKV] ${key}: no CF token resolved (set CLOUDFLARE_API_TOKEN or CLOUDFLARE_API_TOKEN_WORKERS_EDIT in ~/.claude/.env)\n`
-    );
+  process.stderr.write(
+      `[pushToCFKV] ${key}: no CF token resolved (set CLOUDFLARE_API_TOKEN or CLOUDFLARE_API_TOKEN_WORKERS_EDIT in PAI_DIR/.env)\n`
+  );
     return;
   }
 

@@ -31,11 +31,11 @@ bash:
       reason: Recursive deletion of system root (/).
     - pattern: rm\s.*-\w*r.*\s+~/?(\s|$)
       reason: Recursive deletion of home directory (~)
-    - pattern: rm\s.*-\w*r.*\s(~/\.claude|/Users/[^/]+/\.claude|\$HOME/\.claude)/?(\s|$|;|&&)
-      reason: Recursive deletion of ~/.claude (entire PAI infrastructure)
-    - pattern: rm\s.*-\w*r.*\s(~/\.claude|/Users/[^/]+/\.claude|\$HOME/\.claude)/PAI/?(\s|$|;|&&)
-      reason: Recursive deletion of PAI directory
-    - pattern: rm\s.*-\w*r.*\s(~/\.claude|/Users/[^/]+/\.claude|\$HOME/\.claude)/PAI/MEMORY/?(\s|$|;|&&)
+    - pattern: rm\s.*-\w*r.*\s(~/\.(claude|codex)|/Users/[^/]+/\.(claude|codex)|\$HOME/\.(claude|codex))/?(\s|$|;|&&)
+      reason: Recursive deletion of agent harness home
+    - pattern: rm\s.*-\w*r.*\s(~/\.pai|/Users/[^/]+/\.pai|\$HOME/\.pai|~/\.(claude|codex)/PAI|/Users/[^/]+/\.(claude|codex)/PAI|\$HOME/\.(claude|codex)/PAI)/?(\s|$|;|&&)
+      reason: Recursive deletion of canonical or compatibility PAI directory
+    - pattern: rm\s.*-\w*r.*\s(~/\.pai|/Users/[^/]+/\.pai|\$HOME/\.pai|~/\.(claude|codex)/PAI|/Users/[^/]+/\.(claude|codex)/PAI|\$HOME/\.(claude|codex)/PAI)/MEMORY/?(\s|$|;|&&)
       reason: Recursive deletion of PAI/MEMORY directory
     - pattern: rm\s.*-\w*r.*\s+~/Projects/?(\s|$|;|&&)
       reason: Recursive deletion of ~/Projects
@@ -57,8 +57,8 @@ bash:
       reason: Deletion of security validator hook
     - pattern: rm\s.*/hooks/PromptInjectionScanner\.hook\.ts
       reason: Deletion of prompt injection scanner hook
-    - pattern: rm\s.*\.claude/settings\.json
-      reason: Deletion of Claude Code settings (contains hook config)
+    - pattern: rm\s.*\.(claude|codex)/(settings\.json|config\.toml|hooks\.json)
+      reason: Deletion of agent harness settings (contains PAI config)
     - pattern: gh repo delete
       reason: GitHub repository deletion
     - pattern: gh repo edit --visibility public
@@ -132,25 +132,25 @@ paths:
     - ~/.gnupg/private**
     - "**/service-account*.json"
   alertAccess:
-    - ~/.claude/.env
+    - ${HARNESS_HOME}/.env
     - "**/.env"
     - "**/.env.*"
   confirmAccess:
-    - ~/.claude/.mcp.json
+    - ${HARNESS_HOME}/.mcp.json
   readOnly:
     - /etc/**
-    - ~/.claude/PAI/USER/SECURITY/PATTERNS.yaml
-    - ~/.claude/PAI/USER/SECURITY/SECURITY_RULES.md
-    - ~/.claude/hooks/SecurityPipeline.hook.ts
-    - ~/.claude/hooks/ContentScanner.hook.ts
-    - ~/.claude/hooks/SmartApprover.hook.ts
-    - ~/.claude/hooks/PromptGuard.hook.ts
-    - ~/.claude/hooks/security/pipeline.ts
-    - ~/.claude/hooks/security/logger.ts
-    - ~/.claude/hooks/security/types.ts
-    - ~/.claude/PAI/MEMORY/SECURITY/**
+    - ${PAI_DIR}/USER/SECURITY/PATTERNS.yaml
+    - ${PAI_DIR}/USER/SECURITY/SECURITY_RULES.md
+    - ${HARNESS_HOME}/hooks/SecurityPipeline.hook.ts
+    - ${HARNESS_HOME}/hooks/ContentScanner.hook.ts
+    - ${HARNESS_HOME}/hooks/SmartApprover.hook.ts
+    - ${HARNESS_HOME}/hooks/PromptGuard.hook.ts
+    - ${HARNESS_HOME}/hooks/security/pipeline.ts
+    - ${HARNESS_HOME}/hooks/security/logger.ts
+    - ${HARNESS_HOME}/hooks/security/types.ts
+    - ${PAI_DIR}/MEMORY/SECURITY/**
   noDelete:
-    - ~/.claude/hooks/**
-    - ~/.claude/PAI/**
+    - ${HARNESS_HOME}/hooks/**
+    - ${PAI_DIR}/**
     - .git/**
 projects: {}

@@ -147,7 +147,7 @@ interface StopPayload extends BasePayload {
 |------|---------|----------|--------------|
 | `KittyEnvPersist.hook.ts` | Persist Kitty env vars + tab reset | No | None |
 | `LoadContext.hook.ts` | Inject dynamic context (relationship, learning, work) | Yes (stdout) | `settings.json`, `MEMORY/` |
-| `KVSync.hook.ts` | Push work.json to Cloudflare KV | No | `CLOUDFLARE_API_TOKEN_WORKERS_EDIT` or `CLOUDFLARE_API_TOKEN` in `~/.claude/.env` |
+| `KVSync.hook.ts` | Push work.json to Cloudflare KV | No | `CLOUDFLARE_API_TOKEN_WORKERS_EDIT` or `CLOUDFLARE_API_TOKEN` in `PAI_DIR/.env` |
 
 ### UserPromptSubmit Hooks
 
@@ -174,7 +174,7 @@ interface StopPayload extends BasePayload {
 | Hook | Purpose | Blocking | Dependencies |
 |------|---------|----------|--------------|
 | `QuestionAnswered.hook.ts` | Reset tab state after question answered | No | Kitty terminal |
-| `ISASync.hook.ts` | Sync ISA frontmatter → work.json + KV push | No | `MEMORY/WORK/`, `work.json`, `CLOUDFLARE_API_TOKEN_WORKERS_EDIT` or `CLOUDFLARE_API_TOKEN` in `~/.claude/.env` |
+| `ISASync.hook.ts` | Sync ISA frontmatter → work.json + KV push | No | `MEMORY/WORK/`, `work.json`, `CLOUDFLARE_API_TOKEN_WORKERS_EDIT` or `CLOUDFLARE_API_TOKEN` in `PAI_DIR/.env` |
 
 ### PostToolUseFailure Hooks
 
@@ -226,7 +226,7 @@ Outputs: `teammate-events.jsonl`.
 | `RelationshipMemory.hook.ts` | Capture relationship notes | No | `MEMORY/RELATIONSHIP/` |
 | `UpdateCounts.hook.ts` | Update system counts + usage cache | No | `settings.json`, Anthropic API |
 | `IntegrityCheck.hook.ts` | PAI change detection + doc drift detection | No | `MEMORY/STATE/integrity-state.json`, handlers/ |
-| `KVSync.hook.ts` | Push work.json to Cloudflare KV | No | `CLOUDFLARE_API_TOKEN_WORKERS_EDIT` or `CLOUDFLARE_API_TOKEN` in `~/.claude/.env` |
+| `KVSync.hook.ts` | Push work.json to Cloudflare KV | No | `CLOUDFLARE_API_TOKEN_WORKERS_EDIT` or `CLOUDFLARE_API_TOKEN` in `PAI_DIR/.env` |
 
 ---
 

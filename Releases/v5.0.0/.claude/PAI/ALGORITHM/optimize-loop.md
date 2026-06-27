@@ -17,7 +17,7 @@ Referenced from the Algorithm when `mode: optimize`. This file defines the compl
 
 ### Parameter Integration
 
-Optimize mode accepts tunable parameters that control mutation boldness, regression tolerance, and patience. Full schema: `~/.claude/PAI/ALGORITHM/parameter-schema.md`.
+Optimize mode accepts tunable parameters that control mutation boldness, regression tolerance, and patience. Full schema: `${PAI_DIR}/ALGORITHM/parameter-schema.md`.
 
 **Optimize parameters:**
 

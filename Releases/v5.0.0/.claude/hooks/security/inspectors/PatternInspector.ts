@@ -4,7 +4,7 @@ import { homedir } from 'os';
 import { parse as parseYaml } from 'yaml';
 import type { Inspector, InspectionContext, InspectionResult } from '../types';
 import { ALLOW, deny, requireApproval, alert } from '../types';
-import { paiPath } from '../../lib/paths';
+import { getClaudeDir, getPaiDir, paiPath } from '../../lib/paths';
 
 // ── Types ──
 
@@ -86,9 +86,17 @@ function expandTilde(p: string): string {
   return p.startsWith('~') ? p.replace('~', homedir()) : p;
 }
 
+function expandPathVariables(p: string): string {
+  return expandTilde(p)
+    .replace(/^\$PAI_DIR(?=\/|$)/, getPaiDir())
+    .replace(/^\$\{PAI_DIR\}(?=\/|$)/, getPaiDir())
+    .replace(/^\$HARNESS_HOME(?=\/|$)/, getClaudeDir())
+    .replace(/^\$\{HARNESS_HOME\}(?=\/|$)/, getClaudeDir());
+}
+
 function matchesPathPattern(filePath: string, pattern: string): boolean {
-  const expandedPattern = expandTilde(pattern);
-  const normalizedPath = resolve(expandTilde(filePath));
+  const expandedPattern = expandPathVariables(pattern);
+  const normalizedPath = resolve(expandPathVariables(filePath));
 
   if (pattern.includes('*')) {
     let regexStr = expandedPattern

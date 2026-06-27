@@ -11,9 +11,12 @@ set -o pipefail
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-PAI_DIR="${PAI_DIR:-$HOME/.claude/PAI}"
-CLAUDE_HOME="$HOME/.claude"
-SETTINGS_FILE="$CLAUDE_HOME/settings.json"
+PAI_DIR="${PAI_DIR:-$HOME/.pai}"
+CLAUDE_HOME="${HARNESS_HOME:-$HOME/.claude}"
+SETTINGS_FILE="${PAI_SETTINGS_PATH:-$PAI_DIR/settings.json}"
+if [ ! -f "$SETTINGS_FILE" ]; then
+    SETTINGS_FILE="$CLAUDE_HOME/settings.json"
+fi
 RATINGS_FILE="$PAI_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl"
 MODEL_CACHE="$PAI_DIR/MEMORY/STATE/model-cache.txt"
 QUOTE_CACHE="$PAI_DIR/.quote-cache"
@@ -60,9 +63,9 @@ PAI_VERSION="${PAI_VERSION:-—}"
 ALGO_VERSION=""
 for _algo_path in \
     "$PAI_DIR/ALGORITHM/LATEST" \
-    "$HOME/.claude/PAI/ALGORITHM/LATEST" \
-    "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST" \
-    "$(eval echo ~"$(id -un 2>/dev/null)")/.claude/PAI/ALGORITHM/LATEST"; do
+    "$HOME/.pai/ALGORITHM/LATEST" \
+    "/Users/$(id -un 2>/dev/null)/.pai/ALGORITHM/LATEST" \
+    "$(eval echo ~"$(id -un 2>/dev/null)")/.pai/ALGORITHM/LATEST"; do
     if [ -n "$_algo_path" ] && [ -f "$_algo_path" ]; then
         ALGO_VERSION="$(cat "$_algo_path" 2>/dev/null | tr -d '[:space:]')"
         [ -n "$ALGO_VERSION" ] && break
@@ -74,8 +77,8 @@ done
         "$(date '+%H:%M:%S')" "$ALGO_VERSION" "${HOME:-UNSET}" "${PAI_DIR:-UNSET}" "${USER:-UNSET}"
     for _algo_path in \
         "$PAI_DIR/ALGORITHM/LATEST" \
-        "$HOME/.claude/PAI/ALGORITHM/LATEST" \
-        "/Users/$(id -un 2>/dev/null)/.claude/PAI/ALGORITHM/LATEST"; do
+        "$HOME/.pai/ALGORITHM/LATEST" \
+        "/Users/$(id -un 2>/dev/null)/.pai/ALGORITHM/LATEST"; do
         printf ' %s=%s' "$_algo_path" "$([ -f "$_algo_path" ] && echo OK || echo MISS)"
     done
     printf '\n'
@@ -102,7 +105,7 @@ WEATHER_CACHE_TTL=900
 USAGE_CACHE_TTL=900      # 15 min: /api/oauth/usage has aggressive per-token rate limits (~5 req before 429)
 
 # Source .env for API keys
-[ -f "${PAI_CONFIG_DIR:-$HOME/.claude/PAI}/.env" ] && source "${PAI_CONFIG_DIR:-$HOME/.claude/PAI}/.env"
+[ -f "${PAI_CONFIG_DIR:-$PAI_DIR}/.env" ] && source "${PAI_CONFIG_DIR:-$PAI_DIR}/.env"
 
 # Cross-platform file mtime (seconds since epoch). Detect stat flavor once;
 # probing both variants on every mtime check is expensive on macOS.

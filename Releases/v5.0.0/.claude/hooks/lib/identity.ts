@@ -7,10 +7,7 @@
  */
 
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
-
-const HOME = process.env.HOME!;
-const SETTINGS_PATH = join(HOME, '.claude/settings.json');
+import { getSettingsPath } from './paths';
 
 // Default identity (fallback if settings.json doesn't have identity section)
 const DEFAULT_IDENTITY = {
@@ -97,12 +94,13 @@ function loadSettings(): Settings {
   if (cachedSettings) return cachedSettings;
 
   try {
-    if (!existsSync(SETTINGS_PATH)) {
+    const settingsPath = getSettingsPath();
+    if (!existsSync(settingsPath)) {
       cachedSettings = {};
       return cachedSettings;
     }
 
-    const content = readFileSync(SETTINGS_PATH, 'utf-8');
+    const content = readFileSync(settingsPath, 'utf-8');
     cachedSettings = JSON.parse(content);
     return cachedSettings!;
   } catch {

@@ -4,7 +4,7 @@
  *
  * TRIGGER: PostToolUse (Write, Edit)
  *
- * When any file in ~/.claude/PAI/USER/TELOS/ is written or edited (except
+ * When any file in PAI_DIR/USER/TELOS/ is written or edited (except
  * PRINCIPAL_TELOS.md itself and Backups/), regenerates the summary by running
  * GenerateTelosSummary.ts.
  *

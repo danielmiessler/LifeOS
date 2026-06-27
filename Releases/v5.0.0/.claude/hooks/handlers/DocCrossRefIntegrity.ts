@@ -151,8 +151,8 @@ function isHookModified(modifiedFiles: Set<string>): boolean {
 /**
  * Check if ANY meaningful PAI system file was modified.
  * PAI spans TWO root directories:
- *   - CLAUDE_DIR (~/.claude) — hooks, skills, settings, agents, CLAUDE.md
- *   - PAI_DIR (~/.claude/PAI) — PAI data, Tools, Components, Workflows, SYSTEM docs
+ *   - Harness home (~/.claude or ~/.codex) — hooks, skills, settings/config, startup instructions
+ *   - PAI_DIR (~/.pai by default) — PAI data, Tools, Components, Workflows, SYSTEM docs
  * Excludes MEMORY/WORK, MEMORY/LEARNING, MEMORY/STATE, and other non-system paths.
  */
 function isSystemFileModified(modifiedFiles: Set<string>): boolean {
@@ -162,7 +162,7 @@ function isSystemFileModified(modifiedFiles: Set<string>): boolean {
   const CLAUDE_EXCLUDED = ['projects/', '.git/', 'node_modules/', 'history.jsonl'];
 
   for (const filePath of modifiedFiles) {
-    // --- Check ~/.claude/ paths ---
+    // --- Check selected harness home paths ---
     if (filePath.startsWith(CLAUDE_DIR + '/')) {
       const relPath = filePath.slice(CLAUDE_DIR.length + 1);
       if (CLAUDE_EXCLUDED.some(ex => relPath.includes(ex))) continue;
@@ -177,7 +177,7 @@ function isSystemFileModified(modifiedFiles: Set<string>): boolean {
       continue;
     }
 
-    // --- Check ~/.claude/PAI/ paths ---
+    // --- Check PAI_DIR paths ---
     if (filePath.startsWith(PAI_DIR + '/')) {
       const relPath = filePath.slice(PAI_DIR.length + 1);
       if (PAI_EXCLUDED.some(ex => relPath.includes(ex))) continue;

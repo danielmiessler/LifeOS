@@ -8,12 +8,14 @@
 // retrospective release gates (skills/_PAI/TOOLS/ShadowRelease.ts) import
 // from here. Add, remove, or rename zones in one place.
 //
-// Path patterns are matched relative to CLAUDE_ROOT (the .claude directory
-// root, resolved from HOME). `**` means "anywhere under this prefix". A bare
-// path means "this exact file or directory (and anything inside it)".
+// Path patterns are matched relative to their declared root: the selected
+// harness home for hooks/skills/config, or PAI_DIR for USER/MEMORY/runtime
+// data. `**` means "anywhere under this prefix". A bare path means "this
+// exact file or directory (and anything inside it)".
 
 export interface ContainmentZone {
   name: string;
+  root: "harness" | "pai";
   patterns: readonly string[];
   description: string;
 }
@@ -21,53 +23,63 @@ export interface ContainmentZone {
 export const CONTAINMENT_ZONES: readonly ContainmentZone[] = [
   {
     name: "user-data",
-    patterns: ["PAI/USER/**"],
+    root: "pai",
+    patterns: ["USER/**"],
     description: "Principal identity, TELOS, credentials, personal infrastructure, contacts, finances, health, business",
   },
   {
-    name: "config-secrets",
+    name: "harness-config-secrets",
+    root: "harness",
     patterns: [
       "settings.json",
       "settings.local.json",
       ".vscode/settings.json",
       ".env",
       ".env.*",
-      "PAI/.env",
-      "PAI/.env.*",
     ],
     description: "Shell env with API keys, allowed command lists, MCP auth",
   },
   {
+    name: "pai-config-secrets",
+    root: "pai",
+    patterns: [".env", ".env.*", "settings.json"],
+    description: "PAI runtime settings and env symlink/cache",
+  },
+  {
     name: "runtime-memory",
-    patterns: ["PAI/MEMORY/**"],
+    root: "pai",
+    patterns: ["MEMORY/**"],
     description: "Work sessions, learnings, observability logs, research, raw data, bookmarks, relationship notes",
   },
   {
     name: "private-skills",
+    root: "harness",
     patterns: ["skills/_*/**"],
     description: "Skills with underscore-prefixed names — personal and proprietary",
   },
   {
     name: "install-state",
+    root: "harness",
     patterns: [
       "history.jsonl",
       "Plugins/**",
       "plugins/installed_plugins.json",
       "plugins/known_marketplaces.json",
     ],
-    description: "Claude Code runtime install state written by the harness",
+    description: "Agent harness runtime install state written by the harness",
   },
   {
     name: "private-infra",
+    root: "pai",
     patterns: [
-      "PAI/ARBOL/**",
-      "PAI/PULSE/Assistant/**",
-      "PAI/PULSE/Plans/**",
-      "PAI/PULSE/logs/**",
-      "PAI/PULSE/state/**",
-      "PAI/PULSE/Observability/out/**",
-      "PAI/PULSE/.playwright-cli/**",
-      "PAI/ScheduledTasks/**",
+      "ARBOL/**",
+      "PULSE/Assistant/**",
+      "PULSE/Plans/**",
+      "PULSE/logs/**",
+      "PULSE/state/**",
+      "PULSE/Observability/out/**",
+      "PULSE/.playwright-cli/**",
+      "ScheduledTasks/**",
     ],
     description: "Top-level private infrastructure dirs: cloud worker code, DA-specific assistant, planning docs, runtime logs/state, rendered HTML",
   },
@@ -135,10 +147,18 @@ export function relativeToClaudeRoot(absolutePath: string, claudeRoot: string): 
   return absolutePath.startsWith(prefix) ? absolutePath.slice(prefix.length) : absolutePath;
 }
 
+function relativeToRoot(absolutePath: string, root: string): string | null {
+  if (absolutePath === root) return "";
+  const prefix = root.endsWith("/") ? root : root + "/";
+  return absolutePath.startsWith(prefix) ? absolutePath.slice(prefix.length) : null;
+}
+
 // Predicate: is this path inside any configured containment zone?
-export function isContained(absolutePath: string, claudeRoot: string): boolean {
-  const rel = relativeToClaudeRoot(absolutePath, claudeRoot);
+export function isContained(absolutePath: string, harnessRoot: string, paiRoot = `${harnessRoot}/PAI`): boolean {
   for (const zone of CONTAINMENT_ZONES) {
+    const root = zone.root === "pai" ? paiRoot : harnessRoot;
+    const rel = relativeToRoot(absolutePath, root);
+    if (rel === null) continue;
     for (const pattern of zone.patterns) {
       if (matchesPattern(rel, pattern)) return true;
     }
@@ -147,6 +167,12 @@ export function isContained(absolutePath: string, claudeRoot: string): boolean {
 }
 
 // Predicate: is this relative path in the pattern-embedding allowlist?
-export function isPatternAllowlisted(relativePath: string): boolean {
-  return PATTERN_ALLOWLIST_FILES.includes(relativePath);
+export function isPatternAllowlisted(absolutePath: string, harnessRoot: string, paiRoot = `${harnessRoot}/PAI`): boolean {
+  const harnessRel = relativeToRoot(absolutePath, harnessRoot);
+  if (harnessRel !== null && PATTERN_ALLOWLIST_FILES.includes(harnessRel)) return true;
+
+  const paiRel = relativeToRoot(absolutePath, paiRoot);
+  if (paiRel === null) return false;
+  return PATTERN_ALLOWLIST_FILES.includes(paiRel) ||
+    PATTERN_ALLOWLIST_FILES.includes(`PAI/${paiRel}`);
 }

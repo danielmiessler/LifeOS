@@ -8,7 +8,7 @@ User says "ideate [problem]", "id8 [problem]", "generate ideas for [problem]", o
 
 ### Parameter Integration
 
-Parameters control ideation behavior along a spectrum from pure free-form dreaming to tight analytical focus. Full schema: `~/.claude/PAI/ALGORITHM/parameter-schema.md`.
+Parameters control ideation behavior along a spectrum from pure free-form dreaming to tight analytical focus. Full schema: `${PAI_DIR}/ALGORITHM/parameter-schema.md`.
 
 **Parameter resolution** (during OBSERVE phase):
 1. Algorithm detects preset/focus/params from user request

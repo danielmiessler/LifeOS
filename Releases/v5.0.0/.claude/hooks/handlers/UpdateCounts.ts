@@ -17,9 +17,9 @@
  */
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, statSync } from 'fs';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { execSync } from 'child_process';
-import { getPaiDir, getSettingsPath, getClaudeDir } from '../lib/paths';
+import { getPaiDir, getSettingsPath, getHarnessSettingsPath, getClaudeDir } from '../lib/paths';
 
 
 interface Counts {
@@ -113,9 +113,14 @@ function countSkills(_paiDir: string): { total: number; pub: number; priv: numbe
  * NOT count — only what Claude Code will actually fire.
  */
 function countHooks(_paiDir: string): number {
-  const settingsPath = getSettingsPath();
   try {
-    const settings = JSON.parse(readFileSync(settingsPath, 'utf-8'));
+    const harnessDir = getClaudeDir();
+    const hooksJsonPath = join(harnessDir, 'hooks.json');
+    const settingsPath = getHarnessSettingsPath();
+    const hookContainer = existsSync(hooksJsonPath)
+      ? JSON.parse(readFileSync(hooksJsonPath, 'utf-8'))
+      : JSON.parse(readFileSync(settingsPath, 'utf-8'));
+    const settings = hookContainer.hooks ? hookContainer : { hooks: hookContainer };
     const events = settings.hooks ?? {};
     const unique = new Set<string>();
     for (const matchers of Object.values(events)) {
@@ -171,7 +176,7 @@ function getCounts(paiDir: string): Counts {
     workflows: countWorkflowFiles(join(getClaudeDir(), 'skills')),
     hooks: countHooks(paiDir),
     signals: countFilesRecursive(join(paiDir, 'MEMORY/LEARNING'), '.md'),
-    files: countFilesRecursive(join(paiDir, 'PAI/USER')),
+    files: countFilesRecursive(join(paiDir, 'USER')),
     work: countSubdirs(join(paiDir, 'MEMORY/WORK')),
     sessions: countFilesRecursive(join(paiDir, 'MEMORY'), '.jsonl'),
     research: countFilesRecursive(join(paiDir, 'MEMORY/RESEARCH'), '.md') +
@@ -186,6 +191,8 @@ function getCounts(paiDir: string): Counts {
  * Called by stop hook so status line never needs to make this 700ms API call.
  */
 async function refreshUsageCache(paiDir: string): Promise<void> {
+  if (basename(getClaudeDir()) !== '.claude') return;
+
   const usageCachePath = join(paiDir, 'MEMORY/STATE/usage-cache.json');
 
   try {
@@ -197,7 +204,7 @@ async function refreshUsageCache(paiDir: string): Promise<void> {
         { encoding: 'utf-8', timeout: 3000 }
       ).trim();
     } else {
-      const credPath = join(process.env.HOME || '', '.claude', '.credentials.json');
+      const credPath = join(getClaudeDir(), '.credentials.json');
       credJson = readFileSync(credPath, 'utf-8').trim();
     }
 
