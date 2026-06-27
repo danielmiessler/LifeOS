@@ -1,42 +1,28 @@
 #!/usr/bin/env bun
 /**
- * SessionHarvester - Extract learnings from Claude Code session transcripts
+ * SessionHarvester - Extract learnings from harness session transcripts
  *
- * Harvests insights from ~/.claude/projects/ sessions and writes to LEARNING/
+ * Harvests insights from Claude Code or Codex sessions and writes to PAI memory.
  *
  * Commands:
  *   --recent N     Harvest from N most recent sessions (default: 10)
  *   --all          Harvest from all sessions modified in last 7 days
  *   --session ID   Harvest from specific session UUID
+ *   --harness X    Force harness source: claude or codex
  *   --dry-run      Show what would be harvested without writing
  *   --mine         Mine conversations for decisions, preferences, milestones, problems
- *
- * Examples:
- *   bun run SessionHarvester.ts --recent 5
- *   bun run SessionHarvester.ts --session abc-123
- *   bun run SessionHarvester.ts --all --dry-run
- *   bun run SessionHarvester.ts --mine --recent 5
- *   bun run SessionHarvester.ts --mine --recent 10 --dry-run
  */
 
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
-import { getLearningCategory, isLearningCapture } from "../../../.claude/hooks/lib/learning-utils";
+import { getRuntimePaths, type PaiHarness } from "./lib/runtime-paths";
+import { readTranscriptMessages } from "./lib/session-transcripts";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
-// Derive the project slug dynamically from CLAUDE_DIR (works on macOS and Linux)
-// macOS: /Users/daniel/.claude → -Users-daniel--claude
-// Linux: /home/daniel/.claude → -home-daniel--claude
-const CWD_SLUG = CLAUDE_DIR.replace(/[\/\.]/g, "-");
-const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", CWD_SLUG);
-const LEARNING_DIR = path.join(CLAUDE_DIR, "PAI", "MEMORY", "LEARNING");
-
-// Patterns indicating learning moments in conversations
 const CORRECTION_PATTERNS = [
   /actually,?\s+/i,
   /wait,?\s+/i,
@@ -69,7 +55,6 @@ const INSIGHT_PATTERNS = [
   /lesson:/i,
 ];
 
-// Memory mining patterns — extract structured knowledge from conversations
 const DECISION_PATTERNS = [
   /(?:we|i) (?:decided|chose|went with|picked|selected)\b/i,
   /(?:let'?s|going to) (?:use|go with|switch to|adopt)\b/i,
@@ -101,7 +86,7 @@ const PROBLEM_PATTERNS = [
   /(?:regression|degraded|degradation|worse than)\b/i,
 ];
 
-type MemoryType = 'decision' | 'preference' | 'milestone' | 'problem';
+type MemoryType = "decision" | "preference" | "milestone" | "problem";
 
 const MINING_PATTERN_MAP: Record<MemoryType, RegExp[]> = {
   decision: DECISION_PATTERNS,
@@ -113,21 +98,6 @@ const MINING_PATTERN_MAP: Record<MemoryType, RegExp[]> = {
 // ============================================================================
 // Types
 // ============================================================================
-
-interface ProjectsEntry {
-  sessionId?: string;
-  type?: "user" | "assistant" | "summary";
-  message?: {
-    role?: string;
-    content?: string | Array<{
-      type: string;
-      text?: string;
-      name?: string;
-      input?: any;
-    }>;
-  };
-  timestamp?: string;
-}
 
 interface MinedMemory {
   sessionId: string;
@@ -143,62 +113,160 @@ interface MinedMemory {
 interface HarvestedLearning {
   sessionId: string;
   timestamp: string;
-  category: 'SYSTEM' | 'ALGORITHM';
-  type: 'correction' | 'error' | 'insight';
+  category: "SYSTEM" | "ALGORITHM";
+  type: "correction" | "error" | "insight";
   context: string;
   content: string;
   source: string;
 }
 
+interface RuntimeConfig {
+  harness: PaiHarness;
+  harnessHome: string;
+  paiDir: string;
+  sessionsDir: string;
+  learningDir: string;
+  harvestQueueDir: string;
+}
+
 // ============================================================================
-// Session File Discovery
+// Shared Learning Utilities
 // ============================================================================
 
-function getSessionFiles(options: { recent?: number; all?: boolean; sessionId?: string }): string[] {
-  if (!fs.existsSync(PROJECTS_DIR)) {
-    console.error(`Projects directory not found: ${PROJECTS_DIR}`);
+function getLearningCategory(content: string, comment?: string): "SYSTEM" | "ALGORITHM" {
+  const text = `${content} ${comment || ""}`.toLowerCase();
+  const algorithmIndicators = [
+    /over.?engineer/,
+    /wrong approach/,
+    /should have asked/,
+    /didn't follow/,
+    /missed the point/,
+    /too complex/,
+    /didn't understand/,
+    /wrong direction/,
+    /not what i wanted/,
+    /approach|method|strategy|reasoning/,
+  ];
+  const systemIndicators = [
+    /hook|crash|broken/,
+    /tool|config|deploy|path/,
+    /import|module|file.*not.*found/,
+    /typescript|javascript|npm|bun/,
+  ];
+
+  for (const pattern of algorithmIndicators) {
+    if (pattern.test(text)) return "ALGORITHM";
+  }
+  for (const pattern of systemIndicators) {
+    if (pattern.test(text)) return "SYSTEM";
+  }
+  return "ALGORITHM";
+}
+
+function isLearningCapture(text: string, summary?: string, analysis?: string): boolean {
+  const learningIndicators = [
+    /problem|issue|bug|error|failed|broken/i,
+    /fixed|solved|resolved|discovered|realized|learned/i,
+    /troubleshoot|debug|investigate|root cause/i,
+    /lesson|takeaway|now we know|next time/i,
+  ];
+
+  const checkText = `${summary || ""} ${analysis || ""} ${text}`;
+  let indicatorCount = 0;
+  for (const pattern of learningIndicators) {
+    if (pattern.test(checkText)) indicatorCount++;
+  }
+
+  return indicatorCount >= 2;
+}
+
+// ============================================================================
+// Runtime and Session File Discovery
+// ============================================================================
+
+function normalizeHarness(value: unknown): PaiHarness | undefined {
+  return value === "claude" || value === "codex" ? value : undefined;
+}
+
+function makeClaudeProjectsDir(harnessHome: string): string {
+  const cwdSlug = harnessHome.replace(/[\/\.]/g, "-");
+  return path.join(harnessHome, "projects", cwdSlug);
+}
+
+function createRuntimeConfig(harnessOverride?: unknown): RuntimeConfig {
+  const paths = getRuntimePaths(import.meta.dir);
+  const forcedHarness = normalizeHarness(harnessOverride);
+  const harness = forcedHarness ?? paths.harness;
+  const harnessHome = forcedHarness && !process.env.HARNESS_HOME
+    ? path.join(process.env.HOME!, forcedHarness === "claude" ? ".claude" : ".codex")
+    : paths.harnessHome;
+  const sessionsDir = harness === "codex"
+    ? path.join(harnessHome, "sessions")
+    : makeClaudeProjectsDir(harnessHome);
+
+  return {
+    harness,
+    harnessHome,
+    paiDir: paths.paiDir,
+    sessionsDir,
+    learningDir: path.join(paths.paiDir, "MEMORY", "LEARNING"),
+    harvestQueueDir: path.join(paths.paiDir, "MEMORY", "KNOWLEDGE", "_harvest-queue"),
+  };
+}
+
+function walkJsonlFiles(root: string): string[] {
+  if (!fs.existsSync(root)) return [];
+
+  const files: string[] = [];
+  const visit = (dir: string) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const entryPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        visit(entryPath);
+      } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+        files.push(entryPath);
+      }
+    }
+  };
+
+  visit(root);
+  return files;
+}
+
+function getSessionFiles(
+  options: { recent?: number; all?: boolean; sessionId?: string },
+  runtime: RuntimeConfig,
+): string[] {
+  if (!fs.existsSync(runtime.sessionsDir)) {
+    console.error(`Sessions directory not found: ${runtime.sessionsDir}`);
     return [];
   }
 
-  const files = fs.readdirSync(PROJECTS_DIR)
-    .filter(f => f.endsWith('.jsonl'))
-    .map(f => ({
-      name: f,
-      path: path.join(PROJECTS_DIR, f),
-      mtime: fs.statSync(path.join(PROJECTS_DIR, f)).mtime.getTime()
+  const files = walkJsonlFiles(runtime.sessionsDir)
+    .map((file) => ({
+      name: path.basename(file),
+      path: file,
+      mtime: fs.statSync(file).mtime.getTime(),
     }))
     .sort((a, b) => b.mtime - a.mtime);
 
   if (options.sessionId) {
-    const match = files.find(f => f.name.includes(options.sessionId!));
+    const match = files.find((file) => file.name.includes(options.sessionId!));
     return match ? [match.path] : [];
   }
 
   if (options.all) {
     const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    return files.filter(f => f.mtime > sevenDaysAgo).map(f => f.path);
+    return files.filter((file) => file.mtime > sevenDaysAgo).map((file) => file.path);
   }
 
   const limit = options.recent || 10;
-  return files.slice(0, limit).map(f => f.path);
+  return files.slice(0, limit).map((file) => file.path);
 }
 
 // ============================================================================
 // Content Extraction
 // ============================================================================
-
-function extractTextContent(content: string | Array<any>): string {
-  if (typeof content === 'string') return content;
-
-  if (Array.isArray(content)) {
-    return content
-      .filter(c => c.type === 'text' && c.text)
-      .map(c => c.text)
-      .join('\n');
-  }
-
-  return '';
-}
 
 function matchesPatterns(text: string, patterns: RegExp[]): { matches: boolean; matchedPattern: string | null } {
   for (const pattern of patterns) {
@@ -209,83 +277,105 @@ function matchesPatterns(text: string, patterns: RegExp[]): { matches: boolean; 
   return { matches: false, matchedPattern: null };
 }
 
+const TRANSIENT_TOOL_FAILURE_PATTERNS = [
+  /command not found/i,
+  /cannot find module/i,
+  /module not found/i,
+  /no such file or directory/i,
+  /permission denied/i,
+  /missing .*token/i,
+  /not found/i,
+];
+
+function hasFixOrRootCauseSignal(text: string): boolean {
+  return /(?:fixed|solved|resolved|workaround|root cause|turns out|caused by|the reason)/i.test(text);
+}
+
+function isTransientToolFailure(text: string): boolean {
+  return TRANSIENT_TOOL_FAILURE_PATTERNS.some((pattern) => pattern.test(text)) && !hasFixOrRootCauseSignal(text);
+}
+
 // ============================================================================
 // Learning Extraction
 // ============================================================================
 
-function harvestLearnings(sessionPath: string): HarvestedLearning[] {
+export function harvestLearnings(sessionPath: string, harness: PaiHarness = "claude"): HarvestedLearning[] {
   const learnings: HarvestedLearning[] = [];
-  const sessionId = path.basename(sessionPath, '.jsonl');
+  const sessionId = path.basename(sessionPath, ".jsonl");
+  const entries = readTranscriptMessages(sessionPath, harness);
+  let previousContext = "";
 
-  const content = fs.readFileSync(sessionPath, 'utf-8');
-  const lines = content.split('\n').filter(line => line.trim());
+  for (const entry of entries) {
+    const textContent = entry.content;
+    if (!textContent || textContent.length < 20) continue;
 
-  let previousContext = '';
+    const timestamp = entry.timestamp || new Date().toISOString();
 
-  for (const line of lines) {
-    try {
-      const entry = JSON.parse(line) as ProjectsEntry;
+    if (entry.role === "user") {
+      const { matches, matchedPattern } = matchesPatterns(textContent, CORRECTION_PATTERNS);
+      if (matches) {
+        learnings.push({
+          sessionId,
+          timestamp,
+          category: getLearningCategory(textContent),
+          type: "correction",
+          context: previousContext.slice(0, 200),
+          content: textContent.slice(0, 500),
+          source: matchedPattern || "correction",
+        });
+      }
+      previousContext = textContent;
+    }
 
-      if (!entry.message?.content) continue;
-
-      const textContent = extractTextContent(entry.message.content);
-      if (!textContent || textContent.length < 20) continue;
-
-      const timestamp = entry.timestamp || new Date().toISOString();
-
-      // Check for corrections (user messages)
-      if (entry.type === 'user') {
-        const { matches, matchedPattern } = matchesPatterns(textContent, CORRECTION_PATTERNS);
-        if (matches) {
-          learnings.push({
-            sessionId,
-            timestamp,
-            category: getLearningCategory(textContent),
-            type: 'correction',
-            context: previousContext.slice(0, 200),
-            content: textContent.slice(0, 500),
-            source: matchedPattern || 'correction'
-          });
-        }
-        previousContext = textContent;
+    if (entry.role === "assistant") {
+      const { matches: errorMatch, matchedPattern: errorPattern } = matchesPatterns(textContent, ERROR_PATTERNS);
+      if (errorMatch && isLearningCapture(textContent)) {
+        learnings.push({
+          sessionId,
+          timestamp,
+          category: getLearningCategory(textContent),
+          type: "error",
+          context: previousContext.slice(0, 200),
+          content: textContent.slice(0, 500),
+          source: errorPattern || "error",
+        });
       }
 
-      // Check for errors (assistant messages with error patterns)
-      if (entry.type === 'assistant') {
-        const { matches: errorMatch, matchedPattern: errorPattern } = matchesPatterns(textContent, ERROR_PATTERNS);
-        if (errorMatch) {
-          // Only capture if it seems like a real error being addressed
-          if (isLearningCapture(textContent)) {
-            learnings.push({
-              sessionId,
-              timestamp,
-              category: getLearningCategory(textContent),
-              type: 'error',
-              context: previousContext.slice(0, 200),
-              content: textContent.slice(0, 500),
-              source: errorPattern || 'error'
-            });
-          }
-        }
-
-        // Check for insights
-        const { matches: insightMatch, matchedPattern: insightPattern } = matchesPatterns(textContent, INSIGHT_PATTERNS);
-        if (insightMatch) {
-          learnings.push({
-            sessionId,
-            timestamp,
-            category: getLearningCategory(textContent),
-            type: 'insight',
-            context: previousContext.slice(0, 200),
-            content: textContent.slice(0, 500),
-            source: insightPattern || 'insight'
-          });
-        }
-
-        previousContext = textContent;
+      const { matches: insightMatch, matchedPattern: insightPattern } = matchesPatterns(textContent, INSIGHT_PATTERNS);
+      if (insightMatch) {
+        learnings.push({
+          sessionId,
+          timestamp,
+          category: getLearningCategory(textContent),
+          type: "insight",
+          context: previousContext.slice(0, 200),
+          content: textContent.slice(0, 500),
+          source: insightPattern || "insight",
+        });
       }
-    } catch {
-      // Skip malformed lines
+
+      previousContext = textContent;
+    }
+
+    if (entry.role === "tool") {
+      const { matches: errorMatch, matchedPattern: errorPattern } = matchesPatterns(textContent, ERROR_PATTERNS);
+      if (
+        entry.status === "error" &&
+        errorMatch &&
+        !isTransientToolFailure(textContent) &&
+        isLearningCapture(textContent, previousContext)
+      ) {
+        learnings.push({
+          sessionId,
+          timestamp,
+          category: getLearningCategory(textContent),
+          type: "error",
+          context: previousContext.slice(0, 200),
+          content: textContent.slice(0, 500),
+          source: entry.toolName ? `tool:${entry.toolName}` : errorPattern || "tool-error",
+        });
+      }
+      previousContext = textContent;
     }
   }
 
@@ -296,63 +386,61 @@ function harvestLearnings(sessionPath: string): HarvestedLearning[] {
 // Memory Mining
 // ============================================================================
 
-function mineMemories(sessionPath: string): MinedMemory[] {
+export function mineMemories(sessionPath: string, harness: PaiHarness = "claude"): MinedMemory[] {
   const memories: MinedMemory[] = [];
-  const sessionId = path.basename(sessionPath, '.jsonl');
+  const sessionId = path.basename(sessionPath, ".jsonl");
+  const entries = readTranscriptMessages(sessionPath, harness);
 
-  const content = fs.readFileSync(sessionPath, 'utf-8');
-  const lines = content.split('\n').filter(line => line.trim());
+  for (let lineIdx = 0; lineIdx < entries.length; lineIdx++) {
+    const entry = entries[lineIdx];
 
-  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-    try {
-      const entry = JSON.parse(lines[lineIdx]) as ProjectsEntry;
+    if (entry.role !== "user" && entry.role !== "assistant" && entry.role !== "tool") continue;
 
-      if (!entry.message?.content) continue;
-      if (entry.type !== 'user' && entry.type !== 'assistant') continue;
+    const textContent = entry.content;
+    if (!textContent || textContent.length < 20) continue;
 
-      const textContent = extractTextContent(entry.message.content);
-      if (!textContent || textContent.length < 20) continue;
+    const timestamp = entry.timestamp || new Date().toISOString();
+    const patternEntries = entry.role === "tool"
+      ? [["problem", PROBLEM_PATTERNS] as [MemoryType, RegExp[]]]
+      : Object.entries(MINING_PATTERN_MAP) as [MemoryType, RegExp[]][];
 
-      const timestamp = entry.timestamp || new Date().toISOString();
+    if (entry.role === "tool" && (entry.status !== "error" || isTransientToolFailure(textContent))) {
+      continue;
+    }
 
-      for (const [memType, patterns] of Object.entries(MINING_PATTERN_MAP) as [MemoryType, RegExp[]][]) {
-        let matchCount = 0;
-        let firstMatchedPattern = '';
+    for (const [memType, patterns] of patternEntries) {
+      let matchCount = 0;
+      let firstMatchedPattern = "";
 
-        for (const pattern of patterns) {
-          if (pattern.test(textContent)) {
-            matchCount++;
-            if (!firstMatchedPattern) firstMatchedPattern = pattern.source;
-          }
+      for (const pattern of patterns) {
+        if (pattern.test(textContent)) {
+          matchCount++;
+          if (!firstMatchedPattern) firstMatchedPattern = pattern.source;
         }
-
-        if (matchCount === 0) continue;
-
-        let confidence = Math.min(matchCount / 5.0, 1.0);
-        if (textContent.length > 200) confidence = Math.min(confidence + 0.1, 1.0);
-
-        if (confidence < 0.3) continue;
-
-        memories.push({
-          sessionId,
-          timestamp,
-          memoryType: memType,
-          content: textContent.slice(0, 500),
-          context: textContent.slice(0, 300),
-          confidence,
-          sourcePattern: firstMatchedPattern,
-          sourceLine: lineIdx + 1,
-        });
       }
-    } catch {
-      // Skip malformed lines
+
+      if (matchCount === 0) continue;
+
+      let confidence = Math.min(matchCount / 5.0, 1.0);
+      if (textContent.length > 200) confidence = Math.min(confidence + 0.1, 1.0);
+      if (confidence < 0.3) continue;
+
+      memories.push({
+        sessionId,
+        timestamp,
+        memoryType: memType,
+        content: textContent.slice(0, 500),
+        context: textContent.slice(0, 300),
+        confidence,
+        sourcePattern: firstMatchedPattern,
+        sourceLine: entry.sourceLine,
+      });
     }
   }
 
-  // Deduplicate: if two candidates from same session have >80% content overlap, keep higher confidence
   const deduped: MinedMemory[] = [];
   for (const mem of memories) {
-    const overlap = deduped.findIndex(existing => contentOverlap(existing.content, mem.content) > 0.8);
+    const overlap = deduped.findIndex((existing) => contentOverlap(existing.content, mem.content) > 0.8);
     if (overlap >= 0) {
       if (mem.confidence > deduped[overlap].confidence) {
         deduped[overlap] = mem;
@@ -369,7 +457,7 @@ function contentOverlap(a: string, b: string): number {
   const shorter = a.length <= b.length ? a : b;
   const longer = a.length > b.length ? a : b;
   if (shorter.length === 0) return 0;
-  // Simple character-level overlap ratio
+
   let matches = 0;
   for (let i = 0; i < shorter.length; i++) {
     if (shorter[i] === longer[i]) matches++;
@@ -378,23 +466,21 @@ function contentOverlap(a: string, b: string): number {
 }
 
 function confidenceIcon(c: number): string {
-  if (c >= 0.8) return "\u{1F7E2}";  // green circle
-  if (c >= 0.5) return "\u{1F7E1}";  // yellow circle
-  return "\u{1F534}";                  // red circle
+  if (c >= 0.8) return "\u{1F7E2}";
+  if (c >= 0.5) return "\u{1F7E1}";
+  return "\u{1F534}";
 }
 
-const HARVEST_QUEUE_DIR = path.join(CLAUDE_DIR, "PAI", "MEMORY", "KNOWLEDGE", "_harvest-queue");
-
-function writeToQueue(mem: MinedMemory): string {
-  if (!fs.existsSync(HARVEST_QUEUE_DIR)) {
-    fs.mkdirSync(HARVEST_QUEUE_DIR, { recursive: true });
+function writeToQueue(mem: MinedMemory, runtime: RuntimeConfig): string {
+  if (!fs.existsSync(runtime.harvestQueueDir)) {
+    fs.mkdirSync(runtime.harvestQueueDir, { recursive: true, mode: 0o700 });
   }
 
   const now = new Date();
-  const ts = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  const ts = now.toISOString().replace(/[:.]/g, "-").slice(0, 19);
   const sessionShort = mem.sessionId.slice(0, 8);
   const filename = `mine_${ts}_${mem.memoryType}_${sessionShort}_L${mem.sourceLine}.json`;
-  const filepath = path.join(HARVEST_QUEUE_DIR, filename);
+  const filepath = path.join(runtime.harvestQueueDir, filename);
 
   const candidate = {
     title: `${mem.memoryType}: ${mem.content.substring(0, 60)}...`,
@@ -408,7 +494,7 @@ function writeToQueue(mem: MinedMemory): string {
     minedAt: now.toISOString(),
   };
 
-  fs.writeFileSync(filepath, JSON.stringify(candidate, null, 2));
+  fs.writeFileSync(filepath, JSON.stringify(candidate, null, 2), { mode: 0o600 });
   return filepath;
 }
 
@@ -416,15 +502,14 @@ function writeToQueue(mem: MinedMemory): string {
 // Learning File Generation
 // ============================================================================
 
-function getMonthDir(category: 'SYSTEM' | 'ALGORITHM'): string {
+function getMonthDir(category: "SYSTEM" | "ALGORITHM", runtime: RuntimeConfig): string {
   const now = new Date();
   const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-
-  const monthDir = path.join(LEARNING_DIR, category, `${year}-${month}`);
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const monthDir = path.join(runtime.learningDir, category, `${year}-${month}`);
 
   if (!fs.existsSync(monthDir)) {
-    fs.mkdirSync(monthDir, { recursive: true });
+    fs.mkdirSync(monthDir, { recursive: true, mode: 0o700 });
   }
 
   return monthDir;
@@ -432,8 +517,8 @@ function getMonthDir(category: 'SYSTEM' | 'ALGORITHM'): string {
 
 function generateLearningFilename(learning: HarvestedLearning): string {
   const date = new Date(learning.timestamp);
-  const dateStr = date.toISOString().split('T')[0];
-  const timeStr = date.toISOString().split('T')[1].slice(0, 5).replace(':', '');
+  const dateStr = date.toISOString().split("T")[0];
+  const timeStr = date.toISOString().split("T")[1].slice(0, 5).replace(":", "");
   const typeSlug = learning.type;
   const sessionShort = learning.sessionId.slice(0, 8);
 
@@ -460,22 +545,21 @@ ${learning.content}
 
 ---
 
-*Harvested by SessionHarvester from projects/ transcript*
+*Harvested by SessionHarvester from harness transcript*
 `;
 }
 
-function writeLearning(learning: HarvestedLearning): string {
-  const monthDir = getMonthDir(learning.category);
+function writeLearning(learning: HarvestedLearning, runtime: RuntimeConfig): string {
+  const monthDir = getMonthDir(learning.category, runtime);
   const filename = generateLearningFilename(learning);
   const filepath = path.join(monthDir, filename);
 
-  // Skip if file already exists
   if (fs.existsSync(filepath)) {
-    return filepath + ' (skipped - exists)';
+    return `${filepath} (skipped - exists)`;
   }
 
   const content = formatLearningFile(learning);
-  fs.writeFileSync(filepath, content);
+  fs.writeFileSync(filepath, content, { mode: 0o600 });
 
   return filepath;
 }
@@ -484,28 +568,36 @@ function writeLearning(learning: HarvestedLearning): string {
 // CLI
 // ============================================================================
 
-const { values } = parseArgs({
-  args: Bun.argv.slice(2),
-  options: {
-    recent: { type: "string" },
-    all: { type: "boolean" },
-    session: { type: "string" },
-    "dry-run": { type: "boolean" },
-    mine: { type: "boolean", short: "m" },
-    help: { type: "boolean", short: "h" },
-  },
-});
+export function main(argv: string[] = Bun.argv.slice(2)): void {
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      recent: { type: "string" },
+      all: { type: "boolean" },
+      session: { type: "string" },
+      harness: { type: "string" },
+      "dry-run": { type: "boolean" },
+      mine: { type: "boolean", short: "m" },
+      help: { type: "boolean", short: "h" },
+    },
+  });
 
-if (values.help) {
-  console.log(`
-SessionHarvester - Extract learnings from Claude Code session transcripts
+  if (values.harness && !normalizeHarness(values.harness)) {
+    console.error(`Invalid harness: ${values.harness}. Expected claude or codex.`);
+    process.exit(1);
+  }
+
+  if (values.help) {
+    console.log(`
+SessionHarvester - Extract learnings from harness session transcripts
 
 Usage:
-  bun run SessionHarvester.ts --recent 10    Harvest from 10 most recent sessions
-  bun run SessionHarvester.ts --all          Harvest from all sessions (7 days)
-  bun run SessionHarvester.ts --session ID   Harvest from specific session
-  bun run SessionHarvester.ts --dry-run      Preview without writing files
-  bun run SessionHarvester.ts --mine         Mine conversations for decisions, preferences, milestones, problems
+  bun run SessionHarvester.ts --recent 10             Harvest from 10 most recent sessions
+  bun run SessionHarvester.ts --all                   Harvest from all sessions (7 days)
+  bun run SessionHarvester.ts --session ID            Harvest from specific session
+  bun run SessionHarvester.ts --harness codex         Force Codex session source
+  bun run SessionHarvester.ts --dry-run               Preview without writing files
+  bun run SessionHarvester.ts --mine                  Mine conversations for memory candidates
 
 Mining examples:
   bun run SessionHarvester.ts --mine --recent 5
@@ -515,83 +607,86 @@ Output:
   Harvest: MEMORY/LEARNING/{ALGORITHM|SYSTEM}/YYYY-MM/
   Mine:    MEMORY/KNOWLEDGE/_harvest-queue/ (review queue)
 `);
-  process.exit(0);
-}
+    process.exit(0);
+  }
 
-// Get sessions to process
-const sessionFiles = getSessionFiles({
-  recent: values.recent ? parseInt(values.recent) : undefined,
-  all: values.all,
-  sessionId: values.session
-});
+  const runtime = createRuntimeConfig(values.harness);
+  const sessionFiles = getSessionFiles({
+    recent: values.recent ? parseInt(values.recent) : undefined,
+    all: Boolean(values.all),
+    sessionId: values.session,
+  }, runtime);
 
-if (sessionFiles.length === 0) {
-  console.log("No sessions found to harvest");
-  process.exit(0);
-}
+  if (sessionFiles.length === 0) {
+    console.log("No sessions found to harvest");
+    process.exit(0);
+  }
 
-// Mining mode
-if (values.mine) {
-  console.log(`\u{1F50D} Mining ${sessionFiles.length} session(s) for memory candidates...`);
-  let totalMined = 0;
-  for (const session of sessionFiles) {
-    const memories = mineMemories(session);
-    if (memories.length === 0) continue;
-    console.log(`\n\u{1F4CB} ${path.basename(session, '.jsonl').slice(0, 8)}: ${memories.length} candidate(s)`);
-    for (const mem of memories) {
-      if (!values["dry-run"]) {
-        writeToQueue(mem);
+  if (values.mine) {
+    console.log(`\u{1F50D} Mining ${sessionFiles.length} ${runtime.harness} session(s) for memory candidates...`);
+    let totalMined = 0;
+    for (const session of sessionFiles) {
+      const memories = mineMemories(session, runtime.harness);
+      if (memories.length === 0) continue;
+      console.log(`\n\u{1F4CB} ${path.basename(session, ".jsonl").slice(0, 8)}: ${memories.length} candidate(s)`);
+      for (const mem of memories) {
+        if (!values["dry-run"]) {
+          writeToQueue(mem, runtime);
+        }
+        console.log(`  ${confidenceIcon(mem.confidence)} [${mem.memoryType}] ${mem.content.substring(0, 80)}... (${(mem.confidence * 100).toFixed(0)}%)`);
+        totalMined++;
       }
-      console.log(`  ${confidenceIcon(mem.confidence)} [${mem.memoryType}] ${mem.content.substring(0, 80)}... (${(mem.confidence * 100).toFixed(0)}%)`);
-      totalMined++;
+    }
+    console.log(`\n\u{2705} ${totalMined} candidate(s) ${values["dry-run"] ? "found (dry run)" : "queued for review"}`);
+    if (!values["dry-run"] && totalMined > 0) {
+      console.log("  Review: bun KnowledgeHarvester.ts harvest --source queue");
+    }
+    process.exit(0);
+  }
+
+  console.log(`\u{1F50D} Scanning ${sessionFiles.length} ${runtime.harness} session(s)...`);
+
+  let totalLearnings = 0;
+  const allLearnings: HarvestedLearning[] = [];
+
+  for (const sessionFile of sessionFiles) {
+    const sessionName = path.basename(sessionFile, ".jsonl").slice(0, 8);
+    const learnings = harvestLearnings(sessionFile, runtime.harness);
+
+    if (learnings.length > 0) {
+      console.log(`  \u{1F4C2} ${sessionName}: ${learnings.length} learning(s)`);
+      allLearnings.push(...learnings);
+      totalLearnings += learnings.length;
     }
   }
-  console.log(`\n\u{2705} ${totalMined} candidate(s) ${values["dry-run"] ? "found (dry run)" : "queued for review"}`);
-  if (!values["dry-run"] && totalMined > 0) {
-    console.log(`  Review: bun KnowledgeHarvester.ts harvest --source queue`);
+
+  if (totalLearnings === 0) {
+    console.log("\u{2705} No new learnings found");
+    process.exit(0);
   }
-  process.exit(0);
+
+  console.log(`\n\u{1F4CA} Found ${totalLearnings} learning(s)`);
+  console.log(`   - Corrections: ${allLearnings.filter((learning) => learning.type === "correction").length}`);
+  console.log(`   - Errors: ${allLearnings.filter((learning) => learning.type === "error").length}`);
+  console.log(`   - Insights: ${allLearnings.filter((learning) => learning.type === "insight").length}`);
+
+  if (values["dry-run"]) {
+    console.log("\n\u{1F50D} DRY RUN - Would write:");
+    for (const learning of allLearnings) {
+      const monthDir = getMonthDir(learning.category, runtime);
+      const filename = generateLearningFilename(learning);
+      console.log(`   ${learning.category}/${path.basename(monthDir)}/${filename}`);
+    }
+  } else {
+    console.log("\n\u{270D}\u{FE0F}  Writing learning files...");
+    for (const learning of allLearnings) {
+      const result = writeLearning(learning, runtime);
+      console.log(`   \u{2705} ${path.basename(result)}`);
+    }
+    console.log(`\n\u{2705} Harvested ${totalLearnings} learning(s) to MEMORY/LEARNING/`);
+  }
 }
 
-console.log(`\u{1F50D} Scanning ${sessionFiles.length} session(s)...`);
-
-// Harvest learnings from each session
-let totalLearnings = 0;
-const allLearnings: HarvestedLearning[] = [];
-
-for (const sessionFile of sessionFiles) {
-  const sessionName = path.basename(sessionFile, '.jsonl').slice(0, 8);
-  const learnings = harvestLearnings(sessionFile);
-
-  if (learnings.length > 0) {
-    console.log(`  📂 ${sessionName}: ${learnings.length} learning(s)`);
-    allLearnings.push(...learnings);
-    totalLearnings += learnings.length;
-  }
-}
-
-if (totalLearnings === 0) {
-  console.log("✅ No new learnings found");
-  process.exit(0);
-}
-
-console.log(`\n📊 Found ${totalLearnings} learning(s)`);
-console.log(`   - Corrections: ${allLearnings.filter(l => l.type === 'correction').length}`);
-console.log(`   - Errors: ${allLearnings.filter(l => l.type === 'error').length}`);
-console.log(`   - Insights: ${allLearnings.filter(l => l.type === 'insight').length}`);
-
-if (values["dry-run"]) {
-  console.log("\n🔍 DRY RUN - Would write:");
-  for (const learning of allLearnings) {
-    const monthDir = getMonthDir(learning.category);
-    const filename = generateLearningFilename(learning);
-    console.log(`   ${learning.category}/${path.basename(monthDir)}/${filename}`);
-  }
-} else {
-  console.log("\n✍️  Writing learning files...");
-  for (const learning of allLearnings) {
-    const result = writeLearning(learning);
-    console.log(`   ✅ ${path.basename(result)}`);
-  }
-  console.log(`\n✅ Harvested ${totalLearnings} learning(s) to MEMORY/LEARNING/`);
+if (import.meta.main) {
+  main();
 }

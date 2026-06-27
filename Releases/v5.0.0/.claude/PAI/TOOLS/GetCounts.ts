@@ -33,11 +33,12 @@
  *   files_count=172
  */
 
-import { readdirSync, existsSync, statSync } from "fs";
+import { readdirSync, existsSync, statSync, readFileSync } from "fs";
 import { join } from "path";
+import { getHarnessHome, getHarnessKind, getPaiDir } from "./lib/runtime-paths";
 
-const HOME = process.env.HOME!;
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude");
+const PAI_DIR = getPaiDir(import.meta.dir);
+const HARNESS_HOME = getHarnessHome();
 
 interface Counts {
   skills: number;
@@ -101,7 +102,7 @@ function countWorkflowFiles(dir: string): number {
  */
 function countSkills(): number {
   let count = 0;
-  const skillsDir = join(PAI_DIR, "skills");
+  const skillsDir = join(HARNESS_HOME, "skills");
   try {
     for (const entry of readdirSync(skillsDir, { withFileTypes: true })) {
       // Handle both real directories and symlinks to directories
@@ -122,15 +123,16 @@ function countSkills(): number {
 
 /**
  * Count active hooks: unique commands registered under `hooks.<event>[].hooks[].command`
- * in settings.json. Dormant hook files on disk that aren't wired to any event do NOT
- * count — only what Claude Code will actually fire.
+ * in the selected harness hook config. Dormant hook files on disk that aren't
+ * wired to any event do NOT count — only what the harness will actually fire.
  */
 function countHooks(): number {
-  const settingsPath = join(HOME, ".claude", "settings.json");
   try {
-    const fs = require('fs');
-    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-    const events = settings.hooks ?? {};
+    const hooksPath = getHarnessKind() === "codex"
+      ? join(HARNESS_HOME, "hooks.json")
+      : join(HARNESS_HOME, "settings.json");
+    const config = JSON.parse(readFileSync(hooksPath, 'utf-8'));
+    const events = config.hooks ?? {};
     const unique = new Set<string>();
     for (const matchers of Object.values(events)) {
       if (!Array.isArray(matchers)) continue;
@@ -155,8 +157,7 @@ function countHooks(): number {
 function countRatings(): number {
   const ratingsFile = join(PAI_DIR, "MEMORY/LEARNING/SIGNALS/ratings.jsonl");
   try {
-    const fs = require('fs');
-    const content = fs.readFileSync(ratingsFile, 'utf-8');
+    const content = readFileSync(ratingsFile, 'utf-8');
     return content.split('\n').filter((line: string) => line.trim()).length;
   } catch {
     return 0;
@@ -169,10 +170,10 @@ function countRatings(): number {
 function getCounts(): Counts {
   return {
     skills: countSkills(),
-    workflows: countWorkflowFiles(join(PAI_DIR, "skills")),
+    workflows: countWorkflowFiles(join(HARNESS_HOME, "skills")),
     hooks: countHooks(),
     signals: countFilesRecursive(join(PAI_DIR, "MEMORY/LEARNING"), ".md"),
-    files: countFilesRecursive(join(PAI_DIR, "PAI/USER")),
+    files: countFilesRecursive(join(PAI_DIR, "USER")),
     work: (() => {
       let count = 0;
       try {

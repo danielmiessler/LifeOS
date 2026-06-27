@@ -3,10 +3,11 @@ import { readdir, readFile, writeFile, rename, mkdir } from "node:fs/promises"
 import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
+import { getPaiDir } from "./lib/runtime-paths"
 
 const INBOX = join(homedir(), "Library/Mobile Documents/com~apple~CloudDocs/PAI/health/inbox")
 const PROCESSED = join(homedir(), "Library/Mobile Documents/com~apple~CloudDocs/PAI/health/processed")
-const SNAPSHOTS = join(homedir(), ".claude/PAI/USER/HEALTH/snapshots")
+const SNAPSHOTS = join(getPaiDir(import.meta.dir), "USER", "HEALTH", "snapshots")
 
 type HealthSnapshot = {
   date?: string

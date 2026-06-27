@@ -27,7 +27,7 @@ import { fileURLToPath } from "url";
 // Resolve relative to this script's own location. The script ships at
 // PAI/TOOLS/DAInterview.ts, so PAI/USER/DA/_presets.yaml is two levels up.
 // This works whether the script runs from a fresh clone (~/PAI-fresh/...) or
-// from an installed location (~/.claude/PAI/...) — no $HOME assumption.
+// from an installed PAI location — no $HOME assumption.
 
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const PAI_DIR = join(SCRIPT_DIR, "..");

@@ -32,8 +32,8 @@
  *   smart:    model=opus,    timeout=90s
  *   advisor:  model=opus,    timeout=120s
  *
- * BILLING: Uses Claude CLI with subscription (not API key)
- * CACHE: Uses --exclude-dynamic-system-prompt-sections for cross-invocation prompt cache hits
+ * BILLING: Uses the selected harness CLI with subscription auth where supported.
+ * CACHE: Enables Claude prompt-cache flags only when the selected harness supports them.
  *
  * ADVISOR PATTERN (v3.24 Verification Doctrine — see PAI/ALGORITHM/v3.24.0.md):
  *   The advisor() function implements the Sonnet→Opus escalation checkpoint rule
@@ -57,7 +57,8 @@
  * ============================================================================
  */
 
-import { spawn } from "child_process";
+import { runAgentPrompt } from "./lib/agent-cli";
+import { getPaiDir } from "./lib/runtime-paths";
 
 export type InferenceLevel = 'fast' | 'standard' | 'smart';
 
@@ -101,138 +102,65 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
   const startTime = Date.now();
   const timeout = options.timeout || config.defaultTimeout;
 
-  return new Promise((resolve) => {
-    // Unset CLAUDECODE so nested `claude` invocations don't trigger the
-    // nested-session guard (hooks run inside Claude Code's environment).
-    const env = { ...process.env };
-    delete env.CLAUDECODE;
-
-    // BILLING: Always use subscription. Anthropic's credential precedence chain
-    // (https://code.claude.com/docs/en/authentication#authentication-precedence)
-    // puts BOTH ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN above CLAUDE_CODE_OAUTH_TOKEN,
-    // so either one in env will silently override OAuth. Bun auto-loads ~/.claude/.env
-    // into child processes, and some MCP/plugin setups export ANTHROPIC_AUTH_TOKEN —
-    // either path leaks subscription work onto API-key billing. Scrub both.
-    delete env.ANTHROPIC_API_KEY;
-    delete env.ANTHROPIC_AUTH_TOKEN;
-
-    const hasImages = options.imagePaths && options.imagePaths.length > 0;
-    const args = [
-      '--print',
-      '--model', config.model,
-      ...(hasImages ? ['--allowedTools', 'Read'] : ['--tools', '']),
-      '--output-format', 'text',
-      '--exclude-dynamic-system-prompt-sections',  // v3.23 C2: cache-friendly prompt prefix (claude-code v2.1.98+)
-      '--setting-sources', '',
-      '--system-prompt', options.systemPrompt,
-    ];
-
-    const userPromptWithImages = hasImages
-      ? `${options.imagePaths!.map((p) => `@${p}`).join('\n')}\n\n${options.userPrompt}`
-      : options.userPrompt;
-
-    let stdout = '';
-    let stderr = '';
-
-    const proc = spawn('claude', args, {
-      env,
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
-
-    // Write prompt via stdin to avoid ARG_MAX limits on large inputs
-    proc.stdin.write(userPromptWithImages);
-    proc.stdin.end();
-
-    proc.stdout.on('data', (data) => {
-      stdout += data.toString();
-    });
-
-    proc.stderr.on('data', (data) => {
-      stderr += data.toString();
-    });
-
-    // Handle timeout
-    const timeoutId = setTimeout(() => {
-      proc.kill('SIGTERM');
-      resolve({
-        success: false,
-        output: '',
-        error: `Timeout after ${timeout}ms`,
-        latencyMs: Date.now() - startTime,
-        level,
-      });
-    }, timeout);
-
-    proc.on('close', (code) => {
-      clearTimeout(timeoutId);
-      const latencyMs = Date.now() - startTime;
-
-      if (code !== 0) {
-        resolve({
-          success: false,
-          output: stdout,
-          error: stderr || `Process exited with code ${code}`,
-          latencyMs,
-          level,
-        });
-        return;
-      }
-
-      const output = stdout.trim();
-
-      // Parse JSON if requested
-      if (options.expectJson) {
-        // Try both object and array matches — use whichever parses successfully.
-        // The greedy object regex /\{[\s\S]*\}/ can capture invalid substrings
-        // when the LLM wraps a JSON array inside markdown or explanatory text
-        // that happens to contain braces. By trying both candidates and
-        // validating with JSON.parse, we handle arrays and objects reliably.
-        const objectMatch = output.match(/\{[\s\S]*\}/);
-        const arrayMatch = output.match(/\[[\s\S]*\]/);
-
-        for (const candidate of [objectMatch?.[0], arrayMatch?.[0]]) {
-          if (!candidate) continue;
-          try {
-            const parsed = JSON.parse(candidate);
-            resolve({
-              success: true,
-              output,
-              parsed,
-              latencyMs,
-              level,
-            });
-            return;
-          } catch { /* try next candidate */ }
-        }
-        resolve({
-          success: false,
-          output,
-          error: 'Failed to parse JSON response',
-          latencyMs,
-          level,
-        });
-        return;
-      }
-
-      resolve({
-        success: true,
-        output,
-        latencyMs,
-        level,
-      });
-    });
-
-    proc.on('error', (err) => {
-      clearTimeout(timeoutId);
-      resolve({
-        success: false,
-        output: '',
-        error: err.message,
-        latencyMs: Date.now() - startTime,
-        level,
-      });
-    });
+  const result = await runAgentPrompt(options.userPrompt, {
+    excludeDynamicSystemPromptSections: true,
+    imagePaths: options.imagePaths,
+    model: config.model,
+    systemPrompt: options.systemPrompt,
+    timeoutMs: timeout,
   });
+  const latencyMs = Date.now() - startTime;
+
+  if (result.status !== 0) {
+    return {
+      success: false,
+      output: result.stdout,
+      error: result.stderr || result.error?.message || `Process exited with code ${result.status}`,
+      latencyMs,
+      level,
+    };
+  }
+
+  const output = result.stdout.trim();
+
+  // Parse JSON if requested
+  if (options.expectJson) {
+    // Try both object and array matches — use whichever parses successfully.
+    // The greedy object regex /\{[\s\S]*\}/ can capture invalid substrings
+    // when the LLM wraps a JSON array inside markdown or explanatory text
+    // that happens to contain braces. By trying both candidates and
+    // validating with JSON.parse, we handle arrays and objects reliably.
+    const objectMatch = output.match(/\{[\s\S]*\}/);
+    const arrayMatch = output.match(/\[[\s\S]*\]/);
+
+    for (const candidate of [objectMatch?.[0], arrayMatch?.[0]]) {
+      if (!candidate) continue;
+      try {
+        const parsed = JSON.parse(candidate);
+        return {
+          success: true,
+          output,
+          parsed,
+          latencyMs,
+          level,
+        };
+      } catch { /* try next candidate */ }
+    }
+    return {
+      success: false,
+      output,
+      error: 'Failed to parse JSON response',
+      latencyMs,
+      level,
+    };
+  }
+
+  return {
+    success: true,
+    output,
+    latencyMs,
+    level,
+  };
 }
 
 /**
@@ -253,9 +181,9 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
 export async function synthesizeAdvisorState(): Promise<string> {
   const fs = await import("fs/promises");
   const path = await import("path");
-  const home = process.env.HOME || process.env.USERPROFILE || "";
-  const workDir = path.join(home, ".claude", "PAI", "MEMORY", "WORK");
-  const stateFile = path.join(home, ".claude", "PAI", "MEMORY", "STATE", "work.json");
+  const paiDir = getPaiDir(import.meta.dir);
+  const workDir = path.join(paiDir, "MEMORY", "WORK");
+  const stateFile = path.join(paiDir, "MEMORY", "STATE", "work.json");
 
   // Try to read active session from work.json
   let activeSlug: string | undefined;

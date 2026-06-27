@@ -17,7 +17,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { getIdentity } from '../../../.claude/hooks/lib/identity';
+import { getIdentity } from '../../hooks/lib/identity';
 
 const DA_IDENTITY = getIdentity();
 

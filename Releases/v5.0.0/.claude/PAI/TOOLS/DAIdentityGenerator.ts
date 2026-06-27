@@ -11,8 +11,9 @@
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { parse as parseYaml } from "yaml";
+import { getPaiDir } from "./lib/runtime-paths";
 
-const PAI_DA_DIR = join(process.env.HOME!, ".claude", "PAI", "USER", "DA");
+const PAI_DA_DIR = join(getPaiDir(import.meta.dir), "USER", "DA");
 
 function loadYaml<T>(path: string): T {
   if (!existsSync(path)) {

@@ -20,6 +20,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
+import { getPaiDir } from './lib/runtime-paths';
 
 interface TestStep {
   step: string;
@@ -55,7 +56,7 @@ interface FeatureRegistry {
   };
 }
 
-const REGISTRY_DIR = join(process.env.HOME || '', '.claude', 'PAI', 'MEMORY', 'STATE', 'progress');
+const REGISTRY_DIR = join(getPaiDir(import.meta.dir), 'MEMORY', 'STATE', 'progress');
 
 function getRegistryPath(project: string): string {
   return join(REGISTRY_DIR, `${project}-features.json`);

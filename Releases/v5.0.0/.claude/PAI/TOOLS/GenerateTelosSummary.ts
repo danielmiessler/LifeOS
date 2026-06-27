@@ -3,10 +3,10 @@
  * GenerateTelosSummary.ts — Reads TELOS source files and generates a compressed
  * ~60-line summary for boot context loading.
  *
- * Usage: bun run ~/.claude/PAI/TOOLS/GenerateTelosSummary.ts
+ * Usage: bun run "$PAI_DIR/TOOLS/GenerateTelosSummary.ts"
  *
- * Reads from: ~/.claude/PAI/USER/TELOS/*.md (source files)
- * Writes to:  ~/.claude/PAI/USER/TELOS/PRINCIPAL_TELOS.md
+ * Reads from: $PAI_DIR/USER/TELOS/*.md (source files)
+ * Writes to:  $PAI_DIR/USER/TELOS/PRINCIPAL_TELOS.md
  *
  * Design decisions (from Council debate 2026-03-26):
  * - Generated, never hand-authored (Reed's precondition)
@@ -17,8 +17,9 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
+import { getPaiDir } from './lib/runtime-paths';
 
-const TELOS_DIR = join(process.env.HOME || '', '.claude/PAI/USER/TELOS');
+const TELOS_DIR = join(getPaiDir(import.meta.dir), 'USER', 'TELOS');
 const OUTPUT_PATH = join(TELOS_DIR, 'PRINCIPAL_TELOS.md');
 
 interface ParsedItem {

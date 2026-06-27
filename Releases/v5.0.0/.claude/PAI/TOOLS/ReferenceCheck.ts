@@ -2,9 +2,9 @@
 /**
  * ReferenceCheck.ts — Full-surface reference validator for the PAI system.
  *
- * Walks every file under ~/.claude (excluding noise dirs), extracts every
- * reference from .md/.ts/.json files, validates each against the filesystem,
- * and emits three categories: missing, stale, orphan.
+ * Walks the selected harness home and PAI_DIR (excluding noise dirs), extracts
+ * every reference from .md/.ts/.json files, validates each against the
+ * filesystem, and emits three categories: missing, stale, orphan.
  *
  * Superset of DocCheck.ts. DocCheck stays for the narrow doc-specific use
  * consumed by DocIntegrity.hook.ts; this tool covers the full release surface.
@@ -27,16 +27,16 @@
 import { readFileSync, statSync, existsSync, readdirSync, realpathSync } from 'fs';
 import { join, resolve, dirname, relative, extname, sep } from 'path';
 import { execSync } from 'child_process';
+import { getHarnessHome, getPaiDir } from './lib/runtime-paths';
 
-const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
-const PAI_DIR = join(CLAUDE_DIR, 'PAI');
+const HARNESS_DIR = getHarnessHome();
+const PAI_DIR = getPaiDir(import.meta.dir);
 
 // ── Arg parsing (manual, zero deps) ──
 
 const args = process.argv.slice(2);
 if (args.includes('--help') || args.includes('-h')) {
-  console.log(`ReferenceCheck — validate every reference across ~/.claude
+  console.log(`ReferenceCheck — validate every reference across the selected harness home and PAI_DIR
 
 Usage: bun ReferenceCheck.ts [flags]
 
@@ -65,7 +65,7 @@ const EXCLUDE_DIR_NAMES = new Set([
   'logs',
 ]);
 
-// Top-level path segments (relative to CLAUDE_DIR) that are entirely ignored.
+// Top-level path segments (display-relative to HARNESS_DIR or PAI_DIR) that are entirely ignored.
 const EXCLUDE_PATH_PREFIXES = [
   'PAI/MEMORY',
   'PAI/PULSE/Observability/.next',
@@ -130,7 +130,7 @@ let _latestAlgVersionCache: string | null = null;
 function getLatestAlgorithmVersion(): string {
   if (_latestAlgVersionCache !== null) return _latestAlgVersionCache;
   try {
-    const algDir = join(CLAUDE_DIR, 'PAI', 'ALGORITHM');
+    const algDir = join(PAI_DIR, 'ALGORITHM');
     const versions = readdirSync(algDir)
       .map(f => f.match(/^v(\d+\.\d+\.\d+)\.md$/)?.[1])
       .filter((v): v is string => !!v)
@@ -168,11 +168,25 @@ const EXCLUDE_FILE_NAMES = new Set([
   'package-lock.json', 'bun.lockb', 'bun.lock', 'yarn.lock', 'pnpm-lock.yaml',
 ]);
 
+function resolvePaiRelative(raw: string): string {
+  return raw.startsWith('PAI/') ? resolve(PAI_DIR, raw.slice(4)) : resolve(PAI_DIR, raw);
+}
+
+function displayPath(path: string): string {
+  const harnessRel = relative(HARNESS_DIR, path);
+  if (!harnessRel.startsWith('..')) return harnessRel || '.';
+
+  const paiRel = relative(PAI_DIR, path);
+  if (!paiRel.startsWith('..')) return join('PAI', paiRel);
+
+  return path;
+}
+
 function isExcludedDir(absPath: string): boolean {
   const base = absPath.split(sep).pop() || '';
   if (EXCLUDE_DIR_NAMES.has(base)) return true;
-  const rel = relative(CLAUDE_DIR, absPath);
-  if (rel.startsWith('..')) return true;
+  const rel = displayPath(absPath);
+  if (rel === 'PAI' && absPath.startsWith(HARNESS_DIR + sep)) return true;
   for (const pref of EXCLUDE_PATH_PREFIXES) {
     if (rel === pref || rel.startsWith(pref + sep)) return true;
   }
@@ -196,7 +210,7 @@ function isScannableFile(absPath: string): boolean {
   for (const sub of EXCLUDE_SUBSTRINGS) {
     if (absPath.includes(sub)) return false;
   }
-  const rel = relative(CLAUDE_DIR, absPath);
+  const rel = displayPath(absPath);
   if (isArchivedAlgorithmVersion(rel)) return false;
   const ext = extname(absPath);
   return ext === '.md' || ext === '.ts' || ext === '.tsx' || ext === '.json';
@@ -262,10 +276,10 @@ const EXT = '\\.\\w+(?:\\.\\w+)*';
 const REF_PATTERNS: { re: RegExp; label: string }[] = [
   // Backtick-quoted paths with top-level anchor
   { re: new RegExp('`((?:PAI|hooks|skills|agents|Pulse|USER|MEMORY|Components|Algorithm|Tools|Workflows|References)\\/[\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-anchored' },
-  // Backtick-quoted paths starting with ~/.claude/
-  { re: new RegExp('`~\\/\\.claude\\/([\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-home' },
-  // Backtick-quoted paths with $HOME/.claude/ or ${HOME}/.claude/
-  { re: new RegExp('`\\$(?:HOME|\\{HOME\\})\\/\\.claude\\/([\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-env-home' },
+  // Backtick-quoted paths starting with a harness home or canonical PAI_DIR
+  { re: new RegExp('`~\\/\\.(?:claude|codex|pai)\\/([\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-home' },
+  // Backtick-quoted paths with $HOME/.claude, $HOME/.codex, or $HOME/.pai
+  { re: new RegExp('`\\$(?:HOME|\\{HOME\\})\\/\\.(?:claude|codex|pai)\\/([\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-env-home' },
   // @-import at start of line: @PAI/USER/FILE.md
   { re: /^@(PAI\/[\w/@.-]+\.md)/gm, label: 'at-import' },
   // Markdown link target: [text](./path) or [text](path.md)
@@ -277,7 +291,9 @@ const REF_PATTERNS: { re: RegExp; label: string }[] = [
   // TS/TSX relative imports with explicit relative prefix
   { re: /from\s+["'](\.\.?\/[\w/@.-]+?)["']/g, label: 'ts-import' },
   // settings.json style: "command": "... $HOME/.claude/hooks/Foo.hook.ts ..."
-  { re: new RegExp('\\$\\{?HOME\\}?\\/\\.claude\\/((?:hooks|PAI|skills|agents)\\/[\\w/@.-]+?' + EXT + ')', 'g'), label: 'json-home' },
+  { re: new RegExp('\\$\\{?HOME\\}?\\/\\.(?:claude|codex)\\/((?:hooks|PAI|skills|agents)\\/[\\w/@.-]+?' + EXT + ')', 'g'), label: 'json-home' },
+  // PAI_DIR style: "command": "... $HOME/.pai/TOOLS/Foo.ts ..."
+  { re: new RegExp('\\$\\{?HOME\\}?\\/\\.pai\\/((?:ALGORITHM|DOCUMENTATION|MEMORY|PULSE|TOOLS|USER)\\/[\\w/@.-]+?' + EXT + ')', 'g'), label: 'json-pai-home' },
 ];
 
 interface RefHit {
@@ -400,9 +416,9 @@ function extractRefs(content: string, referringFile: string): RefHit[] {
       } else if (raw.startsWith('./') || raw.startsWith('../')) {
         candidates.push(resolve(refDir, raw));
       } else {
-        // Try CLAUDE_DIR-relative, PAI_DIR-relative, referring-dir-relative.
-        candidates.push(resolve(CLAUDE_DIR, raw));
-        candidates.push(resolve(PAI_DIR, raw));
+        // Try harness-home-relative, PAI_DIR-relative, referring-dir-relative.
+        candidates.push(resolve(HARNESS_DIR, raw));
+        candidates.push(resolvePaiRelative(raw));
         candidates.push(resolve(refDir, raw));
         // Skill-internal refs: when file lives in skills/X/Workflows/ or skills/X/Tools/,
         // a ref like `Workflows/Foo.md` resolves against the skill root, not the subdir.
@@ -413,7 +429,11 @@ function extractRefs(content: string, referringFile: string): RefHit[] {
         // intentional convention used by CLAUDE.md routing entries.
         if (sectionRoots) {
           const sectionRoot = getSectionRootAt(sectionRoots, m.index);
-          if (sectionRoot) candidates.push(resolve(CLAUDE_DIR, sectionRoot, raw));
+          if (sectionRoot) {
+            candidates.push(sectionRoot.startsWith('PAI/')
+              ? resolvePaiRelative(join(sectionRoot, raw))
+              : resolve(HARNESS_DIR, sectionRoot, raw));
+          }
         }
       }
       for (const cand of candidates) {
@@ -465,9 +485,9 @@ function getChangedFiles(): Set<string> {
   try {
     const diff = execSync(
       'git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null',
-      { cwd: CLAUDE_DIR, encoding: 'utf-8' }
+      { cwd: HARNESS_DIR, encoding: 'utf-8' }
     );
-    return new Set(diff.split('\n').filter(Boolean).map(f => resolve(CLAUDE_DIR, f)));
+    return new Set(diff.split('\n').filter(Boolean).map(f => resolve(HARNESS_DIR, f)));
   } catch {
     return new Set();
   }
@@ -477,7 +497,7 @@ function getChangedFiles(): Set<string> {
 
 interface Finding {
   type: 'missing' | 'stale' | 'orphan';
-  file: string;   // relative to CLAUDE_DIR
+  file: string;   // display-relative to HARNESS_DIR or PAI_DIR
   line: number | null;
   ref: string | null;
   resolved: string;
@@ -493,7 +513,7 @@ let scannedRefs = 0;
 
 let allFiles: string[];
 try {
-  allFiles = walk(CLAUDE_DIR);
+  allFiles = [...new Set([...walk(HARNESS_DIR), ...walk(PAI_DIR)])];
 } catch (e: any) {
   console.error(`ReferenceCheck: scan error — ${e?.message || e}`);
   process.exit(2);
@@ -534,7 +554,7 @@ const filesToReport = changed
 for (const [file, refs] of fileRefs) {
   if (filesToReport && !filesToReport.has(file)) continue;
   let refMtimeCache: number | null = null;
-  const relFile = relative(CLAUDE_DIR, file);
+  const relFile = displayPath(file);
 
   for (const r of refs) {
     if (!r.exists) {
@@ -579,7 +599,7 @@ for (const [file, refs] of fileRefs) {
 // Skill SKILL.md files are auto-discovered by Claude Code harness via frontmatter.
 if (includeOrphans) {
   for (const file of allFiles) {
-    const rel = relative(CLAUDE_DIR, file);
+    const rel = displayPath(file);
     const isPaiTopMd = /^PAI\/[^/]+\.md$/.test(rel);
     if (!isPaiTopMd) continue;
     if (!referenced.has(file)) {

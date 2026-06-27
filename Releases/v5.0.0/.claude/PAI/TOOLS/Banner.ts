@@ -11,9 +11,11 @@
 import { readdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
+import { getAgentLabel, getAgentVersion } from "./lib/agent-cli";
+import { getHarnessHome, getHarnessKind, getPaiDir } from "./lib/runtime-paths";
 
-const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const HARNESS_HOME = getHarnessHome();
+const PAI_DIR = getPaiDir(import.meta.dir);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Terminal Width Detection
@@ -106,9 +108,75 @@ interface SystemStats {
   model: string;
   platform: string;
   arch: string;
-  ccVersion: string;
+  agentVersion: string;
   paiVersion: string;
   algorithmVersion: string;
+}
+
+function readSettings(): Record<string, any> | null {
+  const paths = [
+    process.env.PAI_SETTINGS_PATH || "",
+    join(PAI_DIR, "settings.json"),
+    join(HARNESS_HOME, "settings.json"),
+  ].filter(Boolean);
+
+  for (const settingsPath of [...new Set(paths)]) {
+    try {
+      if (existsSync(settingsPath)) {
+        return JSON.parse(readFileSync(settingsPath, "utf-8"));
+      }
+    } catch {}
+  }
+
+  return null;
+}
+
+function countCodexSessions(dir: string): number {
+  if (!existsSync(dir)) return 0;
+
+  let count = 0;
+  try {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        count += countCodexSessions(fullPath);
+      } else if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+        count += 1;
+      }
+    }
+  } catch {}
+
+  return count;
+}
+
+function getSessionCount(): number {
+  if (getHarnessKind() === "codex") {
+    return countCodexSessions(join(HARNESS_HOME, "sessions"));
+  }
+
+  try {
+    const historyFile = join(HARNESS_HOME, "history.jsonl");
+    if (existsSync(historyFile)) {
+      const content = readFileSync(historyFile, "utf-8");
+      return content.split("\n").filter(line => line.trim()).length;
+    }
+  } catch {}
+
+  return 0;
+}
+
+function getConfiguredModel(): string {
+  if (getHarnessKind() !== "codex") return "Opus 4.5";
+
+  try {
+    const configPath = join(HARNESS_HOME, "config.toml");
+    if (existsSync(configPath)) {
+      const match = readFileSync(configPath, "utf-8").match(/^\s*model\s*=\s*["']([^"']+)["']/m);
+      if (match) return match[1];
+    }
+  } catch {}
+
+  return getAgentLabel();
 }
 
 function getStats(): SystemStats {
@@ -118,12 +186,13 @@ function getStats(): SystemStats {
   let catchphrase = "{name} here, ready to go";
   let repoUrl = "github.com/danielmiessler/PAI";
   try {
-    const settings = JSON.parse(readFileSync(join(CLAUDE_DIR, "settings.json"), "utf-8"));
+    const settings = readSettings();
+    if (!settings) throw new Error("settings not found");
     name = settings.daidentity?.displayName || settings.daidentity?.name || "PAI";
     paiVersion = settings.pai?.version || "2.0";
     // v6.2.0+: LATEST is the single source of truth. settings.pai.algorithmVersion was removed.
     try {
-      const latestPath = join(CLAUDE_DIR, "PAI", "ALGORITHM", "LATEST");
+      const latestPath = join(PAI_DIR, "ALGORITHM", "LATEST");
       if (existsSync(latestPath)) {
         algorithmVersion = readFileSync(latestPath, "utf-8").trim().replace(/^v/i, "") || algorithmVersion;
       }
@@ -140,7 +209,7 @@ function getStats(): SystemStats {
 
   // Skills count — always live from filesystem so it matches the status line
   try {
-    const skillsDir = join(CLAUDE_DIR, "skills");
+    const skillsDir = join(HARNESS_HOME, "skills");
     if (existsSync(skillsDir)) {
       skills = readdirSync(skillsDir, { withFileTypes: true })
         .filter(d => d.isDirectory() && existsSync(join(skillsDir, d.name, "SKILL.md")))
@@ -149,8 +218,8 @@ function getStats(): SystemStats {
   } catch {}
 
   try {
-    const settings = JSON.parse(readFileSync(join(CLAUDE_DIR, "settings.json"), "utf-8"));
-    if (settings.counts) {
+    const settings = readSettings();
+    if (settings?.counts) {
       workflows = settings.counts.workflows || 0;
       hooks = settings.counts.hooks || 0;
       learnings = settings.counts.signals || 0;
@@ -158,27 +227,14 @@ function getStats(): SystemStats {
     }
   } catch {}
 
-  try {
-    const historyFile = join(CLAUDE_DIR, "history.jsonl");
-    if (existsSync(historyFile)) {
-      const content = readFileSync(historyFile, "utf-8");
-      sessions = content.split("\n").filter(line => line.trim()).length;
-    }
-  } catch {}
+  sessions = getSessionCount();
 
   // Get platform info
   const platform = process.platform === "darwin" ? "macOS" : process.platform;
   const arch = process.arch;
 
-  // Try to get Claude Code version
-  let ccVersion = "2.0";
-  try {
-    const result = spawnSync("claude", ["--version"], { encoding: "utf-8" });
-    if (result.stdout) {
-      const match = result.stdout.match(/(\d+\.\d+\.\d+)/);
-      if (match) ccVersion = match[1];
-    }
-  } catch {}
+  const agentOutput = getAgentVersion() ?? "";
+  const agentVersion = agentOutput.match(/(\d+\.\d+\.\d+)/)?.[1] || agentOutput || "unknown";
 
   return {
     name,
@@ -190,10 +246,10 @@ function getStats(): SystemStats {
     learnings,
     userFiles,
     sessions,
-    model: "Opus 4.5",
+    model: getConfiguredModel(),
     platform,
     arch,
-    ccVersion,
+    agentVersion,
     paiVersion,
     algorithmVersion,
   };

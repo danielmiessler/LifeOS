@@ -12,9 +12,10 @@ import { parseArgs } from "node:util";
 import * as fs from "fs";
 import * as path from "path";
 import { inference } from "./Inference";
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME!;
-const PAI_DIR = path.join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const MEMORY_DIR = path.join(PAI_DIR, "MEMORY");
 const KNOWLEDGE_DIR = path.join(MEMORY_DIR, "KNOWLEDGE");
 const LEARNING_DIR = path.join(MEMORY_DIR, "LEARNING");

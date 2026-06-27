@@ -7,18 +7,18 @@
  * A unified CLI for executing Algorithm sessions against ISAs.
  *
  * MODES:
- *   loop        — Autonomous iteration via `claude -p` (SDK). Runs until all
+ *   loop        — Autonomous iteration via the selected agent. Runs until all
  *                 ISC criteria pass or maxIterations reached. No human needed.
- *   interactive — Launches a full interactive `claude` session with ISA context
- *                 loaded as the initial prompt. Human-in-the-loop.
+ *   interactive — Launches a full interactive agent session with ISA context
+ *                 loaded as the initial prompt. Human in the loop.
  *   ideate      — Evolutionary ideation with tunable parameters. Launches an
  *                 interactive session with parameter configuration controlling
  *                 creativity vs. focus. Supports --preset, --focus, --param flags.
- *                 See ~/.claude/PAI/ALGORITHM/ideate-loop.md for the protocol.
+ *                 See ${PAI_DIR}/ALGORITHM/ideate-loop.md for the protocol.
  *   optimize    — Autonomous hill-climbing against a measurable metric. Launches
  *                 an interactive session with /optimize context loaded. The agent
  *                 runs an autonomous experiment loop (modify → measure → keep/discard).
- *                 See ~/.claude/PAI/ALGORITHM/optimize-loop.md for the protocol.
+ *                 See ${PAI_DIR}/ALGORITHM/optimize-loop.md for the protocol.
  *
  * DASHBOARD INTEGRATION (v0.5.9):
  *   - Creates a persistent algorithm state entry in MEMORY/STATE/algorithms/
@@ -29,7 +29,7 @@
  *
  * USAGE:
  *   algorithm -m loop -p <ISA> [-n 128]        Autonomous loop execution
- *   algorithm -m interactive -p <ISA>           Interactive claude session
+ *   algorithm -m interactive -p <ISA>           Interactive agent session
  *   algorithm -m ideate -p <ISA> [--preset X]   Evolutionary ideation session
  *   algorithm new -t <title> [-e <effort>]      Create a new ISA
  *   algorithm status [-p <ISA>]                 Show ISA status
@@ -38,7 +38,7 @@
  *   algorithm stop -p <ISA>                     Stop a loop
  *
  * EXAMPLES:
- *   algorithm -m loop -p ~/.claude/PAI/MEMORY/WORK/auth/ISA-20260207-auth.md
+ *   algorithm -m loop -p ${PAI_DIR}/MEMORY/WORK/auth/ISA-20260207-auth.md
  *   algorithm -m loop -p /path/to/project/.prd/ISA-20260213-feature.md -n 20
  *   algorithm -m interactive -p ISA-20260213-surface
  *   algorithm new -t "Build auth system" -e Extended
@@ -48,16 +48,17 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, appendFileSync } from "fs";
 import { resolve, basename, join, dirname } from "path";
-import { spawnSync, spawn } from "child_process";
 import { randomUUID } from "crypto";
-import { generateISATemplate } from "../../../.claude/hooks/lib/isa-template";
+import { generateISATemplate } from "../../hooks/lib/isa-template";
+import { getAgentLabel, runAgentPrompt, runAgentPromptSync, spawnInteractiveAgent } from "./lib/agent-cli";
+import { getPaiDir } from "./lib/runtime-paths";
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
 const HOME = process.env.HOME || "~";
-const BASE_DIR = process.env.PAI_DIR || join(HOME, ".claude");
-const ALGORITHMS_DIR = join(BASE_DIR, "MEMORY", "STATE", "algorithms");
-const SESSION_NAMES_PATH = join(BASE_DIR, "MEMORY", "STATE", "session-names.json");
+const PAI_DIR = getPaiDir(import.meta.dir);
+const ALGORITHMS_DIR = join(PAI_DIR, "MEMORY", "STATE", "algorithms");
+const SESSION_NAMES_PATH = join(PAI_DIR, "MEMORY", "STATE", "session-names.json");
 const PROJECTS_DIR = process.env.PROJECTS_DIR || join(HOME, "Projects");
 const VOICE_URL = "http://localhost:31337/notify";
 const VOICE_ID = "fTtv3eikoepIosk8dTZ5";
@@ -327,7 +328,7 @@ Usage:
 
 Modes:
   loop          Autonomous iteration — no human interaction
-  interactive   Full claude session with ISA context loaded
+  interactive   Full agent session with ISA context loaded
   ideate        Evolutionary ideation with tunable parameters
   optimize      Autonomous metric optimization (Karpathy autoresearch pattern)
 
@@ -362,7 +363,7 @@ Optimize Presets:
   aggressive            Large steps, accepts regression — for prototypes
 
 ISA Resolution:
-  Full path     ~/.claude/PAI/MEMORY/WORK/auth/ISA-20260207-auth.md
+  Full path     ${PAI_DIR}/MEMORY/WORK/auth/ISA-20260207-auth.md
   ISA ID        ISA-20260207-auth (searches MEMORY/WORK/ and ~/Projects/*/.prd/)
   Project path  /path/to/project/.prd/ISA-20260213-feature.md
 
@@ -826,31 +827,20 @@ async function runParallelIteration(
   const startTime = Date.now();
   // BILLING: subscription, not API. Remove --bare (forces ANTHROPIC_API_KEY),
   // strip the key from inherited env (bun auto-loads .env).
-  const workerEnv: Record<string, string> = { ...process.env } as Record<string, string>;
-  delete workerEnv.ANTHROPIC_API_KEY;
-  const processes = assignments.map(assignment => {
+  const processes = assignments.map(async assignment => {
     const criterion = assignment.criteriaDetails[0]; // One criterion per agent
     const prompt = buildWorkerPrompt(isaPath, assignment.agentId, criterion, iteration);
-    const proc = Bun.spawn(["claude", "-p", prompt,
-      "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,NotebookEdit",
-    ], {
+    const result = await runAgentPrompt(prompt, {
+      allowedTools: "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,NotebookEdit",
+      codexSandbox: "workspace-write",
       cwd: dirname(isaPath),
-      env: workerEnv,
-      stdout: "pipe",
-      stderr: "pipe",
+      timeoutMs: 600_000,
     });
-    return { assignment, proc };
+    return { assignment, exitCode: result.status ?? 1, stdout: result.stdout, stderr: result.stderr };
   });
 
   // Wait for all agents to complete
-  const results = await Promise.all(
-    processes.map(async ({ assignment, proc }) => {
-      const exitCode = await proc.exited;
-      const stdout = await new Response(proc.stdout).text();
-      const stderr = await new Response(proc.stderr).text();
-      return { assignment, exitCode, stdout, stderr };
-    })
-  );
+  const results = await Promise.all(processes);
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(0);
   console.log(`\x1b[90m  ⏱ Agents finished in ${elapsed}s\x1b[0m`);
@@ -1313,12 +1303,10 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
     // ── Sequential path: single agent (existing behavior) ──
     const prompt = buildIterationPrompt(absPath, newIteration, max);
 
-    const result = spawnSync("claude", [
-      "-p", "--bare", prompt,
-      "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
-    ], {
-      stdio: ["pipe", "pipe", "pipe"],
-      timeout: 600_000, // 10 minute timeout per iteration
+    const result = runAgentPromptSync(prompt, {
+      allowedTools: "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
+      codexSandbox: "workspace-write",
+      timeoutMs: 600_000, // 10 minute timeout per iteration
       cwd: dirname(absPath), // Run from ISA's directory context
     });
 
@@ -1340,7 +1328,7 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
 
     if (result.status !== 0) {
       const stderr = result.stderr?.toString().trim();
-      console.error(`\x1b[31m  claude -p exited with status ${result.status}\x1b[0m`);
+      console.error(`\x1b[31m  ${getAgentLabel()} exited with status ${result.status}\x1b[0m`);
       if (stderr) console.error(`  ${stderr.slice(0, 200)}`);
       if (!state.loopHistory) state.loopHistory = [];
       state.loopHistory.push({
@@ -1423,16 +1411,13 @@ function runInteractive(isaPath: string): void {
   console.log(`\x1b[36m\u25CB\x1b[0m THE ALGORITHM (interactive mode) \u2014 ${isaTitle}`);
   console.log(`  ISA: ${absPath}`);
   console.log(`  Progress: ${criteria.passing}/${criteria.total}`);
-  console.log(`  Launching claude...\n`);
+  console.log(`  Launching ${getAgentLabel()}...\n`);
 
-  // Launch interactive claude session with ISA context
-  const child = spawn("claude", [
-    prompt,
-    "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
-  ], {
-    stdio: "inherit",
+  // Launch interactive harness session with ISA context.
+  const child = spawnInteractiveAgent(prompt, {
+    allowedTools: "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
+    codexSandbox: "workspace-write",
     cwd: dirname(absPath),
-    env: { ...process.env, CLAUDECODE: undefined },
   });
 
   child.on("exit", (code) => {
@@ -1489,16 +1474,13 @@ function runIdeate(
   for (const [k, v] of Object.entries(resolvedParams)) {
     console.log(`    ${k}: ${typeof v === "number" ? (Number.isInteger(v) ? v : v.toFixed(2)) : v}`);
   }
-  console.log(`  Launching claude...\n`);
+  console.log(`  Launching ${getAgentLabel()}...\n`);
 
-  // Launch interactive claude session with ideate context
-  const child = spawn("claude", [
-    prompt,
-    "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
-  ], {
-    stdio: "inherit",
+  // Launch interactive harness session with ideate context.
+  const child = spawnInteractiveAgent(prompt, {
+    allowedTools: "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
+    codexSandbox: "workspace-write",
     cwd: dirname(absPath),
-    env: { ...process.env, CLAUDECODE: undefined },
   });
 
   child.on("exit", (code) => {
@@ -1537,7 +1519,7 @@ function createNewISA(title: string, effortLevel: string = "Standard", outputDir
   } else {
     // Default: create in MEMORY/WORK session directory
     const sessionSlug = `${y}${m}${d}-${String(now.getHours()).padStart(2, "0")}${String(now.getMinutes()).padStart(2, "0")}${String(now.getSeconds()).padStart(2, "0")}_${slug}`;
-    targetDir = join(BASE_DIR, "MEMORY", "WORK", sessionSlug);
+    targetDir = join(PAI_DIR, "MEMORY", "WORK", sessionSlug);
   }
   mkdirSync(targetDir, { recursive: true });
 
@@ -1560,7 +1542,7 @@ function findAllISAs(): string[] {
   const files: string[] = [];
 
   // 1. Scan MEMORY/WORK directory (flat ISA.md + legacy task-level ISAs)
-  const workDir = join(BASE_DIR, "MEMORY", "WORK");
+  const workDir = join(PAI_DIR, "MEMORY", "WORK");
   if (existsSync(workDir)) {
     try {
       for (const session of readdirSync(workDir)) {

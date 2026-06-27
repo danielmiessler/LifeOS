@@ -17,9 +17,10 @@ import { readFile, writeFile, readdir, appendFile, mkdir, stat } from "node:fs/p
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = homedir();
-const PAI_DIR = join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const WORK_DIR = join(PAI_DIR, "MEMORY", "WORK");
 const FINDINGS_LOG = join(PAI_DIR, "MEMORY", "VERIFICATION", "cato-findings.jsonl");
 const TOOL_ACTIVITY_LOG = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "tool-activity.jsonl");

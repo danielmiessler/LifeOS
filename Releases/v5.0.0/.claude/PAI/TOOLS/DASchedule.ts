@@ -12,9 +12,10 @@
 
 import { join } from "path"
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs"
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME ?? "~"
-const PAI_DIR = join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir(import.meta.dir)
 const TASKS_DIR = join(PAI_DIR, "Pulse", "state", "da")
 const TASKS_PATH = join(TASKS_DIR, "scheduled-tasks.jsonl")
 

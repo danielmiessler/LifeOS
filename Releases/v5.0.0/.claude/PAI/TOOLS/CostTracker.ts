@@ -31,9 +31,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
+import { getHarnessHome, getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME ?? "";
-const PAI_DIR = join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
+const HARNESS_HOME = getHarnessHome();
 const OBS_DIR = join(PAI_DIR, "MEMORY", "OBSERVABILITY");
 const LEDGER_PATH = join(OBS_DIR, "anthropic-cost.jsonl");
 const CALL_SITES_PATH = join(OBS_DIR, "anthropic-call-sites.json");
@@ -129,11 +131,11 @@ async function fetchApiSpend(): Promise<{ month_used_usd: number | null; source:
 
 // Paths we scan (source-of-truth for PAI-local billing risk)
 const SCAN_ROOTS = [
-  join(HOME, ".claude", "PAI", "PULSE"),
-  join(HOME, ".claude", "PAI", "TOOLS"),
-  join(HOME, ".claude", "PAI", "USER"),
-  join(HOME, ".claude", "skills"),
-  join(HOME, ".claude", "hooks"),
+  join(PAI_DIR, "PULSE"),
+  join(PAI_DIR, "TOOLS"),
+  join(PAI_DIR, "USER"),
+  join(HARNESS_HOME, "skills"),
+  join(HARNESS_HOME, "hooks"),
 ];
 
 // Paths to exclude from scan

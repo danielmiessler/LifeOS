@@ -2,16 +2,16 @@
 /**
  * pai - Personal AI CLI Tool
  *
- * Comprehensive CLI for managing Claude Code with dynamic MCP loading,
+ * Comprehensive CLI for managing the selected PAI agent harness with dynamic MCP loading,
  * updates, version checking, and profile management.
  *
  * Usage:
- *   pai                  Launch Claude (default profile)
+ *   pai                  Launch selected harness (default profile)
  *   pai -m bd            Launch with Bright Data MCP
  *   pai -m bd,ap         Launch with multiple MCPs
  *   pai -r / --resume    Resume last session
  *   pai --local          Stay in current directory (don't cd to ~/.claude)
- *   pai update           Update Claude Code
+ *   pai update           Update selected harness
  *   pai version          Show version info
  *   pai profiles         List available profiles
  *   pai mcp list         List available MCPs
@@ -19,19 +19,21 @@
  */
 
 import { spawn, spawnSync } from "bun";
-import { getIdentity, getStartupCatchphrase } from "../../../.claude/hooks/lib/identity";
+import { getIdentity, getStartupCatchphrase } from "../../hooks/lib/identity";
 import { existsSync, readFileSync, writeFileSync, readdirSync, symlinkSync, unlinkSync, lstatSync } from "fs";
 import { homedir } from "os";
 import { join, basename } from "path";
+import { getAgentCommand, getAgentLabel, getAgentVersion, runAgentPrompt, spawnInteractiveAgent } from "./lib/agent-cli";
+import { getHarnessHome, getHarnessKind, getPaiDir } from "./lib/runtime-paths";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = join(homedir(), ".claude");
-const MCP_DIR = join(CLAUDE_DIR, "MCPs");
-const ACTIVE_MCP = join(CLAUDE_DIR, ".mcp.json");
-const BANNER_SCRIPT = join(homedir(), ".claude", "PAI", "Tools", "Banner.ts");
+const HARNESS_HOME = getHarnessHome();
+const MCP_DIR = join(HARNESS_HOME, "MCPs");
+const ACTIVE_MCP = join(HARNESS_HOME, ".mcp.json");
+const BANNER_SCRIPT = join(getPaiDir(import.meta.dir), "TOOLS", "Banner.ts");
 const VOICE_SERVER = "http://localhost:31337/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
 // Note: RAW archiving removed - Claude Code handles its own cleanup (30-day retention in projects/)
@@ -126,8 +128,7 @@ function displayBanner() {
 }
 
 function getCurrentVersion(): string | null {
-  const result = spawnSync(["claude", "--version"]);
-  const output = result.stdout.toString();
+  const output = getAgentVersion() ?? "";
   const match = output.match(/([0-9]+\.[0-9]+\.[0-9]+)/);
   return match ? match[1] : null;
 }
@@ -143,6 +144,7 @@ function compareVersions(a: string, b: string): number {
 }
 
 async function getLatestVersion(): Promise<string | null> {
+  if (getHarnessKind() === "codex") return null;
   try {
     const response = await fetch(
       "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/latest"
@@ -394,11 +396,30 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   // (InstantiatePAI.ts is retired — kept for reference only)
 
   displayBanner();
+
+  if (getHarnessKind() === "codex") {
+    if (options.mcp) {
+      log("MCP profile switching is Claude Code-specific; configure Codex MCP servers in config.toml.", "⚠️");
+    }
+
+    const cwd = options.local ? process.cwd() : HARNESS_HOME;
+    const systemPrompt = options.systemPrompt && existsSync(options.systemPrompt)
+      ? readFileSync(options.systemPrompt, "utf-8")
+      : undefined;
+    const child = spawnInteractiveAgent(undefined, {
+      cwd,
+      resume: options.resume,
+      systemPrompt,
+    });
+    child.on("exit", (code) => process.exit(code ?? 0));
+    return;
+  }
+
   const args = ["claude"];
 
   // PAI System Prompt — constitutional rules appended to Claude Code's system prompt
   // These rules get highest instruction authority (system prompt layer > CLAUDE.md layer)
-  const systemPromptFile = options.systemPrompt ?? join(CLAUDE_DIR, "PAI", "PAI_SYSTEM_PROMPT.md");
+  const systemPromptFile = options.systemPrompt ?? join(getPaiDir(import.meta.dir), "PAI_SYSTEM_PROMPT.md");
   if (existsSync(systemPromptFile)) {
     args.push("--append-system-prompt-file", systemPromptFile);
   }
@@ -419,7 +440,7 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
 
   // Change to PAI directory unless --local flag is set
   if (!options.local) {
-    process.chdir(CLAUDE_DIR);
+    process.chdir(HARNESS_HOME);
   }
 
   // Voice notification (using focused marker for calmer tone).
@@ -429,11 +450,13 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   notifyVoice(`[🎯 focused] ${getStartupCatchphrase()}`);
 
   // Launch Claude
-  // BILLING: subscription, not API. Strip ANTHROPIC_API_KEY before spawn so the
-  // interactive session uses OAuth (`claude /login`) instead of API-key billing.
+  // BILLING: subscription, not API. Strip Anthropic API credentials before
+  // spawn so the interactive session uses OAuth (`claude /login`) instead of
+  // API-key billing.
   // Mirrors the protection in cmdPrompt() — same hazard, same fix.
   const launchEnv = { ...process.env };
   delete launchEnv.ANTHROPIC_API_KEY;
+  delete launchEnv.ANTHROPIC_AUTH_TOKEN;
   const proc = spawn(args, {
     stdio: ["inherit", "inherit", "inherit"],
     env: launchEnv,
@@ -445,6 +468,14 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
 
 async function cmdUpdate() {
   log("Checking for updates...", "🔍");
+
+  if (getHarnessKind() === "codex") {
+    log("Updating Codex...", "🔄");
+    const result = spawnSync([getAgentCommand(), "update"], { stdin: "inherit", stdout: "inherit", stderr: "inherit" });
+    if (result.exitCode !== 0) error("Codex update failed");
+    log("Codex update complete", "✅");
+    return;
+  }
 
   const current = getCurrentVersion();
   const latest = await getLatestVersion();
@@ -494,6 +525,12 @@ async function cmdVersion() {
   log("Checking versions...", "🔍");
 
   const current = getCurrentVersion();
+  if (getHarnessKind() === "codex") {
+    const raw = getAgentVersion();
+    if (!raw) error("Could not detect Codex version");
+    console.log(`${getAgentLabel()}: ${raw}`);
+    return;
+  }
   const latest = await getLatestVersion();
 
   if (!current) {
@@ -565,23 +602,29 @@ function cmdMcpList() {
 }
 
 async function cmdPrompt(prompt: string) {
-  // One-shot prompt execution
-  // NOTE: No --dangerously-skip-permissions - rely on settings.json permissions
-  // BILLING: subscription, not API. Removed --bare (forces ANTHROPIC_API_KEY),
-  // strip the key from inherited env.
-  const args = ["claude", "-p", prompt];
+  if (getHarnessKind() === "claude") {
+    // Preserve the historical `pai prompt` Claude Code behavior: one-shot
+    // `claude -p` with inherited stdio and no CLI-level timeout.
+    const env: Record<string, string> = { ...process.env } as Record<string, string>;
+    delete env.ANTHROPIC_API_KEY;
+    delete env.ANTHROPIC_AUTH_TOKEN;
+    delete env.CLAUDECODE;
+    const proc = spawn([getAgentCommand("claude"), "-p", prompt], {
+      cwd: HARNESS_HOME,
+      stdio: ["inherit", "inherit", "inherit"],
+      env,
+    });
+    const exitCode = await proc.exited;
+    process.exit(exitCode);
+  }
 
-  process.chdir(CLAUDE_DIR);
-
-  const env: Record<string, string> = { ...process.env } as Record<string, string>;
-  delete env.ANTHROPIC_API_KEY;
-  const proc = spawn(args, {
-    stdio: ["inherit", "inherit", "inherit"],
-    env,
+  const result = await runAgentPrompt(prompt, {
+    cwd: HARNESS_HOME,
   });
 
-  const exitCode = await proc.exited;
-  process.exit(exitCode);
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
+  process.exit(result.status ?? 1);
 }
 
 function cmdHelp() {
@@ -589,15 +632,15 @@ function cmdHelp() {
 pai - Personal AI CLI Tool (v2.0.0)
 
 USAGE:
-  k                        Launch Claude (no MCPs, max performance)
+  k                        Launch selected harness (no MCPs, max performance)
   k -m <mcp>               Launch with specific MCP(s)
   k -m bd,ap               Launch with multiple MCPs
   k -r, --resume           Resume last session
-  k -s, --system-prompt    System prompt file to append (default: PAI_SYSTEM_PROMPT.md)
-  k -l, --local            Stay in current directory (don't cd to ~/.claude)
+  k -s, --system-prompt    Extra instruction file for this launch
+  k -l, --local            Stay in current directory
 
 COMMANDS:
-  k update                 Update Claude Code to latest version
+  k update                 Update selected harness to latest version
   k version, -v            Show version information
   k profiles               List available MCP profiles
   k mcp list               List all available MCPs
@@ -623,7 +666,7 @@ EXAMPLES:
   k -m bd,ap               Start with multiple MCPs
   k -r                     Resume last session
   k mcp set research       Switch to research profile
-  k update                 Update Claude Code
+  k update                 Update selected harness
   k prompt "What time is it?"   One-shot prompt
   k -w                     List available wallpapers
   k -w circuit-board       Switch wallpaper (Kitty + macOS)

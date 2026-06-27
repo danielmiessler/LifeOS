@@ -6,11 +6,12 @@
  * Based on Anthropic's claude-progress.txt pattern.
  *
  * Usage:
- *   bun run ~/.claude/PAI/TOOLS/SessionProgress.ts <command> [options]
+ *   bun run ${PAI_DIR}/TOOLS/SessionProgress.ts <command> [options]
  */
 
 import { existsSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { getPaiDir } from './lib/runtime-paths';
 
 interface Decision {
   timestamp: string;
@@ -44,7 +45,7 @@ interface SessionProgress {
 }
 
 // Progress files are now in STATE/progress/ (consolidated from MEMORY/PROGRESS/)
-const PROGRESS_DIR = join(process.env.HOME || '', '.claude', 'PAI', 'MEMORY', 'STATE', 'progress');
+const PROGRESS_DIR = join(getPaiDir(import.meta.dir), 'MEMORY', 'STATE', 'progress');
 
 function getProgressPath(project: string): string {
   return join(PROGRESS_DIR, `${project}-progress.json`);

@@ -22,9 +22,10 @@
 
 import { readFileSync, existsSync, appendFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const IDEAL_DIR = join(PAI_DIR, "USER", "TELOS", "IDEAL_STATE");
 const CURRENT_DIR = join(PAI_DIR, "USER", "TELOS", "CURRENT_STATE");
 const HEALTH_DIR = join(PAI_DIR, "USER", "HEALTH");

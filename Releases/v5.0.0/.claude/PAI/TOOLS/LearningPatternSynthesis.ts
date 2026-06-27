@@ -19,13 +19,14 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { getPaiDir } from "./lib/runtime-paths";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
-const LEARNING_DIR = path.join(CLAUDE_DIR, "PAI", "MEMORY", "LEARNING");
+const PAI_DIR = getPaiDir(import.meta.dir);
+const LEARNING_DIR = path.join(PAI_DIR, "MEMORY", "LEARNING");
 const RATINGS_FILE = path.join(LEARNING_DIR, "SIGNALS", "ratings.jsonl");
 const SYNTHESIS_DIR = path.join(LEARNING_DIR, "SYNTHESIS");
 

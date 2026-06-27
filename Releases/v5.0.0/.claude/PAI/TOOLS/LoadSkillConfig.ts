@@ -7,17 +7,18 @@
  * base config with user customizations from SKILLCUSTOMIZATIONS directory.
  *
  * Usage:
- *   import { loadSkillConfig } from '~/.claude/PAI/TOOLS/LoadSkillConfig';
+ *   import { loadSkillConfig } from '${PAI_DIR}/TOOLS/LoadSkillConfig';
  *   const config = loadSkillConfig<MyConfigType>(__dirname, 'config.json');
  *
  * Or CLI:
- *   bun ~/.claude/PAI/TOOLS/LoadSkillConfig.ts <skill-dir> <filename>
+ *   bun ${PAI_DIR}/TOOLS/LoadSkillConfig.ts <skill-dir> <filename>
  */
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import { homedir } from 'os';
 import { parse as parseYaml } from 'yaml';
+import { getPaiDir } from "./lib/runtime-paths";
 
 // Types
 interface CustomizationMetadata {
@@ -35,7 +36,7 @@ interface ExtendManifest {
 
 // Constants
 const HOME = homedir();
-const CUSTOMIZATION_DIR = join(HOME, '.claude', 'PAI', 'USER', 'SKILLCUSTOMIZATIONS');
+const CUSTOMIZATION_DIR = join(getPaiDir(import.meta.dir), 'USER', 'SKILLCUSTOMIZATIONS');
 
 /**
  * Deep merge two objects recursively

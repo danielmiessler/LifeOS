@@ -15,10 +15,10 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
-import { homedir } from "os";
 import { parseArgs } from "util";
+import { getPaiDir } from "./lib/runtime-paths";
 
-const STATE_DIR = join(homedir(), ".claude", "PAI", "MEMORY", "STATE");
+const STATE_DIR = join(getPaiDir(import.meta.dir), "MEMORY", "STATE");
 const STATE_FILE = join(STATE_DIR, "algorithm-phase.json");
 
 interface AlgorithmState {

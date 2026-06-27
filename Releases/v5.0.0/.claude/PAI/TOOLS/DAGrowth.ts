@@ -13,9 +13,10 @@
  */
 
 import { join } from "path"
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME ?? "~"
-const PAI = join(HOME, ".claude", "PAI")
+const PAI = getPaiDir(import.meta.dir)
 const REGISTRY_PATH = join(PAI, "USER", "DA", "_registry.yaml")
 
 // ── Types ──

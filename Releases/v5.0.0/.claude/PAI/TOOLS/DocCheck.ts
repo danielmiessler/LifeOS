@@ -18,11 +18,11 @@
 import { readFileSync, statSync, existsSync, readdirSync } from 'fs';
 import { join, resolve, dirname, relative } from 'path';
 import { execSync } from 'child_process';
+import { getHarnessHome, getPaiDir } from './lib/runtime-paths';
 
-const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
-const PAI_DIR = join(CLAUDE_DIR, 'PAI');
-const HOOKS_DIR = join(CLAUDE_DIR, 'hooks');
+const HARNESS_DIR = getHarnessHome();
+const PAI_DIR = getPaiDir(import.meta.dir);
+const HOOKS_DIR = join(HARNESS_DIR, 'hooks');
 
 const args = process.argv.slice(2);
 const changedOnly = args.includes('--changed');
@@ -34,10 +34,13 @@ const quiet = args.includes('--quiet');
 const PATH_PATTERNS = [
   // Backtick-quoted paths: `PAI/DOCUMENTATION/Hooks/HookSystem.md`, `hooks/SecurityPipeline.hook.ts`
   /`((?:PAI|hooks|skills|agents|Pulse|USER|MEMORY|Components|Algorithm|Tools)\/[\w/.@-]+\.\w+)`/g,
-  // Backtick-quoted paths with ~/.claude/ prefix
-  /`~\/\.claude\/([\w/.@-]+\.\w+)`/g,
-  // Backtick-quoted paths with $HOME/.claude/ prefix
-  /`\$HOME\/\.claude\/([\w/.@-]+\.\w+)`/g,
+  // Backtick-quoted paths with harness-home prefix
+  /`~\/\.(?:claude|codex)\/([\w/.@-]+\.\w+)`/g,
+  // Backtick-quoted paths with $HOME harness-home prefix
+  /`\$HOME\/\.(?:claude|codex)\/([\w/.@-]+\.\w+)`/g,
+  // Backtick-quoted paths with canonical PAI_DIR prefix
+  /`~\/\.pai\/([\w/.@-]+\.\w+)`/g,
+  /`\$HOME\/\.pai\/([\w/.@-]+\.\w+)`/g,
   // @-imports: @PAI/USER/FILE.md
   /^@(PAI\/[\w/.@-]+\.md)/gm,
   // Table cell paths: | `path` | or | path |
@@ -50,6 +53,20 @@ interface PathRef {
   raw: string;       // matched text
   resolved: string;  // absolute path
   line: number;
+}
+
+function resolvePaiRelative(raw: string): string {
+  return raw.startsWith('PAI/') ? resolve(PAI_DIR, raw.slice(4)) : resolve(PAI_DIR, raw);
+}
+
+function displayPath(path: string): string {
+  const harnessRel = relative(HARNESS_DIR, path);
+  if (!harnessRel.startsWith('..')) return harnessRel || '.';
+
+  const paiRel = relative(PAI_DIR, path);
+  if (!paiRel.startsWith('..')) return join('PAI', paiRel);
+
+  return path;
 }
 
 // Parse `## ... (paths under `X`)` headings and build a sorted list of
@@ -108,18 +125,18 @@ function extractPathRefs(content: string, docPath: string): PathRef[] {
       // Skip vX.Y.Z placeholder strings
       if (raw.includes('vX.Y.Z')) continue;
 
-      // Resolve path — try ~/.claude/ first, then ~/.claude/PAI/, then
+      // Resolve path — try the harness home first, then PAI_DIR, then
       // section-aware root from `## ... (paths under `X`)` heading hint, then
       // referrer-dir relative.
-      let resolved = resolve(CLAUDE_DIR, raw);
+      let resolved = resolve(HARNESS_DIR, raw);
       if (!existsSync(resolved)) {
-        const paiResolved = resolve(PAI_DIR, raw);
+        const paiResolved = resolvePaiRelative(raw);
         if (existsSync(paiResolved)) {
           resolved = paiResolved;
         } else {
           const sectionRoot = getSectionRootAt(sectionRoots, match.index);
           if (sectionRoot) {
-            const sectionResolved = resolve(CLAUDE_DIR, sectionRoot, raw);
+            const sectionResolved = resolve(HARNESS_DIR, sectionRoot, raw);
             if (existsSync(sectionResolved)) resolved = sectionResolved;
           }
           if (!existsSync(resolved)) {
@@ -173,7 +190,7 @@ function findDocs(): string[] {
   if (existsSync(hooksReadme)) docs.push(hooksReadme);
 
   // CLAUDE.md
-  const claudeMd = join(CLAUDE_DIR, 'CLAUDE.md');
+  const claudeMd = join(HARNESS_DIR, 'CLAUDE.md');
   if (existsSync(claudeMd)) docs.push(claudeMd);
 
   return docs;
@@ -182,9 +199,9 @@ function findDocs(): string[] {
 function getChangedFiles(): Set<string> {
   try {
     const diff = execSync('git diff --name-only HEAD 2>/dev/null; git diff --cached --name-only 2>/dev/null', {
-      cwd: CLAUDE_DIR, encoding: 'utf-8',
+      cwd: HARNESS_DIR, encoding: 'utf-8',
     });
-    return new Set(diff.split('\n').filter(Boolean).map(f => resolve(CLAUDE_DIR, f)));
+    return new Set(diff.split('\n').filter(Boolean).map(f => resolve(HARNESS_DIR, f)));
   } catch {
     return new Set();
   }
@@ -239,7 +256,7 @@ for (const docPath of docsToCheck) {
     // Check existence
     if (!existsSync(ref.resolved)) {
       findings.push({
-        doc: relative(CLAUDE_DIR, docPath),
+        doc: displayPath(docPath),
         ref: ref.raw,
         line: ref.line,
         type: 'missing',
@@ -253,7 +270,7 @@ for (const docPath of docsToCheck) {
       if (refMtime > docMtime) {
         const daysStale = Math.round((refMtime - docMtime) / (1000 * 60 * 60 * 24));
         findings.push({
-          doc: relative(CLAUDE_DIR, docPath),
+          doc: displayPath(docPath),
           ref: ref.raw,
           line: ref.line,
           type: 'stale',

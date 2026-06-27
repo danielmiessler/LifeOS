@@ -21,6 +21,8 @@ import { spawnSync } from "child_process";
 
 const HOME = process.env.HOME!;
 const CLAUDE_DIR = join(HOME, ".claude");
+const PAI_DIR = process.env.PAI_DIR || join(HOME, ".pai");
+const HARNESS_HOME = process.env.HARNESS_HOME || CLAUDE_DIR;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Terminal Width Detection
@@ -311,13 +313,14 @@ interface SystemStats {
 }
 
 function readDAIdentity(): string {
-  const settingsPath = join(CLAUDE_DIR, "settings.json");
-  try {
-    const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
-    return settings.daidentity?.displayName || settings.daidentity?.name || settings.env?.DA || "PAI";
-  } catch {
-    return "PAI";
+  for (const settingsPath of [join(PAI_DIR, "settings.json"), join(HARNESS_HOME, "settings.json")]) {
+    try {
+      if (!existsSync(settingsPath)) continue;
+      const settings = JSON.parse(readFileSync(settingsPath, "utf-8"));
+      return settings.daidentity?.displayName || settings.daidentity?.name || settings.env?.DA || "PAI";
+    } catch {}
   }
+  return "PAI";
 }
 
 function countSkills(): number {

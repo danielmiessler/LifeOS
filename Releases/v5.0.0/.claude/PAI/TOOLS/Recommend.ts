@@ -16,9 +16,10 @@
 
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const TELOS_DIR = join(PAI_DIR, "USER", "TELOS");
 const CURRENT_DIR = join(TELOS_DIR, "CURRENT_STATE");
 

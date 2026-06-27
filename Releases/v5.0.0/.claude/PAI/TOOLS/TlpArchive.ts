@@ -14,9 +14,9 @@
 
 import { writeFileSync, existsSync, readFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { getPaiDir } from "./lib/runtime-paths";
 
-const HOME = process.env.HOME!;
-const KNOWLEDGE_DIR = join(HOME, ".claude/PAI/MEMORY/KNOWLEDGE/Blogs");
+const KNOWLEDGE_DIR = join(getPaiDir(import.meta.dir), "MEMORY", "KNOWLEDGE", "Blogs");
 const URL_FILE = "/tmp/tlp-urls.txt";
 const FAILED_FILE = "/tmp/tlp-failed.txt";
 const SUCCESS_FILE = "/tmp/tlp-success.txt";

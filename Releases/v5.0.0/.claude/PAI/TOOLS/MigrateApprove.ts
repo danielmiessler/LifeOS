@@ -24,9 +24,10 @@
 
 import { readFileSync, writeFileSync, existsSync, appendFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
+import { getPaiDir } from "./lib/runtime-paths";
 
 const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const QUEUE_FILE = join(PAI_DIR, "MEMORY", "MIGRATION", "migration-proposals.jsonl");
 const COMMITTED_LOG = join(PAI_DIR, "MEMORY", "MIGRATION", "committed.jsonl");
 

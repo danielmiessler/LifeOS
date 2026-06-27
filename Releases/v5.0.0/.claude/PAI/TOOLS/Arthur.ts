@@ -7,8 +7,9 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import YAML from "yaml";
+import { getPaiDir } from "./lib/runtime-paths";
 
-const PAI_DIR = process.env.PAI_DIR ?? join(homedir(), ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const POLICIES_PATH = join(PAI_DIR, "USER", "ARTHUR", "policies.yaml");
 const GCP_PROJECT = process.env.PAI_GCP_PROJECT ?? "";
 
