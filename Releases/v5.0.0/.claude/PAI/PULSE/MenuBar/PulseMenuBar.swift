@@ -256,7 +256,7 @@ class PulseMenuBarApp: NSObject, NSApplicationDelegate {
 
     override init() {
         self.pulseDir = ProcessInfo.processInfo.environment["PAI_PULSE_DIR"]
-            ?? NSString(string: "~/.claude/PAI/PULSE").expandingTildeInPath
+            ?? NSString(string: "~/.pai/PULSE").expandingTildeInPath
         super.init()
     }
 

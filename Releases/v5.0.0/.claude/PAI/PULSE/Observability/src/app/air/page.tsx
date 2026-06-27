@@ -328,7 +328,7 @@ export default function AirPage() {
                 className="px-2 py-0.5 rounded mono"
                 style={{ background: "#12203D", color: "#E8EFFF" }}
               >
-                bun ~/.claude/PAI/PULSE/checks/airgradient-poll.ts
+                bun $PAI_DIR/PULSE/checks/airgradient-poll.ts
               </code>{" "}
               to prime, or wait for the next 5-minute poll.
             </div>

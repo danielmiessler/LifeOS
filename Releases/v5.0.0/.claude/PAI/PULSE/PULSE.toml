@@ -4,7 +4,7 @@
 # One process handles: cron jobs, voice, chat, observability, hooks, DA.
 #
 # type = "script" → runs command, $0 cost
-# type = "claude" → spawns claude --print, costs tokens
+# type = "agent" → spawns the selected harness non-interactively, costs tokens
 # output = voice | telegram | ntfy | email | log
 # Sentinels: NO_ACTION, NO_URGENT, NO_EVENTS → suppress dispatch
 
@@ -14,7 +14,7 @@
 enabled = true
 
 [telegram]
-enabled = true
+enabled = false
 
 [imessage]
 enabled = false
@@ -33,11 +33,11 @@ blocked_skills = ["keybindings-help"]
 [syslog]
 enabled = true
 port = 5514
-# Captures UniFi syslog to ~/.claude/PAI/MEMORY/OBSERVABILITY/unifi-syslog.jsonl.
+# Captures UniFi syslog to PAI_DIR/MEMORY/OBSERVABILITY/unifi-syslog.jsonl.
 # See _NETWORK/Workflows/CaptureLogs.md for controller-side setup.
 
 [da]
-enabled = true
+enabled = false
 primary = "kai"
 heartbeat_schedule = "*/30 * * * *"
 heartbeat_model = "haiku"
@@ -82,16 +82,15 @@ enabled = true
 name = "cost-tracker"
 schedule = "0 * * * *"
 type = "script"
-command = "bun run ~/.claude/PAI/TOOLS/CostTracker.ts log && bun run ~/.claude/PAI/TOOLS/CostTracker.ts alert-check"
+command = "bun run ${PAI_DIR}/TOOLS/CostTracker.ts log && bun run ${PAI_DIR}/TOOLS/CostTracker.ts alert-check"
 output = "log"
 enabled = true
 
 [[job]]
 name = "memory-consolidation"
 schedule = "0 3 * * *"
-type = "claude"
-prompt = "Run learning consolidation: execute `bun run ~/.claude/PAI/TOOLS/SessionHarvester.ts --recent 20` then `bun run ~/.claude/PAI/TOOLS/LearningPatternSynthesis.ts --week`. Summarize what was learned and any patterns found."
-model = "sonnet"
+type = "script"
+command = "bun run ${PAI_DIR}/TOOLS/SessionHarvester.ts --recent 20 && bun run ${PAI_DIR}/TOOLS/LearningPatternSynthesis.ts --week"
 output = "log"
 enabled = true
 
@@ -103,7 +102,7 @@ schedule = "*/30 * * * *"
 type = "script"
 command = "bun run Assistant/checks/heartbeat.ts"
 output = "voice"
-enabled = true
+enabled = false
 
 [[job]]
 name = "assistant-tasks"
@@ -111,7 +110,7 @@ schedule = "* * * * *"
 type = "script"
 command = "bun run Assistant/checks/tasks.ts"
 output = "voice"
-enabled = true
+enabled = false
 
 [[job]]
 name = "assistant-diary"
@@ -119,7 +118,7 @@ schedule = "0 23 * * *"
 type = "script"
 command = "bun run Assistant/checks/diary.ts"
 output = "log"
-enabled = true
+enabled = false
 
 [[job]]
 name = "assistant-growth"
@@ -127,7 +126,7 @@ schedule = "0 4 * * 0"
 type = "script"
 command = "bun run Assistant/checks/growth.ts"
 output = "log"
-enabled = true
+enabled = false
 
 # ── Life Dashboard (Phase 0) ──
 
@@ -163,7 +162,7 @@ enabled = false
 name = "staleness-review"
 schedule = "0 10 * * 0"
 type = "script"
-command = "bun run ~/.claude/PAI/TOOLS/StalenessReview.ts"
+command = "bun run ${PAI_DIR}/TOOLS/StalenessReview.ts"
 output = "voice"
 enabled = false
 
@@ -171,7 +170,7 @@ enabled = false
 name = "compute-gap"
 schedule = "30 6 * * *"
 type = "script"
-command = "bun run ~/.claude/PAI/TOOLS/ComputeGap.ts --log"
+command = "bun run ${PAI_DIR}/TOOLS/ComputeGap.ts --log"
 output = "log"
 enabled = false
 

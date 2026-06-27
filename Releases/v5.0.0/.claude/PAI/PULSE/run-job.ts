@@ -4,10 +4,15 @@
  * Usage: bun run run-job.ts <job-name>
  */
 import { join } from "path"
-import { readFileSync } from "fs"
+import { existsSync, readFileSync } from "fs"
+import { getHarnessHome, getPaiDir } from "../TOOLS/lib/runtime-paths"
 
 // Load .env
-const envPath = join(process.env.HOME ?? "~", ".claude", ".env")
+const PAI_DIR = getPaiDir(import.meta.dir)
+process.env.PAI_DIR ??= PAI_DIR
+const paiEnvPath = join(PAI_DIR, ".env")
+const harnessEnvPath = join(getHarnessHome(), ".env")
+const envPath = existsSync(paiEnvPath) ? paiEnvPath : harnessEnvPath
 try {
   const envContent = readFileSync(envPath, "utf-8")
   for (const line of envContent.split("\n")) {
@@ -23,7 +28,7 @@ try {
   }
 } catch {}
 
-import { loadConfig, spawnClaude, spawnScript, dispatch, isSentinel, log } from "./lib"
+import { loadConfig, spawnAgent, spawnScript, dispatch, isSentinel, log } from "./lib"
 
 const jobName = process.argv[2]
 if (!jobName) {
@@ -31,7 +36,7 @@ if (!jobName) {
   process.exit(1)
 }
 
-const PULSE_DIR = join(process.env.HOME ?? "~", ".claude", "PAI", "PULSE")
+const PULSE_DIR = join(PAI_DIR, "PULSE")
 const config = await loadConfig(PULSE_DIR)
 const job = config.jobs.find((j) => j.name === jobName)
 if (!job) {
@@ -43,8 +48,8 @@ log("info", `Manual run: ${job.name}`, { type: job.type })
 const start = Date.now()
 
 let output: string
-if (job.type === "claude") {
-  output = await spawnClaude(job.prompt!, { model: job.model ?? "sonnet" })
+if (job.type === "agent" || job.type === "claude") {
+  output = await spawnAgent(job.prompt!, { model: job.model ?? "sonnet" })
 } else {
   output = await spawnScript(job.command!)
 }

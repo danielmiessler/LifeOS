@@ -1025,8 +1025,7 @@ export default function SecurityPage() {
             ))}
           </div>
           <p className="text-xs mt-3 ml-1 muted">
-            All hooks use <code style={{ color: "#D6E1F5" }}>bun</code> prefix. Green = file exists and registered. Hook wiring in{" "}
-            <code style={{ color: "#D6E1F5" }}>~/.claude/settings.json</code>.
+            All hooks use <code style={{ color: "#D6E1F5" }}>bun</code> prefix. Green = file exists and registered. Hook wiring in the selected harness config.
           </p>
         </div>
       )}

@@ -8,11 +8,15 @@
  */
 
 import { join } from "path"
-import { readFileSync } from "fs"
+import { existsSync, readFileSync } from "fs"
+import { getHarnessHome, getPaiDir } from "../TOOLS/lib/runtime-paths"
 
 // ── Load .env before anything else ──
 
-const envPath = join(process.env.HOME ?? "~", ".claude", ".env")
+const PAI_DIR = getPaiDir(import.meta.dir)
+const paiEnvPath = join(PAI_DIR, ".env")
+const harnessEnvPath = join(getHarnessHome(), ".env")
+const envPath = existsSync(paiEnvPath) ? paiEnvPath : harnessEnvPath
 try {
   const envContent = readFileSync(envPath, "utf-8")
   for (const line of envContent.split("\n")) {
@@ -41,12 +45,12 @@ import {
   dispatch,
   isSentinel,
   spawnScript,
-  spawnClaude,
+  spawnAgent,
 } from "./lib"
 
 // ── Constants ──
 
-const PULSE_DIR = join(process.env.HOME ?? "~", ".claude", "PAI", "Pulse")
+const PULSE_DIR = join(PAI_DIR, "Pulse")
 const STATE_PATH = join(PULSE_DIR, "state", "state.json")
 const PID_PATH = join(PULSE_DIR, "state", "pulse.pid")
 const HOOK_PORT = parseInt(process.env.HOOK_SERVER_PORT || "8686", 10)
@@ -239,8 +243,8 @@ async function main() {
       try {
         let output: string
 
-        if (job.type === "claude") {
-          output = await spawnClaude(job.prompt!, { model: job.model ?? "sonnet" })
+        if (job.type === "agent" || job.type === "claude") {
+          output = await spawnAgent(job.prompt!, { model: job.model ?? "sonnet" })
         } else {
           output = await spawnScript(job.command!)
         }

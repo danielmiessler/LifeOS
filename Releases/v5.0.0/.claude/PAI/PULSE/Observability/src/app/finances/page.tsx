@@ -1113,7 +1113,7 @@ function SpendInsightsSection({ insights }: { insights: SpendInsights }) {
           </h2>
           <p className="text-[11px] muted mt-1">
             Derived from statement CSVs in <code style={{ color: "#9BB0D6" }}>FINANCES/Statements/*</code>.
-            Re-run with <code style={{ color: "#9BB0D6" }}>bun ~/.claude/PAI/USER/FINANCES/Tools/StatementAnalyzer.ts</code>.
+            Re-run with <code style={{ color: "#9BB0D6" }}>bun $PAI_DIR/USER/FINANCES/Tools/StatementAnalyzer.ts</code>.
           </p>
         </div>
         {insights.statement_spend.generated_at && (
@@ -1176,7 +1176,7 @@ function OutboundTab({ data }: { data: FinancesDataV2 }) {
         <p className="text-sm text-center muted">
           Expenses data unavailable. Check{" "}
           <code style={{ color: "#E8EFFF" }}>
-            ~/.claude/PAI/USER/FINANCES/vendors.yaml
+            $PAI_DIR/USER/FINANCES/vendors.yaml
           </code>
           .
         </p>

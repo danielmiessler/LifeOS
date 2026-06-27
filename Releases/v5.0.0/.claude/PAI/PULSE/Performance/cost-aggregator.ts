@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 /**
- * Cost Aggregator — scans Claude Code session JSONLs for token usage data
+ * Cost Aggregator — scans selected-harness session JSONLs for token usage data
  * and computes per-session costs.
  *
- * Data source: ~/.claude/projects/{project}/{uuid}.jsonl
+ * Data source: selected harness session/project JSONLs
  * Output: MEMORY/OBSERVABILITY/session-costs.jsonl
  *
  * Runs incrementally: tracks last scan time, only processes new/modified files.
@@ -12,10 +12,11 @@
 
 import { join, basename, dirname } from "path"
 import { existsSync, readFileSync, writeFileSync, appendFileSync, readdirSync, statSync, mkdirSync } from "fs"
+import { getHarnessHome, getHarnessKind, getPaiDir } from "../../TOOLS/lib/runtime-paths"
 
-const HOME = process.env.HOME ?? ""
-const PAI_DIR = join(HOME, ".claude", "PAI")
-const PROJECTS_DIR = join(HOME, ".claude", "projects")
+const PAI_DIR = getPaiDir(import.meta.dir)
+const HARNESS_HOME = getHarnessHome()
+const PROJECTS_DIR = join(HARNESS_HOME, getHarnessKind(HARNESS_HOME) === "codex" ? "sessions" : "projects")
 const OUTPUT_FILE = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "session-costs.jsonl")
 const STATE_FILE = join(PAI_DIR, "PULSE", "Performance", "aggregator-state.json")
 
@@ -71,6 +72,15 @@ interface AggregatorState {
   sessionsProcessed: number
 }
 
+interface ParsedUsage {
+  model: string
+  inputTokens: number
+  outputTokens: number
+  cacheWriteTokens: number
+  cacheReadTokens: number
+  timestamp?: string
+}
+
 function loadState(): AggregatorState {
   try {
     if (existsSync(STATE_FILE)) return JSON.parse(readFileSync(STATE_FILE, "utf-8"))
@@ -97,7 +107,45 @@ function loadExistingSessionIds(): Set<string> {
   return ids
 }
 
-function processSessionFile(filePath: string, projectSlug: string): SessionCost | null {
+function claudeUsageFromEvent(d: any): ParsedUsage | null {
+  if (d.type !== "assistant") return null
+  const msg = d.message
+  if (!msg?.usage) return null
+
+  const model = msg.model || "<unknown>"
+  if (model === "<synthetic>") return null
+
+  const usage = msg.usage
+  return {
+    model,
+    inputTokens: usage.input_tokens ?? 0,
+    outputTokens: usage.output_tokens ?? 0,
+    cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
+    cacheReadTokens: usage.cache_read_input_tokens ?? 0,
+    timestamp: d.timestamp,
+  }
+}
+
+function codexUsageFromEvent(d: any, currentModel: string): ParsedUsage | null {
+  if (d.type === "turn_context" && typeof d.payload?.model === "string") return null
+  if (d.type !== "event_msg" || d.payload?.type !== "token_count") return null
+
+  const usage = d.payload?.info?.last_token_usage
+  if (!usage) return null
+
+  const inputTokens = usage.input_tokens ?? 0
+  const cacheReadTokens = usage.cached_input_tokens ?? 0
+  return {
+    model: currentModel || "<unknown>",
+    inputTokens: Math.max(inputTokens - cacheReadTokens, 0),
+    outputTokens: usage.output_tokens ?? 0,
+    cacheWriteTokens: 0,
+    cacheReadTokens,
+    timestamp: d.timestamp,
+  }
+}
+
+export function processSessionFile(filePath: string, projectSlug: string): SessionCost | null {
   try {
     const raw = readFileSync(filePath, "utf-8")
     const lines = raw.split("\n").filter(Boolean)
@@ -114,26 +162,26 @@ function processSessionFile(filePath: string, projectSlug: string): SessionCost 
     let costOutput = 0
     let costCacheWrite = 0
     let costCacheRead = 0
+    let currentCodexModel = "<unknown>"
 
     for (const line of lines) {
       let d: any
       try { d = JSON.parse(line) } catch { continue }
 
-      if (d.type !== "assistant") continue
-      const msg = d.message
-      if (!msg?.usage) continue
+      if (d.type === "turn_context" && typeof d.payload?.model === "string") {
+        currentCodexModel = d.payload.model
+        continue
+      }
 
-      const model = msg.model || "<unknown>"
-      const usage = msg.usage
+      const parsed = claudeUsageFromEvent(d) ?? codexUsageFromEvent(d, currentCodexModel)
+      if (!parsed) continue
 
-      // Skip synthetic messages
-      if (model === "<synthetic>") continue
-
+      const model = parsed.model
       const pricing = getPricing(model)
-      const inTok = usage.input_tokens ?? 0
-      const outTok = usage.output_tokens ?? 0
-      const cwTok = usage.cache_creation_input_tokens ?? 0
-      const crTok = usage.cache_read_input_tokens ?? 0
+      const inTok = parsed.inputTokens
+      const outTok = parsed.outputTokens
+      const cwTok = parsed.cacheWriteTokens
+      const crTok = parsed.cacheReadTokens
 
       inputTokens += inTok
       outputTokens += outTok
@@ -147,7 +195,7 @@ function processSessionFile(filePath: string, projectSlug: string): SessionCost 
       costCacheWrite += (cwTok * pricing.cacheWrite) / 1_000_000
       costCacheRead += (crTok * pricing.cacheRead) / 1_000_000
 
-      const ts = d.timestamp
+      const ts = parsed.timestamp
       if (ts && typeof ts === "string") {
         if (!firstTimestamp || ts < firstTimestamp) firstTimestamp = ts
         if (!lastTimestamp || ts > lastTimestamp) lastTimestamp = ts
@@ -297,7 +345,9 @@ async function main() {
   console.log(`Cost aggregation complete: ${newSessions} new, ${skipped} skipped, ${errors} errors (${elapsed}ms)`)
 }
 
-main().catch((err) => {
-  console.error("Cost aggregator failed:", err)
-  process.exit(1)
-})
+if (import.meta.main) {
+  main().catch((err) => {
+    console.error("Cost aggregator failed:", err)
+    process.exit(1)
+  })
+}

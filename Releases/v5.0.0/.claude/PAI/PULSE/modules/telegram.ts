@@ -14,13 +14,16 @@ import { ConversationStore } from "../lib/conversation"
 import { sanitize, analyzeForInjection } from "../lib/sanitize"
 import { join } from "path"
 import { appendFile, mkdir } from "fs/promises"
+import { getHarnessHome, getPaiDir } from "../../TOOLS/lib/runtime-paths"
 
-// BILLING: Strip ANTHROPIC_API_KEY before any SDK query() call. Bun auto-loads
-// ~/.claude/.env into this process; if the key is present, @anthropic-ai/claude-agent-sdk
-// bills the API key directly instead of the CLAUDE_CODE_OAUTH_TOKEN subscription.
+// BILLING: Strip Anthropic API credentials before any SDK query() call. Bun
+// auto-loads PAI_DIR/.env into this process; if a key is present,
+// @anthropic-ai/claude-agent-sdk bills the API key directly instead of the
+// CLAUDE_CODE_OAUTH_TOKEN subscription.
 // This was the root cause of the April 2026 Sonnet 4.5 $353.89 + Web Search $72.48
 // invoice — every Telegram message was a 25-turn SDK session billed to the API.
 delete process.env.ANTHROPIC_API_KEY
+delete process.env.ANTHROPIC_AUTH_TOKEN
 
 // ── Config Interface ──
 
@@ -35,10 +38,10 @@ export interface TelegramConfig {
 
 // ── Constants ──
 
-const HOME = process.env.HOME ?? ""
-const CWD = join(HOME, ".claude")
-const STATE_DIR = join(HOME, ".claude", "PAI", "PULSE", "state", "telegram")
-const LOGS_DIR = join(HOME, ".claude", "PAI", "PULSE", "logs", "telegram")
+const PAI_DIR = getPaiDir(import.meta.dir)
+const CWD = getHarnessHome()
+const STATE_DIR = join(PAI_DIR, "PULSE", "state", "telegram")
+const LOGS_DIR = join(PAI_DIR, "PULSE", "logs", "telegram")
 const MAX_TELEGRAM_LENGTH = 4096
 const CURSOR = " ▌"
 

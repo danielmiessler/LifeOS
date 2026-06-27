@@ -1,7 +1,7 @@
 /**
  * UserIndex — Life OS USER/ indexer and Pulse module.
  *
- * Walks ~/.claude/PAI/USER/, parses frontmatter + body of every .md file,
+ * Walks PAI_DIR/USER/, parses frontmatter + body of every .md file,
  * computes derived fields (staleness, completeness, item_count, preview),
  * and writes a typed JSON index at Pulse/state/user-index.json.
  *
@@ -21,9 +21,10 @@
 
 import { readFileSync, writeFileSync, statSync, readdirSync, mkdirSync, existsSync, watch } from "fs"
 import { join, relative, basename, dirname } from "path"
+import { getPaiDir } from "../../TOOLS/lib/runtime-paths";
 
 const HOME = process.env.HOME ?? ""
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir(import.meta.dir)
 const USER_DIR = join(PAI_DIR, "USER")
 const STATE_DIR = join(PAI_DIR, "PULSE", "state")
 const INDEX_PATH = join(STATE_DIR, "user-index.json")

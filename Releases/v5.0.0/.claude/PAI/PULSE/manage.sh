@@ -1,8 +1,22 @@
 #!/bin/bash
 # PAI Pulse — Process Management
-# Usage: manage.sh {start|stop|restart|status|install|uninstall}
+# Usage: manage.sh {start|stop|restart|status|install|uninstall|rotate-logs}
 
-PULSE_DIR="$HOME/.claude/PAI/PULSE"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PULSE_DIR="$SCRIPT_DIR"
+PAI_DIR="$(cd "$PULSE_DIR/.." && pwd -P)"
+if [ -z "${HARNESS_HOME:-}" ]; then
+  case "${PAI_HARNESS:-}" in
+    codex) HARNESS_HOME="$HOME/.codex" ;;
+    claude) HARNESS_HOME="$HOME/.claude" ;;
+    *) HARNESS_HOME="$(cd "$PULSE_DIR/../.." && pwd)" ;;
+  esac
+fi
+case "${PAI_HARNESS:-$(basename "$HARNESS_HOME")}" in
+  codex|.codex) PAI_HARNESS="codex" ;;
+  claude|.claude) PAI_HARNESS="claude" ;;
+  *) PAI_HARNESS="${PAI_HARNESS:-}" ;;
+esac
 PLIST_NAME="com.pai.pulse"
 PLIST_SRC="$PULSE_DIR/$PLIST_NAME.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
@@ -28,12 +42,18 @@ else
   BUN_PATH="$(command -v bun || echo "$HOME/.bun/bin/bun")"
 fi
 
+rotate_logs() {
+  mkdir -p "$PULSE_DIR/logs"
+  PAI_DIR="$PAI_DIR" HARNESS_HOME="$HARNESS_HOME" PAI_HARNESS="$PAI_HARNESS" "$BUN_PATH" run "$PULSE_DIR/log-rotation.ts"
+}
+
 case "$1" in
   start)
+    rotate_logs >/dev/null 2>&1 || true
     if [ ! -f "$PLIST_DST" ]; then
       # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
       # no-op on plists that already have literal paths.
-      sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
+      sed -e "s|__HOME__|$HOME|g" -e "s|__PAI_DIR__|$PAI_DIR|g" -e "s|__HARNESS_HOME__|$HARNESS_HOME|g" -e "s|__PAI_HARNESS__|$PAI_HARNESS|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
     fi
     launchctl load "$PLIST_DST" 2>/dev/null
     echo "PAI Pulse started"
@@ -85,6 +105,7 @@ case "$1" in
 
   install)
     mkdir -p "$PULSE_DIR/state" "$PULSE_DIR/logs"
+    rotate_logs >/dev/null 2>&1 || true
 
     # Cleanup any prior pulse before installing fresh — prevents the stale-PID
     # / unbound-port half-dead state where a previous launchd-managed pulse is
@@ -97,7 +118,7 @@ case "$1" in
 
     # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
     # no-op on plists that already have literal paths.
-    sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
+    sed -e "s|__HOME__|$HOME|g" -e "s|__PAI_DIR__|$PAI_DIR|g" -e "s|__HARNESS_HOME__|$HARNESS_HOME|g" -e "s|__PAI_HARNESS__|$PAI_HARNESS|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
     launchctl load "$PLIST_DST"
 
     # Verify pulse actually binds :31337 within 10s. Fail loud if not — prior
@@ -123,8 +144,12 @@ case "$1" in
     echo "PAI Pulse uninstalled"
     ;;
 
+  rotate-logs)
+    rotate_logs
+    ;;
+
   *)
-    echo "Usage: $0 {start|stop|restart|status|install|uninstall}"
+    echo "Usage: $0 {start|stop|restart|status|install|uninstall|rotate-logs}"
     exit 1
     ;;
 esac

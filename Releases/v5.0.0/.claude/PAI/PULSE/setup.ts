@@ -12,9 +12,11 @@
 
 import { join, resolve } from "path"
 import { existsSync, mkdirSync } from "fs"
+import { getHarnessHome, getPaiDir } from "../TOOLS/lib/runtime-paths";
 
 const HOME = process.env.HOME ?? "~"
-const PAI_DIR = join(HOME, ".claude", "PAI")
+const HARNESS_HOME = getHarnessHome()
+const PAI_DIR = getPaiDir(import.meta.dir)
 const PULSE_DIR = join(PAI_DIR, "PULSE")
 
 // ── Helpers ──
@@ -173,7 +175,7 @@ async function generateConfigs(opts: {
   const pulseToml = `# PAI Pulse — ${opts.name} Worker Configuration
 #
 # type = "script" → runs command, $0 cost
-# type = "claude" → spawns claude --print, costs tokens
+# type = "agent" → spawns the selected harness non-interactively, costs tokens
 # output = voice | telegram | ntfy | email | log
 # Sentinels: NO_ACTION, NO_URGENT, NO_EVENTS → suppress dispatch
 
@@ -205,7 +207,7 @@ enabled = true
 [[job]]
 name = "morning-report"
 schedule = "0 7 * * *"
-type = "claude"
+type = "agent"
 prompt = "You are ${opts.name}, a PAI Worker (${opts.description}). Summarize your completed work from the last 24 hours. Check recent git log and closed issues. Be concise."
 model = "sonnet"
 output = "telegram"
@@ -229,12 +231,12 @@ enabled = true
     opts.botToken ? `TELEGRAM_BOT_TOKEN=${opts.botToken}` : `# TELEGRAM_BOT_TOKEN=`,
     opts.chatId ? `TELEGRAM_PRINCIPAL_CHAT_ID=${opts.chatId}` : `# TELEGRAM_PRINCIPAL_CHAT_ID=`,
     ``,
-    `# Anthropic`,
-    `# ANTHROPIC_API_KEY=sk-ant-...`,
+    `# Agent provider keys (optional; subscription/OAuth installs may not need these)`,
+    `# OPENAI_API_KEY=sk-...`,
     ``,
   ]
 
-  const envPath = join(HOME, ".claude", ".env")
+  const envPath = join(PAI_DIR, ".env")
   if (existsSync(envPath)) {
     warn(`.env already exists — appending worker config`)
     const existing = await Bun.file(envPath).text()
@@ -438,7 +440,7 @@ ${"═".repeat(50)}
   Time: ${Math.floor(elapsed / 60)}m ${elapsed % 60}s
 
   Next steps:
-  - Verify ANTHROPIC_API_KEY is set in ${join(HOME, ".claude", ".env")}
+  - Verify required API keys are set in ${join(PAI_DIR, ".env")}
   - Create a test issue with label "status:ready" in one of your repos
   - Watch: tail -f ${join(PULSE_DIR, "logs", "pulse-stdout.log")}
   - Status: ${join(PULSE_DIR, "manage.sh")} status

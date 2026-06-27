@@ -12,9 +12,10 @@
 
 import { join } from "path"
 import { existsSync, readFileSync } from "fs"
+import { getPaiDir } from "../../TOOLS/lib/runtime-paths";
 
 const HOME = process.env.HOME ?? ""
-const PAI_DIR = join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir(import.meta.dir)
 const MEMORY_DIR = join(PAI_DIR, "MEMORY")
 const SESSION_COSTS_PATH = join(MEMORY_DIR, "OBSERVABILITY", "session-costs.jsonl")
 const TOOL_FAILURES_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-failures.jsonl")
@@ -278,7 +279,7 @@ async function handleAnthropicCostApi(): Promise<Response> {
   const { readFileSync, existsSync } = await import("fs")
   const { join } = await import("path")
   const home = process.env.HOME ?? ""
-  const obsDir = join(home, ".claude", "PAI", "MEMORY", "OBSERVABILITY")
+  const obsDir = join(getPaiDir(import.meta.dir), "MEMORY", "OBSERVABILITY")
   const ledgerPath = join(obsDir, "anthropic-cost.jsonl")
   const sitesPath = join(obsDir, "anthropic-call-sites.json")
 

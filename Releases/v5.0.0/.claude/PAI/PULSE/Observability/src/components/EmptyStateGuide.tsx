@@ -25,8 +25,8 @@ export default function EmptyStateGuide({
   daPromptExample,
   hideInterview = false,
 }: EmptyStateGuideProps) {
-  const userPath = userDir ? `~/.claude/PAI/USER/${userDir}/` : "~/.claude/PAI/USER/";
-  const readmePath = userDir ? `~/.claude/PAI/USER/${userDir}/README.md` : "~/.claude/PAI/USER/README.md";
+  const userPath = userDir ? `$PAI_DIR/USER/${userDir}/` : "$PAI_DIR/USER/";
+  const readmePath = userDir ? `$PAI_DIR/USER/${userDir}/README.md` : "$PAI_DIR/USER/README.md";
   const defaultDaPrompt = daPromptExample ?? `help me set up my ${section.toLowerCase()}`;
 
   return (

@@ -27,10 +27,13 @@ import {
 import { sendMessage } from "../lib/imessage-send"
 import { join } from "path"
 import { appendFile, mkdir, rename } from "fs/promises"
+import { getHarnessHome, getPaiDir } from "../../TOOLS/lib/runtime-paths"
 
-// BILLING: Strip ANTHROPIC_API_KEY before any SDK query() call. Same rationale
-// as modules/telegram.ts — prevents API billing when the module is re-enabled.
+// BILLING: Strip Anthropic API credentials before any SDK query() call. Same
+// rationale as modules/telegram.ts — prevents API billing when the module is
+// re-enabled.
 delete process.env.ANTHROPIC_API_KEY
+delete process.env.ANTHROPIC_AUTH_TOKEN
 
 // ── Config Interface ──
 
@@ -59,9 +62,10 @@ export interface IMessageHealth {
 // ── Module State ──
 
 const HOME = process.env.HOME ?? ""
-const CWD = join(HOME, ".claude")
-const STATE_DIR = join(HOME, ".claude", "PAI", "PULSE", "state", "imessage")
-const LOGS_DIR = join(HOME, ".claude", "PAI", "PULSE", "logs", "imessage")
+const CWD = getHarnessHome()
+const PAI_DIR = getPaiDir(import.meta.dir)
+const STATE_DIR = join(PAI_DIR, "PULSE", "state", "imessage")
+const LOGS_DIR = join(PAI_DIR, "PULSE", "logs", "imessage")
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let running = false

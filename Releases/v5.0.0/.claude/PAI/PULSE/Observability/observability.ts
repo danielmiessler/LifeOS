@@ -27,6 +27,7 @@
 import { join, extname } from "path"
 import { readFileSync, readdirSync, existsSync, realpathSync } from "fs"
 import YAML from "yaml"
+import { getHarnessHome, getPaiDir } from "../../TOOLS/lib/runtime-paths"
 
 // Bun is always the runtime here (Pulse launches this via `bun`). The Next
 // tsconfig's DOM+esnext lib doesn't include bun-types, so declare the minimal
@@ -51,7 +52,7 @@ export interface ObservabilityConfig {
 // ── Path Construction ──
 
 const HOME = process.env.HOME ?? ""
-const PAI_DIR = join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir(import.meta.dir)
 const MEMORY_DIR = join(PAI_DIR, "MEMORY")
 
 const WORK_JSON_PATH = join(MEMORY_DIR, "STATE", "work.json")
@@ -63,7 +64,9 @@ const TOOL_ACTIVITY_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-activity.json
 const PATTERNS_PATH = join(PAI_DIR, "USER", "SECURITY", "PATTERNS.yaml")
 const SECURITY_RULES_PATH = join(PAI_DIR, "USER", "SECURITY", "SECURITY_RULES.md")
 const SECURITY_LOG_DIR = join(MEMORY_DIR, "SECURITY")
-const SETTINGS_PATH = join(HOME, ".claude", "settings.json")
+const HARNESS_HOME = getHarnessHome()
+const PAI_SETTINGS_PATH = join(PAI_DIR, "settings.json")
+const SETTINGS_PATH = existsSync(PAI_SETTINGS_PATH) ? PAI_SETTINGS_PATH : join(HARNESS_HOME, "settings.json")
 const LADDER_DIR = join(HOME, "Projects", "Ladder")
 
 const DEFAULT_DASHBOARD_DIR = join(PAI_DIR, "PULSE", "Observability", "out")
@@ -149,7 +152,7 @@ function getDashboardDir(): string {
   const dir = config.dashboard_dir ?? DEFAULT_DASHBOARD_DIR
   // Resolve relative paths against Pulse directory
   if (!dir.startsWith("/")) {
-    return join(HOME, ".claude", "PAI", "PULSE", dir)
+    return join(PAI_DIR, "PULSE", dir)
   }
   return dir
 }
@@ -623,7 +626,7 @@ function handleSecurityApi(): Response {
   // Load InjectionInspector patterns from source
   const injectionPatterns: Array<{ category: string; description: string; pattern: string }> = []
   try {
-    const inspectorPath = join(HOME, ".claude", "hooks", "security", "inspectors", "InjectionInspector.ts")
+    const inspectorPath = join(getHarnessHome(), "hooks", "security", "inspectors", "InjectionInspector.ts")
     if (existsSync(inspectorPath)) {
       const src = readFileSync(inspectorPath, "utf-8")
       const patternRegex = /regex:\s*\/(.+?)\/[a-z]*,\s*category:\s*['"](.+?)['"]\s*,\s*description:\s*['"](.+?)['"]/g
@@ -637,7 +640,7 @@ function handleSecurityApi(): Response {
   // Load PromptInspector heuristic patterns (from security/inspectors/PromptInspector.ts)
   const promptGuardPatterns: Array<{ category: string; count: number }> = []
   try {
-    const piPath = join(HOME, ".claude", "hooks", "security", "inspectors", "PromptInspector.ts")
+    const piPath = join(getHarnessHome(), "hooks", "security", "inspectors", "PromptInspector.ts")
     if (existsSync(piPath)) {
       const src = readFileSync(piPath, "utf-8")
       const injCount = (src.match(/INJECTION_PATTERNS[^=]*=\s*\[([\s\S]*?)\];/)?.[1]?.match(/regex:/g)?.length || 0)
@@ -1646,7 +1649,6 @@ function readDirMdFiles(dir: string): { name: string, content: string, sections:
 
 function handleUserIndexApi(filter: string | null): Response {
   try {
-    const PAI_DIR = process.env.PAI_DIR || join(process.env.HOME || "", ".claude", "PAI")
     const indexPath = join(PAI_DIR, "PULSE", "state", "user-index.json")
     const raw = Bun.file(indexPath)
     if (!raw.size) {
@@ -2465,7 +2467,7 @@ function handleLifeCardApi(): Response {
 //   1. Build-time env flag — `PAI_TEMPLATE_MODE=1` set during ShadowRelease
 //      build. The flag is baked into the static export via Next.js, so
 //      releases ship banner-on regardless of runtime state.
-//   2. Runtime marker file — `~/.claude/PAI/USER/.template-mode`. Written by
+//   2. Runtime marker file — `PAI_DIR/USER/.template-mode`. Written by
 //      `install.sh` on fresh install; deleted by `/interview` on completion.
 // Either signal flips templateMode → banner renders. DA name pulled from
 // USER/DA_IDENTITY.md so the copy reads in the user's voice.

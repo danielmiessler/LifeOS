@@ -32,11 +32,12 @@ import {
   writeFileSync,
 } from "fs"
 import MiniSearch from "minisearch"
+import { getHarnessHome, getPaiDir } from "../../TOOLS/lib/runtime-paths";
 
 // Path Construction
 
 const HOME = process.env.HOME ?? "~"
-const PAI_DIR = join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir(import.meta.dir)
 const DOCUMENTATION_DIR = join(PAI_DIR, "DOCUMENTATION")
 const KNOWLEDGE_DIR = join(PAI_DIR, "MEMORY", "KNOWLEDGE")
 const BOOKMARKS_DIR = join(PAI_DIR, "MEMORY", "BOOKMARKS")
@@ -75,9 +76,11 @@ function resolveAlgorithmDir(paiDir: string): string | null {
 }
 
 const ALGORITHM_DIR: string | null = resolveAlgorithmDir(PAI_DIR)
-const SKILLS_DIR = join(HOME, ".claude", "skills")
-const HOOKS_DIR = join(HOME, ".claude", "hooks")
-const SETTINGS_PATH = join(HOME, ".claude", "settings.json")
+const HARNESS_HOME = getHarnessHome()
+const SKILLS_DIR = join(HARNESS_HOME, "skills")
+const HOOKS_DIR = join(HARNESS_HOME, "hooks")
+const PAI_SETTINGS_PATH = join(PAI_DIR, "settings.json")
+const SETTINGS_PATH = existsSync(PAI_SETTINGS_PATH) ? PAI_SETTINGS_PATH : join(HARNESS_HOME, "settings.json")
 const ARBOL_WORKERS_DIR = join(PAI_DIR, "USER", "ARBOL", "Workers")
 
 const SYSTEM_PROMPT_PATH = join(PAI_DIR, "PAI_SYSTEM_PROMPT.md")

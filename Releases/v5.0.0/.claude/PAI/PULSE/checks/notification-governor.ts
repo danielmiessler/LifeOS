@@ -31,9 +31,10 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "fs";
 import { join, dirname } from "path";
 import { createHash } from "crypto";
+import { getPaiDir } from "../../TOOLS/lib/runtime-paths";
 
 const HOME = process.env.HOME || "";
-const PAI_DIR = process.env.PAI_DIR || join(HOME, ".claude", "PAI");
+const PAI_DIR = getPaiDir(import.meta.dir);
 const STATE_FILE = join(PAI_DIR, "PULSE", "state", "notification-governor.json");
 const LOG_FILE = join(PAI_DIR, "MEMORY", "OBSERVABILITY", "notification-governor.jsonl");
 const NOTIFY_URL = "http://localhost:31337/notify";

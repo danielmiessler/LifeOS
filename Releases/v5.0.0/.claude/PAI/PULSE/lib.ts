@@ -8,6 +8,7 @@
 import { parse } from "smol-toml"
 import { join } from "path"
 import { rename } from "fs/promises"
+import { getHarnessHome, getHarnessKind, getPaiDir } from "../TOOLS/lib/runtime-paths"
 
 // ── Types ──
 
@@ -16,7 +17,7 @@ export type OutputTarget = "voice" | "telegram" | "ntfy" | "email" | "log"
 export interface Job {
   name: string
   schedule: string
-  type: "script" | "claude"
+  type: "script" | "agent" | "claude"
   command?: string
   prompt?: string
   model?: string
@@ -42,8 +43,12 @@ export interface DaemonState {
 
 // ── Env Var Resolution ──
 
+function shellQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`
+}
+
 function resolveEnvVars(value: string): string {
-  return value.replace(/\$\{?([A-Z_][A-Z0-9_]*)\}?/g, (_, name) => process.env[name] ?? "")
+  return value.replace(/\$\{?(PAI_DIR|HARNESS_HOME)\}?/g, (_, name) => shellQuote(process.env[name] ?? ""))
 }
 
 // ── Config Loading ──
@@ -55,7 +60,7 @@ export async function loadConfig(daemonDir: string): Promise<DaemonConfig> {
   const jobs: Job[] = (parsed.job ?? []).map((j) => ({
     name: j.name as string,
     schedule: j.schedule as string,
-    type: (j.type as "script" | "claude") ?? "script",
+    type: (j.type as "script" | "agent" | "claude") ?? "script",
     command: j.command ? resolveEnvVars(j.command as string) : undefined,
     prompt: j.prompt as string | undefined,
     model: (j.model as string) ?? "sonnet",
@@ -246,7 +251,7 @@ export async function spawnScript(command: string, timeoutMs = 60_000): Promise<
   const proc = Bun.spawn(["bash", "-c", command], {
     stdout: "pipe",
     stderr: "pipe",
-    cwd: join(process.env.HOME ?? "~", ".claude", "PAI", "PULSE"),
+    cwd: join(getPaiDir(), "PULSE"),
     env: { ...process.env },
   })
 
@@ -263,15 +268,82 @@ export async function spawnScript(command: string, timeoutMs = 60_000): Promise<
   return output.trim()
 }
 
+export async function spawnAgent(prompt: string, opts: { model?: string; timeoutMs?: number } = {}): Promise<string> {
+  return getHarnessKind() === "codex"
+    ? spawnCodex(prompt, opts)
+    : spawnClaude(prompt, { model: opts.model ?? "sonnet", timeoutMs: opts.timeoutMs })
+}
+
+function scrubAgentSecretEnv(env: Record<string, string>): Record<string, string> {
+  const next = { ...env }
+  delete next.ANTHROPIC_API_KEY
+  delete next.ANTHROPIC_AUTH_TOKEN
+  delete next.CLAUDECODE
+  delete next.OPENAI_API_KEY
+  delete next.ELEVENLABS_API_KEY
+  delete next.GEMINI_API_KEY
+  delete next.GOOGLE_API_KEY
+  delete next.GOOGLE_GENAI_API_KEY
+  delete next.XAI_API_KEY
+  delete next.GROK_API_KEY
+  delete next.PERPLEXITY_API_KEY
+  delete next.TELEGRAM_BOT_TOKEN
+  return next
+}
+
+async function spawnCodex(prompt: string, opts: { model?: string; timeoutMs?: number }): Promise<string> {
+  const codexPath = Bun.which("codex") ?? join(process.env.HOME ?? "~", ".local", "bin", "codex")
+  const args = [
+    "--ask-for-approval", "never",
+    "exec",
+    "--skip-git-repo-check",
+    "--cd", getPaiDir(),
+    "--sandbox", "read-only",
+    "--color", "never",
+  ]
+  if (opts.model && /^(gpt|o\d|codex)/i.test(opts.model)) {
+    args.push("--model", opts.model)
+  }
+  args.push("-")
+
+  const env = scrubAgentSecretEnv({
+    ...process.env,
+    HOME: process.env.HOME ?? "",
+    CODEX_HOME: process.env.CODEX_HOME ?? getHarnessHome(),
+    PAI_DIR: getPaiDir(),
+    PAI_HARNESS: "codex",
+  } as Record<string, string>)
+
+  const proc = Bun.spawn([codexPath, ...args], {
+    stdin: new Blob([prompt]),
+    stdout: "pipe",
+    stderr: "pipe",
+    env,
+  })
+
+  const timeoutMs = opts.timeoutMs ?? 300_000
+  const timer = setTimeout(() => proc.kill("SIGTERM"), timeoutMs)
+  const output = await new Response(proc.stdout).text()
+  const exitCode = await proc.exited
+  clearTimeout(timer)
+
+  if (exitCode !== 0) {
+    const stderr = await new Response(proc.stderr).text()
+    throw new Error(`codex exited ${exitCode}: ${stderr.slice(0, 200)}`)
+  }
+
+  return output.trim()
+}
+
 export async function spawnClaude(prompt: string, opts: { model: string; timeoutMs?: number }): Promise<string> {
   // BILLING: Use subscription via OAuth, NOT API key. Two requirements:
   //   1. Remove --bare flag — `--bare` forces ANTHROPIC_API_KEY auth and skips
   //      OAuth/keychain entirely. That was the root cause of the Apr 2026 Haiku
   //      $22.66 line item on the Anthropic invoice (heartbeat + tasks + memory
   //      consolidation all used --bare, all billed API).
-  //   2. Strip ANTHROPIC_API_KEY from env — bun auto-loads ~/.claude/.env, and if the
-  //      key is present `claude` CLI prefers it over subscription even without
-  //      --bare. Mirrors PAI/TOOLS/Inference.ts:114.
+  //   2. Strip Anthropic API credentials from env — PAI loads PAI_DIR/.env, and
+  //      if a key is present `claude` CLI prefers it over subscription even
+  //      without --bare. Mirrors PAI/TOOLS/Inference.ts:114.
   // Flag set mirrors Inference.ts: --tools '' and --setting-sources '' keep the
   // subprocess lightweight (no hooks, no CLAUDE.md auto-discovery), so we still
   // get the cost-reduction benefit --bare was intended to provide.
@@ -285,8 +357,7 @@ export async function spawnClaude(prompt: string, opts: { model: string; timeout
   ]
   const claudePath = Bun.which("claude") ?? join(process.env.HOME ?? "~", ".local", "bin", "claude")
 
-  const env: Record<string, string> = { ...process.env, HOME: process.env.HOME ?? "" } as Record<string, string>
-  delete env.ANTHROPIC_API_KEY
+  const env = scrubAgentSecretEnv({ ...process.env, HOME: process.env.HOME ?? "" } as Record<string, string>)
 
   const proc = Bun.spawn([claudePath, ...args], {
     stdin: new Blob([prompt]),

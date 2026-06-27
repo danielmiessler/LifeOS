@@ -17,14 +17,17 @@
 import { join } from "path"
 import { readFileSync, existsSync } from "fs"
 import { parse } from "smol-toml"
+import { getHarnessHome, getPaiDir } from "../TOOLS/lib/runtime-paths"
 
 // ── Load .env before anything else ──
 
 const HOME = process.env.HOME ?? "~"
-const PAI_DIR = join(HOME, ".claude", "PAI")
+const PAI_DIR = getPaiDir(import.meta.dir)
 const PULSE_DIR = join(PAI_DIR, "PULSE")
 
-const envPath = join(HOME, ".claude", ".env")
+const paiEnvPath = join(PAI_DIR, ".env")
+const harnessEnvPath = join(getHarnessHome(), ".env")
+const envPath = existsSync(paiEnvPath) ? paiEnvPath : harnessEnvPath
 try {
   const envContent = readFileSync(envPath, "utf-8")
   for (const line of envContent.split("\n")) {
@@ -41,6 +44,12 @@ try {
   }
 } catch { /* .env not found — rely on process environment */ }
 
+// ── BILLING GUARD (defense-in-depth) ──
+// Strip Anthropic API credentials from the daemon environment AFTER .env load.
+// Downstream Claude SDK/CLI calls must use subscription/OAuth when available.
+delete process.env.ANTHROPIC_API_KEY
+delete process.env.ANTHROPIC_AUTH_TOKEN
+
 // ── Imports ──
 
 import {
@@ -54,8 +63,9 @@ import {
   dispatch,
   isSentinel,
   spawnScript,
-  spawnClaude,
+  spawnAgent,
 } from "./lib"
+import { startPulseLogRotation } from "./log-rotation"
 
 import { startHooks, handleHooksRequestAsync, hooksHealth } from "./modules/hooks"
 
@@ -109,7 +119,7 @@ interface PulseConfig {
   jobs: Array<{
     name: string
     schedule: string
-    type: "script" | "claude"
+    type: "script" | "agent" | "claude"
     command?: string
     prompt?: string
     model?: string
@@ -235,6 +245,12 @@ function buildHealthResponse(state: DaemonState, config: PulseConfig): Response 
 // ── Main ──
 
 async function main() {
+  try {
+    startPulseLogRotation(PULSE_DIR)
+  } catch (err) {
+    console.warn("Pulse log rotation disabled:", err)
+  }
+
   await Bun.write(PID_PATH, String(process.pid))
 
   const config = await loadPulseConfig()
@@ -370,8 +386,8 @@ async function main() {
       try {
         let output: string
 
-        if (job.type === "claude") {
-          output = await spawnClaude(job.prompt!, { model: job.model ?? "sonnet" })
+        if (job.type === "agent" || job.type === "claude") {
+          output = await spawnAgent(job.prompt!, { model: job.model ?? "sonnet" })
         } else {
           output = await spawnScript(job.command!)
         }

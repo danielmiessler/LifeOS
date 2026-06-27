@@ -8,16 +8,19 @@
  * Output: spoken notification or NO_EVENTS
  */
 
-import { readFileSync } from "fs"
+import { existsSync, readFileSync } from "fs"
 import { join } from "path"
+import { getHarnessHome, getPaiDir } from "../../TOOLS/lib/runtime-paths"
 
-const HOME = process.env.HOME ?? ""
 const LOOKAHEAD_MS = 30 * 60 * 1000
 
 function loadEnv(): Record<string, string> {
   const env: Record<string, string> = {}
   try {
-    const content = readFileSync(join(HOME, ".claude", ".env"), "utf-8")
+    const paiEnvPath = join(getPaiDir(import.meta.dir), ".env")
+    const harnessEnvPath = join(getHarnessHome(), ".env")
+    const envPath = existsSync(paiEnvPath) ? paiEnvPath : harnessEnvPath
+    const content = readFileSync(envPath, "utf-8")
     for (const line of content.split("\n")) {
       const match = line.match(/^([^#=]+)=(.*)$/)
       if (match) {
