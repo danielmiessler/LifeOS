@@ -28,7 +28,7 @@ const CODEX_BIN = join(HOME, ".bun", "bin", "codex");
 const BUNDLE_TOKEN_CAP = 80_000;
 const CHARS_PER_TOKEN = 4; // rough estimate for bundle sizing
 const BUNDLE_CHAR_CAP = BUNDLE_TOKEN_CAP * CHARS_PER_TOKEN;
-const CODEX_TIMEOUT_MS = 120_000;
+const CODEX_TIMEOUT_MS = 600_000;
 const TOOL_ACTIVITY_TAIL_LINES = 200;
 const ARTIFACT_PER_FILE_CAP = 30_000 * CHARS_PER_TOKEN;
 
@@ -191,14 +191,14 @@ function invokeCodex(bundle: string): Promise<{ stdout: string; stderr: string; 
   return new Promise((resolvePromise) => {
     const proc = spawn(
       CODEX_BIN,
-      ["exec", "--sandbox", "read-only", "--model", "gpt-5.4", "-"],
+      ["exec", "-c", "model_reasoning_effort=medium", "--sandbox", "read-only", "--model", "gpt-5.4", "-"],
       { stdio: ["pipe", "pipe", "pipe"] }
     );
     let stdout = "";
     let stderr = "";
     const timer = setTimeout(() => {
       proc.kill("SIGTERM");
-      resolvePromise({ stdout, stderr: stderr + "\n[TIMEOUT after 120s]", code: 124 });
+      resolvePromise({ stdout, stderr: stderr + "\n[TIMEOUT after 600s]", code: 124 });
     }, CODEX_TIMEOUT_MS);
 
     proc.stdout.on("data", (chunk) => (stdout += chunk.toString()));
