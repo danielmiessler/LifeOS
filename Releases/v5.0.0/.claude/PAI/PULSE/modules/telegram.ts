@@ -8,12 +8,12 @@
  * Architecture: grammY polling → auth → SDK session → stream → Telegram
  */
 
-import { Bot } from "grammy"
+import { Bot, InputFile } from "grammy"
 import { query } from "@anthropic-ai/claude-agent-sdk"
 import { ConversationStore } from "../lib/conversation"
 import { sanitize, analyzeForInjection } from "../lib/sanitize"
 import { join } from "path"
-import { appendFile, mkdir } from "fs/promises"
+import { appendFile, mkdir, unlink } from "fs/promises"
 
 // BILLING: Strip ANTHROPIC_API_KEY before any SDK query() call. Bun auto-loads
 // ~/.claude/.env into this process; if the key is present, @anthropic-ai/claude-agent-sdk
@@ -39,8 +39,68 @@ const HOME = process.env.HOME ?? ""
 const CWD = join(HOME, ".claude")
 const STATE_DIR = join(HOME, ".claude", "PAI", "PULSE", "state", "telegram")
 const LOGS_DIR = join(HOME, ".claude", "PAI", "PULSE", "logs", "telegram")
+const INCOMING_DIR = join(STATE_DIR, "incoming")
 const MAX_TELEGRAM_LENGTH = 4096
 const CURSOR = " ▌"
+
+// ── Outbound image tags ──
+// Slammer emits [[IMG:/path]] or [[IMG:https://url]] to send {{PRINCIPAL_NAME}} a
+// photo. The bridge extracts the refs, sends them, and strips the tags from the text.
+const IMG_TAG = /\[\[IMG:\s*([^\]]+?)\s*\]\]/g
+const PHOTO_EXTS = new Set(["png", "jpg", "jpeg", "webp", "gif"])
+
+function extractImageRefs(text: string): string[] {
+  const refs: string[] = []
+  let m: RegExpExecArray | null
+  IMG_TAG.lastIndex = 0
+  while ((m = IMG_TAG.exec(text)) !== null) refs.push(m[1]!.trim())
+  return refs
+}
+
+function stripImageRefs(text: string): string {
+  return text.replace(IMG_TAG, "").replace(/\n{3,}/g, "\n\n").trim()
+}
+
+// ── Inbound image validation ──
+// Accept only PNG/JPEG, identified by MAGIC BYTES (never the client-declared
+// mime, which is attacker-controllable), under a byte cap AND a pixel/dimension
+// cap. Un-re-encoded documents can be decompression bombs (tiny file, gigapixel
+// canvas) that the byte cap alone does not catch. Refusing to decode WebP/GIF/SVG
+// is what retires the libwebp-2023-4863 and SVG-script attack classes.
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024
+const MAX_IMAGE_PIXELS = 40_000_000
+const MAX_IMAGE_DIM = 10_000
+
+function inspectImage(b: Uint8Array): { kind: "png" | "jpeg"; width: number; height: number } | null {
+  // PNG: signature 89 50 4E 47 0D 0A 1A 0A; IHDR width/height as BE uint32 at 16/20
+  if (b.length >= 24 &&
+      b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47 &&
+      b[4] === 0x0d && b[5] === 0x0a && b[6] === 0x1a && b[7] === 0x0a) {
+    const width = ((b[16]! << 24) | (b[17]! << 16) | (b[18]! << 8) | b[19]!) >>> 0
+    const height = ((b[20]! << 24) | (b[21]! << 16) | (b[22]! << 8) | b[23]!) >>> 0
+    return { kind: "png", width, height }
+  }
+  // JPEG: starts FF D8; scan segment markers for a Start-Of-Frame to read dims
+  if (b.length >= 4 && b[0] === 0xff && b[1] === 0xd8) {
+    const SOF = new Set([0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf])
+    let off = 2
+    while (off + 9 < b.length) {
+      if (b[off] !== 0xff) { off++; continue }
+      const marker = b[off + 1]!
+      off += 2
+      if (marker === 0xd8 || marker === 0xd9 || (marker >= 0xd0 && marker <= 0xd7)) continue
+      const segLen = (b[off]! << 8) | b[off + 1]!
+      if (segLen < 2) break
+      if (SOF.has(marker)) {
+        const height = (b[off + 3]! << 8) | b[off + 4]!
+        const width = (b[off + 5]! << 8) | b[off + 6]!
+        return { kind: "jpeg", width, height }
+      }
+      off += segLen
+    }
+  }
+  return null  // not a recognized PNG/JPEG (or JPEG with no SOF) — reject
+}
 
 // ── Module State ──
 
@@ -118,6 +178,7 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
   // Ensure directories
   await mkdir(STATE_DIR, { recursive: true })
   await mkdir(LOGS_DIR, { recursive: true })
+  await mkdir(INCOMING_DIR, { recursive: true })
 
   // Initialize conversation store
   conversationStore = new ConversationStore(join(STATE_DIR, "conversations.json"))
@@ -143,25 +204,50 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
     await next()
   })
 
-  // Message handler — sequential processing
-  bot.on("message:text", async (ctx) => {
-    const text = ctx.message.text
-    const userId = ctx.from.id
-    const chatId = ctx.chat.id
+  // ── Inbound/outbound media helpers (closures over token / config) ──
 
-    messagesReceived++
-    log("info", "Message received", { userId, chatId, textLength: text.length })
-
-    // Sanitize input
-    const sanitized = sanitize(text)
-    if (!sanitized) return
-
-    const injection = analyzeForInjection(sanitized)
-    if (injection.riskLevel === "CRITICAL") {
-      log("warn", "Blocked CRITICAL injection attempt", { userId, patterns: injection.matchedPatterns })
-      await ctx.reply("Message blocked for security reasons.")
-      return
+  // Download a Telegram file (photo size or image document) to INCOMING_DIR,
+  // returns the absolute local path so the SDK session can Read it.
+  async function downloadIncoming(ctx: any, fileId: string): Promise<string> {
+    const file = await ctx.api.getFile(fileId)
+    const remotePath = file.file_path
+    if (!remotePath) throw new Error("Telegram getFile returned no file_path")
+    if (file.file_size && file.file_size > MAX_IMAGE_BYTES) {
+      throw new Error(`file too large (${file.file_size} bytes)`)
     }
+    const res = await fetch(`https://api.telegram.org/file/bot${token}/${remotePath}`)
+    if (!res.ok) throw new Error(`download failed: HTTP ${res.status}`)
+    const bytes = new Uint8Array(await res.arrayBuffer())
+    if (bytes.byteLength > MAX_IMAGE_BYTES) throw new Error(`file too large (${bytes.byteLength} bytes)`)
+    // Content sniff + dimension cap BEFORE the file is ever handed to the SDK Read tool.
+    const info = inspectImage(bytes)
+    if (!info) throw new Error("unsupported type — only PNG and JPEG accepted")
+    if (info.width * info.height > MAX_IMAGE_PIXELS || Math.max(info.width, info.height) > MAX_IMAGE_DIM) {
+      throw new Error(`dimensions too large (${info.width}x${info.height})`)
+    }
+    // Filename from the sniffed type and a random UUID — never from the remote path.
+    const dest = join(INCOMING_DIR, `${crypto.randomUUID()}.${info.kind === "jpeg" ? "jpg" : "png"}`)
+    await Bun.write(dest, bytes)
+    return dest
+  }
+
+  // Send one outbound image (local path or URL). Known image extensions go as a
+  // photo (inline preview); anything else goes as a document to preserve fidelity.
+  async function sendImage(ctx: any, ref: string): Promise<void> {
+    const ext = (ref.split("?")[0]!.split(".").pop() || "").toLowerCase()
+    const media: any = /^https?:\/\//i.test(ref) ? ref : new InputFile(ref)
+    try {
+      if (PHOTO_EXTS.has(ext)) await ctx.replyWithPhoto(media)
+      else await ctx.replyWithDocument(media)
+    } catch (e) {
+      log("error", "Failed to send image", { ref, error: String(e) })
+      await ctx.reply(`(couldn't send image: ${ref})`).catch(() => {})
+    }
+  }
+
+  // Shared SDK processing — text and image messages both funnel through here.
+  async function processPrompt(ctx: any, opts: { userLog: string; newMessage: string }): Promise<void> {
+    const chatId = ctx.chat.id
 
     // Sequential processing — one message at a time
     if (processing) {
@@ -178,13 +264,13 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
 
       // Build prompt with conversation history context
       const history = conversationStore!.getHistory()
-      let prompt = sanitized
+      let prompt = opts.newMessage
       if (history.length > 0) {
         const historyText = history
           .slice(-10) // Last 5 exchanges for context
           .map(m => `${m.role === "user" ? "Principal" : "DA"}: ${m.content}`)
           .join("\n")
-        prompt = `Previous conversation:\n${historyText}\n\nPrincipal's new message: ${sanitized}`
+        prompt = `Previous conversation:\n${historyText}\n\nPrincipal's new message: ${opts.newMessage}`
       }
 
       const sdkOptions: Record<string, unknown> = {
@@ -211,6 +297,8 @@ CRITICAL RULES FOR TELEGRAM MODE:
 - No code blocks unless {{PRINCIPAL_NAME}} specifically asks for code
 - NEVER use voice notification curls (no http://localhost:31337/notify calls)
 - You have ALL PAI capabilities — skills, email, calendar, lights, everything
+- IMAGES IN: when {{PRINCIPAL_NAME}} sends a photo it is saved locally and the path is in his message — use the Read tool to view it before responding.
+- IMAGES OUT: to send him an image, put a line [[IMG:/absolute/path]] (or [[IMG:https://url]]) anywhere in your reply. The bridge delivers it as a photo and strips the tag from your text. Create or save the file to an absolute path first (e.g. under /tmp or MEMORY/WORK), then reference that path.
 - When doing tasks, do them and confirm briefly what you did`,
         },
       }
@@ -271,10 +359,11 @@ CRITICAL RULES FOR TELEGRAM MODE:
             })
           }
 
-          // Live edit updates in Telegram
+          // Live edit updates in Telegram (image tags hidden from the live view)
           const now = Date.now()
-          if (fullText && now - lastEditTime >= editIntervalMs) {
-            const displayText = fullText.slice(0, MAX_TELEGRAM_LENGTH - 10) + CURSOR
+          const display = stripImageRefs(fullText)
+          if (display && now - lastEditTime >= editIntervalMs) {
+            const displayText = display.slice(0, MAX_TELEGRAM_LENGTH - 10) + CURSOR
             try {
               if (!messageId) {
                 const sent = await ctx.reply(displayText)
@@ -295,45 +384,123 @@ CRITICAL RULES FOR TELEGRAM MODE:
         log("error", "Empty response from SDK")
       }
 
-      // Final clean message
-      if (fullText.length <= MAX_TELEGRAM_LENGTH) {
-        if (messageId) {
-          await ctx.api.editMessageText(chatId, messageId, fullText).catch(() => {})
-        } else {
-          await ctx.reply(fullText)
-        }
-      } else {
-        // Split long messages
-        const chunks: string[] = []
-        let remaining = fullText
-        while (remaining.length > 0) {
-          chunks.push(remaining.slice(0, MAX_TELEGRAM_LENGTH))
-          remaining = remaining.slice(MAX_TELEGRAM_LENGTH)
-        }
-        if (messageId) {
-          await ctx.api.editMessageText(chatId, messageId, chunks[0]!).catch(() => {})
-          for (const chunk of chunks.slice(1)) {
-            await ctx.reply(chunk)
+      // Separate outbound images from the text body
+      const imageRefs = extractImageRefs(fullText)
+      const cleanText = stripImageRefs(fullText)
+
+      // Deliver the text (if any remains after stripping image tags)
+      if (cleanText) {
+        if (cleanText.length <= MAX_TELEGRAM_LENGTH) {
+          if (messageId) {
+            await ctx.api.editMessageText(chatId, messageId, cleanText).catch(() => {})
+          } else {
+            await ctx.reply(cleanText)
           }
         } else {
-          for (const chunk of chunks) {
-            await ctx.reply(chunk)
+          // Split long messages
+          const chunks: string[] = []
+          let remaining = cleanText
+          while (remaining.length > 0) {
+            chunks.push(remaining.slice(0, MAX_TELEGRAM_LENGTH))
+            remaining = remaining.slice(MAX_TELEGRAM_LENGTH)
+          }
+          if (messageId) {
+            await ctx.api.editMessageText(chatId, messageId, chunks[0]!).catch(() => {})
+            for (const chunk of chunks.slice(1)) await ctx.reply(chunk)
+          } else {
+            for (const chunk of chunks) await ctx.reply(chunk)
           }
         }
+      } else if (messageId) {
+        // Image-only reply — drop the empty streaming placeholder
+        await ctx.api.deleteMessage(chatId, messageId).catch(() => {})
       }
 
+      // Deliver any images
+      for (const ref of imageRefs) await sendImage(ctx, ref)
+
       messagesResponded++
-      log("info", "Response sent", { durationMs: Date.now() - startTime, responseLength: fullText.length })
+      log("info", "Response sent", {
+        durationMs: Date.now() - startTime,
+        responseLength: cleanText.length,
+        images: imageRefs.length,
+      })
 
       // Persist conversation
-      await conversationStore!.addExchange(sanitized, fullText)
-      await appendChatLog(sanitized, fullText)
+      await conversationStore!.addExchange(opts.userLog, fullText)
+      await appendChatLog(opts.userLog, cleanText || `[sent ${imageRefs.length} image(s)]`)
 
     } catch (err) {
       log("error", "Message processing failed", { error: String(err) })
       await ctx.reply("Something went wrong processing your message. Try again?").catch(() => {})
     } finally {
       processing = false
+    }
+  }
+
+  // ── Handlers ──
+
+  bot.on("message:text", async (ctx) => {
+    const text = ctx.message.text
+    messagesReceived++
+    log("info", "Message received", { userId: ctx.from.id, chatId: ctx.chat.id, textLength: text.length })
+
+    const sanitized = sanitize(text)
+    if (!sanitized) return
+
+    const injection = analyzeForInjection(sanitized)
+    if (injection.riskLevel === "CRITICAL") {
+      log("warn", "Blocked CRITICAL injection attempt", { userId: ctx.from.id, patterns: injection.matchedPatterns })
+      await ctx.reply("Message blocked for security reasons.")
+      return
+    }
+
+    await processPrompt(ctx, { userLog: sanitized, newMessage: sanitized })
+  })
+
+  // Photos (Telegram-re-encoded JPEG) and PNG/JPEG image documents.
+  // Type is decided by magic-byte sniff in downloadIncoming, not the declared mime.
+  bot.on(["message:photo", "message:document"], async (ctx) => {
+    let fileId: string | undefined
+    if (ctx.message.photo) {
+      const sizes = ctx.message.photo
+      fileId = sizes[sizes.length - 1]?.file_id  // largest rendition
+    } else if (ctx.message.document) {
+      fileId = ctx.message.document.file_id
+    }
+    if (!fileId) return
+
+    messagesReceived++
+    const rawCaption = ctx.message.caption ?? ""
+    const caption = rawCaption ? (sanitize(rawCaption) ?? "") : ""
+    log("info", "Image received", { userId: ctx.from.id, chatId: ctx.chat.id, hasCaption: !!caption })
+
+    if (caption) {
+      const injection = analyzeForInjection(caption)
+      if (injection.riskLevel === "CRITICAL") {
+        log("warn", "Blocked CRITICAL injection in caption", { userId: ctx.from.id })
+        await ctx.reply("Message blocked for security reasons.")
+        return
+      }
+    }
+
+    let savedPath: string
+    try {
+      await ctx.api.sendChatAction(ctx.chat.id, "typing").catch(() => {})
+      savedPath = await downloadIncoming(ctx, fileId)
+    } catch (e) {
+      const reason = String(e).replace(/^Error:\s*/, "")
+      log("warn", "Inbound image rejected", { reason })
+      await ctx.reply(`I can only accept PNG or JPEG images, up to 10MB and 40 megapixels. (${reason})`).catch(() => {})
+      return
+    }
+
+    const newMessage = `Principal sent you an image, saved locally at: ${savedPath}\nUse the Read tool to view it, then respond.${caption ? `\nHis caption: ${caption}` : ""}`
+    const userLog = caption ? `[image] ${caption}` : "[image]"
+    try {
+      await processPrompt(ctx, { userLog, newMessage })
+    } finally {
+      await unlink(savedPath).catch(() => {})  // best-effort cleanup once the session has read it
     }
   })
 
