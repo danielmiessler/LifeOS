@@ -48,6 +48,11 @@ startTaskWatcher((task: BackgroundTask) => {
 // Create Bun server with HTTP and WebSocket support
 const server = Bun.serve({
   port: 4000,
+  // Bind to loopback only. This server exposes /api/activities
+  // (kitty tab titles) and /api/haiku/summarize (proxied Anthropic API
+  // key) with `Access-Control-Allow-Origin: *` and no authentication —
+  // it must never be reachable from the network.
+  hostname: '127.0.0.1',
   
   async fetch(req: Request) {
     const url = new URL(req.url);
