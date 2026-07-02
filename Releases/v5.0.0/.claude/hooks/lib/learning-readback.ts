@@ -172,12 +172,23 @@ export function loadFailurePatterns(paiDir: string): string | null {
 
           try {
             const content = readFileSync(contextPath, 'utf-8');
-            // Extract slug as human-readable failure description
-            const slug = dir.replace(/^\d{4}-\d{2}-\d{2}-\d{6}_/, '').replace(/-/g, ' ');
             // Get date from dir name
             const dateMatch = dir.match(/^(\d{4}-\d{2}-\d{2})/);
             const date = dateMatch ? dateMatch[1] : '';
-            patterns.push(`[${date}] ${slug.substring(0, 70)}`);
+            // Prefer CONTEXT.md's own one-liner over the mangled dir slug
+            // (previously the file was read but its content discarded)
+            let desc = content.match(/\*\*Summary:\*\*\s*(.+)/)?.[1]?.trim()
+              || content.match(/## What Happened\s*\n+([^\n]+)/)?.[1]?.trim()
+              || dir.replace(/^\d{4}-\d{2}-\d{2}-\d{6}_/, '').replace(/-/g, ' ');
+            // Truncate at a word boundary instead of a hard mid-word cut
+            if (desc.length > 110) {
+              const cut = desc.lastIndexOf(' ', 110);
+              desc = desc.slice(0, cut > 60 ? cut : 110) + '…';
+            }
+            // Skip duplicate captures of the same event (a double-fire can
+            // produce two dirs with different slugs but identical summaries)
+            if (patterns.some(p => p.endsWith(desc))) continue;
+            patterns.push(`[${date}] ${desc}`);
           } catch { /* skip unreadable */ }
         }
       } catch { /* skip unreadable months */ }
