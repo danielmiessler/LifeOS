@@ -1,0 +1,9 @@
+{
+  "name": "lifeos-runtime",
+  "private": true,
+  "type": "module",
+  "description": "Shared runtime dependencies for LifeOS hooks and LIFEOS/TOOLS scripts. Deployed to <configRoot>/package.json by DeployCore.ts so `bun install` resolves node_modules for both <configRoot>/hooks/ and <configRoot>/LIFEOS/.",
+  "dependencies": {
+    "yaml": "^2.8.2"
+  }
+}
