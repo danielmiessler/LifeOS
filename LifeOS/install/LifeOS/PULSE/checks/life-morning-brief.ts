@@ -21,6 +21,19 @@ function readFile(name: string): string {
   return readFileSync(p, "utf-8")
 }
 
+// GOALS.md is a legacy per-topic file, superseded by the unified TELOS.md
+// (H2 sections) on 2026-05-01. Fall back to TELOS.md's "## GOALS" section
+// when the legacy file has been archived, so goals written only to TELOS.md
+// still surface here.
+function readGoals(): string {
+  const legacy = readFile("GOALS.md")
+  if (legacy) return legacy
+  const telos = readFile("TELOS.md")
+  if (!telos) return ""
+  const match = telos.match(/(?:^|\n)##\s*GOALS\b[^\n]*\n([\s\S]*?)(?=\n##\s|\n---|$)/i)
+  return match ? match[1].trim() : ""
+}
+
 // Extract top 3 goals from GOALS.md
 function getTopGoals(content: string): string[] {
   const lines = content.split("\n")
@@ -55,7 +68,7 @@ function getNextMove(content: string): string | null {
   return first.trim().replace(/^\d+\.\s*/, "")
 }
 
-const goals = readFile("GOALS.md")
+const goals = readGoals()
 const sparks = readFile("SPARKS.md")
 const current = readFile("CURRENT.md")
 

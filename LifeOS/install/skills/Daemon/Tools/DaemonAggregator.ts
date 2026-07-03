@@ -79,8 +79,20 @@ function readFileIfExists(path: string): string | null {
   return readFileSync(path, "utf-8");
 }
 
+// MISSION.md/GOALS.md/WISDOM.md are legacy per-topic files, superseded by the
+// unified TELOS.md (H2 sections) on 2026-05-01. Fall back to the matching
+// TELOS.md section when the legacy file has been archived, so content written
+// only to TELOS.md still surfaces in the daemon profile.
+function readTelosSection(heading: string): string | null {
+  const telos = readFileIfExists(join(TELOS_DIR, "TELOS.md"));
+  if (!telos) return null;
+  const re = new RegExp(`(?:^|\\n)##\\s*${heading}\\b[^\\n]*\\n([\\s\\S]*?)(?=\\n##\\s|\\n---|$)`, "i");
+  const match = telos.match(re);
+  return match ? match[1].trim() : null;
+}
+
 function readMissions(): string {
-  const content = readFileIfExists(join(TELOS_DIR, "MISSION.md"));
+  const content = readFileIfExists(join(TELOS_DIR, "MISSION.md")) ?? readTelosSection("Mission");
   if (!content) return "";
 
   const lines = content.split("\n");
@@ -103,7 +115,7 @@ function readMissions(): string {
 }
 
 function readGoals(): string {
-  const content = readFileIfExists(join(TELOS_DIR, "GOALS.md"));
+  const content = readFileIfExists(join(TELOS_DIR, "GOALS.md")) ?? readTelosSection("GOALS");
   if (!content) return "";
 
   const lines = content.split("\n");
@@ -149,7 +161,7 @@ function readMovies(): string[] {
 }
 
 function readWisdom(): string[] {
-  const content = readFileIfExists(join(TELOS_DIR, "WISDOM.md"));
+  const content = readFileIfExists(join(TELOS_DIR, "WISDOM.md")) ?? readTelosSection("Wisdom");
   if (!content) return [];
 
   // Split by double newlines to get individual quotes

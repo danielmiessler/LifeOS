@@ -11,16 +11,9 @@ behind any work you ask for.
 
 | File | What goes in it |
 |------|------------------|
-| `MISSION.md` | The 1–3 things you're putting your life behind. Big, durable, often unfinishable. |
-| `GOALS.md` | Concrete year-scale goals tied to each mission. SMART-ish; revisited quarterly. |
-| `PROBLEMS.md` | The world-level problems your work is trying to solve (vs. internal challenges). |
-| `STRATEGIES.md` | The plays you've chosen to make progress on the problems. |
-| `NARRATIVES.md` | The story you tell yourself and others about what you're doing and why. |
-| `CHALLENGES.md` | Personal blockers — habits, fears, patterns that get in your way. |
-| `BELIEFS.md` | The opinions and frames you operate from. The DA uses these to read drafts in your voice. |
-| `WISDOM.md` | Lessons you've extracted from experience and want to keep applying. |
-| `BOOKS.md` | Books that shaped you. Useful when the DA picks recommendations or framings. |
-| `PRINCIPAL_TELOS.md` | **Auto-generated summary** of all the above. Loaded into every session via CLAUDE.md. |
+| `TELOS.md` | **The single source of truth.** Unified H2 sections — Current State, Ideal State, Mission, Problems, Goals, Challenges, Strategies, Projects, Narratives, Wisdom. Edit this file directly (or run `/interview`); `GenerateTelosSummary.ts` reads it. |
+| `BOOKS.md` | Books that shaped you. Standalone — not part of the unified `TELOS.md` schema. Useful when the DA picks recommendations or framings. |
+| `PRINCIPAL_TELOS.md` | **Auto-generated summary** of `TELOS.md`. Loaded into every session via CLAUDE.md. Do not edit manually — regenerate with `GenerateTelosSummary.ts` after editing `TELOS.md`. |
 
 ## Subdirectories
 
@@ -29,16 +22,18 @@ behind any work you ask for.
 | `CURRENT_STATE/` | Where you are right now across the dimensions of your life — health, finances, relationships, work, learning. The DA uses this as the starting point for any "how do I get from here to there" question. Sample scaffolds inside. |
 | `IDEAL_STATE/` | Where you want to be — the vision you're aiming at across the same dimensions. Sample scaffolds inside. |
 | `Backups/` | Versioned snapshots of your TELOS files. Tools that bulk-edit TELOS write a backup here before changing anything. Empty until something is backed up. |
+| `Archive/2026-05-01/` | Pre-unification per-topic files (`MISSION.md`, `GOALS.md`, `PROBLEMS.md`, `STRATEGIES.md`, `CHALLENGES.md`, `NARRATIVES.md`, `BELIEFS.md`, `WISDOM.md`). `TELOS.md` superseded these on 2026-05-01 — kept only for reference. `GenerateTelosSummary.ts` will read a file here as a legacy override **only if you restore it to the top level**; leave this directory alone otherwise. |
 
 ## How to fill these in
 
-**Easiest:** run `/interview` after install. It walks you through each file
-in order, asks the right questions, and writes your answers to disk —
-replacing every `(sample)` entry with content that's actually yours.
+**Easiest:** run `/interview` after install. It walks you through `TELOS.md`
+section by section, asks the right questions, and writes your answers to
+disk — replacing every `(sample)` entry with content that's actually yours.
 
-**By hand:** open each `.md` file. The bootstrap content shows the shape —
-delete the placeholders and write your real answers. Keep entries short and
-high-signal; the DA reads everything in this directory at session start.
+**By hand:** open `TELOS.md`. The bootstrap content shows the shape — delete
+the placeholders and write your real answers under each H2 section. Keep
+entries short and high-signal; the DA reads this file at session start.
+Regenerate the summary afterward (see below).
 
 **From existing data:** if you already have goals/missions in Obsidian,
 Notion, journal entries, or a Telos repo, run the **Migrate** skill before
