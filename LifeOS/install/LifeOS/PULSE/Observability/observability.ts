@@ -55,7 +55,7 @@ export interface ObservabilityConfig {
 // ── Path Construction ──
 
 const HOME = process.env.HOME ?? ""
-const LIFEOS_DIR = join(HOME, ".claude", "LifeOS")
+const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
 const MEMORY_DIR = join(LIFEOS_DIR, "MEMORY")
 
 const WORK_JSON_PATH = join(MEMORY_DIR, "STATE", "work.json")
@@ -142,7 +142,7 @@ function getDashboardDir(): string {
   const dir = config.dashboard_dir ?? DEFAULT_DASHBOARD_DIR
   // Resolve relative paths against Pulse directory
   if (!dir.startsWith("/")) {
-    return join(HOME, ".claude", "LifeOS", "PULSE", dir)
+    return join(HOME, ".claude", "LIFEOS", "PULSE", dir)
   }
   return dir
 }
@@ -1626,7 +1626,7 @@ function readDirMdFiles(dir: string): { name: string, content: string, sections:
 
 function handleUserIndexApi(filter: string | null): Response {
   try {
-    const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME || "", ".claude", "LifeOS")
+    const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME || "", ".claude", "LIFEOS")
     const indexPath = join(LIFEOS_DIR, "PULSE", "state", "user-index.json")
     const raw = Bun.file(indexPath)
     if (!raw.size) {
