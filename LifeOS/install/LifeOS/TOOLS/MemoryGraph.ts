@@ -284,8 +284,19 @@ function buildGraph(raws: Raw[], layer: EdgeLayer = "declared"): { graph: Graph;
 
   // bare-slug -> id resolver (knowledge slug is bare; work id is "work:slug")
   const bareToId = new Map<string, string>();
+  // Track winner's source path so we can warn on collision (report-generator
+  // tool, not a scriptable pipe — silent drop hides data loss from users).
+  const idToPath = new Map<string, string>();
   for (const { node } of raws) {
+    if (graph.hasNode(node.id)) {
+      // First-wins on duplicate ids (e.g. Companies/synthesis.md and
+      // Research/synthesis.md both derive slug "synthesis"). Matches the
+      // bareToId first-wins semantics below.
+      console.warn(`[MemoryGraph] slug collision: kept ${idToPath.get(node.id)}, skipped ${node.path}`);
+      continue;
+    }
     graph.addNode(node.id, { ...node });
+    idToPath.set(node.id, node.path);
     const bare = node.id.startsWith("work:") ? node.id.slice(5) : node.id;
     if (!bareToId.has(bare)) bareToId.set(bare, node.id);
   }
