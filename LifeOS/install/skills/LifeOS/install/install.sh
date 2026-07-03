@@ -5,7 +5,7 @@
 #
 #   Unlike a whole-harness install, this does NOT clobber your setup.
 #   It drops the LifeOS skill into your existing harness, then hands off
-#   to the agentic `/lifeos-setup`, which (with your permission) does the
+#   to the agentic `/LifeOS setup`, which (with your permission) does the
 #   conflict detection, the principal conversation, the TELOS interview
 #   (current state + ideal state), pulls in any sources you provide, and
 #   wires hooks — adapting to YOUR OS and harness as it goes.
@@ -15,7 +15,7 @@
 #     2. Detects your harness + any existing LifeOS install (no clobber)
 #     3. Fetches the pinned LifeOS release (or uses $LIFEOS_SRC locally)
 #     4. Places the LifeOS skill additively into your skills dir
-#     5. Hands off to `/lifeos-setup` (the agentic onboarding)
+#     5. Hands off to `/LifeOS setup` (the agentic onboarding)
 #
 #   Local/offline install (no network):
 #     LIFEOS_SRC=/path/to/LIFEOS_RELEASES/<version> bash install.sh
@@ -131,7 +131,7 @@ success "LifeOS skill placed at ${TARGET/#$HOME/~}"
 
 # ─── Step 5: Hand off to the agentic setup ───────────────────────
 step "5/5  Onboarding"
-if [ "$DRY_RUN" = "1" ]; then info "[DRY-RUN] Would launch /lifeos-setup"; exit 0; fi
+if [ "$DRY_RUN" = "1" ]; then info "[DRY-RUN] Would launch /LifeOS setup"; exit 0; fi
 echo
 success "LifeOS is installed. Now let's set it up for YOU."
 info "The rest is a conversation — it detects conflicts, asks about your TELOS"
@@ -140,7 +140,7 @@ info "hooks with your permission. Nothing changes without you saying yes."
 echo
 if command -v claude >/dev/null 2>&1 && [ -z "${CLAUDECODE:-}" ]; then
   info "Launching setup..."
-  exec claude "/lifeos-setup"
+  exec claude "/LifeOS setup"
 else
-  printf "  ${BOLD}Open your harness and run:${RESET}  ${LIGHT_BLUE}/lifeos-setup${RESET}\n\n"
+  printf "  ${BOLD}Open your harness and run:${RESET}  ${LIGHT_BLUE}/LifeOS setup${RESET}\n\n"
 fi
