@@ -1,6 +1,6 @@
 ---
 name: Telos
-description: Life OS and project analysis — goals, dependencies, beliefs, wisdom, books, movies, narrative points, interview extraction, McKinsey reports, and project dashboards. USE WHEN Telos, life goals, projects, dependencies, books, movies, beliefs, wisdom, update TELOS, narrative points, interview extraction, write report, McKinsey report, TELOS report, project analysis, dashboard, n=24.
+description: Life OS and project analysis — goals, dependencies, beliefs, wisdom, books, movies, narrative points, interview extraction, McKinsey reports, and project dashboards. USE WHEN Telos, life goals, projects, dependencies, books, movies, beliefs, wisdom, update TELOS, narrative points, interview extraction, write report, McKinsey report, TELOS report, project analysis, dashboard, n=24, focus alignment, alignment check, neglected, life balance, should I do this, opportunity cost.
 ---
 
 ## 🚨 MANDATORY: Voice Notification (REQUIRED BEFORE ANY ACTION)
@@ -44,6 +44,7 @@ Running the **WorkflowName** workflow in the **Telos** skill to ACTION...
 | **InterviewExtraction** | "extract content", "extract interviews", "analyze interviews" | `Workflows/InterviewExtraction.md` |
 | **CreateNarrativePoints** | "create narrative", "narrative points", "TELOS report", "n=24" | `Workflows/CreateNarrativePoints.md` |
 | **WriteReport** | "write report", "McKinsey report", "create TELOS report", "professional report" | `Workflows/WriteReport.md` |
+| **FocusAlignment** | "alignment check", "focus balance", "what am I neglecting", "should I do this" | `FocusAlignment/SKILL.md` |
 
 **Note:** For general project analysis, dashboards, dependency mapping, and executive summaries, the skill handles these directly without a separate workflow file.
 
