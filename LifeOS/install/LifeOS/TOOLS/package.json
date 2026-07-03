@@ -1,0 +1,11 @@
+{
+  "name": "lifeos-tools",
+  "private": true,
+  "type": "module",
+  "description": "Runtime deps for LIFEOS/TOOLS/*.ts scripts at this parent level (currently MemoryGraph.ts). Uses parent-directory scope deliberately, rather than a per-tool subdir, because moving MemoryGraph.ts into TOOLS/MemoryGraph/ breaks every existing consumer path (Pulse Observability's /api/memory/graph route, install engine references, sibling tooling). Nested tool subdirs (llcli/, TokenXray/) get their own package.json for isolation; scripts at TOOLS/ root inherit deps from here.",
+  "dependencies": {
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
+    "graphology-metrics": "^2.4.0"
+  }
+}
