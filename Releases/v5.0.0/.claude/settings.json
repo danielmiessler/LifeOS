@@ -226,7 +226,29 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$HOME/.claude/hooks/ISASync.hook.ts",
+            "timeout": 10,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/ContentScanner.hook.ts",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/ToolFailureTracker.hook.ts",
             "timeout": 5,
             "async": true
           }
