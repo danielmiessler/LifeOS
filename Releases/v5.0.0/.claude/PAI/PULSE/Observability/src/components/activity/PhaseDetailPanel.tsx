@@ -2,6 +2,7 @@
 
 import type { AlgorithmState, AlgorithmPhase } from "@/types/algorithm";
 import { Eye, Brain, ClipboardList, Hammer, Zap, CheckCircle2, BookOpen, Clock, Users, Layers, type LucideIcon } from "lucide-react";
+import { resolveEffortTier, TIER_BADGE_CLASSES } from "@/lib/effort-tier";
 
 // ─── Phase config ───
 
@@ -43,23 +44,6 @@ const PHASE_META: Record<string, { color: string; icon: LucideIcon; activeNarrat
     icon: BookOpen,
     activeNarrative: "Capturing what worked and what didn't. Updating ISA with session context. Building institutional knowledge.",
   },
-};
-
-const EFFORT_COLORS: Record<string, string> = {
-  Native: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  Standard: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  Extended: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  Advanced: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-  Deep: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  Comprehensive: "bg-red-500/20 text-red-400 border-red-500/30",
-};
-
-const EFFORT_E_LEVEL: Record<string, string> = {
-  Standard: "E1",
-  Extended: "E2",
-  Advanced: "E3",
-  Deep: "E4",
-  Comprehensive: "E5",
 };
 
 const AGENT_TYPE_COLORS: Record<string, string> = {
@@ -118,12 +102,15 @@ export default function PhaseDetailPanel({ state }: { state: AlgorithmState }) {
               <span className="text-sm font-semibold" style={{ color: phaseMeta?.color ?? "#666" }}>
                 {state.currentPhase}
               </span>
-              <span className={`px-2 py-0.5 rounded text-[14px] font-medium border ${EFFORT_COLORS[state.effortLevel || state.sla] ?? "bg-zinc-700 text-zinc-400 border-zinc-600/30"}`}>
-                {EFFORT_E_LEVEL[state.effortLevel || state.sla] && (
-                  <span className="opacity-60 mr-1 font-semibold">{EFFORT_E_LEVEL[state.effortLevel || state.sla]}</span>
-                )}
-                {state.effortLevel || state.sla}
-              </span>
+              {(() => {
+                const eff = resolveEffortTier(state.effortLevel || state.sla);
+                const cls = eff.tier ? TIER_BADGE_CLASSES[eff.tier] : TIER_BADGE_CLASSES.pending;
+                return (
+                  <span className={`px-2 py-0.5 rounded text-[14px] font-medium border ${cls}`}>
+                    {eff.label}
+                  </span>
+                );
+              })()}
             </div>
             <p className="text-[15px] text-zinc-400 leading-relaxed">
               {narrativeText}

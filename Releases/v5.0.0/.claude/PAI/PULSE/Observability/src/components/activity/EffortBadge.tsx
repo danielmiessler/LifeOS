@@ -1,26 +1,21 @@
-const EFFORT_CONFIG: Record<string, { bg: string; border: string; text: string; eLevel: string }> = {
-  standard: { bg: "bg-amber-500/15", border: "border-amber-500/30", text: "text-amber-400", eLevel: "E1" },
-  extended: { bg: "bg-orange-500/15", border: "border-orange-500/30", text: "text-orange-400", eLevel: "E2" },
-  advanced: { bg: "bg-rose-500/15", border: "border-rose-500/30", text: "text-rose-400", eLevel: "E3" },
-  deep: { bg: "bg-purple-500/15", border: "border-purple-500/30", text: "text-purple-400", eLevel: "E4" },
-  comprehensive: { bg: "bg-red-500/15", border: "border-red-500/30", text: "text-red-400", eLevel: "E5" },
-};
+import { resolveEffortTier, TIER_BADGE_CLASSES } from "@/lib/effort-tier";
 
 interface EffortBadgeProps {
   effort: string;
+  /** When true, render nothing for not-yet-classified placeholders instead of a pending chip. */
+  hidePending?: boolean;
 }
 
-export default function EffortBadge({ effort }: EffortBadgeProps) {
-  const key = effort.toLowerCase();
-  const config = EFFORT_CONFIG[key];
-  if (!config) return null;
+export default function EffortBadge({ effort, hidePending }: EffortBadgeProps) {
+  const { tier, pending, label } = resolveEffortTier(effort);
+  if (pending && hidePending) return null;
+  const classes = tier ? TIER_BADGE_CLASSES[tier] : TIER_BADGE_CLASSES.pending;
 
   return (
     <span
-      className={`inline-flex items-center gap-1 h-6 px-2.5 text-xs font-bold uppercase tracking-widest border rounded shrink-0 ${config.bg} ${config.border} ${config.text}`}
+      className={`inline-flex items-center gap-1 h-6 px-2.5 text-xs font-bold uppercase tracking-widest border rounded shrink-0 ${classes}`}
     >
-      <span className="opacity-70">{config.eLevel}</span>
-      {effort.toUpperCase()}
+      {label}
     </span>
   );
 }

@@ -13,6 +13,7 @@ import QuickPulseStrip from "./QuickPulseStrip";
 import SessionCard from "./SessionCard";
 import CompletedSessionRow from "./CompletedSessionRow";
 import EmptyStateGuide from "@/components/EmptyStateGuide";
+import { resolveEffortTier, TIER_TEXT_CLASSES, EFFORT_TIERS } from "@/lib/effort-tier";
 import {
   Eye,
   Brain,
@@ -38,34 +39,6 @@ import {
 } from "lucide-react";
 
 // ─── Effort Level Colors ───
-
-const EFFORT_COLORS: Record<string, string> = {
-  Native: "bg-amber-600/20 text-amber-500 border-amber-600/30",
-  Standard: "bg-amber-500/20 text-amber-400 border-amber-500/30",
-  Extended: "bg-orange-500/20 text-orange-400 border-orange-500/30",
-  Advanced: "bg-rose-500/20 text-rose-400 border-rose-500/30",
-  Deep: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  Comprehensive: "bg-red-500/20 text-red-400 border-red-500/30",
-};
-
-const EFFORT_TEXT_COLORS: Record<string, string> = {
-  Native: "text-amber-500",
-  Standard: "text-amber-400",
-  Extended: "text-orange-400",
-  Advanced: "text-rose-400",
-  Deep: "text-purple-400",
-  Comprehensive: "text-red-400",
-};
-
-const EFFORT_LEVELS = ["Native", "Standard", "Extended", "Advanced", "Deep", "Comprehensive"] as const;
-
-const EFFORT_E_LEVEL: Record<string, string> = {
-  Standard: "E1",
-  Extended: "E2",
-  Advanced: "E3",
-  Deep: "E4",
-  Comprehensive: "E5",
-};
 
 // ─── Phase Config ───
 
@@ -1322,26 +1295,23 @@ function WorkRow({
         <div className="pl-[26px] flex items-center gap-3">
           {/* Effort level scale — all levels shown, active one colored */}
           <div className="flex items-center gap-1.5">
-            {EFFORT_LEVELS.map((level, i) => {
-              const tier = (item.algorithmState?.effortLevel || item.algorithmState?.sla || "Standard") as string;
-              const isActive = level === tier;
-              const eLevel = EFFORT_E_LEVEL[level];
-              return (
-                <Fragment key={level}>
-                  <span
-                    className={`text-xs font-medium uppercase tracking-wide transition-colors ${
-                      isActive
-                        ? `${EFFORT_TEXT_COLORS[level] ?? "text-zinc-300"} font-bold`
-                        : "text-zinc-700"
-                    }`}
-                  >
-                    {eLevel && <span className="opacity-60 mr-0.5">{eLevel}</span>}
-                    {level}
-                  </span>
-                  {level === "Native" && <span className="text-zinc-700 text-xs">|</span>}
-                </Fragment>
-              );
-            })}
+            {(() => {
+              const resolved = resolveEffortTier(item.algorithmState?.effortLevel || item.algorithmState?.sla);
+              return EFFORT_TIERS.map((tier) => {
+                const isActive = resolved.tier === tier;
+                return (
+                  <Fragment key={tier}>
+                    <span
+                      className={`text-xs font-medium uppercase tracking-wide transition-colors ${
+                        isActive ? `${TIER_TEXT_CLASSES[tier]} font-bold` : "text-zinc-700"
+                      }`}
+                    >
+                      {tier}
+                    </span>
+                  </Fragment>
+                );
+              });
+            })()}
           </div>
 
           <span className="text-zinc-700 text-xs">|</span>
