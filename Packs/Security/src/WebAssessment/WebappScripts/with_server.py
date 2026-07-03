@@ -65,10 +65,10 @@ def main():
         for i, server in enumerate(servers):
             print(f"Starting server {i+1}/{len(servers)}: {server['cmd']}")
 
-            # Use shell=True to support commands with cd and &&
+            # Use shell explicitly to support chained commands (cd && etc.)
+            # without shell=True, which has command injection risks
             process = subprocess.Popen(
-                server['cmd'],
-                shell=True,
+                ['sh', '-c', server['cmd']],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE
             )

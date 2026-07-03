@@ -1,3 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.coverage.*
+coverage/
+htmlcov/
+.venv/
+venv/
+
+# Windows
+Thumbs.db
+
 # macOS
 .DS_Store
 .AppleDouble
@@ -68,6 +82,9 @@ out/
 private/
 secrets/
 credentials/
+
+# Agentic artifacts
+.hermes/
 
 # PAI Update System (sideloading)
 .claude/pai_updates/
