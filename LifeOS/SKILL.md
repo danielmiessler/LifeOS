@@ -13,13 +13,15 @@ The install + onboarding surface for **LifeOS** — the Life Operating System (f
 
 LifeOS is distributed as **one self-contained skill** — the `LifeOS/` directory is the *entire* distribution. Everything ships inside it: the orchestrator (`SKILL.md`, `Workflows/`, `Tools/`), the whole-system payload under `install/`, and the one-line bootstrap at `install/install.sh`. **Nothing ships outside the skill** — no release-root `install.sh`, no `.claude/` clone.
 
-Install the way you'd expect:
+**The primary install is AI-native: give `INSTALL.md` (served at `ourlifeos.ai/install`) to your AI and say "install this."** LifeOS is AI-native, so the install is too — you hand the doc (or its link) to whatever harness you already use, and your AI installs LifeOS on your OS and harness, with permission at each step. It's the same document a human can read and follow. `INSTALL.md` opens with a capability gate, drives the install Tools (which run under `bun` on any OS, not a shell), wires integration per-harness (honest about what each gets), then runs Setup → Interview.
+
+A terminal shortcut stays for Claude Code on macOS/Linux:
 
 ```
 curl -fsSL https://ourlifeos.ai/install.sh | bash
 ```
 
-`ourlifeos.ai/install.sh` is served from the skill's own `install/install.sh` (its single source of truth) — it drops the LifeOS skill **additively** into your existing harness (it does not clobber your setup), then hands off to the agentic **`/lifeos-setup`** — the real product. The skill carries no version field (Claude Code ignores one); **versioning lives at the distribution layer** — the GitHub release tag and the `LIFEOS_RELEASES/<version>/` parent dir. The payload (skills, hooks, system prompt, Algorithm, docs, runtime tools) rides along under `install/` and is placed during setup, with permission.
+Both are served from the skill's own single sources of truth — `INSTALL.md` at the skill root, `install/install.sh` for the shell path (which hands off to the agentic `/lifeos-setup`). The skill carries no version field (Claude Code ignores one); **versioning lives at the distribution layer** — the GitHub release tag and the `LIFEOS_RELEASES/<version>/` parent dir. The payload (skills, hooks, system prompt, Algorithm, docs, runtime tools) rides along under `install/` and is placed during setup, with permission.
 
 ## Workflow Routing
 

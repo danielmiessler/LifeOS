@@ -1,3 +1,11 @@
+---
+last_updated: 2026-06-21
+last_updated_by: kai
+last_reviewed: 2026-07-02
+last_reviewed_by: kai
+convention: pai-freshness-v1
+---
+
 # LifeOS — The Life Operating System Thesis
 
 **The canonical thesis for LifeOS — the Life Operating System (built on the LifeOS infrastructure).** Every LifeOS system doc, public repo description, and marketing surface references this file as the source of truth. If framing across those surfaces disagrees with this file, this file wins.

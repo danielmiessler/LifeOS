@@ -1,3 +1,11 @@
+---
+last_updated: 2026-07-02
+last_updated_by: kai
+last_reviewed: 2026-07-02
+last_reviewed_by: kai
+convention: pai-freshness-v1
+---
+
 # The Router
 
 > **The Router is the layer that decides how every prompt gets handled** — the mode, the effort tier, the stated goal, the model rung, and which agent or vendor runs the work. It runs first (classification happens the moment a prompt is submitted) and keeps deciding: each time the work dispatches an agent, the Router picks that agent's model and effort. The Algorithm is its biggest consumer, not part of it.

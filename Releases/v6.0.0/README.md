@@ -2,56 +2,46 @@
 
 <img src="https://raw.githubusercontent.com/danielmiessler/LifeOS/main/images/lifeos-logo.png" alt="LifeOS" width="200">
 
-<br/>
-
 # LifeOS 6.0.0
 
-**The first release under the LifeOS name — and the whole system now ships as one self-contained skill.**
+**The Life Operating System — one skill, one install.**
 
 [![Skills](https://img.shields.io/badge/Skills-49-22C55E?style=flat)](../../LifeOS/install/skills/)
 [![Algorithm](https://img.shields.io/badge/Algorithm-v6.23.0-D97706?style=flat)](../../LifeOS/install/LifeOS/ALGORITHM/)
 [![Pulse](https://img.shields.io/badge/Pulse-included-3B82F6?style=flat)](../../LifeOS/install/LifeOS/PULSE/)
-[![Install](https://img.shields.io/badge/Install-one%20line-2563EB?style=flat)](#one-line-install)
 
 </div>
 
 ---
 
-LifeOS is a Life Operating System. It knows your goals, the people who matter to you, and where you are right now, and it works to move you toward where you want to be. The engine underneath is a verifiable loop: turn any request into testable criteria, then climb until they pass.
+The first release under the LifeOS name (the project was called PAI). The whole system now ships as a single self-contained skill.
 
-This is the first release under the LifeOS name. The project was called PAI (Personal AI Infrastructure). Everything you had is still here — this version adds a cleaner way to install it.
+## Install
 
-## One-line install
+**Give it to your AI.** Paste this into Claude Code and say **"install this"** — your AI does the whole setup for you.
 
 ```bash
 curl -fsSL https://ourlifeos.ai/install.sh | bash
 ```
 
-> **LifeOS is AI-native — it installs *into* your AI coding harness.** Run the one-liner in your terminal, or paste it to your AI (Claude Code) and say *"install this."* It pulls the LifeOS skill from GitHub, drops it into your harness, then hands off to **`/lifeos-setup`** — a setup *conversation* with your AI that captures your goals and wires everything with your permission. Your AI does the install for you.
+Prefer the terminal? Run the same command yourself. You'll need **Claude Code** and **bun**.
 
-That command lays down the entire system:
+## What's included
 
-- The system prompt and the operating rules
-- The Algorithm — the loop that turns a request into criteria you can check, and keeps going until they hold
-- 49 skills
-- The hook system
-- Pulse, your Life Dashboard, including the observability view
-- The statusline, the memory scaffold, and a USER template you fill in with your own goals and context
+One command lays down the whole system:
 
-See the two-tier **[Core Components](../../README.md#core-components)** overview for what each piece does and why it matters.
+- **Current → Ideal State** and your **TELOS** — what you're working toward
+- **The Algorithm** (v6.23.0) — the loop that turns a request into criteria and climbs until they hold
+- **49 skills**, the **hook system**, and the **router**
+- **Pulse** — your Life Dashboard, with custom spinner verbs and tooltips
+- **Memory**, **voice**, and a **USER template** you fill in with your own goals
 
-## What you need
+See the **[Core Components](../../README.md#core-components)** overview for what each piece does.
 
-- Claude Code
-- bun
+---
 
-## Notes
+<div align="center">
 
-- The whole system ships as a single self-contained skill (`LifeOS/`). One directory, one install.
-- Nothing personal ships. The USER tree is a blank template you populate; the download is clean.
-- Pulse comes up empty on a fresh install and fills in as you run the setup interview.
-- New name, same system. If you ran PAI, this is the next version of it.
+New name, same system. If you ran PAI, this is the next version of it.
 
-## Full changelog
-
-See the commit history for the detail behind this release.
+</div>

@@ -1,3 +1,11 @@
+---
+last_updated: 2026-07-01
+last_updated_by: kai
+last_reviewed: 2026-07-02
+last_reviewed_by: kai
+convention: pai-freshness-v1
+---
+
 # Hook System
 
 > Hooks are why the LifeOS runs when nobody is looking. The thesis (`LifeOs/LifeOsThesis.md`) assigns them their job: automate the loop — capture current state, enforce doctrine, fire the next move — without the principal having to ask. A hill-climb that only advances when prompted is a chatbot; the hook lifecycle below is what makes it an operating system.

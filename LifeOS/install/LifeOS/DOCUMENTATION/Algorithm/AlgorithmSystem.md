@@ -1,3 +1,11 @@
+---
+last_updated: 2026-06-21
+last_updated_by: kai
+last_reviewed: 2026-07-02
+last_reviewed_by: kai
+convention: pai-freshness-v1
+---
+
 # The Algorithm System
 
 > The Algorithm is the LifeOS core loop made systematic. The thesis (`LifeOs/LifeOsThesis.md`) defines the OS's one job — understand current state, understand ideal state, close the gap — and the Algorithm is that job turned into a repeatable, verifiable procedure for any single task. Every ISA is a local copy of the same loop the OS runs over your whole life: TELOS holds the life-scale ideal state; an ISA holds the task-scale one.

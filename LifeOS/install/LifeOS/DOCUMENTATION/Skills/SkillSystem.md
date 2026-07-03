@@ -1,3 +1,11 @@
+---
+last_updated: 2026-06-21
+last_updated_by: kai
+last_reviewed: 2026-07-02
+last_reviewed_by: kai
+convention: pai-freshness-v1
+---
+
 # Custom Skill System
 
 > Skills are the Life OS's action surface. The thesis (`LIFEOS/DOCUMENTATION/LifeOs/LifeOsThesis.md`) puts it directly: "Skills expand so the DA can take more actions to close the gap." Every skill added is a new class of move the DA can make in the current→ideal-state hill-climb; the structure rules below exist so those moves stay discoverable, composable, and safe to ship.

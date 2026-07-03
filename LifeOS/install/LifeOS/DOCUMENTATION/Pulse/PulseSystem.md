@@ -1,3 +1,11 @@
+---
+last_updated: 2026-06-21
+last_updated_by: kai
+last_reviewed: 2026-07-02
+last_reviewed_by: kai
+convention: pai-freshness-v1
+---
+
 # The Pulse System
 
 **Pulse is the Life Dashboard.** It is the visible surface of the LifeOS Life Operating System — the place where you (and your DA) see and interact with everything the OS is doing. LifeOS is the OS; Pulse is how you watch it run.

@@ -39,10 +39,10 @@ DRY_RUN="${DRY_RUN:-0}"
 # ─── Colors / helpers ────────────────────────────────────────────
 if [ -t 1 ]; then
   BLUE='\033[38;2;59;130;246m'; LIGHT_BLUE='\033[38;2;147;197;253m'
-  GREEN='\033[38;2;34;197;94m'; YELLOW='\033[38;2;234;179;8m'
-  RED='\033[38;2;239;68;68m'; RESET='\033[0m'; BOLD='\033[1m'
+  DARK_BLUE='\033[38;2;29;78;216m'; GREEN='\033[38;2;34;197;94m'; YELLOW='\033[38;2;234;179;8m'
+  RED='\033[38;2;239;68;68m'; DIM='\033[38;2;71;85;105m'; RESET='\033[0m'; BOLD='\033[1m'
 else
-  BLUE='' LIGHT_BLUE='' GREEN='' YELLOW='' RED='' RESET='' BOLD=''
+  BLUE='' LIGHT_BLUE='' DARK_BLUE='' GREEN='' YELLOW='' RED='' DIM='' RESET='' BOLD=''
 fi
 info()    { printf "  ${BLUE}ℹ${RESET} %b\n" "$1"; }
 success() { printf "  ${GREEN}✓${RESET} %b\n" "$1"; }
@@ -51,17 +51,9 @@ error()   { printf "  ${RED}✗${RESET} %b\n" "$1" >&2; }
 step()    { printf "\n${BOLD}${LIGHT_BLUE}▸ %s${RESET}\n" "$1"; }
 run()     { if [ "$DRY_RUN" = "1" ]; then echo "  [DRY-RUN] $*"; else "$@"; fi; }
 
-cat <<'BANNER'
-
-  ============================================================
-
-            LifeOS — the Life Operating System
-              current state  →  ideal state
-
-  ============================================================
-
-BANNER
-printf '                    v%s  bootstrap\n\n' "$LIFEOS_VERSION"
+printf "\n  ${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n"
+printf "  ${BOLD}${DARK_BLUE}Life${BLUE}O${LIGHT_BLUE}S${RESET}   ${BOLD}the Life Operating System${RESET}      ${DIM}current state ${BLUE}→${DIM} ideal state${RESET}   ${DIM}·${RESET}   ${LIGHT_BLUE}v%s bootstrap${RESET}\n" "$LIFEOS_VERSION"
+printf "  ${LIGHT_BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}\n\n"
 [ "$DRY_RUN" = "1" ] && warn "DRY-RUN mode — no changes will be made."
 
 # ─── Step 1: Prereqs ─────────────────────────────────────────────
@@ -125,7 +117,7 @@ else
     error "Network install needs LIFEOS_REPO set (owner/name), or use LIFEOS_SRC for a local install."; exit 1
   fi
   run bash -c "curl -fsSL '$LIFEOS_TARBALL_URL' | tar -xzf - -C '$TMP_DIR'"
-  EXTRACTED="$(find "$TMP_DIR" -maxdepth 1 -type d -name '*-*' | head -n 1)"
+  EXTRACTED="$(find "$TMP_DIR" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
   SRC_SKILL="$EXTRACTED/$LIFEOS_RELEASE_SUBPATH"
   [ -d "$SRC_SKILL" ] || { error "LifeOS skill not in tarball at $LIFEOS_RELEASE_SUBPATH"; exit 1; }
 fi
