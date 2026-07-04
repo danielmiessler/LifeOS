@@ -64,6 +64,7 @@ const CLAIM_PATTERNS: RegExp[] = [
 const NARRATION_GUARDS: RegExp[] = [
   /\b(shipped|deployed|landed|verified|finished|pushed|merged|complete[d]?)\s+(in|back\s+in|since|during|by)\s+(19|20)\d\d\b/gim, // past-dated narration
   /"[^"]*\b(shipped|deployed|landed|verified|finished|pushed|merged|complete[d]?)\b[^"]*"/gim, // quoted/attributed
+  /"[^"]*\b((is|it'?s|site'?s|page'?s|now)\s+live|went\s+live|locked\s+down|works\s+(now|in\s+the\s+browser|end[\s-]?to[\s-]?end))\b[^"]*"/gim, // quoted WEB-UI vocab — mention, not assertion
   /(thesis|essay|framing|claim|story|version|post|repo|project)\s+\w*\s*(I|we)\s+(shipped|deployed|landed|finished|pushed|merged)/gim, // narrating a named past artifact
   // Backward-reference to a PRIOR turn ("deployed ... earlier", "already live-verified",
   // "prod rollout was done in the prior turns") is narration about already-finished,
@@ -114,6 +115,8 @@ function appendObs(record: SuccessGateRecord): void {
 // for this-turn done-claims, so the gate only fires on real assertions.
 function stripNarration(message: string): string {
   let out = message;
+  out = out.replace(/```[\s\S]*?```/g, " "); // fenced code block — mention, not assertion
+  out = out.replace(/`[^`\n]+`/g, " ");       // inline code — mention, not assertion
   for (const guard of NARRATION_GUARDS) out = out.replace(guard, " ");
   return out;
 }
@@ -171,7 +174,7 @@ const HONEST_DOWNGRADE =
 function isUnverifiedWebUiClaim(message: string): boolean {
   const s = stripNarration(message);
   const assertsLive = LIVE_UI_CLAIM.test(s) || DEPLOY_CLAIM.test(s) || /\b(it\s+works|works\s+now)\b/i.test(s);
-  const isUi = WEB_UI_NOUN.test(s) || RENDER_VERB.test(s) || LIVE_UI_CLAIM.test(s);
+  const isUi = WEB_UI_NOUN.test(s) || RENDER_VERB.test(s);
   if (!(assertsLive && isUi)) return false;
   if (INTERCEPTOR_EVIDENCE.test(message)) return false; // verified the right way
   if (HONEST_DOWNGRADE.test(message)) return false; // honestly deferred
