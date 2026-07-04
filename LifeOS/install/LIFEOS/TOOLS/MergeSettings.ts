@@ -12,6 +12,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
+import os from "node:os";
 
 type CliMode =
   | { kind: "output"; path: string }
@@ -116,6 +117,50 @@ export function mergeSettings(system: any, user: any): any {
   }
 
   return cloneJsonValue(user);
+}
+
+/**
+ * Expands a home-directory reference in a single env value string. The Claude
+ * Code harness shell-expands `$HOME` in hook `command` fields (they run through
+ * a shell) but injects `env` values VERBATIM — so a template that ships
+ * `"LIFEOS_DIR": "$HOME/.claude/LIFEOS"` reaches process.env unexpanded, and any
+ * tool that writes to it gets a NON-absolute path that resolves against cwd,
+ * littering the working directory (observed: a literal `$HOME/` dir in project
+ * roots). We expand here so the template stays portable (`$HOME`, not a
+ * hardcoded home) while the generated settings.json carries absolute paths.
+ * Handles a leading `~`/`~/`, `${HOME}`, and bare `$HOME` (token-bounded so
+ * `$HOMER` is left alone).
+ */
+export function expandHomeReference(value: string, home: string): string {
+  let out = value;
+  if (out === "~") {
+    out = home;
+  } else if (out.startsWith("~/")) {
+    out = home + out.slice(1);
+  }
+  return out
+    .replace(/\$\{HOME\}/g, home)
+    .replace(/\$HOME(?![A-Za-z0-9_])/g, home);
+}
+
+/**
+ * Expands home-directory references in `settings.env` string values, in place.
+ * Scoped to `env` only: `command` fields must keep `$HOME` literal so the
+ * harness's own shell expansion keeps them portable across installs. Runs AFTER
+ * the merge, so a user override (which wins and is typically already absolute)
+ * is seen as-is and left untouched; only remaining `$HOME`-style system
+ * defaults expand.
+ */
+export function expandEnvHomeReferences(settings: any, home: string = os.homedir()): any {
+  if (isObjectRecord(settings) && isObjectRecord(settings.env)) {
+    for (const key of Object.keys(settings.env)) {
+      const value = settings.env[key];
+      if (typeof value === "string") {
+        settings.env[key] = expandHomeReference(value, home);
+      }
+    }
+  }
+  return settings;
 }
 
 /**
@@ -473,6 +518,7 @@ async function runCli(argv: string[]): Promise<number> {
     const system = await parseJsonFileOrThrow(options.systemPath);
     const user = await parseJsonFileOrThrow(options.userPath);
     const merged = mergeSettings(system, user);
+    expandEnvHomeReferences(merged);
 
     const dropped = prunePermissionRules(merged);
     if (dropped.length > 0) {
