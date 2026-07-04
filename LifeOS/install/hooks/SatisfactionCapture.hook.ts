@@ -69,6 +69,10 @@ const RATINGS_FILE = join(SIGNALS_DIR, 'ratings.jsonl');
 const LAST_RESPONSE_CACHE = join(BASE_DIR, 'MEMORY', 'STATE', 'last-response.txt');
 const MIN_PROMPT_LENGTH = 3;
 
+// Sentence-starters that mean a leading number is describing work, not rating it
+// (e.g. "2/10 items done", "3 of the files"). Shared by the fraction and generic parsers.
+const SENTENCE_STARTERS = /^(items?|things?|steps?|files?|lines?|bugs?|issues?|errors?|times?|minutes?|hours?|days?|seconds?|percent|%|th\b|st\b|nd\b|rd\b|of\b|in\b|at\b|to\b|the\b|a\b|an\b)/i;
+
 // ── Stdin Reader ──
 
 async function readStdinWithTimeout(timeout: number = 5000): Promise<string> {
@@ -111,6 +115,16 @@ function parseExplicitRating(prompt: string): { rating: number; comment?: string
     }
   }
 
+  // N/10 form (e.g. "10/10, thank you", "9 / 10", "8 out of 10 nice").
+  // Must run BEFORE the generic parser, whose reject-on-slash guard would drop it.
+  const fractionMatch = trimmed.match(/^(10|[1-9])\s*(?:\/|out\s+of)\s*10\b(.*)$/i);
+  if (fractionMatch) {
+    const fRating = parseInt(fractionMatch[1], 10);
+    const fRest = fractionMatch[2].replace(/^[\s!.,:;-]+/, '').trim() || undefined;
+    if (fRest && SENTENCE_STARTERS.test(fRest)) return null; // "2/10 items" is not a rating
+    return { rating: fRating, comment: fRest };
+  }
+
   const ratingPattern = /^(10|[1-9])(?:\s*[-:]\s*|\s+)?(.*)$/;
   const match = trimmed.match(ratingPattern);
   if (!match) return null;
@@ -123,10 +137,7 @@ function parseExplicitRating(prompt: string): { rating: number; comment?: string
   const afterNumber = trimmed.slice(match[1].length);
   if (afterNumber.length > 0 && /^[/.\dA-Za-z]/.test(afterNumber)) return null;
 
-  if (rest) {
-    const sentenceStarters = /^(items?|things?|steps?|files?|lines?|bugs?|issues?|errors?|times?|minutes?|hours?|days?|seconds?|percent|%|th\b|st\b|nd\b|rd\b|of\b|in\b|at\b|to\b|the\b|a\b|an\b)/i;
-    if (sentenceStarters.test(rest)) return null;
-  }
+  if (rest && SENTENCE_STARTERS.test(rest)) return null;
 
   return { rating, comment: rest };
 }
