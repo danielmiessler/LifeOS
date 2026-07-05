@@ -12,3 +12,5 @@ convention: pai-freshness-v1
 > 🎯 SAMPLE TEMPLATE — auto-curated hot-layer memory about you. It starts empty and the memory reviewer writes durable facts here as you work with your DA. Nothing to fill in manually. Pulse's memory panel reads this file.
 
 <!-- Entries are appended automatically by the memory curation loop. Empty on a fresh install — this is expected. -->
+<!-- BEGIN ENTRIES -->
+<!-- END ENTRIES -->

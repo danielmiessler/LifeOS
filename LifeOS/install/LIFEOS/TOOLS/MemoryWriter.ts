@@ -222,12 +222,39 @@ function parseFile(content: string): ParsedFile {
   const endIdx = afterFm.indexOf(END_MARKER);
 
   if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx) {
-    // Markers missing or malformed — treat as empty entries with the whole
-    // body as preEntries; this preserves principal content if they edited.
+    // Markers missing or malformed. Happens on files scaffolded before the
+    // entry markers existed, and on files a prior write corrupted by appending
+    // after the body (leaving stray END markers and no BEGIN). Recover any
+    // existing entries from the body and drop stray markers, so serializeFile
+    // can re-emit a canonical BEGIN…END block. Without this, the whole body
+    // (including real entries) becomes preEntriesBody, the entries block stays
+    // empty, and readers that slice between the markers silently see nothing.
+    const recoveredEntries: string[] = [];
+    const preambleLines: string[] = [];
+    let sawEntry = false;
+    let inFence = false;
+    for (const line of afterFm.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("```") || trimmed.startsWith("~~~")) {
+        inFence = !inFence;
+        if (!sawEntry) preambleLines.push(line);
+        continue;
+      }
+      if (trimmed === BEGIN_MARKER || trimmed === END_MARKER) continue;
+      // Only treat a line as an entry when it is not inside a fenced code block
+      // or a blockquote — prose/examples there can legitimately look like an
+      // entry (e.g. a documented `PREFERENCE: …` sample) and must not be adopted.
+      if (!inFence && !trimmed.startsWith(">") && PREFIX_PATTERN.test(trimmed)) {
+        recoveredEntries.push(trimmed);
+        sawEntry = true;
+        continue;
+      }
+      if (!sawEntry) preambleLines.push(line);
+    }
     return {
       frontmatter,
-      preEntriesBody: afterFm,
-      entries: [],
+      preEntriesBody: preambleLines.join("\n").replace(/\s+$/, "") + "\n",
+      entries: recoveredEntries,
       postEntriesBody: "",
     };
   }
@@ -267,8 +294,14 @@ function serializeFile(parsed: ParsedFile, newEntries: string[], updatedBy: stri
   let fm = updateFrontmatterTimestamp(parsed.frontmatter);
   fm = updateFrontmatterUpdatedBy(fm, updatedBy);
 
-  // Ensure preEntriesBody ends just after BEGIN_MARKER, with newline before entries
+  // Ensure the entries block is opened by exactly one BEGIN_MARKER. Healthy
+  // files already carry it in preEntriesBody; a recovered/marker-less file does
+  // not, so add it here — the symmetric partner to the END_MARKER guard below.
+  // Without both guards a missing BEGIN silently swallows every entry.
   let pre = parsed.preEntriesBody;
+  if (!pre.includes(BEGIN_MARKER)) {
+    pre = pre.replace(/\s+$/, "") + "\n" + BEGIN_MARKER;
+  }
   if (!pre.endsWith("\n")) pre += "\n";
 
   const entriesBlock = newEntries.length === 0 ? "" : newEntries.join("\n") + "\n";
