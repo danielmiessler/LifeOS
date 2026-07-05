@@ -27,8 +27,9 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { mergeSettings, deepEqual, parseJsonFileOrThrow } from "./MergeSettings";
+import { getClaudeDir } from "./Paths";
 
-const CLAUDE_DIR = path.join(os.homedir(), ".claude");
+const CLAUDE_DIR = getClaudeDir();
 const SYSTEM_PATH = path.join(CLAUDE_DIR, "settings.system.json");
 const USER_PATH = path.join(CLAUDE_DIR, "LIFEOS", "USER", "CONFIG", "settings.user.json");
 const GENERATED_PATH = path.join(CLAUDE_DIR, "settings.json");
