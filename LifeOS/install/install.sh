@@ -100,7 +100,10 @@ fi
 # ─── Step 2: Detect harness (no clobber) ─────────────────────────
 step "2/5  Detecting your harness"
 if [ -z "$LIFEOS_SKILLS_DIR" ]; then
-  if [ -d "$HOME/.claude" ]; then LIFEOS_SKILLS_DIR="$HOME/.claude/skills"
+  # CLAUDE_CONFIG_DIR is Claude Code's own config-dir override (multi-profile
+  # setups) — when set, it IS the config root, so probe it before the defaults.
+  if [ -n "${CLAUDE_CONFIG_DIR:-}" ] && [ -d "$CLAUDE_CONFIG_DIR" ]; then LIFEOS_SKILLS_DIR="$CLAUDE_CONFIG_DIR/skills"
+  elif [ -d "$HOME/.claude" ]; then LIFEOS_SKILLS_DIR="$HOME/.claude/skills"
   elif [ -d "$HOME/.config/claude" ]; then LIFEOS_SKILLS_DIR="$HOME/.config/claude/skills"
   else LIFEOS_SKILLS_DIR="$HOME/.claude/skills"; fi
 fi

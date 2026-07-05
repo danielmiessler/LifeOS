@@ -14,10 +14,9 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { join } from "node:path";
+import { paiPath } from "./lib/paths";
 
-const HOME = process.env.HOME || "";
-const CHECK = join(HOME, ".claude/LIFEOS/TOOLS/MemoryHealthCheck.ts");
+const CHECK = paiPath("TOOLS/MemoryHealthCheck.ts");
 
 try {
   const out = execFileSync("bun", [CHECK], {

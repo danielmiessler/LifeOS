@@ -39,7 +39,6 @@ import {
   statSync,
   writeFileSync,
 } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
 import {
@@ -48,17 +47,12 @@ import {
   type Classification,
   type ToolCall,
 } from "./lib/safety-classifier";
+import { getLifeosDir } from "./lib/paths";
 
 const STDIN_CAP_BYTES = 2 * 1024 * 1024;
 const CACHE_MAX_BYTES = 10 * 1024 * 1024;
 
-const HOME = homedir();
-const LIFEOS_DIR = process.env.LIFEOS_DIR
-  ? process.env.LIFEOS_DIR.replace(/^~(?=\/|$)/, HOME).replace(
-      /^\$\{?HOME\}?(?=\/|$)/,
-      HOME,
-    )
-  : join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = getLifeosDir();
 const STATE_DIR = join(LIFEOS_DIR, "MEMORY", "STATE");
 const OBS_DIR = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY");
 const CACHE_PATH = join(STATE_DIR, "permission-cache.json");

@@ -31,7 +31,7 @@ export function expandPath(path: string): string {
  * Priority:
  *   1. CLAUDE_PLUGIN_ROOT (plugin install) → <root>/PAI
  *   2. LIFEOS_DIR env var (expanded)
- *   3. ~/.claude/LIFEOS  (live default — byte-identical to pre-plugin behavior)
+ *   3. <claude home>/LIFEOS (getClaudeDir() — honors CLAUDE_CONFIG_DIR, defaults ~/.claude/LIFEOS)
  *
  * The CLAUDE_PLUGIN_ROOT guard MUST precede the LIFEOS_DIR check: in a packed
  * plugin, bin/pai exports LIFEOS_DIR equal to CLAUDE_PLUGIN_ROOT (the flattened
@@ -51,7 +51,7 @@ export function getLifeosDir(): string {
     return expandPath(envLifeosDir);
   }
 
-  return join(homedir(), '.claude', 'LIFEOS');
+  return join(getClaudeDir(), 'LIFEOS');
 }
 
 /**
@@ -59,14 +59,25 @@ export function getLifeosDir(): string {
  *
  * Plugin install: CLAUDE_PLUGIN_ROOT is the flattened plugin root that plays the
  * live ~/.claude role (skills/ and hooks/ sit directly under it, matching live
- * .claude/skills and .claude/hooks). Live default: ~/.claude — byte-identical to
- * pre-plugin behavior, since CLAUDE_PLUGIN_ROOT is unset on a normal install.
+ * .claude/skills and .claude/hooks).
+ *
+ * Live install: CLAUDE_CONFIG_DIR is Claude Code's own override for its config
+ * directory (multi-profile setups). When the harness runs from a non-default
+ * config dir, hooks inherit that env var, so honoring it keeps every LifeOS
+ * path inside the profile that actually loaded the hooks. Default: ~/.claude —
+ * byte-identical to prior behavior when neither env var is set.
  */
 export function getClaudeDir(): string {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
 
   if (pluginRoot) {
     return expandPath(pluginRoot);
+  }
+
+  const configDir = process.env.CLAUDE_CONFIG_DIR;
+
+  if (configDir) {
+    return expandPath(configDir);
   }
 
   return join(homedir(), '.claude');

@@ -16,6 +16,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
+import { getSkillsDir } from "./lib/paths";
 
 interface HookInput {
   session_id?: string;
@@ -23,7 +24,6 @@ interface HookInput {
   tool_input?: { command?: string; description?: string };
 }
 
-const HOME = process.env.HOME ?? "";
 const ART_TOOL_PATH_FRAGMENTS = [
   "skills/Art/Tools/Generate.ts",
   ".claude/skills/Art/Tools/Generate.ts",
@@ -39,7 +39,7 @@ function readHookInput(): HookInput {
 }
 
 function listWorkflows(): string[] {
-  const dir = `${HOME}/.claude/skills/Art/Workflows`;
+  const dir = `${getSkillsDir()}/Art/Workflows`;
   try {
     return readdirSync(dir)
       .filter((f) => f.endsWith(".md"))

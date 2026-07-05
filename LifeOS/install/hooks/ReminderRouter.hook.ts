@@ -22,9 +22,9 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { createHash } from "crypto";
 import { join, dirname } from "path";
 import { loadWorkConfig } from "./lib/work-config";
+import { paiPath } from "./lib/paths";
 
-const HOME = process.env.HOME || "";
-const STATE_PATH = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE", "reminder-router-seen.json");
+const STATE_PATH = paiPath("MEMORY", "STATE", "reminder-router-seen.json");
 
 interface HookInput {
   session_id?: string;

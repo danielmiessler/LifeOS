@@ -12,7 +12,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
-import { getLifeosDir } from './lib/paths';
+import { getClaudeDir, getLifeosDir } from './lib/paths';
 import { setTabState, readTabState, persistKittySession } from './lib/tab-setter';
 import { getDAName } from './lib/identity';
 
@@ -20,7 +20,7 @@ const paiDir = getLifeosDir();
 
 // Skip for subagents
 const claudeProjectDir = process.env.CLAUDE_PROJECT_DIR || '';
-const isSubagent = claudeProjectDir.includes('/.claude/Agents/') ||
+const isSubagent = claudeProjectDir.includes(join(getClaudeDir(), 'Agents') + '/') ||
                   process.env.CLAUDE_AGENT_TYPE !== undefined;
 if (isSubagent) process.exit(0);
 

@@ -548,6 +548,28 @@ function normalizeCommand(cmd: string): string {
     .trim();
 }
 
+/**
+ * Rewrite the default `~/.claude` config-root spellings inside hook commands to
+ * the actually-detected configRoot. The payload's hooks.json ships commands
+ * against the default root (`$HOME/.claude/...`); on a multi-profile setup
+ * (Claude Code's CLAUDE_CONFIG_DIR) those paths point at a different — usually
+ * nonexistent — profile, so every hook errors on startup. No-op when configRoot
+ * IS the default, keeping default installs byte-identical. Pure (no I/O).
+ */
+export function rewriteHooksConfigRoot(hooks: HooksMap, configRoot: string, homeDir: string): HooksMap {
+  if (resolve(configRoot) === resolve(join(homeDir, ".claude"))) return hooks;
+  const defaultRootPattern = /(\$\{HOME\}|\$HOME|~)\/\.claude(?=\/|\s|$)/g;
+  const rewritten: HooksMap = JSON.parse(JSON.stringify(hooks ?? {}));
+  for (const groups of Object.values(rewritten)) {
+    for (const group of groups) {
+      for (const h of group.hooks ?? []) {
+        if (typeof h.command === "string") h.command = h.command.replace(defaultRootPattern, configRoot);
+      }
+    }
+  }
+  return rewritten;
+}
+
 /** Identity key for a hook entry: http → url, else normalized command. */
 function hookKey(h: HookEntry): string {
   if (h.type === "http" && h.url) return `http:${h.url}`;

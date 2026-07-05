@@ -24,21 +24,20 @@
 
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
+import { getClaudeDir, getLifeosDir } from './lib/paths';
 
 // ========================================
 // Configuration
 // ========================================
 
-const HOME = homedir();
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, '.claude', 'LIFEOS');
+const LIFEOS_DIR = getLifeosDir();
 const STATE_DIR = join(LIFEOS_DIR, 'MEMORY', 'STATE');
 const HASHES_FILE = join(STATE_DIR, 'instruction-hashes.json');
 const INTEGRITY_LOG = join(STATE_DIR, 'instruction-integrity.jsonl');
 
 /** Critical LifeOS instruction files to monitor */
 const CRITICAL_FILES: Record<string, string> = {
-  'CLAUDE.md': join(HOME, '.claude', 'CLAUDE.md'),
+  'CLAUDE.md': join(getClaudeDir(), 'CLAUDE.md'),
   'SYSTEM-PROMPT': join(LIFEOS_DIR, 'LIFEOS_SYSTEM_PROMPT.md'),
   'DA_IDENTITY': join(LIFEOS_DIR, 'USER', 'DA_IDENTITY.md'),
   'PRINCIPAL_IDENTITY': join(LIFEOS_DIR, 'USER', 'PRINCIPAL_IDENTITY.md'),

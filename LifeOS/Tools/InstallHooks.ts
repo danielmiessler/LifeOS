@@ -16,7 +16,7 @@
 
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { detectDevTree, mergeHooks } from "./InstallEngine";
+import { detectDevTree, mergeHooks, rewriteHooksConfigRoot } from "./InstallEngine";
 
 interface Args { configRoot: string; skillRoot: string; apply: boolean; allowDev: boolean; }
 
@@ -59,7 +59,14 @@ function main(): void {
     console.log(JSON.stringify({ ok: false, error: `payload hooks.json not found at ${hooksJsonPath}` }, null, 2));
     process.exit(1);
   }
-  const incoming = JSON.parse(readFileSync(hooksJsonPath, "utf-8"))?.hooks ?? {};
+  // Payload commands are written against the default ~/.claude root; retarget
+  // them at the detected configRoot so non-default CLAUDE_CONFIG_DIR profiles
+  // get hooks that point at the files this installer actually deploys.
+  const incoming = rewriteHooksConfigRoot(
+    JSON.parse(readFileSync(hooksJsonPath, "utf-8"))?.hooks ?? {},
+    configRoot,
+    process.env.HOME || "",
+  );
 
   // The hook SCRIPTS (*.hook.ts|sh + lib/**) live beside hooks.json in the payload.
   // Merging hooks.json into settings.json wires commands that point at these files,

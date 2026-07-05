@@ -34,9 +34,9 @@ import {
   mkdirSync, openSync, readSync, closeSync, realpathSync,
 } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
+import { getClaudeDir } from './lib/paths';
 
-const CLAUDE_DIR = join(homedir(), '.claude');
+const CLAUDE_DIR = getClaudeDir();
 const OBS_DIR = join(CLAUDE_DIR, 'LIFEOS', 'MEMORY', 'OBSERVABILITY');
 const LOG_FILE = join(OBS_DIR, 'hook-healer.jsonl');
 const SETTINGS_FILES = ['settings.json', 'settings.local.json'];

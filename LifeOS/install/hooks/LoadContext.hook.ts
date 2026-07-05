@@ -39,7 +39,7 @@
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { getLifeosDir, getSettingsPath } from './lib/paths';
+import { getClaudeDir, getLifeosDir, getSettingsPath } from './lib/paths';
 import { recordSessionStart } from './lib/notifications';
 import { loadLearningDigest, loadWisdomFrames, loadFailurePatterns, loadSignalTrends, loadSynthesisPatterns } from './lib/learning-readback';
 import { findArtifactPath } from './lib/isa-utils';
@@ -386,7 +386,7 @@ async function main() {
   try {
     // Subagents don't need dynamic context injection
     const claudeProjectDir = process.env.CLAUDE_PROJECT_DIR || '';
-    const isSubagent = claudeProjectDir.includes('/.claude/Agents/') ||
+    const isSubagent = claudeProjectDir.includes(join(getClaudeDir(), 'Agents') + '/') ||
                       process.env.CLAUDE_AGENT_TYPE !== undefined;
 
     if (isSubagent) {
