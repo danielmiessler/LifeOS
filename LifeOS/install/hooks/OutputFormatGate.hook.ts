@@ -29,9 +29,10 @@ import { collectCurrentResponseText } from "../LIFEOS/TOOLS/TranscriptParser";
 import { scanAiSpeak } from "./lib/ai-speak-patterns";
 import { readFileSync, appendFileSync, mkdirSync } from "fs";
 import { dirname, join } from "path";
+import { getLifeosDir } from './lib/paths';
 
 const OBS_PATH = join(
-  process.env.LIFEOS_DIR || join(process.env.HOME!, ".claude", "LIFEOS"),
+  getLifeosDir(),
   "MEMORY",
   "OBSERVABILITY",
   "format-gate.jsonl",

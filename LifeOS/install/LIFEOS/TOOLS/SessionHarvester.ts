@@ -22,7 +22,7 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
-import { getLearningCategory, isLearningCapture } from "../../../.claude/hooks/lib/learning-utils";
+import { getLearningCategory, isLearningCapture } from "../../hooks/lib/learning-utils";
 
 // ============================================================================
 // Configuration

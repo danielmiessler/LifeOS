@@ -11,6 +11,7 @@
 
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { getLifeosDir, getSkillsDir } from './lib/paths';
 
 interface HookInput {
   prompt?: string;
@@ -44,8 +45,8 @@ interface ScoredSkill {
 const STDIN_TIMEOUT_MS = 300;
 const MAX_SKILLS_TO_EMIT = 3;
 const MIN_DISTINCT_TRIGGER_TOKEN_HITS = 2;
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME || "", ".claude", "LIFEOS");
-const SKILLS_DIR = join(process.env.HOME || "", ".claude", "skills");
+const LIFEOS_DIR = getLifeosDir();
+const SKILLS_DIR = getSkillsDir();
 const CACHE_PATH = join(LIFEOS_DIR, "MEMORY", "STATE", "skill-index.json");
 
 async function readStdinWithTimeout(timeoutMs: number = STDIN_TIMEOUT_MS): Promise<string> {

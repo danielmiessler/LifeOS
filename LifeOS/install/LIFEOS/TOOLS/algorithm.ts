@@ -50,7 +50,7 @@ import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync, append
 import { resolve, basename, join, dirname } from "path";
 import { spawnSync, spawn } from "child_process";
 import { randomUUID } from "crypto";
-import { generateISATemplate } from "../../../.claude/hooks/lib/isa-template";
+import { generateISATemplate } from "../../hooks/lib/isa-template";
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
