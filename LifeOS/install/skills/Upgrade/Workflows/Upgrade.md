@@ -171,11 +171,34 @@ Sort by priority and tier:
 
 Each recommendation: short action name, LifeOS Relevance (primary framing — WHY it matters), effort (Low/Med/High), files affected.
 
+### Step 6b: Cross-Recommendation Interference Analysis (MANDATORY when >10 recommendations)
+
+Prior-Status gating checks each recommendation against the PAST; this step checks them against EACH OTHER. Skipping it on a large report invites measurement confounds, same-file collisions, and broken sequencing that surface only at implementation time.
+
+**Gate:** runs whenever the recommendation count exceeds 10 — roughly where a reliable mental pairwise sweep ends (10 recommendations ≈ 45 pairs). At ≤10, the section reduces to a single line — "interference: none found across N recs" — so quick modes stay fast.
+
+**1. Build the matrix.** Sweep all recommendation pairs for four interference classes:
+
+| Class | What to look for | Example failure |
+|-------|------------------|-----------------|
+| **Measurement confound** | One rec changes the thing another rec measures (model substitution, effort/token recalibration, fallback routing, safety routing) | A fallback setting silently swaps the model under an A/B eval |
+| **Same-file/surface collision** | Two recs edit the same file, hook, or invocation path | Two recs independently rewrite the same Stop hook |
+| **Resource/input dependency** | One rec consumes or evicts what another rec reads | A memory-eviction rec archives the entries a mandatory-consult rec greps |
+| **Doctrine/version bundling** | Multiple recs edit a single-versioned artifact (Algorithm doctrine, canonical spec) | Eight piecemeal edits to one doctrine file = eight version bumps |
+
+**2. Adversarial verification (REQUIRED).** Hand the draft matrix plus the recommendation list to a second agent — ideally a different model family than the one that drafted it — instructed to (a) find missed pairs, (b) refute listed conflicts, (c) attack the sequencing. Resolve disputes by probing ground truth (read the actual source file), never by deferring to either model. If no second model family is available, run the pass with a fresh-context instance of the same model — adversarial framing still catches drafting blind spots — and note which reviewer ran.
+
+**3. Every conflict gets a guard.** No identified pair ships without a named resolution: a sequencing rule, a design guard, a bundling instruction, or an explicit precondition. Conflicts without guards block the report.
+
+**4. Emit the section.** Output as `⚠️ Interactions & Sequencing` per `../References/OutputFormat.md`: conflict table (Pair | Mechanism | Guard) + wave-ordered execution sequence + synergies worth exploiting. Tag affected recommendation rows so readers see interference before implementing.
+
+> Origin: a 44-recommendation report shipped with every row Prior-Status-gated but zero pairwise analysis; the retrofit found two high-severity measurement confounds (a fallback setting and a safety-routing behavior each silently swapping the model under an A/B eval) plus six same-file collisions.
+
 ### Step 7: Output Report
 
 **Canonical output format:** `../References/OutputFormat.md`. Reference example: `../References/ExampleReport.md`.
 
-Section order: Discoveries → Recommendations → Technique Details → Internal Reflections → Summary → Skipped → Sources Processed.
+Section order: Discoveries → Recommendations → Technique Details → Interactions & Sequencing (when Step 6b ran) → Internal Reflections → Summary → Skipped → Sources Processed.
 
 **Print only non-empty Recommendation tiers.** Empty tier headers are noise.
 

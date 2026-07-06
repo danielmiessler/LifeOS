@@ -84,6 +84,12 @@ echo "Session: ${CLAUDE_SESSION_ID}"
 
 ---
 
+## ⚠️ Interactions & Sequencing
+
+interference: none found across 2 recommendations (≤10 — full matrix not required; see Workflows/Upgrade.md Step 6b)
+
+---
+
 ## 📊 Summary
 
 | # | Technique | Source | Priority | LifeOS Component | Effort |
