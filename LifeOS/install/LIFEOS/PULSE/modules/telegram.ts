@@ -847,10 +847,10 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
               : String(input)
             if (cmd.includes("31337") || cmd.includes("/notify")) {
               log("warn", "canUseTool blocked /notify curl from SDK subprocess", { cmd: cmd.slice(0, 200) })
-              return { result: "deny", reason: "Telegram mode: /notify and port 31337 are blocked. Voice is delivered via Telegram sendVoice, not the desktop speaker." }
+              return { behavior: "deny", message: "Telegram mode: /notify and port 31337 are blocked. Voice is delivered via Telegram sendVoice, not the desktop speaker." }
             }
           }
-          return { result: "allow" }
+          return { behavior: "allow", updatedInput: (input as Record<string, unknown>) ?? {} }
         },
         systemPrompt: {
           type: "preset",
