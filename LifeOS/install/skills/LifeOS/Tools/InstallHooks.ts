@@ -101,7 +101,18 @@ function main(): void {
   cpSync(hooksPayloadDir, hooksDestDir, { recursive: true });
   const hookFilesCopied = countFilesRec(hooksDestDir);
 
-  console.log(JSON.stringify({ ...report, written: true, backup, hookFilesCopied }, null, 2));
+  // Standing source-of-truth snapshot read by MemoryHealthCheck CHECK 3.
+  // hooks = incoming (system wiring), not merged: never freeze a user's foreign entries in.
+  const systemHalfPath = join(skillRoot, "install", "settings.system.json");
+  const sotPath = join(configRoot, "settings.system.json");
+  let sot: Record<string, unknown> = {};
+  if (existsSync(systemHalfPath)) {
+    try { sot = JSON.parse(readFileSync(systemHalfPath, "utf-8")); } catch { sot = {}; }
+  }
+  sot.hooks = incoming;
+  writeFileSync(sotPath, JSON.stringify(sot, null, 2) + "\n");
+
+  console.log(JSON.stringify({ ...report, written: true, backup, hookFilesCopied, settingsSystemPath: sotPath }, null, 2));
   process.exit(0);
 }
 
