@@ -11,8 +11,18 @@ set -o pipefail
 # CONFIGURATION
 # ─────────────────────────────────────────────────────────────────────────────
 
-LIFEOS_DIR="${LIFEOS_DIR:-$HOME/.claude/LIFEOS}"
-CLAUDE_HOME="$HOME/.claude"
+# CLAUDE_CONFIG_DIR is Claude Code's own config-dir override (multi-profile
+# setups). Env values arriving from settings.json `env` are NOT shell-expanded
+# by the harness, so a LIFEOS_DIR like `$HOME/.claude/LIFEOS` reaches us
+# literally — expand the $HOME/${HOME}/~ prefix forms before use.
+CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CLAUDE_HOME="${CLAUDE_HOME/#\$HOME/$HOME}"
+CLAUDE_HOME="${CLAUDE_HOME/#\$\{HOME\}/$HOME}"
+CLAUDE_HOME="${CLAUDE_HOME/#\~/$HOME}"
+LIFEOS_DIR="${LIFEOS_DIR:-$CLAUDE_HOME/LIFEOS}"
+LIFEOS_DIR="${LIFEOS_DIR/#\$HOME/$HOME}"
+LIFEOS_DIR="${LIFEOS_DIR/#\$\{HOME\}/$HOME}"
+LIFEOS_DIR="${LIFEOS_DIR/#\~/$HOME}"
 SETTINGS_FILE="$CLAUDE_HOME/settings.json"
 RATINGS_FILE="$LIFEOS_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl"
 MODEL_CACHE="$LIFEOS_DIR/MEMORY/STATE/model-cache.txt"
