@@ -9,7 +9,7 @@
  *   pai                  Launch Claude (default profile)
  *   pai -m bd            Launch with Bright Data MCP
  *   pai -m bd,ap         Launch with multiple MCPs
- *   pai -r / --resume    Resume last session
+ *   pai -r / --resume    Resume a session (picker, or pass a session ID)
  *   pai --local          Stay in current directory (don't cd to ~/.claude)
  *   pai update           Update Claude Code
  *   pai version          Show version info
@@ -388,7 +388,7 @@ function cmdWallpaper(args: string[]) {
 // Commands
 // ============================================================================
 
-async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: boolean; local?: boolean; systemPrompt?: string }) {
+async function cmdLaunch(options: { mcp?: string; resume?: boolean; resumeId?: string; skipPerms?: boolean; local?: boolean; systemPrompt?: string }) {
   // CLAUDE.md is now static — no build step needed.
   // Algorithm spec is loaded on-demand when Algorithm mode triggers.
   // (InstantiatePAI.ts is retired — kept for reference only)
@@ -415,6 +415,10 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; skipPerms?: 
   // Use --dangerous flag explicitly if you really need to skip all permission checks.
   if (options.resume) {
     args.push("--resume");
+    // Forward a specific session ID when given; bare --resume opens the picker.
+    if (options.resumeId) {
+      args.push(options.resumeId);
+    }
   }
 
   // Change to LifeOS directory unless --local flag is set
@@ -594,7 +598,7 @@ USAGE:
   k                        Launch Claude (no MCPs, max performance)
   k -m <mcp>               Launch with specific MCP(s)
   k -m bd,ap               Launch with multiple MCPs
-  k -r, --resume           Resume last session
+  k -r, --resume [id]      Resume a session (interactive picker, or a specific session ID)
   k -s, --system-prompt    System prompt file to append (default: LIFEOS_SYSTEM_PROMPT.md)
   k -l, --local            Stay in current directory (don't cd to ~/.claude)
 
@@ -648,6 +652,7 @@ async function main() {
   // Parse arguments
   let mcp: string | undefined;
   let resume = false;
+  let resumeId: string | undefined;
   let skipPerms = true;
   let local = false;
   let systemPrompt: string | undefined;
@@ -675,6 +680,11 @@ async function main() {
       case "-r":
       case "--resume":
         resume = true;
+        // Optional session ID: `k -r <session-id>` resumes that session
+        // directly; bare `k -r` opens the interactive picker.
+        if (args[i + 1] && !args[i + 1].startsWith("-")) {
+          resumeId = args[++i];
+        }
         break;
       case "--safe":
         skipPerms = false;
@@ -762,7 +772,7 @@ async function main() {
       break;
     default:
       // Launch with options
-      await cmdLaunch({ mcp, resume, skipPerms, local, systemPrompt });
+      await cmdLaunch({ mcp, resume, resumeId, skipPerms, local, systemPrompt });
   }
 }
 
