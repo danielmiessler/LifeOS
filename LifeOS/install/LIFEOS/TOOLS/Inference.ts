@@ -162,6 +162,12 @@ async function inferenceAttempt(options: InferenceOptions, modelOverride?: strin
     // either path leaks subscription work onto API-key billing. Scrub both.
     delete env.ANTHROPIC_API_KEY;
     delete env.ANTHROPIC_AUTH_TOKEN;
+    // Also scrub ANTHROPIC_BASE_URL: if it points at a local proxy (e.g. a
+    // LiteLLM gateway used for cost tracking/observability), the child process
+    // would still target that proxy after losing its credentials above,
+    // causing every nested call to fail auth (401) and retry until timeout.
+    // Force nested subscription calls straight to Anthropic's real API.
+    delete env.ANTHROPIC_BASE_URL;
 
     const hasImages = options.imagePaths && options.imagePaths.length > 0;
     const args = [
