@@ -156,7 +156,9 @@ function deployPulse(ctx: Ctx): ComponentResult {
     ensurePresent("PULSE", ctx);
     const plistSrc = join(pulseDir, "com.lifeos.pulse.plist");
     if (!existsSync(plistSrc)) throw new Error(`plist template missing at ${plistSrc}`);
-    const materialized = readFileSync(plistSrc, "utf-8").replaceAll("__HOME__", ctx.home);
+    const materialized = readFileSync(plistSrc, "utf-8")
+      .replaceAll("__HOME__", ctx.home)
+      .replaceAll("__BUN_PATH__", process.execPath);
     const u = uid();
     const sameOnDisk = existsSync(plistDst) && readFileSync(plistDst, "utf-8") === materialized;
     const alreadyLoaded = launchctl(["print", `gui/${u}/com.lifeos.pulse`]).ok;
