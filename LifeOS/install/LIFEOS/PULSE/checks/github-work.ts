@@ -12,9 +12,10 @@ import { join } from "path"
 import { readFileSync } from "fs"
 import { parse } from "smol-toml"
 import { SignJWT, importPKCS8 } from "jose"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 const HOME = process.env.HOME ?? ""
-const PULSE_DIR = join(HOME, ".claude", "LIFEOS", "PULSE")
+const PULSE_DIR = join(getClaudeDir(), "LIFEOS", "PULSE")
 const STATE_FILE = join(PULSE_DIR, "state", "work-token.json")
 
 // ── Worker Config (from PULSE.toml [worker] section) ──

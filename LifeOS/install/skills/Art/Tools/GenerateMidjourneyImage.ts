@@ -16,6 +16,7 @@ import { DiscordBotClient } from '../lib/discord-bot.js';
 import { MidjourneyClient, MidjourneyError } from '../lib/midjourney-client.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { getClaudeDir } from "../../../LIFEOS/TOOLS/Paths";
 
 // ============================================================================
 // Environment Loading
@@ -26,7 +27,7 @@ import { resolve } from 'node:path';
  * This ensures API keys are available regardless of how the CLI is invoked
  */
 async function loadEnv(): Promise<void> {
-  const paiDir = process.env.LIFEOS_DIR || resolve(process.env.HOME!, '.claude');
+  const paiDir = process.env.LIFEOS_DIR || getClaudeDir();
   const envPath = resolve(paiDir, '.env');
   try {
     const envContent = await readFile(envPath, 'utf-8');

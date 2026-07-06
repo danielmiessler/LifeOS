@@ -27,11 +27,12 @@
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, appendFileSync } from "fs";
 import { join } from "path";
 import { loadWorkConfig } from "../../hooks/lib/work-config";
+import { displayPath, getClaudeDir } from "./Paths";
 
 declare const Bun: { spawn: (cmd: string[], opts?: any) => any };
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const WORK_DIR = join(LIFEOS_DIR, "MEMORY", "WORK");
 const OBS_DIR = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY");
 const OBS_LOG = join(OBS_DIR, "worksweep.jsonl");
@@ -516,7 +517,7 @@ async function sweepBpeCadence(
     "",
     `**Run:** \`Skill("BitterPillEngineering", "audit")\` over the ${BPE_AUDIT_TARGETS}.`,
     `**Cadence:** every ${BPE_CADENCE_DAYS} days. Last audit: ${days === null ? "never" : days + " days ago"}.`,
-    `**Then stamp it:** \`bun ~/.claude/LIFEOS/TOOLS/WorkSweep.ts --stamp-bpe\` to reset the clock.`,
+    `**Then stamp it:** \`bun ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/WorkSweep.ts --stamp-bpe\` to reset the clock.`,
     "",
     `Propose-only — never auto-cut. A cut needs judgment + ratification (the producer-lock / shadow-log call is why).`,
     "",
@@ -599,7 +600,7 @@ async function main(): Promise<void> {
   // Final step: regenerate the TASKLIST.md and push (best-effort, never blocks)
   if (!dryRun) {
     const proc = Bun.spawn(
-      ["bun", join(HOME, ".claude", "skills", "_ULWORK", "Tools", "RegenerateTasklist.ts"), "--commit-push"],
+      ["bun", join(getClaudeDir(), "skills", "_ULWORK", "Tools", "RegenerateTasklist.ts"), "--commit-push"],
       { stdout: "inherit", stderr: "inherit", timeout: 30000 },
     );
     await proc.exited;

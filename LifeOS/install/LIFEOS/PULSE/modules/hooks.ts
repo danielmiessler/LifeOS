@@ -1,4 +1,5 @@
 /**
+import { getLifeosDir } from "../../TOOLS/Paths";
  * Pulse Module: Hook Validation Server
  *
  * Extracted from pulse.ts inline code.
@@ -115,7 +116,7 @@ function handleAgentGuard(body: {
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "allow",
-        additionalContext: `WATCHDOG: Background agent "${name}" launching. If not already running, start an agent watchdog Monitor:\nMonitor({ description: "Agent watchdog", persistent: true, timeout_ms: 3600000, command: "bun $HOME/.claude/LIFEOS/TOOLS/AgentWatchdog.ts" })`,
+        additionalContext: `WATCHDOG: Background agent "${name}" launching. If not already running, start an agent watchdog Monitor:\nMonitor({ description: "Agent watchdog", persistent: true, timeout_ms: 3600000, command: "bun ${join(getLifeosDir(), "TOOLS/AgentWatchdog.ts")}" })`,
       },
     })
   }

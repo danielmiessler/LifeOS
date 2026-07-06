@@ -24,15 +24,15 @@
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join as pathJoin, resolve as pathResolve } from "node:path";
-import { homedir } from "node:os";
 import {
   PRINCIPAL_MEMORY_PATH,
   DA_MEMORY_PATH,
   PENDING_PROPOSALS_PATH,
 } from "./MemoryTypes";
 import { read as readMemory } from "./MemoryWriter";
+import { getClaudeDir } from "./Paths";
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = getClaudeDir();
 const LIFEOS_DIR = pathJoin(CLAUDE_ROOT, "LIFEOS");
 const IDEAS_DIR = pathJoin(LIFEOS_DIR, "MEMORY", "IDEAS");
 const KNOWLEDGE_DIR = pathJoin(LIFEOS_DIR, "MEMORY", "KNOWLEDGE");

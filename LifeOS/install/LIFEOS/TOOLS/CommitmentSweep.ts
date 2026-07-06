@@ -23,9 +23,9 @@ import { existsSync, mkdirSync, appendFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
 import { loadWorkConfig } from "../../hooks/lib/work-config";
+import { getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const OBS_DIR = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY");
 const OBS_LOG = join(OBS_DIR, "commitment-digest.jsonl");
 const PULSE_NOTIFY = "http://localhost:31337/notify";

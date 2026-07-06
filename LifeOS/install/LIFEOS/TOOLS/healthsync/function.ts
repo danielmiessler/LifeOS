@@ -10,6 +10,7 @@
 import { join } from "node:path";
 import type { Biomarker, Ctx, LabsFile, SourceResult } from "./types";
 import { authCooldownUntil, dayKeyLA, isoNowLA, loadState, timedFetch, writeJson } from "./store";
+import { displayPath, getClaudeDir } from "../Paths";
 
 const BASE = "https://production-member-app-mid-lhuqotpy2a-ue.a.run.app/api/v1";
 const FETCH_TIMEOUT_MS = 15_000;
@@ -102,7 +103,7 @@ export async function pull(ctx: Ctx): Promise<SourceResult> {
   const email = str(ctx.env.FUNCTION_HEALTH_EMAIL);
   const password = str(ctx.env.FUNCTION_HEALTH_PASSWORD);
   if (email === null || password === null) {
-    return unconfigured("FUNCTION_HEALTH_EMAIL / FUNCTION_HEALTH_PASSWORD not set in ~/.claude/.env", startedAt);
+    return unconfigured(`FUNCTION_HEALTH_EMAIL / FUNCTION_HEALTH_PASSWORD not set in ${displayPath(getClaudeDir())}/.env`, startedAt);
   }
 
   const state = await loadState(ctx);

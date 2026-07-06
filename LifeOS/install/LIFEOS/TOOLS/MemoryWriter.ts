@@ -50,11 +50,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, resolve as pathResolve } from "node:path";
-import { homedir } from "node:os";
+import { getClaudeDir } from "./Paths";
 
 // ── Constants ──
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = getClaudeDir();
 
 const ALLOWED_FILES = new Set<string>([
   pathResolve(CLAUDE_ROOT, "LIFEOS/USER/PRINCIPAL/PRINCIPAL_MEMORY.md"),

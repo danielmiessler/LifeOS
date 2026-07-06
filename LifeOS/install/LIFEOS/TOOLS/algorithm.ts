@@ -51,11 +51,12 @@ import { resolve, basename, join, dirname } from "path";
 import { spawnSync, spawn } from "child_process";
 import { randomUUID } from "crypto";
 import { generateISATemplate } from "../../hooks/lib/isa-template";
+import { displayPath, getClaudeDir } from "./Paths";
 
 // ─── Paths ───────────────────────────────────────────────────────────────────
 
 const HOME = process.env.HOME || "~";
-const BASE_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude");
+const BASE_DIR = process.env.LIFEOS_DIR || getClaudeDir();
 const ALGORITHMS_DIR = join(BASE_DIR, "MEMORY", "STATE", "algorithms");
 const SESSION_NAMES_PATH = join(BASE_DIR, "MEMORY", "STATE", "session-names.json");
 const PROJECTS_DIR = process.env.PROJECTS_DIR || join(HOME, "Projects");
@@ -362,7 +363,7 @@ Optimize Presets:
   aggressive            Large steps, accepts regression — for prototypes
 
 ISA Resolution:
-  Full path     ~/.claude/LIFEOS/MEMORY/WORK/auth/ISA-20260207-auth.md
+  Full path     ${displayPath(getClaudeDir())}/LIFEOS/MEMORY/WORK/auth/ISA-20260207-auth.md
   ISA ID        ISA-20260207-auth (searches MEMORY/WORK/ and ~/Projects/*/.prd/)
   Project path  /path/to/project/.prd/ISA-20260213-feature.md
 

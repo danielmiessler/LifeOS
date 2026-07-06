@@ -15,10 +15,10 @@
 
 import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
-import { homedir } from "os";
 import { parseArgs } from "util";
+import { getClaudeDir } from "./Paths";
 
-const STATE_DIR = join(homedir(), ".claude", "LIFEOS", "MEMORY", "STATE");
+const STATE_DIR = join(getClaudeDir(), "LIFEOS", "MEMORY", "STATE");
 const STATE_FILE = join(STATE_DIR, "algorithm-phase.json");
 
 interface AlgorithmState {

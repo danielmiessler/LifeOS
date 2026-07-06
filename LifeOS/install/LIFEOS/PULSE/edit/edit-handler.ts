@@ -3,10 +3,10 @@ import { resolve, join } from "node:path";
 import { atomicWriteText } from "../lib/atomic-write";
 import { parseFrontmatter, serializeFrontmatter } from "../lib/frontmatter";
 import { sha256Hex } from "../lib/cache";
+import { getClaudeDir } from "../../TOOLS/Paths";
 
-const HOME = process.env.HOME!;
-const USER_ROOT = resolve(HOME, ".claude", "LIFEOS", "USER");
-const EDITS_LOG = resolve(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY", "pulse-edits.jsonl");
+const USER_ROOT = resolve(getClaudeDir(), "LIFEOS", "USER");
+const EDITS_LOG = resolve(getClaudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY", "pulse-edits.jsonl");
 const CONTAINMENT_PREFIX_DENY = ["MEMORY/PULSE_DATA", "MEMORY/OBSERVABILITY"];
 
 export interface EditRequest {
@@ -32,7 +32,7 @@ function isInUserTree(absPath: string): boolean {
 }
 
 function isContainmentPath(absPath: string): boolean {
-  const rel = absPath.replace(resolve(HOME, ".claude", "LIFEOS") + "/", "");
+  const rel = absPath.replace(resolve(getClaudeDir(), "LIFEOS") + "/", "");
   return CONTAINMENT_PREFIX_DENY.some((p) => rel.startsWith(p));
 }
 

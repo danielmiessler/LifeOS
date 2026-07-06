@@ -56,3 +56,15 @@ export function getLifeosDir(): string {
 
   return join(getClaudeDir(), "LIFEOS");
 }
+
+/**
+ * Abbreviate the home prefix to `~` in a path shown to the user. Purely
+ * cosmetic — the absolute path would work as-is. Exists so that messages
+ * built from resolved path constants render byte-identical to the previous
+ * hardcoded `~/.claude/...` strings on a default-root install, and follow
+ * the usual home-relative display convention everywhere else.
+ */
+export function displayPath(path: string): string {
+  const home = homedir();
+  return path.startsWith(home + "/") ? "~" + path.slice(home.length) : path;
+}

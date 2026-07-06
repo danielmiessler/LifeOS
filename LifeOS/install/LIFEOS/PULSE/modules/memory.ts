@@ -28,9 +28,9 @@ import {
   statSync,
 } from "node:fs";
 import { join } from "node:path";
+import { getClaudeDir } from "../../TOOLS/Paths";
 
-const HOME = process.env.HOME || "";
-const CLAUDE = join(HOME, ".claude");
+const CLAUDE = getClaudeDir();
 const OBS_DIR = join(CLAUDE, "LIFEOS/MEMORY/OBSERVABILITY");
 
 const REVIEW_STATE = join(OBS_DIR, "review-state.json");

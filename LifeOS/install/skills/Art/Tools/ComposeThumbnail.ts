@@ -16,6 +16,7 @@
 import { spawn } from "node:child_process";
 import { existsSync, unlinkSync } from "node:fs";
 import { resolve, dirname } from "node:path";
+import { displayPath, getClaudeDir } from "../../../LIFEOS/TOOLS/Paths";
 
 // ============================================================================
 // Types
@@ -105,7 +106,7 @@ function printHelp(): void {
 ComposeThumbnail - YouTube Thumbnail Composition CLI
 
 USAGE:
-  bun ~/.claude/skills/Art/Tools/ComposeThumbnail.ts [OPTIONS]
+  bun ${displayPath(getClaudeDir())}/skills/Art/Tools/ComposeThumbnail.ts [OPTIONS]
 
 REQUIRED:
   --background <path>     Background image (dramatic tech art)
@@ -123,7 +124,7 @@ OPTIONAL:
   --help, -h              Show this help message
 
 EXAMPLE:
-  bun ~/.claude/skills/Art/Tools/ComposeThumbnail.ts \\
+  bun ${displayPath(getClaudeDir())}/skills/Art/Tools/ComposeThumbnail.ts \\
     --background ~/Downloads/tech-background.png \\
     --headshot ~/Downloads/headshot-nobg.png \\
     --title "AI AGENTS KILLING SOFTWARE" \\

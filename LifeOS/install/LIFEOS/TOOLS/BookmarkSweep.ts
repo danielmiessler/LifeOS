@@ -21,12 +21,12 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, renameSync } from "fs";
 import { join } from "path";
+import { getClaudeDir } from "./Paths";
 
 declare const Bun: { spawn: (cmd: string[], opts?: any) => any };
 
-const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
-const X_DIR = join(HOME, ".claude", "skills", "_X");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
+const X_DIR = join(getClaudeDir(), "skills", "_X");
 const BOOKMARKS_TOOL = join(X_DIR, "Tools", "bookmarks.ts");
 const BOOKMARK_ISSUE_TOOL = join(X_DIR, "Tools", "bookmark-issue.ts");
 const INFERENCE_TOOL = join(LIFEOS_DIR, "TOOLS", "Inference.ts");

@@ -16,15 +16,20 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { getClaudeDir } from "./Paths";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = getClaudeDir();
 const MEMORY_DIR = path.join(CLAUDE_DIR, "LIFEOS", "MEMORY");
-const USERNAME = process.env.USER || require("os").userInfo().username;
-const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", `-Users-${USERNAME}--claude`);  // Claude Code native storage
+// Claude Code encodes a session's cwd into its projects/ subdir name by
+// replacing every "/" and "." with "-"; sessions started in the config dir
+// land under that encoding of the config dir itself.
+const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", CLAUDE_DIR.replace(/[/.]/g, "-"));  // Claude Code native storage
+// Path fragment that marks a file as living inside the active config dir.
+const CLAUDE_MARKER = "/" + path.basename(CLAUDE_DIR) + "/";
 const SYSTEM_UPDATES_DIR = path.join(MEMORY_DIR, "PAISYSTEMUPDATES");  // Canonical system change history
 
 // ============================================================================
@@ -85,7 +90,7 @@ function shouldSkip(filePath: string): boolean {
 
 function categorizeFile(filePath: string): keyof ParsedActivity["categories"] | null {
   if (shouldSkip(filePath)) return null;
-  if (!filePath.includes("/.claude/")) return null;
+  if (!filePath.includes(CLAUDE_MARKER)) return null;
 
   if (PATTERNS.skills.test(filePath)) return "skills";
   if (PATTERNS.workflows.test(filePath)) return "workflows";
@@ -103,9 +108,9 @@ function extractSkillName(filePath: string): string | null {
 }
 
 function getRelativePath(filePath: string): string {
-  const claudeIndex = filePath.indexOf("/.claude/");
+  const claudeIndex = filePath.indexOf(CLAUDE_MARKER);
   if (claudeIndex === -1) return filePath;
-  return filePath.substring(claudeIndex + 9); // Skip "/.claude/"
+  return filePath.substring(claudeIndex + CLAUDE_MARKER.length);
 }
 
 // ============================================================================
@@ -202,7 +207,7 @@ async function parseEvents(sessionFilter?: string): Promise<ParsedActivity> {
       // Write tool = new files
       if (contentItem.name === "Write" && contentItem.input?.file_path) {
         const filePath = contentItem.input.file_path;
-        if (filePath.includes("/.claude/")) {
+        if (filePath.includes(CLAUDE_MARKER)) {
           filesCreated.add(filePath);
         }
       }
@@ -210,7 +215,7 @@ async function parseEvents(sessionFilter?: string): Promise<ParsedActivity> {
       // Edit tool = modified files
       if (contentItem.name === "Edit" && contentItem.input?.file_path) {
         const filePath = contentItem.input.file_path;
-        if (filePath.includes("/.claude/")) {
+        if (filePath.includes(CLAUDE_MARKER)) {
           filesModified.add(filePath);
         }
       }

@@ -16,8 +16,9 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join, basename } from 'path';
 import { parseArgs } from 'util';
+import { getClaudeDir } from "./Paths";
 
-const BASE_DIR = process.env.LIFEOS_DIR || join(process.env.HOME!, '.claude');
+const BASE_DIR = process.env.LIFEOS_DIR || getClaudeDir();
 const FRAMES_DIR = join(BASE_DIR, 'MEMORY', 'WISDOM', 'FRAMES');
 
 // ── Domain Keyword Map ──

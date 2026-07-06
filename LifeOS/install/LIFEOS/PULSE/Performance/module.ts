@@ -12,9 +12,10 @@
 
 import { join } from "path"
 import { existsSync, readFileSync } from "fs"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 const HOME = process.env.HOME ?? ""
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
+const LIFEOS_DIR = join(getClaudeDir(), "LIFEOS")
 const MEMORY_DIR = join(LIFEOS_DIR, "MEMORY")
 const SESSION_COSTS_PATH = join(MEMORY_DIR, "OBSERVABILITY", "session-costs.jsonl")
 const TOOL_FAILURES_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-failures.jsonl")
@@ -278,7 +279,7 @@ async function handleAnthropicCostApi(): Promise<Response> {
   const { readFileSync, existsSync } = await import("fs")
   const { join } = await import("path")
   const home = process.env.HOME ?? ""
-  const obsDir = join(home, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY")
+  const obsDir = join(getClaudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY")
   const ledgerPath = join(obsDir, "anthropic-cost.jsonl")
   const sitesPath = join(obsDir, "anthropic-call-sites.json")
 

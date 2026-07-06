@@ -3,9 +3,9 @@ import { resolve, join } from "node:path";
 import { paiRoot } from "./manifest-loader";
 import { atomicWriteJSON } from "./atomic-write";
 import type { PageData, PageMeta, Provenance } from "../Schema/PulseSchema";
+import { getClaudeDir } from "../../TOOLS/Paths";
 
-const HOME = process.env.HOME!;
-export const PULSE_DATA_DIR = resolve(HOME, ".claude", "LIFEOS", "MEMORY", "PULSE_DATA");
+export const PULSE_DATA_DIR = resolve(getClaudeDir(), "LIFEOS", "MEMORY", "PULSE_DATA");
 
 export interface DataPlaneFile {
   schemaVersion: string;

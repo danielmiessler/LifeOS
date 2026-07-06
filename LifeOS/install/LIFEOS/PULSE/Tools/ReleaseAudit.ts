@@ -3,6 +3,7 @@ import { readdirSync, statSync, readFileSync, existsSync } from "node:fs";
 import { resolve, join, relative } from "node:path";
 import { homedir } from "node:os";
 import { parseFrontmatter } from "../lib/frontmatter";
+import { getLifeosDir } from "../../TOOLS/Paths";
 
 const args = process.argv.slice(2);
 const stagingArg = args.find((a) => !a.startsWith("--"));
@@ -34,7 +35,7 @@ function loadProhibitedStrings(): string[] {
   const candidates = [
     process.env.LIFEOS_RELEASE_AUDIT_STRINGS,
     join(homedir(), ".config/LIFEOS/USER/CONFIG/release-audit-strings.json"),
-    join(homedir(), ".claude/LIFEOS/USER/CONFIG/release-audit-strings.json"),
+    join(getLifeosDir(), "USER/CONFIG/release-audit-strings.json"),
   ].filter(Boolean) as string[];
   for (const p of candidates) {
     try {

@@ -20,14 +20,15 @@
 import { readFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
+import { displayPath, getClaudeDir } from "./Paths";
 
-const ENV_PATH = `${process.env.HOME}/.claude/.env`;
+const ENV_PATH = `${getClaudeDir()}/.env`;
 
 // Run-record: proof the detector actually executed on a specific text. The
 // WritingGate Stop hook reads this so its pass condition is "Pangram ran on
 // this content", not "a token string is present" (Forge audit 2026-07-01).
 const RUNS_PATH = join(
-  process.env.LIFEOS_DIR || `${process.env.HOME}/.claude/LifeOS`,
+  process.env.LIFEOS_DIR || `${getClaudeDir()}/LifeOS`,
   "MEMORY", "OBSERVABILITY", "pangram-runs.jsonl",
 );
 export function normalizeForHash(text: string): string {
@@ -55,7 +56,7 @@ function loadKey(): string {
     const line = env.split("\n").find((l) => l.startsWith("PANGRAM_API_KEY="));
     if (line) return line.slice("PANGRAM_API_KEY=".length).replace(/^["']|["']$/g, "").trim();
   } catch {}
-  console.error("No PANGRAM_API_KEY found. Add it to ~/.claude/.env, then re-run.");
+  console.error(`No PANGRAM_API_KEY found. Add it to ${displayPath(getClaudeDir())}/.env, then re-run.`);
   process.exit(1);
 }
 

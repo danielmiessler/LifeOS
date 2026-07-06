@@ -19,10 +19,9 @@
 
 import { existsSync, readFileSync, lstatSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
-import { homedir } from "node:os";
+import { getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME ?? homedir();
-const CLAUDE_ROOT = join(HOME, ".claude");
+const CLAUDE_ROOT = getClaudeDir();
 
 interface MigrationContext {
   claudeRoot: string;

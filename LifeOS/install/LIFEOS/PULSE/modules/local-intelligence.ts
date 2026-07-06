@@ -19,19 +19,20 @@ import { readFile, mkdir, writeFile, stat } from "node:fs/promises"
 import { join } from "node:path"
 import { homedir } from "node:os"
 import { randomUUID } from "node:crypto"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 const HOME = process.env.HOME ?? homedir()
 const MODULE_NAME = "local-intelligence"
 
 // Primary path: user-scoped customizations directory (per {{PRINCIPAL_NAME}} directive 2026-05-03).
 // Fallback path: legacy MEMORY/DATA path (used when customizations file absent).
-const CUSTOMIZATIONS_DIR = join(HOME, ".claude", "LIFEOS", "USER", "CUSTOMIZATIONS", "SKILLS", "LocalIntelligence")
-const LEGACY_DATA_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "DATA", "LocalIntelligence")
+const CUSTOMIZATIONS_DIR = join(getClaudeDir(), "LIFEOS", "USER", "CUSTOMIZATIONS", "SKILLS", "LocalIntelligence")
+const LEGACY_DATA_DIR = join(getClaudeDir(), "LIFEOS", "MEMORY", "DATA", "LocalIntelligence")
 const LATEST_PATH = join(CUSTOMIZATIONS_DIR, "latest.json")
 const LEGACY_LATEST_PATH = join(LEGACY_DATA_DIR, "latest.json")
 const DATA_DIR = CUSTOMIZATIONS_DIR  // alias for existing references in this file
 const RUNS_DIR = join(CUSTOMIZATIONS_DIR, "runs")
-const REFRESH_SCRIPT = join(HOME, ".claude", "skills", "LocalIntelligence", "Tools", "Refresh.ts")
+const REFRESH_SCRIPT = join(getClaudeDir(), "skills", "LocalIntelligence", "Tools", "Refresh.ts")
 
 async function readLatest(): Promise<string | null> {
   try { return await readFile(LATEST_PATH, "utf8") } catch {}

@@ -69,10 +69,11 @@ import {
 import { setEntries as memoryWriterSetEntries, read as memoryWriterRead } from "./MemoryWriter";
 import { getTier } from "./MutationTier";
 import { getRelevantContext, type RelevantResultItem } from "./MemoryRetriever";
+import { getClaudeDir, getLifeosDir } from "./Paths";
 
 // ── Constants ──
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = getClaudeDir();
 
 // ── Result types ──
 
@@ -679,7 +680,7 @@ async function smokeTest(): Promise<number> {
   // 5. ISC-156 — proposal enqueues
   const r5 = add({
     type: "proposal",
-    target_file: pathJoin(homedir(), ".claude/LIFEOS/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md"),
+    target_file: pathJoin(getLifeosDir(), "USER/PRINCIPAL/PRINCIPAL_IDENTITY.md"),
     edit: "RULE: This is a smoke-test proposal — DO NOT APPLY.",
     confidence: 0.42,
     rationale: "smoke test",

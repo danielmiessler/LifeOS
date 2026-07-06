@@ -29,11 +29,11 @@
  */
 
 import { resolve as pathResolve, join as pathJoin } from "node:path";
-import { homedir } from "node:os";
+import { getClaudeDir } from "./Paths";
 
 // ── Paths ──
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = getClaudeDir();
 const LIFEOS_DIR = pathJoin(CLAUDE_ROOT, "LIFEOS");
 const KNOWLEDGE_DIR = pathJoin(LIFEOS_DIR, "MEMORY", "KNOWLEDGE");
 

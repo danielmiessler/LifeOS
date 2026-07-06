@@ -17,9 +17,9 @@
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from "fs";
 import { join } from "path";
+import { getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const TELOS_DIR = join(LIFEOS_DIR, "USER", "TELOS");
 const IDEAL_DIR = join(TELOS_DIR, "IDEAL_STATE");
 const STATE_FILE = join(LIFEOS_DIR, "USER", "TELOS", "CURRENT_STATE", "interview-state.json");

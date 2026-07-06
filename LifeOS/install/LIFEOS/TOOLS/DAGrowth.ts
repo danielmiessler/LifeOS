@@ -13,9 +13,10 @@
  */
 
 import { join } from "path"
+import { getClaudeDir } from "./Paths";
 
 const HOME = process.env.HOME ?? "~"
-const LifeOS = join(HOME, ".claude", "LIFEOS")
+const LifeOS = join(getClaudeDir(), "LIFEOS")
 const REGISTRY_PATH = join(LifeOS, "USER", "DA", "_registry.yaml")
 
 // ── Types ──

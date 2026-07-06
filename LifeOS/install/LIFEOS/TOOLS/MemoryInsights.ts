@@ -21,9 +21,9 @@
 
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve as pathResolve } from "node:path";
-import { homedir } from "node:os";
+import { getClaudeDir } from "./Paths";
 
-const ROOT = pathResolve(homedir(), ".claude");
+const ROOT = getClaudeDir();
 const OBS = pathResolve(ROOT, "LIFEOS/MEMORY/OBSERVABILITY");
 const PRINCIPAL_MEM = pathResolve(ROOT, "LIFEOS/USER/PRINCIPAL/PRINCIPAL_MEMORY.md");
 const DA_MEM = pathResolve(ROOT, "LIFEOS/USER/DIGITAL_ASSISTANT/DA_MEMORY.md");

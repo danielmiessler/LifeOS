@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { displayPath, getClaudeDir } from "./Paths";
 /**
  * ============================================================================
  * OPENROUTER — frontier open-model access via the OpenRouter broker
@@ -104,7 +105,7 @@ export async function openrouter(options: ORandOptions): Promise<ORResult> {
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    return { success: false, output: "", error: "OPENROUTER_API_KEY not set in environment (~/.claude/.env)", latencyMs: 0, model, level };
+    return { success: false, output: "", error: `OPENROUTER_API_KEY not set in environment (${displayPath(getClaudeDir())}/.env)`, latencyMs: 0, model, level };
   }
 
   const controller = new AbortController();

@@ -12,9 +12,9 @@ import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
 import { parse as parseYaml } from "yaml";
+import { getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const CLAUDE_DIR = getClaudeDir();
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Terminal Width Detection

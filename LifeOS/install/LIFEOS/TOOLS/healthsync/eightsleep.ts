@@ -9,6 +9,7 @@
  * rotate them or the endpoints at any time; on breakage, re-research the HA
  * integration first.
  */
+import { getClaudeDir, displayPath } from "../Paths";
 import type { Ctx, SourceResult } from "./types";
 import {
   authCooldownUntil,
@@ -113,7 +114,7 @@ async function authenticate(ctx: Ctx): Promise<AuthOutcome> {
   const email = str(ctx.env.EIGHTSLEEP_EMAIL);
   const password = str(ctx.env.EIGHTSLEEP_PASSWORD);
   if (email === null || password === null) {
-    return { ok: false, error: "EIGHTSLEEP_EMAIL / EIGHTSLEEP_PASSWORD not set in ~/.claude/.env", attempted: false };
+    return { ok: false, error: `EIGHTSLEEP_EMAIL / EIGHTSLEEP_PASSWORD not set in ${displayPath(getClaudeDir())}/.env`, attempted: false };
   }
 
   const tokens = await loadTokens(ctx);

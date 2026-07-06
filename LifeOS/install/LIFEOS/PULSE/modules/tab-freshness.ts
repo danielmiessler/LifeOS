@@ -28,9 +28,10 @@
 
 import { existsSync, statSync, readdirSync, readFileSync } from "fs"
 import { join } from "path"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 const HOME = process.env.HOME ?? "~"
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
+const LIFEOS_DIR = join(getClaudeDir(), "LIFEOS")
 const USER_DIR = join(LIFEOS_DIR, "USER")
 const TELOS_DIR = join(USER_DIR, "TELOS")
 
@@ -82,14 +83,14 @@ const REGISTRY: Record<string, SourceSpec[]> = {
     { name: "KNOWLEDGE/", path: join(LIFEOS_DIR, "MEMORY", "KNOWLEDGE"), expand: true },
   ],
   hooks: [
-    { name: "hooks/", path: join(HOME, ".claude", "hooks"), expand: true },
-    { name: "settings.json", path: join(HOME, ".claude", "settings.json") },
+    { name: "hooks/", path: join(getClaudeDir(), "hooks"), expand: true },
+    { name: "settings.json", path: join(getClaudeDir(), "settings.json") },
   ],
   skills: [
-    { name: "skills/", path: join(HOME, ".claude", "skills"), expand: true },
+    { name: "skills/", path: join(getClaudeDir(), "skills"), expand: true },
   ],
   agents: [
-    { name: "agents/", path: join(HOME, ".claude", "agents"), expand: true },
+    { name: "agents/", path: join(getClaudeDir(), "agents"), expand: true },
   ],
   docs: [
     { name: "DOCUMENTATION/", path: join(LIFEOS_DIR, "DOCUMENTATION"), expand: true },

@@ -31,6 +31,7 @@ import {
   type ProposalReply,
 } from "../lib/telegram-proposals"
 import { stripModeScaffolding, hasModeScaffolding } from "../lib/strip-mode-scaffolding"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 // BILLING: Strip ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN before any SDK
 // query() call. Bun auto-loads ~/.claude/.env into this process; if either key
@@ -63,9 +64,9 @@ export interface TelegramConfig {
 // ── Constants ──
 
 const HOME = process.env.HOME ?? ""
-const CWD = join(HOME, ".claude")
-const STATE_DIR = join(HOME, ".claude", "LIFEOS", "PULSE", "state", "telegram")
-const LOGS_DIR = join(HOME, ".claude", "LIFEOS", "PULSE", "logs", "telegram")
+const CWD = getClaudeDir()
+const STATE_DIR = join(getClaudeDir(), "LIFEOS", "PULSE", "state", "telegram")
+const LOGS_DIR = join(getClaudeDir(), "LIFEOS", "PULSE", "logs", "telegram")
 const STALE_ACK_CACHE_DIR = join(STATE_DIR, "ack-cache")
 const MAX_TELEGRAM_LENGTH = 4096
 const CURSOR = " ▌"
@@ -76,7 +77,7 @@ const IDLE_TIMEOUT_MS = 60 * 60 * 1000          // 1 hour — gap of silence tha
 const INFERENCE_HARD_BUDGET_MS = 10_000         // outer race cap on summarize; measured Sonnet subprocess cost is 4-6s, this gives slack without losing the voice trailing the text by too much
 const MIN_FALLBACK_WORDS = 6                    // a fallback summary shorter than this is presumed too thin to be worth voicing
 const MEANINGFUL_REPLY_WORDS = 25               // when a reply is at least this long, a too-short fallback is a regression — skip voice rather than ship a "0:00" stub
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
+const LIFEOS_DIR = join(getClaudeDir(), "LIFEOS")
 
 // Voice ID for outbound voice summaries. Read at module import from
 // LifeosConfig — `[da.voices.main] voice_id` in LIFEOS/USER/CONFIG/LIFEOS_CONFIG.toml.
@@ -402,7 +403,7 @@ async function handleProposalReply(chatId: number, reply: ProposalReply, ctx: { 
       markProposal(row.id, { status: "accepted", resolved_at: new Date().toISOString(), applied_edit: row.edit })
       logProposalEvent({ id: row.id, file: row.target_file, edit: row.edit, confidence: row.confidence, status: "accepted" })
       logProposalReply({ kind: "yes", id: row.id, outcome: "applied", chatId })
-      const fileLabel = row.target_file.replace(`${HOME}/.claude/`, "")
+      const fileLabel = row.target_file.replace(`${getClaudeDir()}`, "")
       await ctx.reply(`✅ Applied to ${fileLabel}`).catch(() => {})
     } else {
       logProposalReply({ kind: "yes", id: row.id, outcome: "apply-failed", reason: result.reason, chatId })
@@ -429,7 +430,7 @@ async function handleProposalReply(chatId: number, reply: ProposalReply, ctx: { 
     markProposal(row.id, { status: "edited", resolved_at: new Date().toISOString(), applied_edit: reply.editText })
     logProposalEvent({ id: row.id, file: row.target_file, edit: reply.editText, confidence: row.confidence, status: "edited" })
     logProposalReply({ kind: "edit", id: row.id, outcome: "applied", chatId })
-    const fileLabel = row.target_file.replace(`${HOME}/.claude/`, "")
+    const fileLabel = row.target_file.replace(`${getClaudeDir()}`, "")
     await ctx.reply(`✅ Applied your edit to ${fileLabel}`).catch(() => {})
   } else {
     logProposalReply({ kind: "edit", id: row.id, outcome: "apply-failed", reason: result.reason, chatId })

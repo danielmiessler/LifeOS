@@ -6,9 +6,9 @@ import { hashFile, combineSourceHashes } from "../lib/cache";
 import { writePage, writeError, clearError, readMeta, type DataPlaneFile, PULSE_DATA_DIR } from "../lib/data-plane";
 import { getProvenance } from "../lib/frontmatter";
 import { inference, type InferenceLevel } from "../../TOOLS/Inference";
+import { getClaudeDir } from "../../TOOLS/Paths";
 
-const HOME = process.env.HOME!;
-const OBSERVABILITY_DIR = resolve(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY");
+const OBSERVABILITY_DIR = resolve(getClaudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY");
 const RUNS_LOG = join(OBSERVABILITY_DIR, "adapter-runs.jsonl");
 
 const ADAPTER_TIMEOUT_MS = 120_000;

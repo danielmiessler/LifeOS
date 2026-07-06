@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-LifeOS=~/.claude
+LifeOS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
 PI=~/.pi/agent
 
 [ -d "$PI" ] || { echo "✗ ~/.pi/agent missing"; exit 1; }

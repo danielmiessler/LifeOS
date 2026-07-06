@@ -11,9 +11,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, dirname, join } from "path";
 import { CONTEXT_FRESHNESS_REGISTRY, parseFrontmatter, type ContextFile } from "./TelosFreshness";
 import { currentModel } from "./models";
+import { getClaudeDir, getLifeosDir } from "./Paths";
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const CLAUDE_DIR = dirname(LIFEOS_DIR);
 const AUDIT_PATH = join(
   LIFEOS_DIR,
@@ -192,8 +193,8 @@ function normalizeReference(raw: string): string | null {
   if (/[*?[\]{}]/.test(value)) return null;
 
   if (value.startsWith("LIFEOS/")) return join(CLAUDE_DIR, value);
-  if (value.startsWith("~/.claude/LIFEOS/")) return join(HOME, value.slice(2));
-  if (value.startsWith(`${HOME}/.claude/LIFEOS/`)) return value;
+  if (value.startsWith("~/.claude/LIFEOS/")) return join(getLifeosDir(), value.slice("~/.claude/LIFEOS/".length));
+  if (value.startsWith(`${getLifeosDir()}/`)) return value;
   return null;
 }
 

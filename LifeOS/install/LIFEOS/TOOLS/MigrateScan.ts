@@ -22,9 +22,9 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, appendFileSync } from "fs";
 import { join, basename, dirname, extname } from "path";
 import { randomUUID } from "crypto";
+import { displayPath, getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const QUEUE_FILE = join(LIFEOS_DIR, "MEMORY", "MIGRATION", "migration-proposals.jsonl");
 
 type Target =
@@ -301,7 +301,7 @@ function main(): void {
     console.log(`⚠️  ${lowConf.length} chunks classified at <40% confidence — review recommended.`);
   }
   console.log(``);
-  console.log(`Next: bun ~/.claude/LIFEOS/TOOLS/MigrateApprove.ts --review`);
+  console.log(`Next: bun ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/MigrateApprove.ts --review`);
 }
 
 main();

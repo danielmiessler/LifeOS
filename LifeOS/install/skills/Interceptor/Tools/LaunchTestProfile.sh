@@ -23,7 +23,7 @@ set -euo pipefail
 # resolves from the single canonical home (preferences.env), not a guessed
 # default. The preflight sources this too; this script must not rely on the
 # preflight having run first.
-USER_PREFS="${HOME}/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
+USER_PREFS="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
 if [ -f "$USER_PREFS" ]; then
     # shellcheck disable=SC1090
     . "$USER_PREFS"

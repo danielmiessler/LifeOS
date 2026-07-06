@@ -63,7 +63,8 @@ async function demonstrateCodeFirstApproach() {
 
   console.log('\nStep 2: Model writes code to execute operations')
   const codeExample = `
-import { Apify } from '~/.claude/filesystem-mcps/apify'
+import { Apify } from '${displayPath(getClaudeDir())}/filesystem-mcps/apify'
+import { displayPath, getClaudeDir } from "../../../LIFEOS/TOOLS/Paths";
 
 const apify = new Apify()
 

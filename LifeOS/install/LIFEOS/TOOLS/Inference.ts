@@ -113,6 +113,7 @@ export interface InferenceResult {
 }
 
 import { modelForEffort, pinnedModelForEffort, EFFORT_MODEL, LEVEL_TO_HARNESS_EFFORT, type EffortLevel, type HarnessEffort } from './models';
+import { getClaudeDir } from "./Paths";
 
 // Level configurations — models resolve via models.ts EFFORT_MODEL (the single
 // edit point on a lineup change). No model names appear here. `effort` is the
@@ -419,8 +420,8 @@ export async function synthesizeAdvisorState(): Promise<string> {
   const fs = await import("fs/promises");
   const path = await import("path");
   const home = process.env.HOME || process.env.USERPROFILE || "";
-  const workDir = path.join(home, ".claude", "LIFEOS", "MEMORY", "WORK");
-  const stateFile = path.join(home, ".claude", "LIFEOS", "MEMORY", "STATE", "work.json");
+  const workDir = path.join(getClaudeDir(), "LIFEOS", "MEMORY", "WORK");
+  const stateFile = path.join(getClaudeDir(), "LIFEOS", "MEMORY", "STATE", "work.json");
 
   // Try to read active session from work.json
   let activeSlug: string | undefined;

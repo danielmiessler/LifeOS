@@ -10,6 +10,7 @@ verb. Accessibility checks are viewport-independent tree heuristics, not axe-cor
 import { stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
+import { displayPath, getClaudeDir } from "../../../LIFEOS/TOOLS/Paths";
 
 type TreeNode = {
   ref?: string;
@@ -33,7 +34,7 @@ function resolveInterceptorBin(): string {
   const found = Bun.spawnSync(["which", "interceptor"]);
   const bin = found.stdout.toString().trim();
   if (found.exitCode !== 0 || bin.length === 0) {
-    console.error("interceptor CLI not found on PATH — install the Interceptor skill (see ~/.claude/skills/Interceptor/SKILL.md)");
+    console.error(`interceptor CLI not found on PATH — install the Interceptor skill (see ${displayPath(getClaudeDir())}/skills/Interceptor/SKILL.md)`);
     process.exit(127);
   }
   return bin;

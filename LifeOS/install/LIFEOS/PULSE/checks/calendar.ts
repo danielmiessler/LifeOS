@@ -10,6 +10,7 @@
 
 import { readFileSync } from "fs"
 import { join } from "path"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 const HOME = process.env.HOME ?? ""
 const LOOKAHEAD_MS = 30 * 60 * 1000
@@ -17,7 +18,7 @@ const LOOKAHEAD_MS = 30 * 60 * 1000
 function loadEnv(): Record<string, string> {
   const env: Record<string, string> = {}
   try {
-    const content = readFileSync(join(HOME, ".claude", ".env"), "utf-8")
+    const content = readFileSync(join(getClaudeDir(), ".env"), "utf-8")
     for (const line of content.split("\n")) {
       const match = line.match(/^([^#=]+)=(.*)$/)
       if (match) {

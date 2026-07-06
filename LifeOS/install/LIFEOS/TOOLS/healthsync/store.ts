@@ -8,12 +8,12 @@ import type {
   SyncState,
   TokenStore,
 } from "./types";
+import { getClaudeDir } from "../Paths";
 
-const HOME = process.env.HOME || "";
-const ENV_PATH = join(HOME, ".claude", ".env");
-const STATE_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE");
-const DATA_DIR = join(HOME, ".claude", "LIFEOS", "USER", "HEALTH", "DATA");
-const OBS_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY");
+const ENV_PATH = join(getClaudeDir(), ".env");
+const STATE_DIR = join(getClaudeDir(), "LIFEOS", "MEMORY", "STATE");
+const DATA_DIR = join(getClaudeDir(), "LIFEOS", "USER", "HEALTH", "DATA");
+const OBS_DIR = join(getClaudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY");
 const TOKENS_PATH = join(STATE_DIR, "healthsync-tokens.json");
 const STATE_PATH = join(STATE_DIR, "healthsync-state.json");
 

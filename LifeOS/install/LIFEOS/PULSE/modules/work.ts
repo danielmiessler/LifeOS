@@ -24,9 +24,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from "fs";
 import { join } from "path";
 import { loadWorkConfig, type WorkConfig } from "../../../hooks/lib/work-config";
+import { displayPath, getClaudeDir } from "../../TOOLS/Paths";
 
-const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const PULSE_STATE_DIR = join(LIFEOS_DIR, "PULSE", "state");
 const CACHE_PATH = join(PULSE_STATE_DIR, "work-cache.json");
 const MODULE = "work";
@@ -145,7 +145,7 @@ function extractSlug(title: string): string | undefined {
 // issues; the workload is bounded and the files are small.
 function extractPrincipalGoal(slug: string | undefined): string | undefined {
   if (!slug) return undefined;
-  const isaPath = join(HOME, ".claude", "LIFEOS", "MEMORY", "WORK", slug, "ISA.md");
+  const isaPath = join(getClaudeDir(), "LIFEOS", "MEMORY", "WORK", slug, "ISA.md");
   if (!existsSync(isaPath)) return undefined;
   try {
     const content = readFileSync(isaPath, "utf-8");
@@ -309,9 +309,9 @@ function setupTemplate(reason: string): Response {
     reason,
     subtype,
     instructions: [
-      "Configure the work repo via the privacy-attested CLI: `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts <owner/repo>`. The CLI calls `gh repo view --json visibility,isPrivate` and refuses to write the config unless the repo is currently private.",
+      "Configure the work repo via the privacy-attested CLI: `bun ${displayPath(getClaudeDir())}/skills/_ULWORK/Tools/SetWorkRepo.ts <owner/repo>`. The CLI calls `gh repo view --json visibility,isPrivate` and refuses to write the config unless the repo is currently private.",
       "Ensure the repo has these labels: Type:feature, Type:reminder, Type:research, Type:queue, Status:queued, Status:in-progress, Status:in-review, Status:blocked, Status:done, Priority:P0..P3, Property:internal, Agent:kai, pai-sync.",
-      "Restart Pulse so this module re-reads work_repo.json: `bun ~/.claude/LIFEOS/PULSE/manage.sh restart`.",
+      "Restart Pulse so this module re-reads work_repo.json: `bun ${displayPath(getClaudeDir())}/LIFEOS/PULSE/manage.sh restart`.",
       "Run an Algorithm session — ULWorkSync.hook.ts will open the first issue at SessionEnd.",
     ],
     docs: "skills/_ULWORK/SKILL.md (search 'Capture flow')",

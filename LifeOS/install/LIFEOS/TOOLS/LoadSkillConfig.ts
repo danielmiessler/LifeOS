@@ -16,8 +16,8 @@
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
-import { homedir } from 'os';
 import { parse as parseYaml } from 'yaml';
+import { displayPath, getClaudeDir } from "./Paths";
 
 // Types
 interface CustomizationMetadata {
@@ -34,8 +34,7 @@ interface ExtendManifest {
 }
 
 // Constants
-const HOME = homedir();
-const CUSTOMIZATION_DIR = join(HOME, '.claude', 'LIFEOS', 'USER', 'SKILLCUSTOMIZATIONS');
+const CUSTOMIZATION_DIR = join(getClaudeDir(), 'LIFEOS', 'USER', 'SKILLCUSTOMIZATIONS');
 
 /**
  * Deep merge two objects recursively
@@ -250,7 +249,7 @@ Usage:
   bun LoadSkillConfig.ts --check <skill-name>      Check if skill has customizations
 
 Examples:
-  bun LoadSkillConfig.ts ~/.claude/skills/Upgrade sources.json
+  bun LoadSkillConfig.ts ${displayPath(getClaudeDir())}/skills/Upgrade sources.json
   bun LoadSkillConfig.ts --list
   bun LoadSkillConfig.ts --check Upgrade
 `);

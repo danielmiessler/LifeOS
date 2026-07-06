@@ -16,9 +16,9 @@
 
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
+import { getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const TELOS_DIR = join(LIFEOS_DIR, "USER", "TELOS");
 const CURRENT_DIR = join(TELOS_DIR, "CURRENT_STATE");
 

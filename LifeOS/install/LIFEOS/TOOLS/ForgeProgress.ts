@@ -5,6 +5,7 @@ import { accessSync, constants, createWriteStream, existsSync, type WriteStream 
 import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
+import { getClaudeDir } from "./Paths";
 
 type Args = { slug: string; prompt?: string; model: string; effort: string; sandbox: string; timeoutMs: number; pulseUrl: string };
 type JsonRecord = Record<string, unknown>;
@@ -67,7 +68,7 @@ function preflightCodex(home: string): string | null {
   catch (_error: unknown) { return null; } // Safe: caller emits the exact unavailable JSON.
 }
 async function ensureSlugDir(home: string, slug: string): Promise<Paths> {
-  const slugDir = join(home, ".claude", "LIFEOS", "MEMORY", "WORK", slug);
+  const slugDir = join(getClaudeDir(), "LIFEOS", "MEMORY", "WORK", slug);
   await mkdir(slugDir, { recursive: true }); // Local artifact I/O is unbounded so errors can surface naturally.
   return { eventsFile: join(slugDir, "forge-events.jsonl"), finalFile: join(slugDir, "forge-final.txt") };
 }

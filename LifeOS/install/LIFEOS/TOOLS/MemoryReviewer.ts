@@ -50,7 +50,7 @@ import {
   markProposal,
   logProposalEvent,
 } from "../PULSE/lib/telegram-proposals";
-import { getClaudeDir } from "./Paths";
+import { displayPath, getClaudeDir } from "./Paths";
 
 // ── Constants ──
 
@@ -578,7 +578,7 @@ export async function review(opts: ReviewOptions = {}): Promise<ReviewResult> {
       ...summary.failures.map((f) => `  FAIL [${f.index}] ${f.type}: ${f.error}`),
       "",
       "Per-item results:",
-      ...results.map((r, i) => `[${i}] ${r.ok ? "OK " + (r as any).type : "FAIL " + (r as any).code}: ${r.ok ? (r as any).path?.replace(CLAUDE_ROOT, "~/.claude") : (r as any).message}`),
+      ...results.map((r, i) => `[${i}] ${r.ok ? "OK " + (r as any).type : "FAIL " + (r as any).code}: ${r.ok ? (r as any).path?.replace(CLAUDE_ROOT, displayPath(CLAUDE_ROOT)) : (r as any).message}`),
     ].join("\n"),
   });
 

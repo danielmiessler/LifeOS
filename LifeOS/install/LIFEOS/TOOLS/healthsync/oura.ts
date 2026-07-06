@@ -2,6 +2,7 @@
  * Oura source module — OFFICIAL API v2 (OAuth2; PATs were removed by Oura Dec 2025).
  * Provenance: https://cloud.ouraring.com/v2/docs + /docs/authentication, verified 2026-06-11.
  */
+import { getClaudeDir, displayPath } from "../Paths";
 import type { Ctx, SourceResult, TokenStore } from "./types";
 import {
   dayKeyLA,
@@ -185,7 +186,7 @@ export async function pull(ctx: Ctx): Promise<SourceResult> {
     str(ctx.env.OURA_CLIENT_ID) === null ||
     str(ctx.env.OURA_CLIENT_SECRET) === null
   ) {
-    return unconfigured("OURA_CLIENT_ID / OURA_CLIENT_SECRET not set in ~/.claude/.env", startedAt);
+    return unconfigured(`OURA_CLIENT_ID / OURA_CLIENT_SECRET not set in ${displayPath(getClaudeDir())}/.env`, startedAt);
   }
 
   let tokens = await loadTokens(ctx);

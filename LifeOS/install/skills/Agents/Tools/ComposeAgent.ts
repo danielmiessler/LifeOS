@@ -31,13 +31,13 @@ import { parseArgs } from "util";
 import { readFileSync, existsSync, readdirSync, unlinkSync, mkdirSync, writeFileSync } from "fs";
 import { parse as parseYaml } from "yaml";
 import Handlebars from "handlebars";
+import { displayPath, getClaudeDir, getLifeosDir } from "../../../LIFEOS/TOOLS/Paths";
 
 // Paths
-const HOME = process.env.HOME || "~";
-const BASE_TRAITS_PATH = `${HOME}/.claude/skills/Agents/Data/Traits.yaml`;
-const USER_TRAITS_PATH = `${HOME}/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Agents/Traits.yaml`;
-const TEMPLATE_PATH = `${HOME}/.claude/skills/Agents/Templates/DynamicAgent.hbs`;
-const CUSTOM_AGENTS_DIR = `${HOME}/.claude/custom-agents`;
+const BASE_TRAITS_PATH = `${getClaudeDir()}/skills/Agents/Data/Traits.yaml`;
+const USER_TRAITS_PATH = `${getLifeosDir()}/USER/CUSTOMIZATIONS/SKILLS/Agents/Traits.yaml`;
+const TEMPLATE_PATH = `${getClaudeDir()}/skills/Agents/Templates/DynamicAgent.hbs`;
+const CUSTOM_AGENTS_DIR = `${getClaudeDir()}/custom-agents`;
 
 // Types
 interface ProsodySettings {
@@ -727,13 +727,13 @@ ${identityList}
 To re-compose this agent with a specific task:
 
 \`\`\`bash
-bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts --load "${slug}"
+bun run ${displayPath(getClaudeDir())}/skills/Agents/Tools/ComposeAgent.ts --load "${slug}"
 \`\`\`
 
 Or reconstruct from traits:
 
 \`\`\`bash
-bun run ~/.claude/skills/Agents/Tools/ComposeAgent.ts --traits "${agent.traits.join(",")}"
+bun run ${displayPath(getClaudeDir())}/skills/Agents/Tools/ComposeAgent.ts --traits "${agent.traits.join(",")}"
 \`\`\`
 
 ---
@@ -883,16 +883,16 @@ OPTIONS:
   -o, --output <fmt>   Output format: prompt (default), json, yaml, summary
   --timing <tier>      Timing scope: fast, standard (default), deep
   -l, --list           List all available traits
-  -s, --save           Save composed agent to ~/.claude/custom-agents/
+  -s, --save           Save composed agent to ${displayPath(getClaudeDir())}/custom-agents/
   --list-saved         List all saved custom agents
   --load <name>        Load a saved custom agent's prompt
   --delete <name>      Delete a saved custom agent
   -h, --help           Show this help
 
 CONFIGURATION:
-  Base traits:    ~/.claude/skills/Agents/Data/Traits.yaml
-  User traits:    ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Agents/Traits.yaml
-  Custom agents:  ~/.claude/custom-agents/
+  Base traits:    ${displayPath(getClaudeDir())}/skills/Agents/Data/Traits.yaml
+  User traits:    ${displayPath(getClaudeDir())}/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Agents/Traits.yaml
+  Custom agents:  ${displayPath(getClaudeDir())}/custom-agents/
 
   User traits are merged over base (user takes priority).
   Add your custom voices, personalities, and prosody settings in the user file.

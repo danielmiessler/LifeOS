@@ -10,7 +10,7 @@
  *   pai -m bd            Launch with Bright Data MCP
  *   pai -m bd,ap         Launch with multiple MCPs
  *   pai -r / --resume    Resume last session
- *   pai --local          Stay in current directory (don't cd to ~/.claude)
+ *   pai --local          Stay in current directory (don't cd to the Claude config dir)
  *   pai update           Update Claude Code
  *   pai version          Show version info
  *   pai profiles         List available profiles
@@ -597,7 +597,7 @@ USAGE:
   k -m bd,ap               Launch with multiple MCPs
   k -r, --resume           Resume last session
   k -s, --system-prompt    System prompt file to append (default: LIFEOS_SYSTEM_PROMPT.md)
-  k -l, --local            Stay in current directory (don't cd to ~/.claude)
+  k -l, --local            Stay in current directory (don't cd to the Claude config dir)
 
 COMMANDS:
   k update                 Update Claude Code to latest version

@@ -28,8 +28,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync } from 'fs';
 import { join, basename } from 'path';
 import { inference } from './Inference';
+import { getClaudeDir } from "./Paths";
 
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME!, '.claude');
+const LIFEOS_DIR = process.env.LIFEOS_DIR || getClaudeDir();
 
 interface FailureCaptureInput {
   transcriptPath: string;

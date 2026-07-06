@@ -18,10 +18,10 @@
 import { spawnSync } from "child_process";
 import { appendFileSync, mkdirSync } from "fs";
 import { join, dirname } from "path";
+import { getClaudeDir } from "./Paths";
 
-const HOME = process.env.HOME || "";
 const PKG = "@openai/codex";
-const LOG = join(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY", "codex-update.jsonl");
+const LOG = join(getClaudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY", "codex-update.jsonl");
 
 function codexVersion(): string | null {
   const r = spawnSync("codex", ["--version"], { encoding: "utf-8" });

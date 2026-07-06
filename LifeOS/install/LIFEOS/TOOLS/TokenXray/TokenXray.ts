@@ -20,9 +20,9 @@
 
 import { readFileSync, statSync } from "fs";
 import { globSync } from "fs";
-import { homedir } from "os";
 import { join } from "path";
 import { getEncoding } from "js-tiktoken";
+import { displayPath, getClaudeDir, getLifeosDir } from "../Paths";
 
 const enc = getEncoding("cl100k_base");
 
@@ -105,11 +105,11 @@ function* readJsonl(path: string): IterableIterator<Record<string, unknown>> {
 }
 
 function mainLogs(): string[] {
-  return glob(join(homedir(), ".claude/projects/*/*.jsonl"));
+  return glob(join(getClaudeDir(), "projects/*/*.jsonl"));
 }
 
 function sideLogs(): string[] {
-  return glob(join(homedir(), ".claude/projects/*/*/subagents/*.jsonl"));
+  return glob(join(getClaudeDir(), "projects/*/*/subagents/*.jsonl"));
 }
 
 function fmtNum(n: number, w = 0): string {
@@ -228,7 +228,7 @@ interface ApiCostSnapshot {
 }
 
 function loadLatestApiCostSnapshot(): ApiCostSnapshot | null {
-  const path = join(homedir(), ".claude/LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl");
+  const path = join(getLifeosDir(), "MEMORY/OBSERVABILITY/anthropic-cost.jsonl");
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");
@@ -281,7 +281,7 @@ function runActual(jsonOut: boolean): void {
     return;
   }
 
-  console.log("SUBSCRIPTION (~/.claude/projects/, OAuth-billed via Claude Max)");
+  console.log(`SUBSCRIPTION (${displayPath(getClaudeDir())}/projects/, OAuth-billed via Claude Max)`);
   console.log(`  counterfactual list-rate cost:  $${fmtMoney(ct.total)}`);
   console.log(`  actual marginal:                $0.00   (covered by Max subscription fee)`);
   if (snap?.subscription) {
@@ -875,7 +875,7 @@ FLAGS
   --json      Emit structured JSON instead of human tables
   --help, -h  Show this help
 
-Reads only ~/.claude/projects/*​/*.jsonl and LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl.
+Reads only ${displayPath(getClaudeDir())}/projects/*​/*.jsonl and LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl.
 Nothing leaves the machine.
 `);
 }

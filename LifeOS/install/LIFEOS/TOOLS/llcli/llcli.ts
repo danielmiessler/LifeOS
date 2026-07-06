@@ -11,7 +11,7 @@
 
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { homedir } from 'os';
+import { displayPath, getClaudeDir } from "../Paths";
 
 // ============================================================================
 // Types
@@ -53,7 +53,7 @@ const DEFAULTS = {
  * Load configuration from environment
  */
 function loadConfig(): Config {
-  const envPath = process.env.LIFEOS_CONFIG_DIR ? join(process.env.LIFEOS_CONFIG_DIR, '.env') : join(homedir(), '.claude', '.env');
+  const envPath = process.env.LIFEOS_CONFIG_DIR ? join(process.env.LIFEOS_CONFIG_DIR, '.env') : join(getClaudeDir(), '.env');
 
   try {
     const envContent = readFileSync(envPath, 'utf-8');
@@ -64,7 +64,7 @@ function loadConfig(): Config {
       ?.trim();
 
     if (!apiKey) {
-      console.error('Error: LIMITLESS_API_KEY not found in ~/.claude/.env');
+      console.error(`Error: LIMITLESS_API_KEY not found in ${displayPath(getClaudeDir())}/.env`);
       process.exit(1);
     }
 
@@ -74,8 +74,8 @@ function loadConfig(): Config {
       baseUrl: DEFAULTS.baseUrl,
     };
   } catch (error) {
-    console.error(`Error: Cannot read ~/.claude/.env file`);
-    console.error('Make sure LIMITLESS_API_KEY is set in ~/.claude/.env');
+    console.error(`Error: Cannot read ${displayPath(getClaudeDir())}/.env file`);
+    console.error(`Make sure LIMITLESS_API_KEY is set in ${displayPath(getClaudeDir())}/.env`);
     process.exit(1);
   }
 }
@@ -222,7 +222,7 @@ OUTPUT:
   Exit code 0 on success, 1 on error
 
 CONFIGURATION:
-  API Key:   ~/.claude/.env (LIMITLESS_API_KEY=your_key)
+  API Key:   ${displayPath(getClaudeDir())}/.env (LIMITLESS_API_KEY=your_key)
   Timezone:  America/Los_Angeles (Pacific Time)
   Base URL:  https://api.limitless.ai/v1
 
@@ -251,7 +251,7 @@ PHILOSOPHY:
   - Documented: Full help and examples
   - Testable: Predictable behavior
 
-For more information, see ~/.claude/LIFEOS/TOOLS/llcli/README.md
+For more information, see ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/llcli/README.md
 
 Version: 1.0.0
 Author: {{PRINCIPAL_FULL_NAME}}

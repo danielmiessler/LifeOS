@@ -28,6 +28,7 @@ import { sendMessage } from "../lib/imessage-send"
 import { join } from "path"
 import { appendFile, mkdir, rename } from "fs/promises"
 import { stripModeScaffolding, hasModeScaffolding } from "../lib/strip-mode-scaffolding"
+import { getClaudeDir } from "../../TOOLS/Paths";
 
 // BILLING: Strip ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN before any SDK
 // query() call. Same rationale as modules/telegram.ts — both outrank OAuth in
@@ -62,9 +63,9 @@ export interface IMessageHealth {
 // ── Module State ──
 
 const HOME = process.env.HOME ?? ""
-const CWD = join(HOME, ".claude")
-const STATE_DIR = join(HOME, ".claude", "LIFEOS", "PULSE", "state", "imessage")
-const LOGS_DIR = join(HOME, ".claude", "LIFEOS", "PULSE", "logs", "imessage")
+const CWD = getClaudeDir()
+const STATE_DIR = join(getClaudeDir(), "LIFEOS", "PULSE", "state", "imessage")
+const LOGS_DIR = join(getClaudeDir(), "LIFEOS", "PULSE", "logs", "imessage")
 
 let pollTimer: ReturnType<typeof setInterval> | null = null
 let running = false

@@ -11,6 +11,7 @@ Thin Interceptor wrapper. UI targeting uses loud accessibility-tree heuristics.
 */
 import { mkdir, readdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
+import { displayPath, getClaudeDir } from "../../../LIFEOS/TOOLS/Paths";
 
 type TreeNode = { ref?: string; role?: string; name?: string; text?: string; contenteditable?: boolean | string; children?: TreeNode[] };
 
@@ -18,7 +19,7 @@ function resolveInterceptorBin(): string {
   const found = Bun.spawnSync(["which", "interceptor"]);
   const bin = found.stdout.toString().trim();
   if (found.exitCode !== 0 || bin.length === 0) {
-    console.error("interceptor CLI not found on PATH — install the Interceptor skill (see ~/.claude/skills/Interceptor/SKILL.md)");
+    console.error(`interceptor CLI not found on PATH — install the Interceptor skill (see ${displayPath(getClaudeDir())}/skills/Interceptor/SKILL.md)`);
     process.exit(127);
   }
   return bin;

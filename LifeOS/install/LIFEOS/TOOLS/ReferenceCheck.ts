@@ -27,9 +27,10 @@
 import { readFileSync, statSync, existsSync, readdirSync, realpathSync } from 'fs';
 import { join, resolve, dirname, relative, extname, sep } from 'path';
 import { execSync } from 'child_process';
+import { getClaudeDir } from "./Paths";
 
 const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
+const CLAUDE_DIR = getClaudeDir();
 const LIFEOS_DIR = join(CLAUDE_DIR, 'LIFEOS');
 
 // ── Arg parsing (manual, zero deps) ──

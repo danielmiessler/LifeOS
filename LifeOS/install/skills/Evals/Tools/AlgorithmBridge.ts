@@ -13,6 +13,7 @@ import { join } from 'path';
 import { parse as parseYaml } from 'yaml';
 import { parseArgs } from 'util';
 import { $ } from 'bun';
+import { displayPath, getClaudeDir } from "../../../LIFEOS/TOOLS/Paths";
 
 const EVALS_DIR = join(import.meta.dir, '..');
 // Run artifacts live outside the skill tree (runtime state, not skill content).
@@ -160,7 +161,7 @@ export function formatForISC(result: AlgorithmEvalResult): string {
 export async function updateISCWithResult(result: AlgorithmEvalResult): Promise<void> {
   const status = result.passed ? 'DONE' : 'BLOCKED';
 
-  await $`bun run ~/.claude/skills/THEALGORITHM/Tools/ISCManager.ts update --row ${result.isc_row} --status ${status} --note "${formatForISC(result)}"`.quiet();
+  await $`bun run ${displayPath(getClaudeDir())}/skills/THEALGORITHM/Tools/ISCManager.ts update --row ${result.isc_row} --status ${status} --note "${formatForISC(result)}"`.quiet();
 }
 
 // CLI interface

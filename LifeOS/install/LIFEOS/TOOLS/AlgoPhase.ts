@@ -31,6 +31,7 @@ import { readRegistry, writeRegistry } from '../../hooks/lib/isa-utils';
 import { setPhaseTab } from '../../hooks/lib/tab-setter';
 import { effortToCanonicalELevel } from '../../hooks/lib/effort';
 import type { AlgorithmTabPhase } from '../../hooks/lib/tab-constants';
+import { displayPath, getClaudeDir } from "./Paths";
 
 const VALID_PHASES = new Set([
   'observe', 'think', 'plan', 'build', 'execute', 'verify', 'learn', 'complete', 'starting',
@@ -72,7 +73,7 @@ function printHelp(): void {
   console.log(`AlgoPhase — atomic Algorithm phase emitter
 
 Usage:
-  bun ~/.claude/LIFEOS/TOOLS/AlgoPhase.ts <phase> [--slug X] [--uuid X] [--iteration N]
+  bun ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/AlgoPhase.ts <phase> [--slug X] [--uuid X] [--iteration N]
 
 Phases: observe | think | plan | build | execute | verify | learn | complete | starting
 
@@ -83,9 +84,9 @@ Slug resolution priority:
   4. most-recent algorithm-mode row in work.json
 
 Examples:
-  bun ~/.claude/LIFEOS/TOOLS/AlgoPhase.ts think
-  bun ~/.claude/LIFEOS/TOOLS/AlgoPhase.ts build --slug 20260524-072107_pulse-agents
-  bun ~/.claude/LIFEOS/TOOLS/AlgoPhase.ts verify --uuid 49348c25-a71f-47f1-b038-0f26192f24bf
+  bun ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/AlgoPhase.ts think
+  bun ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/AlgoPhase.ts build --slug 20260524-072107_pulse-agents
+  bun ${displayPath(getClaudeDir())}/LIFEOS/TOOLS/AlgoPhase.ts verify --uuid 49348c25-a71f-47f1-b038-0f26192f24bf
 `);
 }
 

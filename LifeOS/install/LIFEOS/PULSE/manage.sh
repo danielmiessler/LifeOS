@@ -2,7 +2,7 @@
 # LifeOS Pulse — Process Management
 # Usage: manage.sh {start|stop|restart|status|install|uninstall}
 
-PULSE_DIR="$HOME/.claude/LIFEOS/PULSE"
+PULSE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/LIFEOS/PULSE"
 PLIST_NAME="com.lifeos.pulse"
 PLIST_SRC="$PULSE_DIR/$PLIST_NAME.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
