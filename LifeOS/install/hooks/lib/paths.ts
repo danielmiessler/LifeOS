@@ -26,9 +26,11 @@ export function expandPath(path: string): string {
 }
 
 /**
- * Abbreviate the home prefix to `~` for user-facing display, so messages show
- * the path that actually resolves on this install (e.g. `~/.claude-gc/...` on
- * a CLAUDE_CONFIG_DIR profile) instead of a hardcoded `~/.claude/...`.
+ * Abbreviate the home prefix to `~` in a path shown to the user. Purely
+ * cosmetic — the absolute path would work as-is. Exists so that messages
+ * built from resolved path constants render byte-identical to the previous
+ * hardcoded `~/.claude/...` strings on a default-root install, and follow
+ * the usual home-relative display convention everywhere else.
  */
 export function displayPath(path: string): string {
   const home = homedir();
