@@ -16,7 +16,7 @@
  */
 
 import { readFileSync, readdirSync } from "node:fs";
-import { getSkillsDir } from "./lib/paths";
+import { displayPath, getSkillsDir } from "./lib/paths";
 
 interface HookInput {
   session_id?: string;
@@ -83,7 +83,7 @@ function main(): never {
     "  ArtWorkflowGuard — Generate.ts call BLOCKED before execution.",
     "═══════════════════════════════════════════════════════════════════════════",
     "",
-    "  This Bash command invokes ~/.claude/skills/Art/Tools/Generate.ts but",
+    `  This Bash command invokes ${displayPath(getSkillsDir())}/Art/Tools/Generate.ts but`,
     "  does not name a workflow. The Art skill requires every image generation",
     "  to run through a named workflow. Freeform prompts are documented to fail.",
     "",
@@ -93,7 +93,7 @@ function main(): never {
     "",
     "  Available workflows (each is a file under skills/Art/Workflows/):",
     ...workflows.map(
-      (w) => `    --workflow=${w.padEnd(28)} → ~/.claude/skills/Art/Workflows/${w}.md`
+      (w) => `    --workflow=${w.padEnd(28)} → ${displayPath(getSkillsDir())}/Art/Workflows/${w}.md`
     ),
     "",
     "  Recommended next step: Read the workflow file matching your task,",

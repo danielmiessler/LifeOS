@@ -26,7 +26,7 @@
  */
 import { existsSync, readFileSync, writeFileSync, chmodSync } from "fs";
 import { join } from "path";
-import { getLifeosDir } from "./paths";
+import { displayPath, getClaudeDir, getLifeosDir } from "./paths";
 
 declare const Bun: { spawnSync: (cmd: string[], opts?: any) => any };
 
@@ -104,7 +104,7 @@ export function loadWorkConfig(): WorkConfig {
   if (!existsSync(REPO_JSON_PATH)) {
     return disabled(
       "missing",
-      "USER/WORK/work_repo.json missing — run `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts <owner/repo>`",
+      `USER/WORK/work_repo.json missing — run \`bun ${displayPath(join(getClaudeDir(), "skills/_ULWORK/Tools/SetWorkRepo.ts"))} <owner/repo>\``,
     );
   }
 

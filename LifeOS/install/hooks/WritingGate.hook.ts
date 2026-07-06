@@ -29,7 +29,7 @@ import { readHookInput, parseTranscriptFromInput } from "./lib/hook-io";
 import { appendFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 import { createHash } from "crypto";
 import { dirname, join } from "path";
-import { getLifeosDir } from './lib/paths';
+import { displayPath, getLifeosDir } from './lib/paths';
 
 const LIFEOS_DIR = getLifeosDir();
 const OBS_PATH = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "writing-gate.jsonl");
@@ -130,7 +130,7 @@ const BLOCK_REASON =
   "through the _WRITING skill AND the detector before it is shown (OPERATIONAL_RULES.md § Authored content). " +
   "The gate checks for a real PangramScore.ts run on the draft — a typed token does NOT satisfy it. Before " +
   "stopping: (1) run Skill(\"_WRITING\") DETECT mode on the draft and fix every P0/P1 in the right voice; " +
-  "(2) run `bun ~/.claude/LIFEOS/TOOLS/PangramScore.ts --file <draft>` on the ACTUAL draft text so the run is " +
+  "(2) run `bun " + displayPath(join(getLifeosDir(), "TOOLS/PangramScore.ts")) + " --file <draft>` on the ACTUAL draft text so the run is " +
   "logged; (3) cite the detect result + the reported AI% in a `✍️ WRITING-AUDIT:` line. Pangram saturates on " +
   "model prose, so the number is REPORTED, not a pass/fail bar — the requirement is that the audit RAN.";
 

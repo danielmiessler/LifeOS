@@ -14,7 +14,7 @@
  */
 
 import { execFileSync } from "node:child_process";
-import { paiPath } from "./lib/paths";
+import { displayPath, paiPath } from "./lib/paths";
 
 const CHECK = paiPath("TOOLS/MemoryHealthCheck.ts");
 
@@ -26,7 +26,7 @@ try {
   });
   const report = JSON.parse(out);
   if (report.overall === "critical") {
-    console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: bun ~/.claude/LIFEOS/TOOLS/MemoryHealthCheck.ts`);
+    console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: bun ${displayPath(CHECK)}`);
   } else if (report.overall === "warn") {
     console.error(`⚠️  Memory health: WARN — ${report.counts.warn} finding(s).`);
   }
@@ -39,7 +39,7 @@ try {
     if (stdout) {
       const report = JSON.parse(stdout);
       if (report.overall === "critical") {
-        console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: bun ~/.claude/LIFEOS/TOOLS/MemoryHealthCheck.ts`);
+        console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: bun ${displayPath(CHECK)}`);
       } else if (report.overall === "warn") {
         console.error(`⚠️  Memory health: WARN — ${report.counts.warn} finding(s).`);
       }

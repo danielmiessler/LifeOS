@@ -26,6 +26,16 @@ export function expandPath(path: string): string {
 }
 
 /**
+ * Abbreviate the home prefix to `~` for user-facing display, so messages show
+ * the path that actually resolves on this install (e.g. `~/.claude-gc/...` on
+ * a CLAUDE_CONFIG_DIR profile) instead of a hardcoded `~/.claude/...`.
+ */
+export function displayPath(path: string): string {
+  const home = homedir();
+  return path.startsWith(home + '/') ? '~' + path.slice(home.length) : path;
+}
+
+/**
  * Get the LifeOS data directory (expanded).
  *
  * Priority:
