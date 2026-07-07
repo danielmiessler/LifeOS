@@ -1317,13 +1317,19 @@ async function runLoop(isaPath: string, maxOverride?: number, agentCount: number
     // ── Sequential path: single agent (existing behavior) ──
     const prompt = buildIterationPrompt(absPath, newIteration, max);
 
+    // BILLING: subscription, not API. No --bare (forces ANTHROPIC_API_KEY),
+    // strip the key from inherited env (bun auto-loads .env). Mirrors runParallelIteration.
+    const workerEnv: Record<string, string> = { ...process.env } as Record<string, string>;
+    delete workerEnv.ANTHROPIC_API_KEY;
+
     const result = spawnSync("claude", [
-      "-p", "--bare", prompt,
+      "-p", prompt,
       "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
     ], {
       stdio: ["pipe", "pipe", "pipe"],
       timeout: 600_000, // 10 minute timeout per iteration
       cwd: dirname(absPath), // Run from ISA's directory context
+      env: workerEnv,
     });
 
     const iterEndTime = Date.now();
