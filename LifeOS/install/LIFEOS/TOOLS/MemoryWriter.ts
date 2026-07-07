@@ -222,13 +222,26 @@ function parseFile(content: string): ParsedFile {
   const endIdx = afterFm.indexOf(END_MARKER);
 
   if (beginIdx === -1 || endIdx === -1 || endIdx < beginIdx) {
-    // Markers missing or malformed — treat as empty entries with the whole
-    // body as preEntries; this preserves principal content if they edited.
+    // Self-heal: markers missing or malformed (e.g. a template that shipped
+    // without a BEGIN marker, or a file where prior writes appended stray END
+    // markers). Recover every well-formed entry line, drop ALL stray markers,
+    // preserve the intro text before the first entry, and rebuild a single
+    // clean BEGIN/END scaffold. Without this, each write compounded corruption.
+    const recovered: string[] = [];
+    const introLines: string[] = [];
+    let sawEntry = false;
+    for (const line of afterFm.split("\n")) {
+      const t = line.trim();
+      if (t === BEGIN_MARKER || t === END_MARKER) continue;
+      if (PREFIX_PATTERN.test(t)) { recovered.push(t); sawEntry = true; continue; }
+      if (!sawEntry) introLines.push(line);
+    }
+    const intro = introLines.join("\n").replace(/\n+$/, "");
     return {
       frontmatter,
-      preEntriesBody: afterFm,
-      entries: [],
-      postEntriesBody: "",
+      preEntriesBody: (intro ? intro + "\n" : "") + BEGIN_MARKER,
+      entries: recovered,
+      postEntriesBody: END_MARKER,
     };
   }
 
