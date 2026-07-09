@@ -67,6 +67,32 @@
  */
 
 import { spawn } from "child_process";
+import { existsSync } from "fs";
+
+// Resolve `claude` to an absolute path. Bare `spawn('claude')` relies on PATH,
+// which is fine interactively but ENOENTs under launchd/cron (minimal PATH lacks
+// ~/.local/bin) — the failure that silently wedges any scheduled inference caller.
+let cachedClaudeBin: string | null = null;
+export function resolveClaudeBin(): string {
+  if (cachedClaudeBin) return cachedClaudeBin;
+  const explicit = process.env.CLAUDE_BIN;
+  if (explicit && existsSync(explicit)) return (cachedClaudeBin = explicit);
+  const home = process.env.HOME ?? "";
+  const candidates = [
+    home ? `${home}/.local/bin/claude` : "",
+    home ? `${home}/.claude/local/claude` : "",
+    "/opt/homebrew/bin/claude",
+    "/usr/local/bin/claude",
+    "/usr/bin/claude",
+  ].filter(Boolean);
+  for (const p of candidates) {
+    if (existsSync(p)) return (cachedClaudeBin = p);
+  }
+  for (const dir of (process.env.PATH ?? "").split(":")) {
+    if (dir && existsSync(`${dir}/claude`)) return (cachedClaudeBin = `${dir}/claude`);
+  }
+  return (cachedClaudeBin = "claude"); // last resort: preserve prior behavior
+}
 
 /** The four run levels — mirrors models.ts EffortLevel. */
 export type InferenceLevel = 'low' | 'medium' | 'high' | 'max';
@@ -182,7 +208,7 @@ async function inferenceAttempt(options: InferenceOptions, modelOverride?: strin
     let stdout = '';
     let stderr = '';
 
-    const proc = spawn('claude', args, {
+    const proc = spawn(resolveClaudeBin(), args, {
       env,
       stdio: ['pipe', 'pipe', 'pipe'],
     });

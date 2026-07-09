@@ -51,6 +51,7 @@ import { resolve, basename, join, dirname } from "path";
 import { spawnSync, spawn } from "child_process";
 import { randomUUID } from "crypto";
 import { generateISATemplate } from "../../../.claude/hooks/lib/isa-template";
+import { resolveClaudeBin } from "./Inference";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -842,7 +843,7 @@ async function runParallelIteration(
   const processes = assignments.map(assignment => {
     const criterion = assignment.criteriaDetails[0]; // One criterion per agent
     const prompt = buildWorkerPrompt(isaPath, assignment.agentId, criterion, iteration);
-    const proc = Bun.spawn(["claude", "-p", prompt,
+    const proc = Bun.spawn([resolveClaudeBin(), "-p", prompt,
       "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,NotebookEdit",
     ], {
       cwd: dirname(isaPath),
@@ -1437,7 +1438,7 @@ function runInteractive(isaPath: string): void {
   console.log(`  Launching claude...\n`);
 
   // Launch interactive claude session with ISA context
-  const child = spawn("claude", [
+  const child = spawn(resolveClaudeBin(), [
     prompt,
     "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
   ], {
@@ -1503,7 +1504,7 @@ function runIdeate(
   console.log(`  Launching claude...\n`);
 
   // Launch interactive claude session with ideate context
-  const child = spawn("claude", [
+  const child = spawn(resolveClaudeBin(), [
     prompt,
     "--allowedTools", "Edit,Write,Bash,Read,Glob,Grep,WebFetch,WebSearch,Task,TaskCreate,TaskUpdate,TaskList,NotebookEdit",
   ], {
