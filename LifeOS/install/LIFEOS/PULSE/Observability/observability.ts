@@ -26,6 +26,13 @@ import { join, extname } from "path"
 import { readFileSync, readdirSync, existsSync, realpathSync, statSync, watch, type FSWatcher } from "fs"
 import YAML from "yaml"
 import { effortToCanonicalTierName } from "../../../hooks/lib/effort"
+
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
 // Growth is an OPTIONAL USER customization (USER/CUSTOMIZATIONS/TOOLS/Growth.ts): present on the
 // principal's machine, absent on fresh installs (private code, not shipped). It is loaded via a
 // guarded dynamic import in handleLifeGrowth so the Pulse server boots without it. A static import

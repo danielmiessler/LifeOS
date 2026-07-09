@@ -10,6 +10,13 @@ import { homedir } from "os";
 import { join, resolve } from "path";
 import type { DetectionResult, ExistingUserContentDetection } from "./types";
 
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
+
 function tryExec(cmd: string): string | null {
   try {
     return execSync(cmd, { timeout: 5000, stdio: ["pipe", "pipe", "pipe"] })

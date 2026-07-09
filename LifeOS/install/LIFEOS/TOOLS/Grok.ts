@@ -41,6 +41,13 @@ import { readFileSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
 
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
+
 const colors = {
   reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m',
   red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m',

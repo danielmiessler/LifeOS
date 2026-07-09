@@ -30,6 +30,13 @@ import { appendFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 import { createHash } from "crypto";
 import { dirname, join } from "path";
 
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
+
 const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME!, ".claude", "LIFEOS");
 const OBS_PATH = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "writing-gate.jsonl");
 const RUNS_PATH = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "pangram-runs.jsonl");

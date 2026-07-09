@@ -25,6 +25,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from "fs
 import { join } from "path";
 import { loadWorkConfig, type WorkConfig } from "../../../hooks/lib/work-config";
 
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
+
 const HOME = process.env.HOME || "";
 const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
 const PULSE_STATE_DIR = join(LIFEOS_DIR, "PULSE", "state");

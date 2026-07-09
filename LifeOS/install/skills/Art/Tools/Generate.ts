@@ -675,6 +675,13 @@ function enhancePromptForTransparency(prompt: string): string {
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
+
 const execAsync = promisify(exec);
 
 // ============================================================================

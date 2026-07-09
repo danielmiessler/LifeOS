@@ -32,6 +32,13 @@ import { getISOTimestamp, getPSTComponents } from './lib/time';
 import { captureFailure } from '../LIFEOS/TOOLS/FailureCapture';
 import { addRatingPulse } from './lib/isa-utils';
 
+// Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
+for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
+  const v = process.env[k];
+  if (v && /^\$\{?HOME\}?(\/|$)/.test(v)) process.env[k] = v.replace(/^\$\{?HOME\}?/, process.env.HOME ?? "~");
+}
+
+
 // ── Types ──
 
 interface HookInput {

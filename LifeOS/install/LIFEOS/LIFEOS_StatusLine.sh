@@ -12,6 +12,11 @@ set -o pipefail
 # ─────────────────────────────────────────────────────────────────────────────
 
 LIFEOS_DIR="${LIFEOS_DIR:-$HOME/.claude/LIFEOS}"
+# Claude Code injects settings.json env values without shell expansion (LifeOS#1404):
+# a shipped value of "$HOME/.claude/LIFEOS" arrives literal. Expand it here.
+LIFEOS_DIR="${LIFEOS_DIR/#\$HOME/$HOME}"
+LIFEOS_DIR="${LIFEOS_DIR/#\$\{HOME\}/$HOME}"
+LIFEOS_DIR="${LIFEOS_DIR/#\~\//$HOME/}"
 CLAUDE_HOME="$HOME/.claude"
 SETTINGS_FILE="$CLAUDE_HOME/settings.json"
 RATINGS_FILE="$LIFEOS_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl"
