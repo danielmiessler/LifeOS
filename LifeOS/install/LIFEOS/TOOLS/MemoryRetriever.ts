@@ -309,6 +309,30 @@ function extractExcerpt(note: KnowledgeNote, queryTerms: string[]): string {
 // LLM Compression via Inference.ts
 // ============================================================================
 
+// A compression call can exit 0 with non-empty output yet return the model's
+// clarification/refusal instead of a summary (e.g. it treats the note as absent
+// and answers "I need the actual note content to compress…"). Those bodies then
+// masquerade as real summaries. These high-signal tells detect that case; the
+// guard's failure mode is benign — it falls back to a raw excerpt.
+const META_ARTIFACT_PATTERNS: RegExp[] = [
+  /\bi need the actual\b/i,
+  /\bpaste the full\b/i,
+  /\byou'?ve provided the title\b/i,
+  /\bthe note body itself\b/i,
+  /\bnote content to compress\b/i,
+  /\bcontent to compress isn'?t\b/i,
+  /\bi'?ll compress it\b/i,
+  /\bcompress it to under\b/i,
+  /\bready when you share\b/i,
+  /\bplease (?:paste|share)\b[\s\S]{0,30}\bnote\b/i,
+  /\bnote\b[\s\S]{0,20}\b(?:isn'?t|not|wasn'?t) (?:included|provided)\b/i,
+  /\b(?:isn'?t|not|wasn'?t) (?:included|provided)\b[\s\S]{0,20}\bnote\b/i,
+];
+
+export function looksLikeMetaArtifact(s: string): boolean {
+  return META_ARTIFACT_PATTERNS.some((p) => p.test(s));
+}
+
 function compress(text: string, budget: number): string {
   const inferPath = path.join(LIFEOS_DIR, "TOOLS", "Inference.ts");
 
@@ -327,7 +351,10 @@ function compress(text: string, budget: number): string {
   );
 
   if (result.status === 0 && result.stdout.trim()) {
-    return result.stdout.trim();
+    const summary = result.stdout.trim();
+    // Reject a "successful" result that is actually the model's clarification or
+    // refusal rather than a summary; fall through to the raw-truncation fallback.
+    if (!looksLikeMetaArtifact(summary)) return summary;
   }
 
   // Fallback: return truncated raw text
