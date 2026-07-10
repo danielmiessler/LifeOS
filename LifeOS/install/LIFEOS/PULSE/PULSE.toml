@@ -86,7 +86,9 @@ enabled = true
 
 [da]
 enabled = true
-primary = "kai"
+# DA display name (placeholder). The canonical DA name lives in
+# LIFEOS/USER/CONFIG/LIFEOS_CONFIG.toml [da].name; rename your DA there.
+primary = "Aria"
 heartbeat_schedule = "*/30 * * * *"
 heartbeat_model = "haiku"
 heartbeat_cost_ceiling = 0.01

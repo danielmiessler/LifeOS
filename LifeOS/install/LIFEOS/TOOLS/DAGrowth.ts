@@ -13,6 +13,7 @@
  */
 
 import { join } from "path"
+import { getDAName } from "../../hooks/lib/identity"
 
 const HOME = process.env.HOME ?? "~"
 const LifeOS = join(HOME, ".claude", "LIFEOS")
@@ -40,7 +41,7 @@ interface GrowthEvent {
 
 function parsePrimaryDA(content: string): string {
   const match = content.match(/^primary:\s*(\S+)/m)
-  return match?.[1] ?? "kai"
+  return match?.[1] ?? getDAName()
 }
 
 async function readJSONL<T>(path: string): Promise<T[]> {
@@ -212,7 +213,7 @@ async function main() {
   const args = process.argv.slice(2)
   const command = args[0] ?? "summary"
 
-  let primaryDA = "kai"
+  let primaryDA = getDAName()
   try {
     const registryContent = await Bun.file(REGISTRY_PATH).text()
     primaryDA = parsePrimaryDA(registryContent)

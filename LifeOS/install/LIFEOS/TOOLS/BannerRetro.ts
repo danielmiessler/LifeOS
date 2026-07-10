@@ -278,24 +278,13 @@ const LIFEOS_CUBE_WIDE = [
   "   +----------+",
 ];
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Block Letter KAI (using block characters)
-// ═══════════════════════════════════════════════════════════════════════════
-
-const BLOCK_KAI = [
-  "█  █  █████  █████",
-  "█ █   █   █    █  ",
-  "██    █████    █  ",
-  "█ █   █   █    █  ",
-  "█  █  █   █  █████",
-];
-
-// Smaller block KAI
-const BLOCK_KAI_SMALL = [
-  "█▀▄  ▄▀█  █",
-  "█▀▄  █▀█  █",
-  "▀ ▀  ▀ ▀  █",
-];
+// The banner spells the configured DA name (stats.name, which defaults to
+// "LifeOS"), rendered letter-spaced at the render sites below. The former
+// hardcoded "KAI" block-letter constants were removed so the banner reflects
+// whatever DA the principal named during setup.
+function daNameBanner(name: string): string {
+  return name.toUpperCase().split("").join(" ");
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Dynamic Stats & Identity
@@ -514,12 +503,10 @@ function createRetroBanner(): string {
   lines.push(`  ${gd}System Status:${RESET} ${g}${progress}${RESET} ${h}75%${RESET}`);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // BLOCK LETTER KAI
+  // DA NAME (derived from configured DA identity)
   // ─────────────────────────────────────────────────────────────────────────
   lines.push("");
-  for (const row of BLOCK_KAI_SMALL) {
-    lines.push(`    ${c}${row}${RESET}`);
-  }
+  lines.push(`    ${c}${daNameBanner(stats.name)}${RESET}`);
 
   // ─────────────────────────────────────────────────────────────────────────
   // GITHUB URL
@@ -625,12 +612,8 @@ function createPureASCIIBanner(): string {
   lines.push(`  ${gd}Status:${RESET} ${g}[########....] 75%${RESET}`);
 
   lines.push("");
-  // Simple block KAI
-  lines.push(`    ${c}#  # ### ###${RESET}`);
-  lines.push(`    ${c}# #  ### ###${RESET}`);
-  lines.push(`    ${c}##   # # ###${RESET}`);
-  lines.push(`    ${c}# #  ### ###${RESET}`);
-  lines.push(`    ${c}#  # # # ###${RESET}`);
+  // DA name (derived from configured DA identity)
+  lines.push(`    ${c}${daNameBanner(stats.name)}${RESET}`);
 
   lines.push("");
   lines.push(`  ${gd}----------------------------------------${RESET}`);

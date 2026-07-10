@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * MemoryInsights — `kai insights` CLI for autonomic memory delta view.
+ * MemoryInsights — the DA-named `insights` CLI for autonomic memory delta view.
  *
  * Visual-freshness ISA, F4 (ISC-30 through ISC-38).
  *
@@ -22,6 +22,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
+import { getDAName } from "../../hooks/lib/identity";
 
 const ROOT = pathResolve(homedir(), ".claude");
 const OBS = pathResolve(ROOT, "LIFEOS/MEMORY/OBSERVABILITY");
@@ -41,7 +42,7 @@ function parseArgs(): Args {
       if (!Number.isNaN(n) && n > 0) days = n;
       i++;
     } else if (argv[i] === "--help" || argv[i] === "-h") {
-      console.log("kai insights — memory delta over the last N day(s)");
+      console.log(`${getDAName().toLowerCase()} insights — memory delta over the last N day(s)`);
       console.log("usage: bun LIFEOS/TOOLS/MemoryInsights.ts [--days N]");
       console.log("       --days N    window size in days (default: 1)");
       process.exit(0);
@@ -163,7 +164,7 @@ function main(): void {
   // Zero-activity short-circuit (ISC-36)
   const zeroActivity = reviewerRuns.length === 0 && memoryWrites.length === 0 && proposals.length === 0;
   if (zeroActivity) {
-    console.log(`kai insights — last ${days} day(s)`);
+    console.log(`${getDAName().toLowerCase()} insights — last ${days} day(s)`);
     console.log("═".repeat(60));
     console.log(`window: ${fmtClock(sinceMs)} → ${fmtClock(now)}`);
     console.log(`(no activity in last ${days} day(s))`);
@@ -173,7 +174,7 @@ function main(): void {
   }
 
   const out: string[] = [];
-  out.push(`kai insights — last ${days} day(s)`);
+  out.push(`${getDAName().toLowerCase()} insights — last ${days} day(s)`);
   out.push("═".repeat(60));
   out.push(`window: ${fmtClock(sinceMs)} → ${fmtClock(now)}`);
   out.push("");

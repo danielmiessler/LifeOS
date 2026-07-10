@@ -202,7 +202,7 @@ function ingest(): Raw[] {
 // ============================================================================
 
 const STOP = new Set(("a an and are as at be by for from has have in into is it its of on or that the to with we our this " +
-  "you your i me my system build make want need use using via pai memory work isa kai daniel new add get set " +
+  "you your i me my system build make want need use using via pai memory work isa new add get set " +
   "not but all any can will should would they them then than over under about across into out up down").split(" "));
 
 function tokenize(text: string): Set<string> {

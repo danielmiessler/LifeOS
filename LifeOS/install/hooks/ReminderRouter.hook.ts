@@ -22,6 +22,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { createHash } from "crypto";
 import { join, dirname } from "path";
 import { loadWorkConfig } from "./lib/work-config";
+import { getDAName } from "./lib/identity";
 
 const HOME = process.env.HOME || "";
 const STATE_PATH = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE", "reminder-router-seen.json");
@@ -178,7 +179,7 @@ function buildIssue(match: RouteMatch, prompt: string): { title: string; body: s
     "Property:internal",
     "Status:queued",
     "Priority:P3",
-    "Agent:kai",
+    `Agent:${getDAName()}`,
     "pai-sync",
   ];
 

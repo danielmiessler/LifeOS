@@ -102,6 +102,18 @@ const DA_VOICE_ID = ((): string => {
   return "21m00Tcm4TlvDq8ikWAM"  // ElevenLabs "Rachel" — public voice
 })()
 
+// DA display name — read once at import from LifeosConfig ([da].name in
+// LIFEOS/USER/CONFIG/LIFEOS_CONFIG.toml). Used to strip a leading speaker label
+// off voice summaries and to name the outbound voice-note file. "LifeOS"
+// fallback matches the identity loader's default when config is unavailable.
+const DA_NAME = ((): string => {
+  try {
+    const n = loadLifeosConfig().da.name
+    if (n && typeof n === "string" && n.length > 0) return n
+  } catch { /* fall through to default */ }
+  return "LifeOS"
+})()
+
 // ── Module State ──
 
 let bot: Bot | null = null
@@ -499,7 +511,8 @@ function tidySummary(raw: string): string {
   // Strip wrapping quotes
   s = s.replace(/^["'`]+|["'`]+$/g, "")
   // Strip leading speaker labels ({{DA_NAME}}:, Summary:, etc.)
-  s = s.replace(/^(kai|summary|voice|output|response)[:\-—]\s*/i, "")
+  const daLabel = DA_NAME.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+  s = s.replace(new RegExp(`^(${daLabel}|summary|voice|output|response)[:\\-—]\\s*`, "i"), "")
   // Strip leading list markers
   s = s.replace(/^[-*•]\s+/, "")
   // Collapse internal whitespace
@@ -528,7 +541,7 @@ function fallbackFirstSentence(text: string): string {
  * bytes as a Buffer; never writes to disk. Telegram's sendVoice consumes the
  * Buffer via grammY's InputFile constructor.
  */
-export async function synthesizeKaiVoice(text: string): Promise<Buffer> {
+export async function synthesizeDaVoice(text: string): Promise<Buffer> {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${DA_VOICE_ID}?output_format=opus_48000_64`
   const spokenText = disambiguateHomographs(text)
   const res = await fetch(url, {
@@ -612,11 +625,11 @@ export function sendVoiceSummary(
       }
 
       const tSynth = Date.now()
-      const buf = await synthesizeKaiVoice(summary)
+      const buf = await synthesizeDaVoice(summary)
       const synthLatencyMs = Date.now() - tSynth
 
       const tSend = Date.now()
-      await ctx.api.sendVoice(chatId, new InputFile(buf, "kai-summary.ogg"))
+      await ctx.api.sendVoice(chatId, new InputFile(buf, `${DA_NAME.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-summary.ogg`))
       const sendLatencyMs = Date.now() - tSend
 
       lastVoiceSendMs = Date.now() - t0

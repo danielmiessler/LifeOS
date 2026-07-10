@@ -27,6 +27,7 @@
 import { existsSync, readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, appendFileSync } from "fs";
 import { join } from "path";
 import { loadWorkConfig } from "../../hooks/lib/work-config";
+import { getDAName } from "../../hooks/lib/identity";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -255,7 +256,7 @@ async function sweepSessions(
       "Status:queued",
       projectProperty(fm.project),
       "Priority:P3",
-      "Agent:kai",
+      `Agent:${getDAName()}`,
     ], existingLabels);
     const goalLine = fm.principal_stated_goal ? `\n> 🎯 **Principal stated goal:** ${fm.principal_stated_goal}\n` : "";
     const body = [
@@ -378,7 +379,7 @@ async function sweepProjectChecks(
       "Status:queued",
       projectProperty(row.name.toLowerCase()),
       "Priority:P3",
-      "Agent:kai",
+      `Agent:${getDAName()}`,
       "stale",
     ], existingLabels);
     const body = [
@@ -443,7 +444,7 @@ async function sweepGoals(
       "Status:queued",
       "Property:internal",
       "Priority:P2",
-      "Agent:kai",
+      `Agent:${getDAName()}`,
     ], existingLabels);
     const body = [
       `## 🎯 TELOS Goal`,
@@ -514,7 +515,7 @@ async function sweepBpeCadence(
     "Status:queued",
     "Property:internal",
     "Priority:P3",
-    "Agent:kai",
+    `Agent:${getDAName()}`,
   ], existingLabels);
   const body = [
     `## 🪓 Scheduled BitterPillEngineering pass`,

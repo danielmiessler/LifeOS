@@ -12,6 +12,7 @@
 
 import { join } from "path"
 import { readFileSync, writeFileSync, appendFileSync, existsSync, mkdirSync } from "fs"
+import { getDAName } from "../../hooks/lib/identity"
 
 const HOME = process.env.HOME ?? "~"
 const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
@@ -143,7 +144,7 @@ function addTask(args: Record<string, string>): void {
   const task: ScheduledTask = {
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     created_at: new Date().toISOString(),
-    created_by: args.by ?? "kai",
+    created_by: args.by ?? getDAName(),
     description: desc,
     schedule: hasCron
       ? { type: "recurring", cron: args.cron, until: args.until }
@@ -251,6 +252,6 @@ Options:
   --model     LLM model (for type=prompt, default: haiku)
   --command   Shell command (for type=script)
   --until     Expiry ISO datetime (for recurring)
-  --by        Creator name (default: kai)`)
+  --by        Creator name (default: ${getDAName()})`)
     break
 }

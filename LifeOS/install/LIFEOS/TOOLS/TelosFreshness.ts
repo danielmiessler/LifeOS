@@ -24,6 +24,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { basename, join } from "path";
+import { getDAName } from "../../hooks/lib/identity";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -552,7 +553,7 @@ function refreshFreshnessCache(): void {
  */
 export function bumpTelosTimestamp(
   slug?: string,
-  by: string = "kai",
+  by: string = getDAName(),
   path: string = TELOS_PATH,
 ): { changed: boolean; sectionFound: boolean } {
   if (!existsSync(path)) return { changed: false, sectionFound: false };
@@ -617,7 +618,7 @@ export function bumpTelosTimestamp(
   return { changed: true, sectionFound };
 }
 
-export function bumpContextTimestamp(filePath: string, by: string = "kai"): { changed: boolean } {
+export function bumpContextTimestamp(filePath: string, by: string = getDAName()): { changed: boolean } {
   if (!existsSync(filePath)) return { changed: false };
 
   const raw = readFileSync(filePath, "utf-8");
