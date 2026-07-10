@@ -15,6 +15,9 @@ enabled = true
 
 [telegram]
 enabled = true
+# Send a spoken summary of each text reply as a Telegram voice note. Requires
+# ELEVENLABS_API_KEY. Set false to keep text replies but suppress voice notes.
+voice_summaries = true
 
 [imessage]
 enabled = false

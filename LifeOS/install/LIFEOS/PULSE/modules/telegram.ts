@@ -58,6 +58,11 @@ export interface TelegramConfig {
   max_turns?: number
   sdk_timeout_ms?: number
   edit_interval_ms?: number
+  // Send a spoken summary of each text reply as a Telegram voice note.
+  // Defaults to enabled (undefined ⇒ on) so existing installs are unchanged;
+  // set `voice_summaries = false` under [telegram] in PULSE.toml to opt out
+  // even when ELEVENLABS_API_KEY is present.
+  voice_summaries?: boolean
 }
 
 // ── Constants ──
@@ -570,6 +575,9 @@ export function sendVoiceSummary(
   fullText: string,
 ): void {
   if (!ELEVENLABS_API_KEY) return
+  // Explicit opt-out: a principal can keep text replies but suppress voice
+  // notes via [telegram] voice_summaries = false, even with an API key present.
+  if (activeConfig?.voice_summaries === false) return
   const wordCount = fullText.trim().split(/\s+/).length
   if (wordCount < SHORT_REPLY_WORDS) {
     log("info", "voice summary skipped — short reply", { wordCount, chatId: ctx.chat.id })
@@ -1084,7 +1092,10 @@ export function telegramHealth(): {
   last_session_id?: string
   voice_summary: { enabled: boolean; last_send_ms: number | null }
 } {
-  const voice_summary = { enabled: ELEVENLABS_API_KEY !== "", last_send_ms: lastVoiceSendMs }
+  const voice_summary = {
+    enabled: ELEVENLABS_API_KEY !== "" && activeConfig?.voice_summaries !== false,
+    last_send_ms: lastVoiceSendMs,
+  }
 
   if (!bot) {
     return {
