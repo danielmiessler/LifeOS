@@ -17,6 +17,7 @@
 import { join } from "path"
 import { readFileSync, existsSync } from "fs"
 import { parse } from "smol-toml"
+import { loadLifeosConfig } from "../TOOLS/LifeosConfig"
 
 // ── Load .env before anything else ──
 
@@ -231,6 +232,20 @@ async function loadPulseConfig(): Promise<PulseConfig> {
 
   const daemonConfig = await loadConfig(PULSE_DIR)
 
+  // Converge the DA identity on a single source of truth. PULSE.toml ships a
+  // placeholder [da].primary, but the DA's real name lives in the user config
+  // (LIFEOS/USER/CONFIG/LIFEOS_CONFIG.toml [da].name). Defer to it when present
+  // — via the existing LifeosConfig loader — rather than maintaining the DA
+  // name in two files. Fresh installs without the user config keep the
+  // PULSE.toml value.
+  const da = (parsed.da as PulseConfig["da"]) ?? { enabled: false }
+  try {
+    const daName = loadLifeosConfig().da.name
+    if (daName) da.primary = daName
+  } catch {
+    // LIFEOS_CONFIG.toml absent or invalid (e.g. fresh install) — keep PULSE.toml's value.
+  }
+
   return {
     port: (parsed.port as number) ?? parseInt(process.env.PULSE_PORT || "31337", 10),
     tls: (parsed.tls as PulseConfig["tls"]) ?? undefined,
@@ -243,7 +258,7 @@ async function loadPulseConfig(): Promise<PulseConfig> {
     work: (parsed.work as PulseConfig["work"]) ?? { enabled: true },
     telos: (parsed.telos as PulseConfig["telos"]) ?? { enabled: true },
     hooks: (parsed.hooks as PulseConfig["hooks"]) ?? { enabled: true },
-    da: (parsed.da as PulseConfig["da"]) ?? { enabled: false },
+    da,
     worker: parsed.worker as PulseConfig["worker"],
     jobs: daemonConfig.jobs,
   }
