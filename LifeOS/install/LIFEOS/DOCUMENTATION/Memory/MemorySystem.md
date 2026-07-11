@@ -408,7 +408,7 @@ This is the actual "firehose" — every message, tool call, and response. LifeOS
 | File | Description |
 |------|-------------|
 | `CONTEXT.md` | Human-readable analysis with metadata, root cause notes |
-| `transcript.jsonl` | Full raw conversation up to the failure point |
+| `transcript.tail.jsonl` | Last 200 lines of the conversation (bounded) |
 | `sentiment.json` | Sentiment analysis output (rating, confidence, detailed analysis) |
 | `tool-calls.json` | Extracted tool calls with inputs and outputs |
 
