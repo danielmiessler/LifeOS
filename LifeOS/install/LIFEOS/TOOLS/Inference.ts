@@ -408,10 +408,31 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
  * that might have missed the problem decides what the reviewer sees. Auto-synthesis
  * reads the ISA directly so the reviewer gets the unfiltered state.
  *
- * Reads:
- * - Current ISA content (resolved from MEMORY/STATE/work.json active session, or
- *   the most recently-updated ISA in MEMORY/WORK/)
- * - Recent session activity if available
+ * Session resolution (deterministic, fail-safe):
+ * - work.json is a `{sessions: {...}}` registry. The pre-fix code looked for
+ *   `active`/`current`/`activeSession` keys that never existed, so it ALWAYS
+ *   fell through to "most recently modified dir in MEMORY/WORK/" — usually
+ *   right by accident, but with no session identity it could attach an
+ *   unrelated (often completed) session's ISA as the advisor state blob.
+ * - Resolution order:
+ *   1. Row matching CLAUDE_SESSION_ID, any phase — a phase:complete row of
+ *      the SAME session is still this session, and the advisor fires at the
+ *      completion boundary itself. Env set but unmatched → no state (never
+ *      fall through to a guess). Claude Code does not export
+ *      CLAUDE_SESSION_ID to tool subprocesses today; this path is
+ *      forward-looking defense-in-depth, local-trust only — not an auth
+ *      boundary.
+ *   2. No env: a COMPLETE row updated within the last 5 minutes is almost
+ *      certainly the just-finished caller making its mandatory
+ *      completion-boundary advisor call — prefer the most recent such row,
+ *      UNLESS any fresh live row also exists (then we cannot tell which
+ *      session is calling → ambiguous → no state).
+ *   3. No env, no recent-complete: exactly ONE live (non-complete,
+ *      non-native) row updated within the last 60 minutes → use it. Rows
+ *      idle longer are crash leftovers (the registry stale sweep only
+ *      prunes them after ~7 days) and are never guessable.
+ *   4. Anything else → return a state-unavailable marker and warn loudly.
+ *      Wrong state is worse than no state for a reviewer.
  *
  * Returns a state string suitable for passing to advisor().
  */
@@ -422,35 +443,75 @@ export async function synthesizeAdvisorState(): Promise<string> {
   const workDir = path.join(home, ".claude", "LIFEOS", "MEMORY", "WORK");
   const stateFile = path.join(home, ".claude", "LIFEOS", "MEMORY", "STATE", "work.json");
 
-  // Try to read active session from work.json
+  // Resolve the current session's slug from the work.json sessions registry.
   let activeSlug: string | undefined;
+  let sessions: Record<string, any> = {};
   try {
     const stateRaw = await fs.readFile(stateFile, "utf-8");
-    const state = JSON.parse(stateRaw);
-    activeSlug = state?.active || state?.current || state?.activeSession;
+    sessions = JSON.parse(stateRaw)?.sessions ?? {};
   } catch {
-    // work.json may not exist — fall back to most recent ISA
+    // work.json missing/unreadable — handled below as zero candidates.
   }
 
-  // Fall back: find most recently updated ISA in WORK/
+  const rows = Object.entries(sessions).filter(([slug]) => slug !== "__pulse_strip");
+  const updatedMs = (s: any) => {
+    const t = new Date(s?.updatedAt || s?.started || 0).getTime();
+    return Number.isFinite(t) ? t : 0;
+  };
+  const nowMs = Date.now();
+  // Freshness horizons — see the resolution-order doc comment above.
+  const LIVE_FRESH_MS = 60 * 60 * 1000;
+  const COMPLETE_RECENT_MS = 5 * 60 * 1000;
+
+  const unavailable = (detail: string): string => {
+    const warning =
+      `advisor --auto-state could not resolve the current session deterministically (${detail}); ` +
+      `proceeding WITHOUT auto-synthesized state. Pass explicit state or set CLAUDE_SESSION_ID.`;
+    console.error(`WARN: ${warning}`);
+    return `ADVISOR STATE UNAVAILABLE: ${warning}`;
+  };
+
+  // 1. Current session wins: row whose sessionUUID matches CLAUDE_SESSION_ID.
+  // A phase:complete row still belongs to THIS session, so it stays eligible;
+  // live rows are preferred, most recently updated breaks ties. Set-but-
+  // unmatched never falls through to a guess.
+  const envUUID = process.env.CLAUDE_SESSION_ID;
+  if (envUUID) {
+    const mine = rows
+      .filter(([, s]) => s?.sessionUUID === envUUID)
+      .sort((a, b) =>
+        (Number(a[1]?.phase === "complete") - Number(b[1]?.phase === "complete"))
+        || updatedMs(b[1]) - updatedMs(a[1]));
+    if (mine.length === 0) {
+      return unavailable(`CLAUDE_SESSION_ID matches no session row in work.json`);
+    }
+    activeSlug = mine[0][0];
+  }
+
+  // 2/3. No env: completion-boundary path first, then the single-fresh-live
+  // convenience path; anything else proceeds with NO state rather than guess.
   if (!activeSlug) {
-    try {
-      const entries = await fs.readdir(workDir, { withFileTypes: true });
-      const dirs = entries.filter((e) => e.isDirectory()).map((e) => e.name);
-      if (dirs.length === 0) {
-        return "No active ISA found. Advisor state unavailable.";
-      }
-      // Sort by mtime
-      const statted = await Promise.all(
-        dirs.map(async (d) => {
-          const s = await fs.stat(path.join(workDir, d));
-          return { name: d, mtime: s.mtimeMs };
-        }),
-      );
-      statted.sort((a, b) => b.mtime - a.mtime);
-      activeSlug = statted[0].name;
-    } catch (err) {
-      return `Unable to locate active ISA: ${(err as Error).message}`;
+    const live = rows.filter(([, s]) =>
+      s?.phase && s.phase !== "complete" && s.phase !== "native"
+      && nowMs - updatedMs(s) <= LIVE_FRESH_MS);
+    const recentComplete = rows
+      .filter(([, s]) => s?.phase === "complete" && nowMs - updatedMs(s) <= COMPLETE_RECENT_MS)
+      .sort((a, b) => updatedMs(b[1]) - updatedMs(a[1]));
+
+    if (recentComplete.length > 0 && live.length > 0) {
+      return unavailable(
+        `both just-completed [${recentComplete.map(([slug]) => slug).join(", ")}] and live ` +
+        `[${live.map(([slug]) => slug).join(", ")}] sessions exist — cannot tell which is calling`);
+    }
+    if (recentComplete.length > 0) {
+      activeSlug = recentComplete[0][0];
+    } else if (live.length === 1) {
+      activeSlug = live[0][0];
+    } else {
+      const detail = live.length === 0
+        ? "no live session rows in work.json (rows idle >60min are not guessable)"
+        : `${live.length} live sessions [${live.map(([slug]) => slug).join(", ")}]`;
+      return unavailable(detail);
     }
   }
 
