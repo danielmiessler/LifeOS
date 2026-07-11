@@ -54,10 +54,11 @@ interface RatingEntry {
   rating: number;
   session_id: string;
   comment?: string;
-  source?: 'implicit' | 'explicit';
+  source?: 'implicit' | 'explicit' | 'inference-failed';
   sentiment_summary?: string;
   confidence?: number;
   response_preview?: string;
+  provenance?: Provenance;
 }
 
 interface SentimentResult {
@@ -66,15 +67,43 @@ interface SentimentResult {
   confidence: number;
   summary: string;
   detailed_context: string;
+  provenance?: Provenance;
 }
 
 // ── Constants ──
+
+type Provenance = 'situational' | 'durable';
 
 const BASE_DIR = process.env.LIFEOS_DIR || join(process.env.HOME!, '.claude', 'LIFEOS');
 const SIGNALS_DIR = join(BASE_DIR, 'MEMORY', 'LEARNING', 'SIGNALS');
 const RATINGS_FILE = join(SIGNALS_DIR, 'ratings.jsonl');
 const LAST_RESPONSE_CACHE = join(BASE_DIR, 'MEMORY', 'STATE', 'last-response.txt');
 const MIN_PROMPT_LENGTH = 3;
+
+// ── Provenance Classification ──
+
+// A bare numeric rating is just this moment's score; only an articulated standing rule becomes durable.
+// Mirror the implicit channel's situational-vs-durable judgment deterministically (no extra LLM call),
+// defaulting to situational so mood/pace comments ("too slow", "stop") never mint standing lessons.
+export function classifyExplicitProvenance(comment?: string): Provenance {
+  const text = comment?.trim();
+  if (!text) return 'situational';
+  // Mood / pace / terse-redirect signals: momentary, never a standing rule.
+  const situational = /\b(?:slow(?:er)?|faster|speed|hurry|stop|halt|just do it|get to the point|get on with it|move on|over[-\s]?(?:analyz|think)\w*|relax|chill|enough|ugh|wtf|damn|annoying|terrible|awful|hate|sloppy|lazy|wrong|nope)\b/i;
+  // Articulated, repeatable rule naming a convention / tool / fact: the only thing allowed to be durable.
+  const durableRule = /\b(?:always|never|every ?time|each time|from now on|going forward|by default|in general|as a rule|use \w+ not \w+|(?:this|the) (?:project|repo|codebase|app|api|team|stack) (?:uses?|returns?|expects?|requires?|needs?|is|are|should|must|always|never))\b/i;
+  return durableRule.test(text) && !situational.test(text) ? 'durable' : 'situational';
+}
+
+// Default to situational so terse redirects never enter the durable learning corpus unless explicitly classified.
+export function classifyImplicitProvenance(raw: unknown): Provenance {
+  return raw === 'durable' ? 'durable' : 'situational';
+}
+
+// Only durable corrections are allowed to mint standing lessons or failure patterns.
+export function shouldMintStandingLesson(provenance: Provenance): boolean {
+  return provenance === 'durable';
+}
 
 // ── Stdin Reader ──
 
@@ -176,7 +205,8 @@ function captureLowRatingLearning(
   rating: number,
   summaryOrComment: string,
   detailedContext: string,
-  source: 'explicit' | 'implicit'
+  source: 'explicit' | 'implicit',
+  provenance: Provenance
 ): void {
   if (rating >= 5) return;
   if (!detailedContext?.trim()) return;
@@ -201,6 +231,7 @@ capture_type: LEARNING
 timestamp: ${year}-${month}-${day} ${hours}:${minutes}:${seconds} PST
 rating: ${rating}
 source: ${source}
+provenance: ${provenance}
 auto_captured: true
 tags: ${tags}
 ---
@@ -264,10 +295,16 @@ CRITICAL RULES:
 - Building on work enthusiastically = 7-8.
 - Simple "ok" or "thanks" = 6.
 
+PROVENANCE (situational vs durable): classify the CORRECTION, not the mood:
+- "situational": the user is steering THIS one moment: pace, verbosity, or "just do it now" energy. Examples: "stop analyzing", "just do it", "too slow", "get to the point", a terse redirect that ignores long output, "that's wrong" with no explanation. These are momentary mood/pace signals tied to this single response. They MUST NOT become standing behavioral rules.
+- "durable": the user articulated a repeatable, verifiable correction that should change standing behavior across sessions. Examples: "you used npm again, this project always uses bun", "the API returns snake_case, you keep assuming camelCase", a specific factual rule that holds beyond this moment.
+- When unsure, choose "situational".
+
 OUTPUT FORMAT (JSON only):
 {
   "rating": <1-10, REQUIRED, never null>,
   "sentiment": "positive" | "negative" | "neutral",
+  "provenance": "situational" | "durable",
   "confidence": <0.0-1.0>,
   "summary": "<10 words max describing the satisfaction signal>",
   "detailed_context": "<50-150 words: what happened, why this rating, what to learn>"
@@ -343,11 +380,13 @@ async function main() {
     if (explicitResult) {
       console.error(`[SatisfactionCapture] Explicit rating: ${explicitResult.rating}`);
       const lastResponse = getLastResponse();
+      const provenance = classifyExplicitProvenance(explicitResult.comment);
       const entry: RatingEntry = {
         timestamp: getISOTimestamp(),
         rating: explicitResult.rating,
         session_id: sessionId,
         source: 'explicit',
+        provenance,
       };
       if (explicitResult.comment) entry.comment = explicitResult.comment;
       if (lastResponse) entry.response_preview = lastResponse.slice(0, 500);
@@ -359,16 +398,20 @@ async function main() {
         message: explicitResult.comment?.slice(0, 32),
       });
 
-      if (explicitResult.rating < 5) {
-        captureLowRatingLearning(explicitResult.rating, explicitResult.comment || '', lastResponse, 'explicit');
-        if (explicitResult.rating <= 3) {
-          await captureFailure({
-            transcriptPath: data.transcript_path,
-            rating: explicitResult.rating,
-            sentimentSummary: explicitResult.comment || `Explicit low rating: ${explicitResult.rating}/10`,
-            detailedContext: lastResponse,
-            sessionId,
-          }).catch((err) => console.error(`[SatisfactionCapture] Failure capture error: ${err}`));
+      // Situational redirects are still metrics, but only durable corrections may mint standing learnings.
+      if (shouldMintStandingLesson(provenance)) {
+        if (explicitResult.rating < 5) {
+          captureLowRatingLearning(explicitResult.rating, explicitResult.comment || '', lastResponse, 'explicit', provenance);
+          if (explicitResult.rating <= 3) {
+            await captureFailure({
+              transcriptPath: data.transcript_path,
+              rating: explicitResult.rating,
+              sentimentSummary: explicitResult.comment || `Explicit low rating: ${explicitResult.rating}/10`,
+              detailedContext: lastResponse,
+              sessionId,
+              source: 'explicit',
+            }).catch((err) => console.error(`[SatisfactionCapture] Failure capture error: ${err}`));
+          }
         }
       }
       process.exit(0);
@@ -434,6 +477,7 @@ async function main() {
         // Clamp rating to 1-10, default 5 if missing
         const rating = (r.rating != null && r.rating >= 1 && r.rating <= 10) ? r.rating : 5;
         const confidence = r.confidence || 0.5;
+        const provenance = classifyImplicitProvenance(r.provenance);
 
         console.error(`[SatisfactionCapture] Implicit: ${rating}/10 (${confidence}) - ${r.summary || 'no summary'}`);
 
@@ -445,6 +489,7 @@ async function main() {
           source: 'implicit',
           sentiment_summary: r.summary || 'Inferred from follow-up behavior',
           confidence,
+          provenance,
           ...(cachedResponse ? { response_preview: cachedResponse.slice(0, 500) } : {}),
         });
 
@@ -454,29 +499,37 @@ async function main() {
           message: (r.summary || cleanPrompt).slice(0, 32),
         });
 
-        if (rating < 5) {
-          captureLowRatingLearning(rating, r.summary || '', r.detailed_context || '', 'implicit');
-          if (rating <= 3) {
-            await captureFailure({
-              transcriptPath: data.transcript_path,
-              rating,
-              sentimentSummary: r.summary || '',
-              detailedContext: r.detailed_context || '',
-              sessionId,
-            }).catch((err) => console.error(`[SatisfactionCapture] Failure capture error: ${err}`));
+        // Situational frustration is recorded as a metric but blocked from durable lesson generation.
+        if (shouldMintStandingLesson(provenance)) {
+          if (rating < 5) {
+            captureLowRatingLearning(rating, r.summary || '', r.detailed_context || '', 'implicit', provenance);
+            if (rating <= 3) {
+              // source:'implicit' lets FailureCapture's gate own the policy: an
+              // inferred low is a guess, not a real failure, even when durable.
+              await captureFailure({
+                transcriptPath: data.transcript_path,
+                rating,
+                sentimentSummary: r.summary || '',
+                detailedContext: r.detailed_context || '',
+                sessionId,
+                source: 'implicit',
+              }).catch((err) => console.error(`[SatisfactionCapture] Failure capture error: ${err}`));
+            }
           }
         }
       } else {
         // Inference failed — default to 5 (neutral)
         const errorReason = result.error || 'unknown';
         console.error(`[SatisfactionCapture] Inference failed: ${errorReason} — defaulting to 5`);
+        // Fabricated neutral: label the source and zero the confidence so
+        // downstream consumers can exclude it from averages and synthesis.
         writeRating({
           timestamp: getISOTimestamp(),
           rating: 5,
           session_id: sessionId,
-          source: 'implicit',
+          source: 'inference-failed',
           sentiment_summary: `Inference failed: ${errorReason.slice(0, 80)}`,
-          confidence: 0.3,
+          confidence: 0,
         });
       }
     } catch (err) {
@@ -487,9 +540,9 @@ async function main() {
         timestamp: getISOTimestamp(),
         rating: 5,
         session_id: sessionId,
-        source: 'implicit',
+        source: 'inference-failed',
         sentiment_summary: `Inference error: ${errMsg.slice(0, 80)}`,
-        confidence: 0.3,
+        confidence: 0,
       });
     }
 
@@ -500,4 +553,6 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.main) {
+  main();
+}
