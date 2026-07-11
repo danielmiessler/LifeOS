@@ -62,10 +62,21 @@ interface Rating {
   timestamp: string;
   rating: number;
   session_id: string;
-  source: "explicit" | "implicit";
+  source: "explicit" | "implicit" | "inference-failed";
   sentiment_summary: string;
   confidence: number;
   comment?: string;
+  provenance?: 'situational' | 'durable';
+}
+
+// A standing recommendation requires a REPEATABLE pattern (>=2 occurrences), not a one-off.
+const MIN_PATTERN_COUNT = 2;
+
+// Fabricated neutrals (inference-failed rows, confidence 0) carry no signal;
+// they are placeholders written when sentiment inference errored, and would
+// distort averages and pattern detection if analyzed as real data.
+function isAnalyzableRating(r: Rating): boolean {
+  return r.source !== 'inference-failed' && r.confidence !== 0;
 }
 
 interface PatternGroup {
@@ -80,6 +91,7 @@ interface SynthesisResult {
   period: string;
   totalRatings: number;
   avgRating: number;
+  situationalExcluded: number;
   frustrations: PatternGroup[];
   successes: PatternGroup[];
   topIssues: string[];
@@ -160,12 +172,15 @@ function groupToPatternGroups(
 // Analysis
 // ============================================================================
 
-function analyzeRatings(ratings: Rating[], period: string): SynthesisResult {
+function analyzeRatings(ratingsRaw: Rating[], period: string): SynthesisResult {
+  // Provenance, not value: exclude fabricated neutrals before any aggregation.
+  const ratings = ratingsRaw.filter(isAnalyzableRating);
   if (ratings.length === 0) {
     return {
       period,
       totalRatings: 0,
       avgRating: 0,
+      situationalExcluded: 0,
       frustrations: [],
       successes: [],
       topIssues: [],
@@ -175,8 +190,11 @@ function analyzeRatings(ratings: Rating[], period: string): SynthesisResult {
 
   const avgRating = ratings.reduce((sum, r) => sum + r.rating, 0) / ratings.length;
 
-  // Separate frustrations (rating <= 4) and successes (rating >= 7)
-  const frustrationRatings = ratings.filter(r => r.rating <= 4);
+  // Separate frustrations (rating <= 4) and successes (rating >= 7).
+  // Situational lows are momentary mood/pace signals; counted, but never
+  // allowed to shape standing recommendations.
+  const frustrationRatings = ratings.filter(r => r.rating <= 4 && r.provenance !== 'situational');
+  const situationalExcluded = ratings.filter(r => r.rating <= 4 && r.provenance === 'situational').length;
   const successRatings = ratings.filter(r => r.rating >= 7);
 
   const frustrationSummaries = frustrationRatings.map(r => r.sentiment_summary);
@@ -197,16 +215,16 @@ function analyzeRatings(ratings: Rating[], period: string): SynthesisResult {
   // Generate recommendations based on patterns
   const recommendations: string[] = [];
 
-  if (frustrations.some(f => f.pattern === "Time/Performance Issues")) {
+  if (frustrations.some(f => f.pattern === "Time/Performance Issues" && f.count >= MIN_PATTERN_COUNT)) {
     recommendations.push("Consider setting clearer time expectations and progress updates");
   }
-  if (frustrations.some(f => f.pattern === "Wrong Approach")) {
+  if (frustrations.some(f => f.pattern === "Wrong Approach" && f.count >= MIN_PATTERN_COUNT)) {
     recommendations.push("Ask clarifying questions before starting complex tasks");
   }
-  if (frustrations.some(f => f.pattern === "Over-engineering")) {
+  if (frustrations.some(f => f.pattern === "Over-engineering" && f.count >= MIN_PATTERN_COUNT)) {
     recommendations.push("Default to simpler solutions; only add complexity when justified");
   }
-  if (frustrations.some(f => f.pattern === "Communication Problems")) {
+  if (frustrations.some(f => f.pattern === "Communication Problems" && f.count >= MIN_PATTERN_COUNT)) {
     recommendations.push("Summarize understanding before implementation");
   }
 
@@ -218,6 +236,7 @@ function analyzeRatings(ratings: Rating[], period: string): SynthesisResult {
     period,
     totalRatings: ratings.length,
     avgRating,
+    situationalExcluded,
     frustrations,
     successes,
     topIssues,
@@ -238,6 +257,7 @@ function formatSynthesisReport(result: SynthesisResult): string {
 **Generated:** ${date}
 **Total Ratings:** ${result.totalRatings}
 **Average Rating:** ${result.avgRating.toFixed(1)}/10
+${result.situationalExcluded > 0 ? `**Situational redirects excluded from recommendations:** ${result.situationalExcluded}\n` : ''}
 
 ---
 
@@ -635,7 +655,9 @@ function runDeriver(opts: { window: number; dryRun: boolean }): { emitted: numbe
   // Load signals within window
   const cutoff = Date.now() - opts.window * 86400 * 1000;
   const allRatings = loadJsonl<Rating>(RATINGS_FILE);
-  const ratings = allRatings.filter(r => new Date(r.timestamp).getTime() >= cutoff);
+  // Same provenance discipline as the synthesis path: fabricated neutrals never
+  // reach hypothesis generation.
+  const ratings = allRatings.filter(r => new Date(r.timestamp).getTime() >= cutoff && isAnalyzableRating(r));
   log.push(`signals: total=${allRatings.length} in_window=${ratings.length}`);
 
   if (ratings.length === 0) {
@@ -645,7 +667,9 @@ function runDeriver(opts: { window: number; dryRun: boolean }): { emitted: numbe
   }
 
   const summaries = ratings.map(r => r.sentiment_summary);
-  const frustrationGroups = detectPatterns(summaries.filter((_, i) => ratings[i].rating <= 4), FRUSTRATION_PATTERNS);
+  // Situational lows are mood/pace steering for one moment; they never seed
+  // durable hypotheses.
+  const frustrationGroups = detectPatterns(summaries.filter((_, i) => ratings[i].rating <= 4 && ratings[i].provenance !== 'situational'), FRUSTRATION_PATTERNS);
   const successGroups = detectPatterns(summaries.filter((_, i) => ratings[i].rating >= 7), SUCCESS_PATTERNS);
   const allGroups = new Map<string, string[]>();
   for (const [k, v] of frustrationGroups) allGroups.set(k, v);
