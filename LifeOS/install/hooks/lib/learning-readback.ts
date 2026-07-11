@@ -2,20 +2,24 @@
  * learning-readback.ts - Close the learning loop by reading learnings back into context
  *
  * PURPOSE:
- * The LifeOS learning system writes extensively (8,400+ files across 5 hooks) but
- * previously had no readback mechanism. This library provides fast, compact
- * readers that LoadContext.hook.ts calls at session start to inject accumulated
- * knowledge back into the model's context.
+ * The LifeOS learning system writes extensively, and this library provides the
+ * fast, compact readback that LoadContext.hook.ts calls at session start.
+ *
+ * RATIONALE:
+ * Session-start readback surfaces ONLY vetted constructive guidance (Wisdom
+ * Frames + authored constructive corrections), never raw frustration or
+ * aggregate metrics, because at session start there is no active plan to
+ * apply them to. Raw signal stays in the corpus for the scheduled synthesis
+ * batch; readback is an authored allowlist, not a denylist.
  *
  * FUNCTIONS:
- * - loadLearningDigest()    — Recent learning signals (ALGORITHM + SYSTEM)
- * - loadWisdomFrames()      — Crystallized behavioral patterns (WISDOM/FRAMES)
- * - loadFailurePatterns()   — Recent failure insights (FAILURES)
- * - loadSignalTrends()      — Performance metrics from learning-cache.sh
- * - loadSynthesisPatterns() — Most recent weekly complaint synthesis (SYNTHESIS)
+ * - loadWisdomFrames()            -> Crystallized behavioral patterns (WISDOM/FRAMES)
+ * - loadConstructiveCorrections() -> Authored corrections gated by recent corpus signals
  *
  * PERFORMANCE:
- * Each function reads a small number of pre-existing files (<10).
+ * Each function reads a bounded set of pre-existing files.
+ * Constructive correction scanning is limited to the 2 newest month
+ * directories per source, 60 feedback lines total, and 30 failure slugs.
  * Total budget: <100ms combined. All reads are synchronous for simplicity.
  *
  * OUTPUT:
@@ -26,82 +30,138 @@
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 
-/**
- * Read the N most recent learning files from a LEARNING subdirectory.
- * Files are named YYYY-MM-DD-HHMMSS_LEARNING_*.md with YAML frontmatter.
- * Extracts the **Feedback:** line and rating for compact display.
- */
-function getRecentLearnings(baseDir: string, subdir: string, count: number): string[] {
-  const insights: string[] = [];
-  const learningDir = join(baseDir, 'MEMORY', 'LEARNING', subdir);
-  if (!existsSync(learningDir)) return insights;
+interface CorrectionClass {
+  id: string;
+  signal: RegExp;
+  guidance: string;
+}
+
+// Authored allowlist: the only correction guidance readback may surface.
+// Raw frustration text never appears here; recent corpus signals only decide
+// WHICH vetted guidance strings are relevant right now.
+export const CONSTRUCTIVE_CORRECTIONS: CorrectionClass[] = [
+  {
+    id: 'verify-before-claiming',
+    signal: /\b(verify|verification|verified|confirm|confirmed|confirmation|proof|evidence|claimed?\s+(?:completion|complete|done|success)|claim(?:ed|ing)?\s+(?:completion|complete|done|success))\b/i,
+    guidance: 'Verify before claiming: run the check that settles the question and show the evidence before you report success or completion.'
+  },
+  {
+    id: 'dont-fabricate',
+    signal: /\b(fabricat(?:e|ed|ing)|hallucinat(?:e|ed|ing)|invent(?:ed|ing)?|made\s+up|false\s+claim)\b/i,
+    guidance: 'Do not fabricate: report only real tool output and observed facts; if something is unverified, say that plainly instead of presenting a guess as a result.'
+  },
+  {
+    id: 'follow-the-plan',
+    signal: /\b(follow(?:ing)?\s+plan|rest\s+of\s+plan|agreed\s+plan|should\s+have\s+stopped|stop\s+gate|running?\s+ahead|run\s+ahead)\b/i,
+    guidance: 'Follow the plan and honor the stop gate: stay with the agreed plan, and when the stop gate fires, stop instead of running ahead.'
+  }
+];
+
+interface CorpusScanOptions {
+  maxMonths: number;
+  maxItems: number;
+  entryType: 'file' | 'directory';
+  isCandidate: (entryName: string) => boolean;
+  readEntryText: (monthPath: string, entryName: string) => string | null;
+}
+
+function scanRecentMonthEntries(rootDir: string, options: CorpusScanOptions): string[] {
+  const entries: string[] = [];
+  if (!existsSync(rootDir)) return entries;
 
   try {
-    // Get month dirs sorted descending (newest first)
-    const months = readdirSync(learningDir, { withFileTypes: true })
-      .filter(d => d.isDirectory() && /^\d{4}-\d{2}$/.test(d.name))
-      .map(d => d.name)
+    const months = readdirSync(rootDir, { withFileTypes: true })
+      .filter(entry => entry.isDirectory() && /^\d{4}-\d{2}$/.test(entry.name))
+      .map(entry => entry.name)
       .sort()
-      .reverse();
+      .reverse()
+      .slice(0, options.maxMonths);
 
     for (const month of months) {
-      if (insights.length >= count) break;
-      const monthPath = join(learningDir, month);
+      if (entries.length >= options.maxItems) break;
+      const monthPath = join(rootDir, month);
 
       try {
-        const files = readdirSync(monthPath)
-          .filter(f => f.endsWith('.md'))
+        const monthEntries = readdirSync(monthPath, { withFileTypes: true })
+          .filter(entry => options.entryType === 'file' ? entry.isFile() : entry.isDirectory())
+          .map(entry => entry.name)
+          .filter(options.isCandidate)
           .sort()
           .reverse();
 
-        for (const file of files) {
-          if (insights.length >= count) break;
+        for (const entryName of monthEntries) {
+          if (entries.length >= options.maxItems) break;
+
           try {
-            const content = readFileSync(join(monthPath, file), 'utf-8');
-            const feedbackMatch = content.match(/\*\*Feedback:\*\*\s*(.+)/);
-            const ratingMatch = content.match(/rating:\s*(\d+)/);
-            if (feedbackMatch) {
-              const rating = ratingMatch ? ratingMatch[1] : '?';
-              const feedback = feedbackMatch[1].substring(0, 80);
-              insights.push(`[${rating}/10] ${feedback}`);
-            }
+            const text = options.readEntryText(monthPath, entryName);
+            if (text) entries.push(text);
           } catch { /* skip unreadable files */ }
         }
       } catch { /* skip unreadable months */ }
     }
   } catch { /* skip if dir scan fails */ }
 
-  return insights;
+  return entries;
 }
 
-/**
- * Load recent learning signals from ALGORITHM and SYSTEM directories.
- * Returns the 3 most recent from each, formatted as a compact bullet list.
- */
-export function loadLearningDigest(paiDir: string): string | null {
-  const algorithmInsights = getRecentLearnings(paiDir, 'ALGORITHM', 3);
-  const systemInsights = getRecentLearnings(paiDir, 'SYSTEM', 3);
+function readFeedbackLine(monthPath: string, fileName: string): string | null {
+  const content = readFileSync(join(monthPath, fileName), 'utf-8');
+  const feedbackMatch = content.match(/\*\*Feedback:\*\*\s*(.+)/);
+  return feedbackMatch ? feedbackMatch[1].trim() : null;
+}
 
-  if (algorithmInsights.length === 0 && systemInsights.length === 0) return null;
+function readFailureSlug(_monthPath: string, dirName: string): string | null {
+  const slug = dirName
+    .replace(/^\d{4}-\d{2}-\d{2}-\d{6}_/, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 
-  const parts: string[] = ['**Recent Learning Signals:**'];
+  return slug || null;
+}
 
-  if (algorithmInsights.length > 0) {
-    parts.push('*Algorithm:*');
-    algorithmInsights.forEach(i => parts.push(`  ${i}`));
-  }
-  if (systemInsights.length > 0) {
-    parts.push('*System:*');
-    systemInsights.forEach(i => parts.push(`  ${i}`));
-  }
+function collectRecentCorrectionCorpus(paiDir: string): string[] {
+  const algorithmFeedback = scanRecentMonthEntries(
+    join(paiDir, 'MEMORY', 'LEARNING', 'ALGORITHM'),
+    {
+      maxMonths: 2,
+      maxItems: 30,
+      entryType: 'file',
+      isCandidate: entryName => entryName.endsWith('.md'),
+      readEntryText: readFeedbackLine
+    }
+  );
 
-  return parts.join('\n');
+  const systemFeedback = scanRecentMonthEntries(
+    join(paiDir, 'MEMORY', 'LEARNING', 'SYSTEM'),
+    {
+      maxMonths: 2,
+      maxItems: 30,
+      entryType: 'file',
+      isCandidate: entryName => entryName.endsWith('.md'),
+      readEntryText: readFeedbackLine
+    }
+  );
+
+  const failureSlugs = scanRecentMonthEntries(
+    join(paiDir, 'MEMORY', 'LEARNING', 'FAILURES'),
+    {
+      maxMonths: 2,
+      maxItems: 30,
+      entryType: 'directory',
+      isCandidate: () => true,
+      readEntryText: readFailureSlug
+    }
+  );
+
+  return [...algorithmFeedback, ...systemFeedback, ...failureSlugs];
 }
 
 /**
  * Load Wisdom Frame core principles for context injection.
  * Reads all WISDOM/FRAMES/*.md files and extracts principle headers
- * (lines matching "### Name [CRYSTAL: N%]").
+ * (lines matching "### Name [CRYSTAL: N%]"). Only crystallized principles
+ * (>= 85% confidence) are surfaced.
  */
 export function loadWisdomFrames(paiDir: string): string | null {
   const framesDir = join(paiDir, 'MEMORY', 'WISDOM', 'FRAMES');
@@ -135,147 +195,29 @@ export function loadWisdomFrames(paiDir: string): string | null {
 }
 
 /**
- * Load recent failure pattern insights.
- * Reads the 5 most recent FAILURES directories and extracts the CONTEXT.md
- * first paragraph for a compact summary of what went wrong.
+ * Load authored constructive corrections when current corpus signals indicate
+ * they are relevant. Recent ALGORITHM/SYSTEM feedback lines and FAILURES slugs
+ * are scanned only to decide which vetted guidance strings to surface; the
+ * raw corpus text itself is never injected.
  */
-export function loadFailurePatterns(paiDir: string): string | null {
-  const failuresDir = join(paiDir, 'MEMORY', 'LEARNING', 'FAILURES');
-  if (!existsSync(failuresDir)) return null;
+export function loadConstructiveCorrections(paiDir: string): string | null {
+  const corpus = collectRecentCorrectionCorpus(paiDir);
+  if (corpus.length === 0) return null;
 
-  const patterns: string[] = [];
+  const surfaced = new Set<string>();
+  const guidance: string[] = [];
 
-  try {
-    // Get month dirs sorted descending
-    const months = readdirSync(failuresDir, { withFileTypes: true })
-      .filter(d => d.isDirectory() && /^\d{4}-\d{2}$/.test(d.name))
-      .map(d => d.name)
-      .sort()
-      .reverse();
+  for (const correction of CONSTRUCTIVE_CORRECTIONS) {
+    if (surfaced.has(correction.id)) continue;
 
-    for (const month of months) {
-      if (patterns.length >= 5) break;
-      const monthPath = join(failuresDir, month);
+    const hasHit = corpus.some(text => correction.signal.test(text));
+    if (!hasHit) continue;
 
-      try {
-        // Failure dirs are named timestamp_slug
-        const dirs = readdirSync(monthPath, { withFileTypes: true })
-          .filter(d => d.isDirectory())
-          .map(d => d.name)
-          .sort()
-          .reverse();
-
-        for (const dir of dirs) {
-          if (patterns.length >= 5) break;
-          const contextPath = join(monthPath, dir, 'CONTEXT.md');
-          if (!existsSync(contextPath)) continue;
-
-          try {
-            const content = readFileSync(contextPath, 'utf-8');
-            // Extract slug as human-readable failure description
-            const slug = dir.replace(/^\d{4}-\d{2}-\d{2}-\d{6}_/, '').replace(/-/g, ' ');
-            // Get date from dir name
-            const dateMatch = dir.match(/^(\d{4}-\d{2}-\d{2})/);
-            const date = dateMatch ? dateMatch[1] : '';
-            patterns.push(`[${date}] ${slug.substring(0, 70)}`);
-          } catch { /* skip unreadable */ }
-        }
-      } catch { /* skip unreadable months */ }
-    }
-  } catch { /* skip if dir scan fails */ }
-
-  if (patterns.length === 0) return null;
-
-  return `**Recent Failure Patterns (avoid these):**\n${patterns.map(p => `  ${p}`).join('\n')}`;
-}
-
-/**
- * Load the most recent weekly complaint synthesis.
- * Reads MEMORY/LEARNING/SYNTHESIS/YYYY-MM/YYYY-MM-DD_weekly-patterns.md
- * (written by LearningPatternSynthesis.ts) and extracts the average rating
- * plus the top issue clusters so every session is primed with current themes.
- */
-export function loadSynthesisPatterns(paiDir: string): string | null {
-  const synthesisDir = join(paiDir, 'MEMORY', 'LEARNING', 'SYNTHESIS');
-  if (!existsSync(synthesisDir)) return null;
-
-  try {
-    // Get month dirs sorted descending (newest first)
-    const months = readdirSync(synthesisDir, { withFileTypes: true })
-      .filter(d => d.isDirectory() && /^\d{4}-\d{2}$/.test(d.name))
-      .map(d => d.name)
-      .sort()
-      .reverse();
-
-    for (const month of months) {
-      const monthPath = join(synthesisDir, month);
-
-      try {
-        const files = readdirSync(monthPath)
-          .filter(f => f.endsWith('_weekly-patterns.md'))
-          .sort()
-          .reverse();
-
-        for (const file of files) {
-          try {
-            const content = readFileSync(join(monthPath, file), 'utf-8');
-
-            const avgMatch = content.match(/\*\*Average Rating:\*\*\s*([\d.]+\/10)/);
-            if (!avgMatch) continue;
-
-            // Extract numbered items under "## Top Issues"
-            const topIssuesMatch = content.match(/## Top Issues\s*\n([\s\S]*?)(?:\n##|\n---|$)/);
-            if (!topIssuesMatch) continue;
-
-            const issues: string[] = [];
-            const itemRegex = /^\s*(\d+)\.\s+(.+)$/gm;
-            let m: RegExpExecArray | null;
-            while ((m = itemRegex.exec(topIssuesMatch[1])) !== null) {
-              if (issues.length >= 5) break;
-              issues.push(`  ${m[1]}. ${m[2].trim()}`);
-            }
-
-            if (issues.length === 0) return null;
-
-            return `**Current Complaint Clusters (from weekly synthesis):** Avg rating ${avgMatch[1]}\n${issues.join('\n')}`;
-          } catch { /* skip unreadable files */ }
-        }
-      } catch { /* skip unreadable months */ }
-    }
-  } catch { /* skip if dir scan fails */ }
-
-  return null;
-}
-
-/**
- * Load performance signal trends from the pre-computed learning-cache.sh.
- * Extracts numeric averages and trend direction for a compact status line.
- */
-export function loadSignalTrends(paiDir: string): string | null {
-  const cachePath = join(paiDir, 'MEMORY', 'STATE', 'learning-cache.sh');
-  if (!existsSync(cachePath)) return null;
-
-  try {
-    const content = readFileSync(cachePath, 'utf-8');
-
-    // Parse shell variable assignments (key='value' or key=value)
-    const vars: Record<string, string> = {};
-    for (const line of content.split('\n')) {
-      const match = line.match(/^(\w+)='?([^']*)'?$/);
-      if (match) vars[match[1]] = match[2];
-    }
-
-    const todayAvg = vars.today_avg || '?';
-    const weekAvg = vars.week_avg || '?';
-    const monthAvg = vars.month_avg || '?';
-    const trend = vars.trend || 'stable';
-    const totalCount = vars.total_count || '?';
-    const dayTrend = vars.day_trend || 'stable';
-
-    const trendEmoji = trend === 'up' ? 'trending up' : trend === 'down' ? 'trending down' : 'stable';
-
-    return `**Performance Signals:** Today: ${todayAvg}/10 | Week: ${weekAvg}/10 | Month: ${monthAvg}/10 | Trend: ${trendEmoji} | Total signals: ${totalCount}`;
-  } catch {
-    return null;
+    surfaced.add(correction.id);
+    guidance.push(`  ${correction.guidance}`);
   }
+
+  if (guidance.length === 0) return null;
+
+  return `**Constructive Corrections:**\n${guidance.join('\n')}`;
 }

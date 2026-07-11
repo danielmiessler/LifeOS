@@ -41,7 +41,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { getLifeosDir, getSettingsPath } from './lib/paths';
 import { recordSessionStart } from './lib/notifications';
-import { loadLearningDigest, loadWisdomFrames, loadFailurePatterns, loadSignalTrends, loadSynthesisPatterns } from './lib/learning-readback';
+import { loadWisdomFrames, loadConstructiveCorrections } from './lib/learning-readback';
 import { findArtifactPath } from './lib/isa-utils';
 
 interface DynamicContextConfig {
@@ -422,21 +422,15 @@ async function main() {
     // Load learning readback context
     let learningContext = '';
     if (isDynamicEnabled(settings, 'learningReadback')) {
-      const learningDigest = loadLearningDigest(paiDir);
+      // Allowlist readback: only vetted guidance is injected at session start.
+      // Raw learning digests, failure patterns, and aggregate signal trends
+      // stay in the corpus for the scheduled synthesis batch.
       const wisdomFrames = loadWisdomFrames(paiDir);
-      const failurePatterns = loadFailurePatterns(paiDir);
-      const signalTrends = loadSignalTrends(paiDir);
-      const synthesisPatterns = loadSynthesisPatterns(paiDir);
-      if (synthesisPatterns) {
-        console.error(`🧭 Loaded synthesis patterns (${synthesisPatterns.length} chars)`);
-      }
+      const constructiveCorrections = loadConstructiveCorrections(paiDir);
 
       const learningParts: string[] = [];
-      if (signalTrends) learningParts.push(signalTrends);
-      if (synthesisPatterns) learningParts.push(synthesisPatterns);
       if (wisdomFrames) learningParts.push(wisdomFrames);
-      if (learningDigest) learningParts.push(learningDigest);
-      if (failurePatterns) learningParts.push(failurePatterns);
+      if (constructiveCorrections) learningParts.push(constructiveCorrections);
 
       learningContext = learningParts.length > 0
         ? '\n## Learning Context (auto-loaded)\n\n' + learningParts.join('\n\n')
