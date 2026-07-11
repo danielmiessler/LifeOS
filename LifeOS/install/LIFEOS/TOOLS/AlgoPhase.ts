@@ -13,11 +13,17 @@
  * Phases (case-insensitive):
  *   observe | think | plan | build | execute | verify | learn | complete | starting
  *
- * Slug resolution priority:
- *   1. --slug X (explicit)
- *   2. row whose sessionUUID === CLAUDE_SESSION_ID env var
- *   3. row whose sessionUUID === --uuid X
- *   4. most-recent (by updatedAt) algorithm-mode row in work.json
+ * Slug resolution priority (deterministic, fail-closed):
+ *   1. --slug X (explicit; unknown slug is an error; complete rows allowed —
+ *      resume-after-complete is a sanctioned flow)
+ *   2. --uuid X (explicit flags outrank ambient env; no live match is an error)
+ *   3. row whose sessionUUID === CLAUDE_SESSION_ID env var (set-but-unmatched
+ *      is an error, never a fall-through to a guess)
+ *   4. the SINGLE fresh live algorithm-mode row in work.json (updated within
+ *      the last 60 minutes) — if zero or more than one qualify, the tool
+ *      refuses to guess: it errors out listing the candidates and performs
+ *      NO write. (Previously it warned and wrote to the most-recent row,
+ *      which could flip the OTHER session's phase.)
  *
  * Output:
  *   On success — prints `OK: <slug> <prev>→<phase>` to stdout, exits 0.
@@ -76,11 +82,13 @@ Usage:
 
 Phases: observe | think | plan | build | execute | verify | learn | complete | starting
 
-Slug resolution priority:
-  1. --slug X
-  2. row with sessionUUID === \$CLAUDE_SESSION_ID
-  3. row with sessionUUID === --uuid X
-  4. most-recent algorithm-mode row in work.json
+Slug resolution priority (deterministic, fail-closed):
+  1. --slug X (unknown slug errors; complete rows allowed for resume)
+  2. row with sessionUUID === --uuid X (explicit flag outranks env; no live match errors)
+  3. row with sessionUUID === \$CLAUDE_SESSION_ID (set-but-unmatched errors)
+  4. the SINGLE live algorithm-mode row updated in the last 60 minutes —
+     zero or multiple candidates error out (listed, nothing written)
+     instead of guessing
 
 Examples:
   bun ~/.claude/LIFEOS/TOOLS/AlgoPhase.ts think
@@ -102,8 +110,26 @@ interface Session {
   modeHistory?: Array<{ mode: string; startedAt: number; endedAt?: number }>;
 }
 
-function pickAlgorithmModeRow(sessions: Record<string, Session>): string | null {
-  let best: { slug: string; t: number } | null = null;
+// Candidate-freshness horizon for the no-flag fallback. Crashed or abandoned
+// sessions leave non-complete rows behind (the registry's stale sweep only
+// prunes them after ~7 days, and SessionCleanup fires only on a clean
+// SessionEnd), so "not complete" alone is far too weak a liveness signal —
+// fail-closed against week-old ghosts would hard-fail every bare call. A
+// session actively running the Algorithm touches its row on every phase emit
+// and tool-activity hook, so an hour of silence means the row is not driving
+// anything right now. Stale rows are only excluded from GUESSING — they stay
+// addressable explicitly via --slug or --uuid.
+const CANDIDATE_FRESH_MS = 60 * 60 * 1000;
+
+/** Millisecond timestamp of a row's last update (0 when unparseable). */
+function rowUpdatedMs(s: Session): number {
+  const t = new Date(s.updatedAt || s.started || 0).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
+
+/** Fresh live algorithm-mode rows, most recently updated first. */
+function listAlgorithmModeRows(sessions: Record<string, Session>, nowMs: number): string[] {
+  const rows: Array<{ slug: string; t: number }> = [];
   for (const [slug, s] of Object.entries(sessions)) {
     if (slug === '__pulse_strip') continue;
     if (s.phase === 'complete') continue;
@@ -111,44 +137,90 @@ function pickAlgorithmModeRow(sessions: Record<string, Session>): string | null 
       || s.mode === 'starting'
       || (s.mode === 'interactive' && s.phase && s.phase !== 'native');
     if (!isAlgo) continue;
-    const t = new Date(s.updatedAt || s.started || 0).getTime();
+    const t = rowUpdatedMs(s);
+    if (nowMs - t > CANDIDATE_FRESH_MS) continue;
+    rows.push({ slug, t });
+  }
+  rows.sort((a, b) => b.t - a.t);
+  return rows.map((r) => r.slug);
+}
+
+/** Most recently updated live (non-complete) row matching a session UUID. */
+function findLiveByUUID(sessions: Record<string, Session>, uuid: string): string | null {
+  let best: { slug: string; t: number } | null = null;
+  for (const [slug, s] of Object.entries(sessions)) {
+    if (slug === '__pulse_strip') continue;
+    if (s.sessionUUID !== uuid || s.phase === 'complete') continue;
+    const t = rowUpdatedMs(s);
     if (!best || t > best.t) best = { slug, t };
   }
   return best ? best.slug : null;
 }
 
-function resolveSlug(args: Args, sessions: Record<string, Session>): string | null {
-  // 1. explicit --slug
-  if (args.slug) return args.slug in sessions ? args.slug : null;
+type SlugResolution = { ok: true; slug: string } | { ok: false; reason: string };
 
-  // 2. CLAUDE_SESSION_ID env
+function resolveSlug(args: Args, sessions: Record<string, Session>): SlugResolution {
+  // 1. explicit --slug — trusted verbatim, INCLUDING phase:complete rows:
+  // resume-after-complete is a sanctioned flow, and an explicit slug is the
+  // caller stating exactly which row it owns. Object.hasOwn (not `in`) so
+  // prototype keys like "constructor" can't false-match; the __pulse_strip
+  // metadata row is never addressable from any path.
+  if (args.slug) {
+    if (args.slug === '__pulse_strip' || !Object.hasOwn(sessions, args.slug)) {
+      return { ok: false, reason: `slug "${args.slug}" not found in work.json` };
+    }
+    if (args.uuid && sessions[args.slug].sessionUUID !== args.uuid) {
+      return {
+        ok: false,
+        reason: `--slug "${args.slug}" and --uuid "${args.uuid}" disagree — ` +
+          `that row has sessionUUID "${sessions[args.slug].sessionUUID ?? 'none'}"`,
+      };
+    }
+    return { ok: true, slug: args.slug };
+  }
+
+  // 2. explicit --uuid — outranks ambient CLAUDE_SESSION_ID (an explicit flag
+  // must never be silently overridden by environment state); unmatched is an
+  // error, never a fall-through guess.
+  if (args.uuid) {
+    const slug = findLiveByUUID(sessions, args.uuid);
+    return slug
+      ? { ok: true, slug }
+      : { ok: false, reason: `no live session with sessionUUID "${args.uuid}" in work.json` };
+  }
+
+  // 3. CLAUDE_SESSION_ID env — forward-looking defense-in-depth (Claude Code
+  // does not export it to tool subprocesses today) and local-trust only, NOT
+  // an auth boundary. Set-but-unmatched is a hard error: falling through to
+  // a guess would reintroduce the ambiguity this resolver exists to close.
   const envUUID = process.env.CLAUDE_SESSION_ID;
   if (envUUID) {
-    for (const [slug, s] of Object.entries(sessions)) {
-      if (s.sessionUUID === envUUID && s.phase !== 'complete') return slug;
-    }
+    const slug = findLiveByUUID(sessions, envUUID);
+    return slug
+      ? { ok: true, slug }
+      : { ok: false, reason: `CLAUDE_SESSION_ID "${envUUID}" matches no live session in work.json — pass --slug` };
   }
 
-  // 3. --uuid
-  if (args.uuid) {
-    for (const [slug, s] of Object.entries(sessions)) {
-      if (s.sessionUUID === args.uuid && s.phase !== 'complete') return slug;
-    }
-  }
-
-  // 4. most-recent algorithm-mode row — multi-tab hazard.
-  // If two Algorithm sessions are alive concurrently and the caller passed
-  // neither --slug, --uuid, nor CLAUDE_SESSION_ID, we'd write to the
-  // most-recent one — possibly the WRONG one. Emit a stderr warning so this
-  // ambiguity is visible. Cato 2026-05-24 self-review flagged this.
-  const fallback = pickAlgorithmModeRow(sessions);
-  if (fallback) {
+  // 4. Fail-closed disambiguation. The old behavior warned and then WROTE to
+  // the most-recent algorithm-mode row anyway — with two Algorithm sessions
+  // alive, a bare `AlgoPhase think` from one session could flip the OTHER
+  // session's phase. Exactly one fresh live row is unambiguous and stays the
+  // convenience path; anything else refuses and performs no write.
+  const candidates = listAlgorithmModeRows(sessions, Date.now());
+  if (candidates.length === 1) {
     process.stderr.write(
-      `WARN: AlgoPhase falling back to most-recent algorithm-mode row "${fallback}". ` +
-      `Pass --slug or --uuid (or set CLAUDE_SESSION_ID) when multiple Algorithm sessions are alive.\n`
+      `NOTE: AlgoPhase resolved the single live algorithm-mode row "${candidates[0]}" (no --slug/--uuid/CLAUDE_SESSION_ID given).\n`
     );
+    return { ok: true, slug: candidates[0] };
   }
-  return fallback;
+  if (candidates.length === 0) {
+    return { ok: false, reason: 'no live algorithm-mode session found in work.json (rows idle >60min are not guessable) — pass --slug or --uuid' };
+  }
+  return {
+    ok: false,
+    reason: `${candidates.length} live algorithm-mode sessions are ambiguous — refusing to guess (no write performed). ` +
+      `Candidates: ${candidates.join(', ')}. Pass --slug or --uuid (or set CLAUDE_SESSION_ID).`,
+  };
 }
 
 function main(): number {
@@ -161,11 +233,12 @@ function main(): number {
   const registry = readRegistry();
   const sessions = registry.sessions as Record<string, Session>;
 
-  const slug = resolveSlug(args, sessions);
-  if (!slug) {
-    process.stderr.write('ERR: no algorithm-mode session found in work.json — pass --slug or --uuid\n');
+  const resolved = resolveSlug(args, sessions);
+  if (!resolved.ok) {
+    process.stderr.write(`ERR: ${resolved.reason}\n`);
     return 1;
   }
+  const slug = resolved.slug;
 
   const session = sessions[slug];
   if (!session) {
