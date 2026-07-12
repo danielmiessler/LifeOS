@@ -42,7 +42,7 @@ Compare rules across all files for:
 For each force-loaded file, estimate:
 - How many tokens it consumes
 - How often its content actually affects output quality
-- Whether it could be on-demand (via CONTEXT_ROUTING) instead of always-loaded
+- Whether it could be on-demand (via the CLAUDE.md routing table) instead of always-loaded
 
 ### 6. Produce the report
 

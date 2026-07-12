@@ -109,7 +109,7 @@ Exception — four keep-classes are legitimate HOW, never cut them: **safety-gat
 | Duplicates another rule | **MERGE** — one location, one statement |
 | One-off fix for past mistake | **EVALUATE** — still relevant or already learned? |
 | Vague / unquantifiable | **SHARPEN** — add specific DO/DON'T examples, or cut |
-| Loaded but rarely actionable | **MOVE to on-demand** — load via CONTEXT_ROUTING when needed |
+| Loaded but rarely actionable | **MOVE to on-demand** — load via the CLAUDE.md routing table when needed |
 | Specific, actionable, non-default | **KEEP** — this is what good instructions look like |
 
 ## Anti-Fragile vs Fragile
