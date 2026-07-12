@@ -165,7 +165,7 @@ function calculateTrend(observations: Observation[], years: number): TrendStat |
 async function fetchEIAGasPrice(): Promise<{ value: number; date: string } | null> {
   if (!EIA_API_KEY) return null;
 
-  const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${EIA_API_KEY}&frequency=weekly&data[0]=value&facets[product][]=EPMR&facets[duession][]=Y&sort[0][column]=period&sort[0][direction]=desc&length=1`;
+  const url = `https://api.eia.gov/v2/petroleum/pri/gnd/data/?api_key=${EIA_API_KEY}&frequency=weekly&data[0]=value&facets[product][]=EPMR&facets[duoarea][]=NUS&sort[0][column]=period&sort[0][direction]=desc&length=1`;
 
   try {
     const response = await fetch(url);
@@ -190,8 +190,13 @@ function formatValue(value: number, seriesId: string): string {
   if (["UNRATE", "CIVPART", "PSAVERT", "MORTGAGE30US", "FEDFUNDS", "DGS10", "DGS2", "DRCCLACBS"].includes(seriesId)) {
     return `${value.toFixed(1)}%`;
   }
-  if (["GDPC1", "GFDEBTN", "BOPGSTB", "TOTALSL"].includes(seriesId)) {
-    return value >= 1000000 ? `$${(value / 1000000).toFixed(2)}T` : `$${(value / 1000).toFixed(1)}B`;
+  if (seriesId === "GDPC1") {
+    // GDPC1 is reported in billions of dollars (not millions)
+    return `$${(value / 1000).toFixed(2)}T`;
+  }
+  if (["GFDEBTN", "BOPGSTB", "TOTALSL", "FYFSD"].includes(seriesId)) {
+    // these series are reported in millions of dollars; use abs() so negatives (deficit/trade) pick the right scale
+    return Math.abs(value) >= 1000000 ? `$${(value / 1000000).toFixed(2)}T` : `$${(value / 1000).toFixed(1)}B`;
   }
   if (["MSPUS"].includes(seriesId)) {
     return `$${(value / 1000).toFixed(0)}K`;
