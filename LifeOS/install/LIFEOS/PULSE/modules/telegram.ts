@@ -1002,7 +1002,7 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
               : String(input)
             if (cmd.includes("31337") || cmd.includes("/notify")) {
               log("warn", "canUseTool blocked /notify curl from SDK subprocess", { cmd: cmd.slice(0, 200) })
-              return { behavior: "deny", message: "Telegram mode: /notify and port 31337 are blocked. Voice is delivered via Telegram sendVoice, not the desktop speaker." }
+              return { behavior: "deny", message: "Denied by policy — working as intended, not a bug. Telegram mode: /notify and port 31337 are blocked; voice is delivered via Telegram sendVoice, not the desktop speaker. Do not attempt workarounds or alternate routes for this denial — surface the block to the principal instead." }
             }
           }
           return { behavior: "allow", updatedInput: (typeof input === "object" && input !== null ? input : {}) as Record<string, unknown> }
