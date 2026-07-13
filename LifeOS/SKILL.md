@@ -1,9 +1,9 @@
 ---
 name: LifeOS
 version: 1.4.19
-description: Install and onboard a user into LifeOS — the Life Operating System (current state → ideal state via TELOS + the Algorithm). The agentic installer detects your OS + harness, wires hooks with permission, scaffolds your USER tree, pulls in sources you provide, and runs the TELOS / current→ideal interview that seeds your Pulse dashboard. USE WHEN install LifeOS, set up LifeOS, lifeos setup, lifeos-setup, lifeos interview, onboard me, run the interview, integrate LifeOS into my harness, update LifeOS, uninstall LifeOS, first-time setup. NOT FOR building or cutting a LifeOS release (private release tooling), editing TELOS after onboarding (use Telos / Interview), or LifeOS system maintenance (use the private maintenance skill).
+description: Install and onboard a user into LifeOS — the Life Operating System (current state → ideal state via TELOS + the Algorithm). The agentic installer detects your OS + harness, wires hooks with permission, scaffolds your USER tree, pulls in sources you provide, and runs the TELOS / current→ideal interview that seeds your Pulse dashboard. USE WHEN install LifeOS, set up LifeOS, lifeos setup, lifeos-setup, lifeos interview, onboard me, run the interview, integrate LifeOS into my harness, update LifeOS, uninstall LifeOS, first-time setup, lifeos doctor, check my install, what capabilities are broken. NOT FOR building or cutting a LifeOS release (private release tooling), editing TELOS after onboarding (use Telos / Interview), or LifeOS system maintenance (use the private maintenance skill).
 disable-model-invocation: true
-argument-hint: "[setup|interview|update|uninstall]"
+argument-hint: "[setup|interview|doctor|update|uninstall]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -27,12 +27,15 @@ Both are served from the skill's own single sources of truth — `INSTALL.md` at
 
 ## Workflow Routing
 
-| Trigger | Workflow |
-|---------|----------|
+| Trigger | Target |
+|---------|--------|
 | `setup`, `/lifeos-setup`, "install LifeOS", "integrate into my harness" | `Workflows/Setup.md` |
 | `interview`, "onboard me", "run the interview", TELOS capture | `Workflows/Interview.md` |
+| `doctor`, "check my install", "what's broken", "what capabilities are live" | run `bun <configRoot>/LIFEOS/TOOLS/Doctor.ts` (see `INSTALL.md` § 8.5) |
 | `update`, "update LifeOS", after a version bump | `Workflows/Update.md` |
 | `uninstall`, "remove LifeOS" | `Workflows/Uninstall.md` |
+
+`doctor` is the one tool-backed route — it needs no workflow because `Doctor.ts` is self-describing: it prints the four capability states (live / broken / declined / stale) and the exact fix command for anything broken. Relay its table, offer the fix it names, and honor `decline` — a declined capability is a legitimate way to run LifeOS, never a defect to nag about.
 
 Default flow (`/lifeos-setup`): **Setup phase** (system integration) → transitions into **Interview phase** (life onboarding). One continuous experience, two clearly-marked phases — setup is logistics, interview is meaning. Setup ALWAYS runs first; hooks must be wired before the interview seeds anything.
 
@@ -62,4 +65,5 @@ Default flow (`/lifeos-setup`): **Setup phase** (system integration) → transit
 
 - "install LifeOS" → `install.sh` drops the skill, then `/lifeos-setup` runs: detect env, surface conflicts, wire hooks with permission, scaffold the USER tree, then roll into the interview.
 - "run the lifeos interview" → Interview workflow: capture TELOS + current/ideal state, pull in the user's sources, seed Pulse.
+- "lifeos doctor" → run `Doctor.ts`, relay the capability table, offer the fix command for anything broken.
 - "update LifeOS" → Update workflow: idempotent re-overlay after a version bump, non-destructive.
