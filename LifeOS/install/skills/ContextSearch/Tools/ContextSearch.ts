@@ -299,10 +299,28 @@ function searchWorkDirs(tokens: string[], since: Date | null, until: Date | null
   return out.slice(0, 50);
 }
 
+/**
+ * Resolve a runnable ripgrep. On machines without a real `rg` binary, Claude
+ * Code's shell integration aliases rg to its embedded ripgrep via a shell
+ * FUNCTION — invisible to Bun.spawn, so every rg-backed source (ISA bodies,
+ * conversation logs) dies with "Executable not found in $PATH". Fall back to
+ * running the Claude Code executable with argv0="rg", the same trick the shell
+ * function uses.
+ */
+function rgCommand(): { exe: string; argv0?: string } {
+  const onPath = typeof Bun.which === "function" ? Bun.which("rg") : null;
+  if (onPath) return { exe: onPath };
+  const cc = process.env.CLAUDE_CODE_EXECPATH || join(HOME, ".local", "bin", "claude");
+  if (existsSync(cc)) return { exe: cc, argv0: "rg" };
+  return { exe: "rg" };
+}
+
 async function ripgrep(pattern: string, dir: string, extra: string[] = []): Promise<string> {
-  const proc = Bun.spawn(["rg", "--no-heading", "--line-number", "-i", ...extra, pattern, dir], {
+  const { exe, argv0 } = rgCommand();
+  const proc = Bun.spawn([exe, "--no-heading", "--line-number", "-i", ...extra, pattern, dir], {
     stdout: "pipe",
     stderr: "pipe",
+    ...(argv0 ? { argv0 } : {}),
   });
   const out = await new Response(proc.stdout).text();
   await proc.exited;
