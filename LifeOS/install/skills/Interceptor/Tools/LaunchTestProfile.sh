@@ -56,10 +56,22 @@ fi
 
 case "$(uname -s)" in
     Darwin)
-        # No -n flag here — we want to reuse the existing Chrome process so the new
-        # window shares the user-data-dir lock with Default. Chrome handles
-        # --profile-directory by opening a window for that profile in the existing
-        # instance.
+        # Direct binary, not `open -a … --args`: when the browser is ALREADY
+        # RUNNING, `open` silently drops the --args (macOS behavior), so the
+        # profile window never opens and the isolation gate times out waiting
+        # for the context. Invoking the binary directly forwards the args to
+        # the running instance via Chrome's process singleton — the profile
+        # window opens whether or not the browser was already up.
+        CHROME_BIN="${INTERCEPTOR_TEST_BROWSER_BIN:-/Applications/${BROWSER}.app/Contents/MacOS/${BROWSER}}"
+        if [ -x "$CHROME_BIN" ]; then
+            "$CHROME_BIN" \
+                --profile-directory="$CHROME_PROFILE" \
+                --new-window \
+                "$START_URL" >/dev/null 2>&1 &
+            exit 0
+        fi
+        # Fallback (binary not at the expected path): reliable only when the
+        # browser is not already running.
         exec open -a "$BROWSER" --args \
             --profile-directory="$CHROME_PROFILE" \
             --new-window \
