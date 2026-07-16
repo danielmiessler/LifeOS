@@ -212,6 +212,15 @@
             "timeout": 8
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/TimeContext.hook.ts",
+            "timeout": 5
+          }
+        ]
       }
     ],
     "PostToolUseFailure": [
