@@ -62,6 +62,12 @@ export interface TelegramConfig {
   // Opt out of Telegram voice-note summaries (PR #1458). undefined ⇒ on, so existing
   // installs are unchanged; set voice_summaries = false under [telegram] in PULSE.toml.
   voice_summaries?: boolean
+  // Auto-delete the visible Telegram chat messages (both sides) after purge_hours,
+  // for privacy. OFF by default (undefined ⇒ off, so existing installs are unchanged).
+  // The bot's memory lives server-side in the SessionStore, so purging the visible
+  // chat copies loses no context. Bounded by the Bot API's 48h delete window.
+  purge_enabled?: boolean
+  purge_hours?: number // default 24
 }
 
 // ── Constants ──
@@ -739,6 +745,55 @@ async function cleanupStaleAckCache(): Promise<void> {
 
 // ── Exports ──
 
+// ── Telegram message purge (privacy, opt-in) ────────────────────────────────
+// Delete the visible chat messages (both the user's and the bot's) after N hours.
+// The bot's memory lives in the SessionStore (never touched here), so purging the
+// Telegram-visible copies loses no context. Bounded by the Bot API's hard 48h delete
+// window: we record (chat, msg, ts) as messages flow and delete anything aged into
+// [purge_hours, ~48h). Durable — the ledger persists, so a restart resumes and any
+// past-due messages are swept on the next run. OFF unless purge_enabled is set.
+const PURGE_LEDGER = join(STATE_DIR, "purge-ledger.json")
+interface PurgeEntry { chat: number; msg: number; ts: number }
+let purgeLedger: PurgeEntry[] = []
+let purgeEnabled = false
+let purgeHours = 24
+
+async function loadPurgeLedger(): Promise<void> {
+  try {
+    purgeLedger = JSON.parse(await readFile(PURGE_LEDGER, "utf8")).pending ?? []
+  } catch {
+    purgeLedger = []
+  }
+}
+async function savePurgeLedger(): Promise<void> {
+  await writeFile(PURGE_LEDGER, JSON.stringify({ pending: purgeLedger })).catch(() => {})
+}
+/** Record a message (either direction) for later purge. No-op when disabled. */
+function recordPurgeMsg(chat?: number, msg?: number): void {
+  if (!purgeEnabled || !chat || !msg) return
+  purgeLedger.push({ chat, msg, ts: Date.now() })
+  void savePurgeLedger()
+}
+/** Delete messages aged into the [purge_hours, ~48h) window; drop expired ones. */
+async function runPurge(): Promise<void> {
+  if (!purgeEnabled || !bot || purgeLedger.length === 0) return
+  const now = Date.now()
+  const purgeAfter = purgeHours * 3600_000
+  const HARD = 47.5 * 3600_000 // stay safely inside the API's 48h ceiling
+  const keep: PurgeEntry[] = []
+  let deleted = 0, expired = 0
+  for (const e of purgeLedger) {
+    const age = now - e.ts
+    if (age < purgeAfter) { keep.push(e); continue }   // not old enough yet
+    if (age >= HARD) { expired++; continue }            // past the deletable window — give up
+    try { await bot.api.deleteMessage(e.chat, e.msg); deleted++ }
+    catch { /* already gone / not deletable — drop it either way */ }
+  }
+  purgeLedger = keep
+  await savePurgeLedger()
+  if (deleted || expired) log("info", "Telegram purge run", { deleted, expired, remaining: keep.length })
+}
+
 /**
  * Start the Telegram bot polling loop.
  * Runs forever until stopTelegram() is called or parent terminates.
@@ -773,6 +828,12 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
   const maxTurns = config.max_turns ?? 25
   const sdkTimeoutMs = config.sdk_timeout_ms ?? 120_000
   const editIntervalMs = config.edit_interval_ms ?? 800
+
+  // Message purge (privacy) — OFF by default. Set before the bot starts so the record
+  // middleware/transformer are live from the first message.
+  purgeEnabled = config.purge_enabled ?? false
+  purgeHours = config.purge_hours ?? 24
+  await loadPurgeLedger()
 
   // Ensure directories
   await mkdir(STATE_DIR, { recursive: true })
@@ -836,6 +897,27 @@ export async function startTelegram(config: TelegramConfig): Promise<void> {
     }
     await next()
   })
+
+  // Purge: record incoming messages here; an API transformer records ALL outgoing
+  // sends (message_id from every reply/voice/photo). A 30-min loop deletes anything
+  // aged into the [purge_hours, 48h) window. No-op when disabled.
+  bot.use(async (ctx, next) => {
+    recordPurgeMsg(ctx.chat?.id, ctx.message?.message_id)
+    await next()
+  })
+  bot.api.config.use(async (prev, method, payload, signal) => {
+    const res = await prev(method, payload, signal)
+    if (res.ok) {
+      const r = res.result as { chat?: { id?: number }; message_id?: number }
+      recordPurgeMsg(r?.chat?.id, r?.message_id)
+    }
+    return res
+  })
+  if (purgeEnabled) {
+    setInterval(() => { void runPurge() }, 30 * 60_000)
+    void runPurge() // sweep anything already past-due on boot
+    log("info", "Telegram message purge enabled", { purgeHours, pending: purgeLedger.length })
+  }
 
   // ── Inbound/outbound media helpers (closures over `token`) — PR #1384 port ──
 
