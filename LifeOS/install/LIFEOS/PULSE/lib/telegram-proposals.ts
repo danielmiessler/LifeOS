@@ -13,7 +13,7 @@
 
 import { appendFileSync, existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import {
   PENDING_PROPOSALS_PATH,
   inferProposalKind,
@@ -157,9 +157,14 @@ export function parseProposalReply(text: string): ProposalReply {
 }
 
 export function applyProposalEdit(targetFile: string, editText: string): { ok: true } | { ok: false; reason: string } {
-  if (!existsSync(targetFile)) return { ok: false, reason: `target file missing: ${targetFile}` };
+  // A proposal's targetFile is pai-root-relative (e.g. "LIFEOS/USER/CONFIG/OPERATIONAL_RULES.md").
+  // Resolve it against ~/.claude so it works regardless of the process CWD: the Telegram bot runs
+  // from LIFEOS/PULSE, so a bare relative path resolved to a nonexistent nested path and every apply
+  // failed with "target file missing" even though the file was present.
+  const resolved = isAbsolute(targetFile) ? targetFile : join(HOME, ".claude", targetFile);
+  if (!existsSync(resolved)) return { ok: false, reason: `target file missing: ${targetFile}` };
   try {
-    const current = readFileSync(targetFile, "utf8");
+    const current = readFileSync(resolved, "utf8");
     const sectionHeader = "## Memory-System Proposals";
     const ts = new Date().toISOString();
     const entry = `\n- ${editText} <!-- applied: ${ts} -->`;
@@ -169,9 +174,9 @@ export function applyProposalEdit(targetFile: string, editText: string): { ok: t
     } else {
       next = current.trimEnd() + `\n\n${sectionHeader}\n\n${entry.trim()}\n`;
     }
-    const tmp = `${targetFile}.tmp`;
+    const tmp = `${resolved}.tmp`;
     writeFileSync(tmp, next, "utf8");
-    renameSync(tmp, targetFile);
+    renameSync(tmp, resolved);
     return { ok: true };
   } catch (e) {
     return { ok: false, reason: (e as Error)?.message ?? String(e) };
