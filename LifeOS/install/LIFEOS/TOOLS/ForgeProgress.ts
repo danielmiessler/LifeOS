@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { createInterface } from "node:readline";
-import { accessSync, constants, createWriteStream, existsSync, type WriteStream } from "node:fs";
+import { accessSync, constants, createWriteStream, existsSync, readFileSync, unlinkSync, writeFileSync, type WriteStream } from "node:fs";
 import { mkdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import process from "node:process";
@@ -13,7 +13,7 @@ type RunState = { startMs: number; childAlive: boolean; timedOut: boolean; inter
 type ExitInfo = { code: number | null; signal: NodeJS.Signals | null; error?: Error };
 type TimeoutControl = { clearNaturalExit: () => void; clearAll: () => void };
 type SignalControl = { clear: () => void };
-type Paths = { eventsFile: string; finalFile: string };
+type Paths = { eventsFile: string; finalFile: string; pidFile: string };
 type FinalInput = { verdict: "success" | "error" | "timeout"; exitCode: number | null; eventsFile: string; finalFile: string; durationMs: number; finalMessage: string };
 const RING_SIZE = 5;
 const PULSE_TIMEOUT_MS = 2000;
@@ -69,7 +69,44 @@ function preflightCodex(home: string): string | null {
 async function ensureSlugDir(home: string, slug: string): Promise<Paths> {
   const slugDir = join(home, ".claude", "LIFEOS", "MEMORY", "WORK", slug);
   await mkdir(slugDir, { recursive: true }); // Local artifact I/O is unbounded so errors can surface naturally.
-  return { eventsFile: join(slugDir, "forge-events.jsonl"), finalFile: join(slugDir, "forge-final.txt") };
+  return { eventsFile: join(slugDir, "forge-events.jsonl"), finalFile: join(slugDir, "forge-final.txt"), pidFile: join(slugDir, "forge-codex.pid") };
+}
+function pidAlive(pid: number): boolean { try { process.kill(pid, 0); return true; } catch (_error: unknown) { return false; } }
+function reapStaleCodex(pidFile: string): void {
+  // WHY: a hard-killed wrapper (SIGKILL / group teardown) cannot signal its detached codex child, leaving an
+  // orphan writer loose in the workspace. Each new run reaps its slug's stale group first.
+  if (!existsSync(pidFile)) return;
+  try {
+    const parsed = JSON.parse(readFileSync(pidFile, "utf8")) as { wrapperPid?: unknown; childPid?: unknown };
+    const wrapperPid = typeof parsed.wrapperPid === "number" ? parsed.wrapperPid : null;
+    const childPid = typeof parsed.childPid === "number" ? parsed.childPid : null;
+    if (wrapperPid !== null && pidAlive(wrapperPid)) { console.error(`ForgeProgress: another wrapper (pid ${wrapperPid}) is still alive on this slug; not reaping`); return; }
+    if (childPid !== null && pidAlive(childPid)) {
+      console.error(`ForgeProgress: reaping orphaned codex group ${childPid} left by dead wrapper ${wrapperPid ?? "unknown"}`);
+      try { process.kill(-childPid, "SIGTERM"); } catch (_error: unknown) { /* group already gone */ }
+      setTimeout(() => { if (pidAlive(childPid)) { try { process.kill(-childPid, "SIGKILL"); } catch (_error: unknown) { /* gone */ } } }, ESCALATE_MS);
+    }
+  } catch (error: unknown) { console.error(`ForgeProgress: stale pid file unreadable, removing: ${String(error)}`); }
+  try { unlinkSync(pidFile); } catch (_error: unknown) { /* already gone */ }
+}
+function writePidFile(pidFile: string, childPid: number | undefined): void {
+  if (childPid === undefined) return;
+  try { writeFileSync(pidFile, JSON.stringify({ wrapperPid: process.pid, childPid })); }
+  catch (error: unknown) { console.error(`ForgeProgress: failed to write pid file: ${String(error)}`); }
+}
+function startOrphanWatchdog(child: ChildProcessWithoutNullStreams, state: RunState, cleanupPoller: () => void): () => void {
+  // WHY: if the spawning agent/shell dies, this wrapper reparents to launchd (ppid 1). Without this check the
+  // detached codex group keeps writing to the workspace with no supervisor able to kill, commit, or report it.
+  let cleaned = false;
+  const timer = setInterval(() => {
+    if (process.ppid !== 1) return;
+    cleaned = true; clearInterval(timer); cleanupPoller();
+    console.error("ForgeProgress: parent process died; terminating codex group to prevent an orphan writer");
+    sendChildSignal(child, "SIGTERM", "orphan watchdog");
+    setTimeout(() => { if (state.childAlive) sendChildSignal(child, "SIGKILL", "orphan watchdog escalation"); }, ESCALATE_MS);
+    setTimeout(() => process.exit(1), ESCALATE_MS * 2);
+  }, 2000);
+  return () => { if (cleaned) return; cleaned = true; clearInterval(timer); };
 }
 async function readPrompt(prompt: string | undefined): Promise<string> {
   if (prompt !== undefined) return prompt;
@@ -226,13 +263,16 @@ export default async function main(argv: string[]): Promise<number> {
     const prompt = await readPrompt(args.prompt);
     if (prompt.length === 0) throw new Error("no prompt provided; pass --prompt or pipe stdin data");
     const paths = await ensureSlugDir(home, args.slug), state: RunState = { startMs: Date.now(), childAlive: true, timedOut: false, interrupted: false }, ring: RingEntry[] = [];
+    reapStaleCodex(paths.pidFile);
     const child = spawnCodex(codexPath, args, paths.finalFile, prompt);
+    writePidFile(paths.pidFile, child.pid);
     child.stderr.pipe(process.stderr);
-    const cleanupPoller = startProgressPoller(ring, args), timeoutControl = wireTimeout(child, state, args, cleanupPoller), signalControl = wireSignals(child, state, timeoutControl, cleanupPoller);
+    const cleanupPoller = startProgressPoller(ring, args), timeoutControl = wireTimeout(child, state, args, cleanupPoller), signalControl = wireSignals(child, state, timeoutControl, cleanupPoller), cleanupWatchdog = startOrphanWatchdog(child, state, cleanupPoller);
     let stdoutError: Error | null = null;
     const stdoutTask = wireStdout(child, paths.eventsFile, ring, args).catch((error: unknown) => { stdoutError = error instanceof Error ? error : new Error(String(error)); console.error(`ForgeProgress: stdout wiring failed: ${String(error)}`); sendChildSignal(child, "SIGTERM", "stdout failure"); });
     const exitInfo = await waitForChild(child);
-    state.childAlive = false; timeoutControl.clearNaturalExit(); cleanupPoller(); signalControl.clear(); await stdoutTask;
+    state.childAlive = false; timeoutControl.clearNaturalExit(); cleanupPoller(); cleanupWatchdog(); signalControl.clear(); await stdoutTask;
+    try { unlinkSync(paths.pidFile); } catch (_error: unknown) { /* already gone */ }
     const durationMs = Date.now() - state.startMs;
     void sendNotify(args.pulseUrl, { message: `Forge: codex complete (${durationMs}ms, exit ${exitInfo.code})`, voice_enabled: false, agent: "Forge", slug: args.slug });
     if (exitInfo.error) console.error(`ForgeProgress: codex spawn failed: ${exitInfo.error.message}`);
