@@ -109,7 +109,7 @@ Walk every ISC in `## Criteria`:
 
 If invoked during OBSERVE-end or VERIFY AND the ISA is v6.4.0+ scaffolded:
 
-- If session additionalContext contains `GOAL_SIGNAL: <1|2|3|4>` (non-`none`) AND `principal_stated_goal:` in ISA frontmatter is empty/null → hard failure: "literal capture missed — classifier detected goal-signal but Scaffold did not preserve."
+- If `principal_stated_goal_signal:` in the ISA frontmatter is set (the four-signal detector fired at scaffold) AND `principal_stated_goal:` is empty/null → hard failure: "literal capture missed — the detector fired but Scaffold did not preserve the literal." (Formerly checked the retired classifier's `GOAL_SIGNAL` line; now an ISA-internal consistency check between the recorded signal and the recorded literal.)
 - If `principal_stated_goal:` is set to a non-null string but the string is < 6 tokens or fails the minimum-content rule → hard failure: "literal violates minimum-content rule — should have been `null`."
 
 ### Step 5b — Artifact-Presence Check (NEW v6.4.0 — Cato 2026-05-11 lesson)
