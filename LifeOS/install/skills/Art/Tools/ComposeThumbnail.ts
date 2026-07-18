@@ -44,7 +44,7 @@ const DEFAULTS = {
   borderColor: "#bb9af7",       // Tokyo Night Vivid Purple
   font: "Helvetica-Bold",       // System font that actually exists
   headshotPosition: "left" as const,
-  output: `${process.env.HOME}/Downloads/yt-thumbnail-${Date.now()}.png`,
+  output: `${process.env.LIFEOS_DOWNLOADS_DIR || `${process.env.HOME}/Downloads`}/yt-thumbnail-${Date.now()}.png`,
 };
 
 const LAYOUT = {
@@ -114,7 +114,7 @@ REQUIRED:
   --subtitle <text>       Subtitle text (max 12 words, auto-capitalized)
 
 OPTIONAL:
-  --output <path>         Output path (default: ~/Downloads/yt-thumbnail-{timestamp}.png)
+  --output <path>         Output path (default: $LIFEOS_DOWNLOADS_DIR/yt-thumbnail-{timestamp}.png, fallback ~/Downloads)
   --position <pos>        Headshot position: left, center, right (default: left)
   --font <name>           Font name (default: Helvetica-Bold)
   --title-color <hex>     Title color (default: #FFFFFF)
@@ -129,7 +129,7 @@ EXAMPLE:
     --title "AI AGENTS KILLING SOFTWARE" \\
     --subtitle "WHY TRADITIONAL DEVELOPMENT IS DEAD" \\
     --position left \\
-    --output ~/Downloads/thumbnail.png
+    --output $LIFEOS_DOWNLOADS_DIR/thumbnail.png
 
 LAYOUT:
   Canvas:     1280x720 px

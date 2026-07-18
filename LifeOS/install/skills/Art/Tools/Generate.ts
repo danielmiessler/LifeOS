@@ -113,7 +113,7 @@ interface CLIArgs {
 const DEFAULTS = {
   model: "flux" as Model,
   size: "16:9" as Size,
-  output: `${process.env.HOME}/Downloads/ul-image.png`,
+  output: `${process.env.LIFEOS_DOWNLOADS_DIR || `${process.env.HOME}/Downloads`}/ul-image.png`,
 };
 
 const REPLICATE_SIZES: ReplicateSize[] = ["1:1", "16:9", "3:2", "2:3", "3:4", "4:3", "4:5", "5:4", "9:16", "21:9"];

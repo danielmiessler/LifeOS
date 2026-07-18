@@ -21,7 +21,7 @@
  *
  * Solo:      bun ThumbnailText.ts --title "PERSONAL AI" --subtitle "INFRASTRUCTURE" \
  *              --kicker "A DEEP DIVE ON MY" --tag "v2 (December 2025)" --face headshot.png \
- *              --art diagram.png --variant core --output ~/Downloads/thumb.png
+ *              --art diagram.png --variant core --output "$LIFEOS_DOWNLOADS_DIR"/thumb.png
  * Interview: bun ThumbnailText.ts --mode interview --kicker "A CONVERSATION WITH" \
  *              --title "GRANT LEE" --subtitle "ON BUILDING GAMMA" --face host.png --face2 guest.png \
  *              --name1 "{{PRINCIPAL_FULL_NAME}}" --name2 "Grant Lee" --variant sponsored --output out.png

@@ -15,7 +15,7 @@
 #     non-zero exit per failure class. Never narrates.
 #
 # Usage:
-#   Tools/Capture.sh <url|--current> [--full] [--out <path>]
+#   Tools/Capture.sh <url|--current> [--full] [--selector <css>] [--region X,Y,W,H] [--out <path>]
 #   Tools/Capture.sh --help
 #
 # Exit codes: 0 ok; 2 bad args; 3 preflight failed (propagated); 7 target denied
@@ -24,7 +24,9 @@
 # 12 BLANK/DEGENERATE capture — image landed but is near-uniform (the black-frame
 #    failure: page unhydrated or mid entrance-animation). A blank frame is NEVER a
 #    successful capture — it is a wedged verifier, so it fails hard (defer, never
-#    treat a black frame as evidence).
+#    treat a black frame as evidence);
+# 13 destination dir unwritable — the wrapper NEVER falls back to CWD; ask the
+#    operator where the capture should go.
 
 set -euo pipefail
 
@@ -42,7 +44,11 @@ Usage:
   Capture.sh ... --pixel    Skip DOM-render, capture the real compositor frame
                             directly (use on dark/animated pages that DOM-render
                             snaps blank before hydration). Needs the tab foreground.
-  Capture.sh ... --out PATH  Write to PATH (default: ~/Downloads/interceptor-capture-*.png).
+  Capture.sh ... --selector CSS   Capture only the element matching CSS.
+  Capture.sh ... --region X,Y,W,H Capture a page region.
+  Capture.sh ... --out PATH  Write to PATH (default: \$LIFEOS_DOWNLOADS_DIR/
+                            interceptor-capture-*.png; fallback ~/Downloads.
+                            Set LIFEOS_DOWNLOADS_DIR in settings.json env).
   Capture.sh --help
 
 Always targets only INTERCEPTOR_TEST_CONTEXT_ID from preferences.env. Refuses
@@ -56,6 +62,8 @@ TARGET_URL=""
 USE_CURRENT=0
 FULL=0
 FORCE_PIXEL=0
+SELECTOR=""
+REGION=""
 OUT=""
 
 if [ "$#" -eq 0 ]; then
@@ -80,6 +88,22 @@ while [ "$#" -gt 0 ]; do
         --pixel)
             FORCE_PIXEL=1
             shift
+            ;;
+        --selector)
+            SELECTOR="${2:-}"
+            if [ -z "$SELECTOR" ]; then
+                echo "Capture.sh: --selector requires a CSS selector" >&2
+                exit 2
+            fi
+            shift 2
+            ;;
+        --region)
+            REGION="${2:-}"
+            if [ -z "$REGION" ]; then
+                echo "Capture.sh: --region requires X,Y,W,H" >&2
+                exit 2
+            fi
+            shift 2
             ;;
         --out)
             OUT="${2:-}"
@@ -167,17 +191,34 @@ if ! printf '%s\n' "$contexts_now" \
     exit 3
 fi
 
-# --- 4. resolve output path (review artifacts go to ~/Downloads per OPERATIONAL_RULES) ---
+# --- 4. resolve output path. Default dir comes from LIFEOS_DOWNLOADS_DIR (the
+# global artifact-output knob, set in settings.json's env block); fallback is
+# ~/Downloads. An unwritable destination is a hard failure (exit 13) — NEVER
+# fall back to CWD. ---
 if [ -z "$OUT" ]; then
     ts="$(date +%Y%m%d-%H%M%S)"
     rand="$$"
-    OUT="${HOME}/Downloads/interceptor-capture-${ts}-${rand}.png"
+    OUT="${LIFEOS_DOWNLOADS_DIR:-${HOME}/Downloads}/interceptor-capture-${ts}-${rand}.png"
 fi
-mkdir -p "$(dirname "$OUT")"
+OUT_DIR="$(dirname "$OUT")"
+if ! mkdir -p "$OUT_DIR" 2>/dev/null || [ ! -w "$OUT_DIR" ]; then
+    echo "Capture.sh: destination dir $OUT_DIR is not writable (exit 13). Pass a writable --out; if none is known, ask the operator where the capture should go. Never falling back to CWD." >&2
+    exit 13
+fi
 
-# Build common flag arrays.
-SS_FLAGS=(--context "$CTX" --save --out "$OUT")
+# --- staging dir: the CLI has NO output-path flag — `--save` always writes
+# interceptor-screenshot-<epoch>.<ext> into the CLI process CWD. Every capture
+# runs `cd`-ed into this private stage so that write can never land in the
+# caller's CWD; resolve_saved() then MOVES the result to $OUT. ---
+STAGE="$(mktemp -d "${TMPDIR:-/tmp}/interceptor-capture-stage.XXXXXX")"
+trap 'rm -rf "$STAGE"' EXIT
+
+# Build common flag arrays. (No --out here: the CLI silently swallows unknown
+# flags, which is how strays used to leak — see 2026-07-18 root-cause.)
+SS_FLAGS=(--context "$CTX" --save)
 [ "$FULL" -eq 1 ] && SS_FLAGS+=(--full)
+[ -n "$SELECTOR" ] && SS_FLAGS+=(--selector "$SELECTOR")
+[ -n "$REGION" ] && SS_FLAGS+=(--region "$REGION")
 
 # --- helpers ---
 navigate_if_needed() {
@@ -236,16 +277,27 @@ content_ok() {
 }
 
 # interceptor screenshot prints JSON including "filePath" — the path it ACTUALLY
-# wrote. The --pixel path (captureVisibleTab) ignores --out and saves to a
-# daemon-chosen temp path, so after every capture we reconcile: if $OUT wasn't
-# populated, lift the real file from filePath into $OUT. This is what makes the
-# working pixel fallback actually satisfy the wrapper's contract.
+# wrote (CLI CWD = our stage for DOM-render; a daemon-chosen temp path for
+# --pixel). After every capture we reconcile by MOVING that file into $OUT —
+# move, not copy: the source living anywhere else IS the stray-file bug this
+# wrapper exists to prevent. Relative filePath resolves against the stage; if
+# filePath is unparseable, fall back to the newest capture file in the stage.
 resolve_saved() {
     local out_text="$1" fp
     [ -s "$OUT" ] && return 0
     fp="$(printf '%s\n' "$out_text" | grep -oE '"filePath"[[:space:]]*:[[:space:]]*"[^"]+"' | head -1 | sed -E 's/.*:[[:space:]]*"([^"]+)".*/\1/')"
+    case "$fp" in
+        ""|/*) : ;;
+        *) fp="$STAGE/$fp" ;;
+    esac
     if [ -n "$fp" ] && [ -s "$fp" ]; then
-        cp -f "$fp" "$OUT" 2>/dev/null && return 0
+        mv -f "$fp" "$OUT" && return 0
+    fi
+    # The stage is private to this run, so ANY file in it is our capture —
+    # don't couple the fallback to the CLI's current filename convention.
+    fp="$(ls -t "$STAGE"/* 2>/dev/null | head -1)"
+    if [ -n "$fp" ] && [ -s "$fp" ]; then
+        mv -f "$fp" "$OUT" && return 0
     fi
     return 1
 }
@@ -261,11 +313,11 @@ heal_bridge() {
 }
 
 dom_capture() {
-    interceptor screenshot "${SS_FLAGS[@]}" 2>&1
+    ( cd "$STAGE" && interceptor screenshot "${SS_FLAGS[@]}" 2>&1 )
 }
 
 pixel_capture() {
-    interceptor screenshot "${SS_FLAGS[@]}" --pixel 2>&1
+    ( cd "$STAGE" && interceptor screenshot "${SS_FLAGS[@]}" --pixel 2>&1 )
 }
 
 # --- 5/6/7. capture with bounded recovery. DOM-first, then a single classified
