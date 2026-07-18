@@ -16,7 +16,6 @@
 
 import { join } from "path"
 import { readFileSync, existsSync } from "fs"
-import { parse } from "smol-toml"
 import { loadLifeosConfig } from "../TOOLS/LifeosConfig"
 import { isLoopbackHostHeader } from "./lib/host-guard.ts"
 
@@ -68,6 +67,7 @@ import {
   isSentinel,
   spawnScript,
   spawnClaude,
+  parseConfigToml,
 } from "./lib"
 
 import { startHooks, handleHooksRequestAsync, hooksHealth } from "./modules/hooks"
@@ -316,7 +316,10 @@ interface PulseConfig {
 
 async function loadPulseConfig(): Promise<PulseConfig> {
   const raw = await Bun.file(join(PULSE_DIR, "PULSE.toml")).text()
-  const parsed = parse(raw) as Record<string, unknown>
+  // parseConfigToml expands ${VAR} in every string value, so config sections
+  // can carry secrets by reference (e.g. [discord] bot_token) instead of
+  // literal values checked into the file.
+  const parsed = parseConfigToml(raw)
 
   const daemonConfig = await loadConfig(PULSE_DIR)
 

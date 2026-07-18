@@ -66,9 +66,55 @@ export interface DaemonState {
 }
 
 // ── Env Var Resolution ──
+//
+// Historically this was applied to exactly one field (a job's `command`), so
+// every other `${VAR}` in PULSE.toml was a dead literal. Two silent failures
+// followed from that: upstream ships `[notifications.discord] webhook =
+// "${DISCORD_WEBHOOK}"` that nothing ever expanded, and any module reading a
+// secret straight off the config would hand the literal string "${TOKEN}" to a
+// remote API and fail authentication with no local error.
+//
+// Expansion is now applied to every string value in the parsed config (see
+// parseConfigToml), so secrets can live in the environment instead of in the
+// file. Substitution semantics are deliberately unchanged from the original
+// single-field behaviour — both `$VAR` and `${VAR}` are recognised, and an
+// undefined variable resolves to the empty string.
+//
+// Backward compatibility: the regex only matches a `$` followed by an
+// uppercase identifier, so a plain literal value ("ntfy.sh", a cron
+// expression, a prose prompt) is returned byte-identical and existing installs
+// keep working across an upgrade.
 
-function resolveEnvVars(value: string): string {
+export function resolveEnvVars(value: string): string {
   return value.replace(/\$\{?([A-Z_][A-Z0-9_]*)\}?/g, (_, name) => process.env[name] ?? "")
+}
+
+// Recursively expand env vars in every string reachable from a parsed TOML
+// document. Non-string scalars (numbers, booleans, dates) pass through
+// untouched; object keys are never rewritten, only values.
+function resolveEnvVarsDeep<T>(value: T): T {
+  if (typeof value === "string") return resolveEnvVars(value) as unknown as T
+  if (Array.isArray(value)) return value.map(resolveEnvVarsDeep) as unknown as T
+  if (value !== null && typeof value === "object") {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      out[k] = resolveEnvVarsDeep(v)
+    }
+    return out as unknown as T
+  }
+  return value
+}
+
+/**
+ * Parse a Pulse TOML document and expand `${VAR}` / `$VAR` references in all
+ * string values against the process environment.
+ *
+ * This is the single entry point for reading PULSE.toml — both the job loader
+ * here and loadPulseConfig() in pulse.ts go through it, so env expansion is a
+ * property of the config layer rather than of any one consumer.
+ */
+export function parseConfigToml(raw: string): Record<string, unknown> {
+  return resolveEnvVarsDeep(parse(raw) as Record<string, unknown>)
 }
 
 // ── Config Loading ──
@@ -82,12 +128,15 @@ function resolveEnvVars(value: string): string {
 // jobs until the user adds something via the API.
 
 function jobsFromToml(raw: string, source: JobSource): Job[] {
-  const parsed = parse(raw) as { job?: Array<Record<string, unknown>> }
+  // parseConfigToml already expanded env vars in every string, including
+  // `command` — which is why there is no per-field resolveEnvVars call here
+  // any more.
+  const parsed = parseConfigToml(raw) as { job?: Array<Record<string, unknown>> }
   return (parsed.job ?? []).map((j) => ({
     name: j.name as string,
     schedule: j.schedule as string,
     type: (j.type as "script" | "claude") ?? "script",
-    command: j.command ? resolveEnvVars(j.command as string) : undefined,
+    command: j.command as string | undefined,
     prompt: j.prompt as string | undefined,
     model: (j.model as string) ?? modelForEffort('medium'),
     output: (j.output ?? "log") as OutputTarget | OutputTarget[],
