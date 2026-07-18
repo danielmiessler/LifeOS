@@ -11,7 +11,7 @@ source ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
 bash ~/.claude/skills/Interceptor/Tools/PreflightIsolation.sh
 ```
 
-Non-zero exit → STOP and surface the message verbatim. Do not fall back to the Default profile. Capture goes through `Tools/Capture.sh`, which re-runs this gate, routes to `INTERCEPTOR_TEST_CONTEXT_ID`, and resolves the destination to `~/Downloads/` for review artifacts — never raw `interceptor screenshot`.
+Non-zero exit → STOP and surface the message verbatim. Do not fall back to the Default profile. Capture goes through `Tools/Capture.sh`, which re-runs this gate, routes to `INTERCEPTOR_TEST_CONTEXT_ID`, and resolves the destination to `$LIFEOS_DOWNLOADS_DIR` (fallback `~/Downloads/`) for review artifacts — never raw `interceptor screenshot`.
 
 ## Command Budget
 
@@ -29,9 +29,9 @@ If the first screenshot doesn't answer the question, do NOT take a second explor
 bash ~/.claude/skills/Interceptor/Tools/Capture.sh --current
 ```
 
-`Capture.sh` runs `interceptor screenshot` under the hood with the DOM-render path, the pinned `--context`, `--save`, and a `~/Downloads/` destination, then prints the absolute saved-image path on its only stdout line. No inline base64; the path re-reads on demand and never bloats your context. The defaults it applies are load-bearing:
+`Capture.sh` runs `interceptor screenshot` under the hood with the DOM-render path, the pinned `--context`, `--save`, and a `$LIFEOS_DOWNLOADS_DIR` destination (fallback `~/Downloads/`), then prints the absolute saved-image path on its only stdout line. No inline base64; the path re-reads on demand and never bloats your context. The defaults it applies are load-bearing:
 
-- **`--save`** — writes bytes to disk (Capture.sh resolves the path to `~/Downloads/`, the OPERATIONAL_RULES home for review artifacts) and strips `dataUrl` from the result. Without it the WebP rides the response inline.
+- **`--save`** — writes bytes to disk (Capture.sh stages the write and moves it to `$LIFEOS_DOWNLOADS_DIR`, fallback `~/Downloads/`) and strips `dataUrl` from the result. Without it the WebP rides the response inline.
 - **`--format webp`** — re-encodes at the SW boundary via OffscreenCanvas. ~5–8× smaller than PNG at q=85 with no measurable VLM accuracy loss. Default WebP quality is 85; PNG/JPEG default to 92.
 - **`--target-max-long-edge 1568`** — clamps the rasterized canvas long edge to 1568 px, Anthropic Sonnet's auto-resize ceiling. Pixels above that ceiling get downscaled by the API anyway. Vendor ceilings:
   - Sonnet — 1568 px
@@ -69,7 +69,7 @@ If any returns the answer, you don't need pixels.
 ## Output format
 
 Report:
-- The path written (Capture.sh's single stdout line, e.g. `~/Downloads/interceptor-capture-<ts>-<rand>.png`)
+- The path written (Capture.sh's single stdout line, e.g. `$LIFEOS_DOWNLOADS_DIR/interceptor-capture-<ts>-<rand>.png`)
 - Dimensions and on-disk size
 - What you saw in the image (the actual visual finding, not "the page rendered")
 - Whether the pixel evidence answered the question, or whether you still need another read

@@ -378,8 +378,8 @@ import { LIFEOS_THEME } from '~/.claude/skills/Remotion/theme'
 │ STEP 5: RENDER                                                              │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │ 1. Install dependencies: npm install                                        │
-│ 2. Render: npx remotion render {composition-id} ~/Downloads/{name}.mp4     │
-│ 3. Open for preview: open ~/Downloads/{name}.mp4                           │
+│ 2. Render: npx remotion render {composition-id} "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/{name}.mp4     │
+│ 3. Open for preview: open "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/{name}.mp4                           │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 

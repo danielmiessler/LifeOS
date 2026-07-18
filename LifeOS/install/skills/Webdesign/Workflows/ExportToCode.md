@@ -23,7 +23,7 @@ Optional:
 ### 1. Export from Claude Design (if not already done)
 
 ```bash
-OUT=~/Downloads/webdesign/export/$(date +%Y%m%d-%H%M%S)
+OUT="${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/webdesign/export/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
 
 bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts export bundle "$OUT/bundle"

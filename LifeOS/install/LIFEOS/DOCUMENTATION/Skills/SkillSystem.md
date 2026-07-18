@@ -431,7 +431,7 @@ Complete visual content system using **charcoal architectural sketch** aesthetic
 
 **Aesthetic:** Charcoal architectural sketch
 **Model:** nano-banana-pro
-**Output:** Always ~/Downloads/ first
+**Output:** Always the downloads dir first — `$LIFEOS_DOWNLOADS_DIR` (set in settings.json's `env` block; default `~/Downloads/` when unset)
 
 **Full Documentation:**
 - Aesthetic guide: `SkillSearch('art aesthetic')` → loads Aesthetic.md

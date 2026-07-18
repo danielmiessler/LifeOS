@@ -94,7 +94,7 @@ Pitch shifting on `<Audio>` / `<Video>` runs only during `bunx remotion render`,
 All Remotion commands run via `bunx remotion ...`. `npx` is forbidden in this codebase (per global operational rules).
 
 ```bash
-bunx remotion render my-video ~/Downloads/out.mp4
+bunx remotion render my-video "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/out.mp4
 bunx remotion studio
 bunx remotion lambda render ...
 ```

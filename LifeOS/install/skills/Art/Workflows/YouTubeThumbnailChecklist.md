@@ -116,7 +116,7 @@ Running **YouTubeThumbnailChecklist** in **Art**...
 □ All sizes confirmed from measurement
 □ Kerning/letter-spacing values match example
 □ Layer order correct (background → art → headshot → text → border → logo)
-□ Output path is ~/Downloads/
+□ Output path is $LIFEOS_DOWNLOADS_DIR (default ~/Downloads/ when unset)
 □ Output filename includes timestamp
 ```
 

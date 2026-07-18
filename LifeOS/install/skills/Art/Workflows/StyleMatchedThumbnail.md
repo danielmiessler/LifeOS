@@ -45,7 +45,7 @@ bun ~/.claude/skills/Art/Tools/Generate.ts --workflow=StyleMatchedThumbnail --mo
   --size 2K --aspect-ratio 1:1 --no-signature \
   --reference-image <headshot-clean.png> --reference-image <headshot-smiling.png> \
   --prompt "Photorealistic head-and-shoulders portrait of the man in the references, <EXPRESSION>, looking at camera, plain near-black background, studio lighting, NO text." \
-  --output ~/Downloads/sm-thumb/face-gen.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/sm-thumb/face-gen.png
 ```
 Then `Read` it and reroll on any likeness drift or render-y skin before using it.
 
@@ -65,7 +65,7 @@ bun ~/.claude/skills/Art/Tools/ThumbnailText.ts \
   --face "<headshot from step 2>" --art "<diagram.png, optional>" \
   --kicker "A DEEP DIVE ON MY" --title "PERSONAL AI" --subtitle "INFRASTRUCTURE" --tag "v2 (December 2025)" \
   --variant core --face-side right \
-  --output ~/Downloads/sm-thumb/final-1.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/sm-thumb/final-1.png
 ```
 
 **Interview layout** (Sponsored/Main7-style: centered text + two framed stills + name labels):
@@ -74,7 +74,7 @@ bun ~/.claude/skills/Art/Tools/ThumbnailText.ts --mode interview \
   --kicker "A CONVERSATION WITH" --title "GRANT LEE" --subtitle "ON BUILDING GAMMA" \
   --face host.png --face2 guest.png --name1 "{{PRINCIPAL_FULL_NAME}}" --name2 "Grant Lee" \
   --accent "#F5A623" --variant sponsored \
-  --output ~/Downloads/sm-thumb/final-1.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/sm-thumb/final-1.png
 ```
 
 **The house design system, reproduced from `SPECIFICATIONS.md` + live pixel samples:**
@@ -100,7 +100,7 @@ For each final:
 
 Build a contact sheet and let the creator pick:
 ```bash
-magick montage ~/Downloads/sm-thumb/final-*.png -tile 2x2 -geometry 640x360+6+6 ~/Downloads/sm-thumb/CONTACT.png
+magick montage "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/sm-thumb/final-*.png -tile 2x2 -geometry 640x360+6+6 "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/sm-thumb/CONTACT.png
 ```
 `Read` it, then `SendUserFile` the sheet + full-res variants, numbered, each labeled with its expression + background concept. Human pick is the finish, not a fallback — this is a brand-critical asset.
 

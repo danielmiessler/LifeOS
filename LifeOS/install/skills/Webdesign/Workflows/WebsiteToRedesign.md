@@ -22,7 +22,7 @@ Optional:
 ### 1. Capture the Existing Site
 
 ```bash
-OUT=~/Downloads/webdesign/redesign/$(date +%Y%m%d-%H%M%S)
+OUT="${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/webdesign/redesign/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
 
 # Full-page screenshot — Interceptor has no Tools/ dir; use the skill API instead.

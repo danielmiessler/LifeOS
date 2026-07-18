@@ -41,7 +41,7 @@ These override default behavior. If the directory does not exist, proceed with s
 
 ## What It Does
 
-Generates static visual content across 20+ formats — blog headers, technical and architecture diagrams, frameworks, taxonomies, timelines, comparisons, stat cards, comics, icons, wallpapers, D3 charts, Mermaid diagrams — using Flux, Nano Banana Pro (Gemini 3 Pro), and GPT-Image-2. Every request routes through a named workflow that encodes the technique and palette, output stages to ~/Downloads/ for review first, and blog headers ship both a transparent inline version and an opaque social thumbnail.
+Generates static visual content across 20+ formats — blog headers, technical and architecture diagrams, frameworks, taxonomies, timelines, comparisons, stat cards, comics, icons, wallpapers, D3 charts, Mermaid diagrams — using Flux, Nano Banana Pro (Gemini 3 Pro), and GPT-Image-2. Every request routes through a named workflow that encodes the technique and palette, output stages to $LIFEOS_DOWNLOADS_DIR (default ~/Downloads/ when unset) for review first, and blog headers ship both a transparent inline version and an opaque social thumbnail.
 
 ## The Problem
 
@@ -49,7 +49,7 @@ The bare image model produces inconsistent, off-style output when handed a freef
 
 ## How It Works
 
-A complete visual content system for illustrations, diagrams, and other static visuals. Each request picks a matching workflow file first, follows its prompt template, then calls `Generate.ts` with `--workflow=<name>` plus model/size/output flags. Two layers enforce that the workflow was followed (`Generate.ts` itself and the `ArtWorkflowGuard.hook.ts` PreToolUse hook), output always lands in ~/Downloads/ for preview, and blog headers run with `--thumbnail` to produce both the transparent PNG and the sepia-backed social thumbnail.
+A complete visual content system for illustrations, diagrams, and other static visuals. Each request picks a matching workflow file first, follows its prompt template, then calls `Generate.ts` with `--workflow=<name>` plus model/size/output flags. Two layers enforce that the workflow was followed (`Generate.ts` itself and the `ArtWorkflowGuard.hook.ts` PreToolUse hook), output always lands in $LIFEOS_DOWNLOADS_DIR (default ~/Downloads/ when unset) for preview, and blog headers run with `--thumbnail` to produce both the transparent PNG and the sepia-backed social thumbnail.
 
 ## 🛑 STRUCTURAL ENFORCEMENT — `--workflow=<name>` IS REQUIRED
 
@@ -77,7 +77,7 @@ bun ~/.claude/skills/Art/Tools/Generate.ts \
   --prompt "..." \
   --size 2K \
   --aspect-ratio 16:9 \
-  --output ~/Downloads/<filename>.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/<filename>.png
 ```
 
 `<WorkflowName>` MUST match a file under `Workflows/` (without `.md`):
@@ -119,7 +119,7 @@ If no workflow matches the request, **stop and surface to the user** before gene
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-⚠️  ALL GENERATED IMAGES GO TO ~/Downloads/ FIRST                   ⚠️
+⚠️  ALL GENERATED IMAGES GO TO $LIFEOS_DOWNLOADS_DIR (default ~/Downloads/ when unset) FIRST                   ⚠️
 ⚠️  NEVER output directly to project directories                    ⚠️
 ⚠️  User MUST preview in Finder/Preview before use                  ⚠️
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -145,8 +145,8 @@ The blog page background is sepia #EAE9DF. Inline images MUST be transparent PNG
 - If `rembg` isn't installed at `~/.local/bin/rembg`, the tool fails loudly with install instructions rather than silently producing an opaque image. Install: `pipx install rembg` (or set `REMBG_BIN` env var to override the path).
 
 **Verification step before declaring an image done (REQUIRED):**
-1. `file ~/Downloads/[name].png` → must report `PNG image data, ... RGBA` (8-bit/color RGBA). If it says `JPEG` or `8-bit colormap` without alpha, transparency failed.
-2. `file ~/Downloads/[name]-thumb.png` → must report `PNG image data`. The thumb is intentionally opaque with sepia background.
+1. `file "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].png` → must report `PNG image data, ... RGBA` (8-bit/color RGBA). If it says `JPEG` or `8-bit colormap` without alpha, transparency failed.
+2. `file "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-thumb.png` → must report `PNG image data`. The thumb is intentionally opaque with sepia background.
 3. Only after both pass: copy to the project directory and wire into the post.
 
 **Wiring into the blog post:**
@@ -251,12 +251,12 @@ Arena leaderboard sweeps measure aesthetic preference at scale, not editorial st
 
 ### 🚨 CRITICAL: Always Output to Downloads First
 
-**ALL generated images MUST go to `~/Downloads/` first for preview and selection.**
+**ALL generated images MUST go to `$LIFEOS_DOWNLOADS_DIR` (default `~/Downloads/` when unset) first for preview and selection.**
 
 Never output directly to a project's `public/images/` directory. User needs to review images in Preview before they're used.
 
 **Workflow:**
-1. Generate to `~/Downloads/[descriptive-name].png`
+1. Generate to `$LIFEOS_DOWNLOADS_DIR/[descriptive-name].png`
 2. User reviews in Preview
 3. If approved, THEN copy to final destination (e.g., `cms/public/images/`)
 4. Create WebP and thumbnail versions at final destination
@@ -269,11 +269,11 @@ bun run ${LIFEOS_SKILL_DIR}/Tools/Generate.ts \
   --size 2K \
   --aspect-ratio 1:1 \
   --thumbnail \
-  --output ~/Downloads/blog-header-concept.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/blog-header-concept.png
 
 # After approval, copy to final location (substitute your blog/site path)
-cp ~/Downloads/blog-header-concept.png ~/your-site/public/images/
-cp ~/Downloads/blog-header-concept-thumb.png ~/your-site/public/images/
+cp "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/blog-header-concept.png ~/your-site/public/images/
+cp "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/blog-header-concept-thumb.png ~/your-site/public/images/
 ```
 
 ### Multiple Reference Images (Character/Style Consistency)
@@ -290,7 +290,7 @@ bun run ${LIFEOS_SKILL_DIR}/Tools/Generate.ts \
   --reference-image face3.jpg \
   --size 2K \
   --aspect-ratio 16:9 \
-  --output ~/Downloads/character-scene.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/character-scene.png
 ```
 
 **API Limits (Gemini):**
@@ -308,7 +308,7 @@ User: "create a header for my AI agents post"
 → Invokes ESSAY workflow
 → Generates charcoal sketch prompt
 → Creates image with architectural aesthetic
-→ Saves to ~/Downloads/ for preview
+→ Saves to $LIFEOS_DOWNLOADS_DIR/ for preview
 → After approval, copies to public/images/
 ```
 
@@ -335,13 +335,13 @@ User: "create icon for the skill system pack"
 → Reads workflow from Workflows/CreateLifeosPackIcon.md
 → Generates 1K image with --remove-bg for transparency
 → Resizes to 256x256 RGBA PNG
-→ Outputs to ~/Downloads/ for preview
+→ Outputs to $LIFEOS_DOWNLOADS_DIR/ for preview
 → After approval, copies to ${PROJECTS_DIR}/LIFEOS/Packs/icons/
 ```
 
 ## Gotchas
 
-- **Always output to ~/Downloads/ first — NEVER directly to project directories.** User must preview before use. Multiple past failures from pushing wrong images directly to repos.
+- **Always output to $LIFEOS_DOWNLOADS_DIR (default ~/Downloads/ when unset) first — NEVER directly to project directories.** User must preview before use. Multiple past failures from pushing wrong images directly to repos.
 - **Verify image dimensions match target use case before claiming done.** Social media previews, blog headers, and thumbnails have different size requirements. A header that works on the blog may break OG/social previews.
 - **nano-banana-pro uses `--size` for resolution (1K/2K/4K) and SEPARATE `--aspect-ratio` flag.** Don't pass aspect ratio values to `--size`.
 - **Reference images: max 5 human, 6 object, 14 total per request** (Gemini API limit).

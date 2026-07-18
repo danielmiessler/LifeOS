@@ -60,7 +60,7 @@ Wait for Claude Design to produce the first version (typically 20-60 seconds).
 ### 5. Capture the Output
 
 ```bash
-OUT=~/Downloads/webdesign/$(date +%Y%m%d-%H%M%S)
+OUT="${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/webdesign/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
 bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/v1.png"
 ```

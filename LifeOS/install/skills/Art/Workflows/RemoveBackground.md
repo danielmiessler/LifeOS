@@ -118,7 +118,7 @@ bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts \
 ### Example 3: Process multiple images
 
 ```bash
-cd ~/Downloads
+cd "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"
 bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts diagram-*.png
 ```
 

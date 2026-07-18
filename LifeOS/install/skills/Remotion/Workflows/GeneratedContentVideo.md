@@ -89,7 +89,7 @@ Calculate `durationInFrames` from narration length: `audioDurationSec * fps`.
 Default to local:
 
 ```bash
-bunx remotion render GeneratedVideo ~/Downloads/video.mp4 --codec=h264
+bunx remotion render GeneratedVideo "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/video.mp4 --codec=h264
 ```
 
 For batch/production, use Lambda (see `Tools/Ref-lambda.md`).
@@ -99,12 +99,12 @@ For batch/production, use Lambda (see `Tools/Ref-lambda.md`).
 Show the file path and play via `open` on macOS:
 
 ```bash
-open ~/Downloads/video.mp4
+open "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/video.mp4
 ```
 
 ## Output
 
-- `~/Downloads/<slug>.mp4` — final video
+- `$LIFEOS_DOWNLOADS_DIR/<slug>.mp4` — final video
 - Project kept in your local Remotion projects directory for iteration (same location Remotion studio uses)
 
 ## Related

@@ -113,7 +113,7 @@ export const AiVideo: React.FC = () => {
 ## Step 5 — Render
 
 ```bash
-bunx remotion render AiVideo ~/Downloads/ai-video.mp4 --codec=h264
+bunx remotion render AiVideo "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/ai-video.mp4 --codec=h264
 ```
 
 ## Automation

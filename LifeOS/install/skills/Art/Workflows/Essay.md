@@ -539,9 +539,9 @@ seamless warm sepia paper that blends into a cream blog page.
 - **N defaults to 4 total** (2 OpenAI gpt-image-2 + 2 Google nano-banana-pro), each with a distinct compositional angle on the same thesis brief.
 - **Bump to 6 (3+3) or 8 (4+4)** when the thesis is multi-part, the metaphor is non-obvious, or the previous round failed the gate.
 - **Spawn all candidates as parallel background jobs** (`run_in_background: true`) — the wall-clock cost of 4 parallel is roughly the same as 1 sequential.
-- **All outputs go to `~/Downloads/`** with descriptive suffixes (`{slug}-candidate-{n}-{model}-{angle}.png`).
+- **All outputs go to `$LIFEOS_DOWNLOADS_DIR` (default `~/Downloads/` when unset)** with descriptive suffixes (`{slug}-candidate-{n}-{model}-{angle}.png`).
 - **Then run the Concept Fidelity Gate (Step 8)** on each. Score every candidate against the thesis brief. Auto-select the highest-fidelity winner.
-- **The winner moves through optimize → mv → git add. Losers stay in `~/Downloads/` as disposable.**
+- **The winner moves through optimize → mv → git add. Losers stay in `$LIFEOS_DOWNLOADS_DIR/` as disposable.**
 
 **Why this is the default, not an option:**
 
@@ -600,14 +600,14 @@ seamless warm sepia paper that blends into a cream blog page.
 
 ### Default Model: nano-banana-pro
 
-### 🚨 CRITICAL: Always Output to Downloads First — `~/Downloads/` IS THE WORKING DIRECTORY
+### 🚨 CRITICAL: Always Output to Downloads First — `$LIFEOS_DOWNLOADS_DIR` (default `~/Downloads/` when unset) IS THE WORKING DIRECTORY
 
-**`~/Downloads/` is the canonical working directory for ALL Art-skill image generation. EVERY `--output` path MUST start with `~/Downloads/`. ZERO exceptions.**
+**`$LIFEOS_DOWNLOADS_DIR` (default `~/Downloads/` when unset) is the canonical working directory for ALL Art-skill image generation. EVERY `--output` path MUST start with `$LIFEOS_DOWNLOADS_DIR/`. ZERO exceptions.**
 
 This applies to:
-- Single-shot generations (`--output ~/Downloads/{name}.png`)
-- Multi-candidate comparisons across models (`--output ~/Downloads/{name}-candidate-{n}-{model}.png`)
-- Thumbnail generation (`--thumbnail` flag — both `.png` and `-thumb.png` land in `~/Downloads/`)
+- Single-shot generations (`--output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/{name}.png`)
+- Multi-candidate comparisons across models (`--output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/{name}-candidate-{n}-{model}.png`)
+- Thumbnail generation (`--thumbnail` flag — both `.png` and `-thumb.png` land in `$LIFEOS_DOWNLOADS_DIR/`)
 - Background-removal intermediates
 - Optimization intermediates (`cwebp` / `magick` outputs while iterating)
 
@@ -616,7 +616,7 @@ This applies to:
 The strict pipeline:
 
 ```bash
-# 1. GENERATE → ALWAYS to ~/Downloads/
+# 1. GENERATE → ALWAYS to $LIFEOS_DOWNLOADS_DIR/
 bun run ~/.claude/skills/Art/Tools/Generate.ts \
   --workflow=Essay \
   --model nano-banana-pro \
@@ -624,26 +624,26 @@ bun run ~/.claude/skills/Art/Tools/Generate.ts \
   --size 2K \
   --aspect-ratio 1:1 \
   --thumbnail \
-  --output ~/Downloads/[descriptive-name].png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[descriptive-name].png
 
 # 2. INSPECT → MANDATORY visual gate via the Read tool
 #    (see Step 8 — you literally cannot validate the image without this)
-#    Read("~/Downloads/[descriptive-name].png")
+#    Read("$LIFEOS_DOWNLOADS_DIR/[descriptive-name].png")
 #    nano-banana-pro often returns JPEG even for --output .png:
-#    Read("~/Downloads/[descriptive-name].jpg")
+#    Read("$LIFEOS_DOWNLOADS_DIR/[descriptive-name].jpg")
 
-# 3. OPTIMIZE → still in ~/Downloads/
-cwebp -q 78 ~/Downloads/[name].png -o ~/Downloads/[name].webp
-magick ~/Downloads/[name].png -resize 512x512 -colors 128 ~/Downloads/[name]-thumb.png
+# 3. OPTIMIZE → still in $LIFEOS_DOWNLOADS_DIR/
+cwebp -q 78 "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].png -o "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].webp
+magick "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].png -resize 512x512 -colors 128 "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-thumb.png
 
 # 4. MOVE → only after visual gate passes, only the chosen winner
-mv ~/Downloads/[name].{png,webp,thumb.png} ~/your-site/public/images/
+mv "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].{png,webp,thumb.png} ~/your-site/public/images/
 
 # 5. STAGE → git add the moved files
 cd ~/your-site && git add public/images/[name].*
 ```
 
-**If you generate multiple candidates for comparison, all of them stay in `~/Downloads/`. Only the winner moves through steps 4–5. The losers stay in `~/Downloads/` (they're disposable; the principal's Downloads folder is the staging area, not a permanent archive).**
+**If you generate multiple candidates for comparison, all of them stay in `$LIFEOS_DOWNLOADS_DIR/`. Only the winner moves through steps 4–5. The losers stay in `$LIFEOS_DOWNLOADS_DIR/` (they're disposable; the principal's Downloads folder is the staging area, not a permanent archive).**
 
 ### Construct Command Based on Intent
 
@@ -671,8 +671,8 @@ The `--thumbnail` flag generates TWO versions:
 2. `output-thumb.png` — With `#EAE9DF` background (for thumbnails, social previews, OpenGraph)
 
 ```bash
-# Example: Generates both my-header.png AND my-header-thumb.png in ~/Downloads/
-# 🚨 --output MUST point to ~/Downloads/ — NEVER directly into cms/public/images/
+# Example: Generates both my-header.png AND my-header-thumb.png in $LIFEOS_DOWNLOADS_DIR/
+# 🚨 --output MUST point to $LIFEOS_DOWNLOADS_DIR/ — NEVER directly into cms/public/images/
 bun run ~/.claude/skills/Art/Tools/Generate.ts \
   --workflow=Essay \
   --model nano-banana-pro \
@@ -680,10 +680,10 @@ bun run ~/.claude/skills/Art/Tools/Generate.ts \
   --size 2K \
   --aspect-ratio 1:1 \
   --thumbnail \
-  --output ~/Downloads/my-header.png
+  --output "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/my-header.png
 
 # After visual inspection passes (Step 8), move into your site's public tree:
-mv ~/Downloads/my-header.png ~/Downloads/my-header-thumb.png \
+mv "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/my-header.png "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/my-header-thumb.png \
    ~/your-site/public/images/
 ```
 
@@ -775,16 +775,16 @@ open /path/to/output.png
 
 ```bash
 # Stage A — magick -trim removes uniform-color/transparent borders to the bbox of opaque pixels.
-magick ~/Downloads/[name].png -trim +repage ~/Downloads/[name]-trimmed.png
+magick "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].png -trim +repage "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-trimmed.png
 
 # Stage B — resize the trimmed result to 1024 wide (preserve native aspect — DO NOT pad to square).
-magick ~/Downloads/[name]-trimmed.png -resize 1024x ~/Downloads/[name]-resized.png
+magick "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-trimmed.png -resize 1024x "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-resized.png
 
 # Stage C — verify margins are now ≤ 2% on every edge (sanity check; any model whitespace inside
 # the bbox stays, but cropping has eliminated background bleed).
 bun ~/.claude/skills/Art/Tools/FillFrame.ts \
-  ~/Downloads/[name]-resized.png \
-  ~/Downloads/[name]-resized.png \
+  "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-resized.png \
+  "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-resized.png \
   --report-only \
   --max-margin 2 \
   --bg-color auto
@@ -792,8 +792,8 @@ bun ~/.claude/skills/Art/Tools/FillFrame.ts \
 # If Stage C reports margins > 2%, the model produced an image with internal whitespace inside
 # the figure area — REGENERATE with a tighter composition prompt instead of padding it more.
 
-mv ~/Downloads/[name]-resized.png ~/Downloads/[name].png
-rm ~/Downloads/[name]-trimmed.png
+mv "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-resized.png "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].png
+rm "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-trimmed.png
 ```
 
 **Skip conditions: NONE for the trim.** The trim is non-negotiable — every image goes through it. Aspect-ratio padding to force-square is FORBIDDEN; the rendered post does not need square images, and faking a square crops blank space INTO the file which renders as a visible layout gap.
@@ -814,8 +814,8 @@ Generated images at 2K resolution (2048x2048) are 6-8MB each - far too large for
 # Step 7.0 (above) has already trimmed the image to its bbox.
 
 # 7.0.5 — CUT TO TRUE ALPHA (mandatory; the model output is an opaque JPEG)
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts "~/Downloads/[name].jpg"   # → ~/Downloads/[name].png with real alpha
-magick "~/Downloads/[name].png" -trim +repage -resize 1024x "~/Downloads/[name].png"
+bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].jpg"   # → $LIFEOS_DOWNLOADS_DIR/[name].png with real alpha
+magick "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].png" -trim +repage -resize 1024x "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].png"
 
 # 7.1 — "{{DA_NAME}}" SIGNATURE (human handwriting, NOT calligraphy)
 #   🟢 AUTO-STAMPED BY Generate.ts (2026-06-26): any `--workflow=Essay` or `--thumbnail`
@@ -826,24 +826,24 @@ magick "~/Downloads/[name].png" -trim +repage -resize 1024x "~/Downloads/[name].
 #   This manual command is ONLY for: (a) a hand-built image that never went through
 #   Generate.ts, or (b) re-stamping after rembg ate the signature. Opt out at generation
 #   with `--no-signature`. Snell-Roundhand/Apple-Chancery/Savoye are calligraphy → REJECTED (2026-06-20).
-magick "~/Downloads/[name].png" -gravity SouthEast \
+magick "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].png" -gravity SouthEast \
   -font "SignPainter-HouseScript" -pointsize 31 -fill "rgba(55,45,38,0.55)" \
-  -annotate 352x352+44+30 "{{DA_NAME}}" "~/Downloads/[name].png"
+  -annotate 352x352+44+30 "{{DA_NAME}}" "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].png"
 
 # 1. Convert the signed transparent PNG to WebP for inline blog display
-cwebp -q 86 -alpha_q 100 "~/Downloads/[name].png" -o "~/Downloads/[name].webp"
+cwebp -q 86 -alpha_q 100 "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].png" -o "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].webp"
 
 # 1a. VERIFY the inline WebP kept its alpha — MUST print srgba (NOT srgb).
 #     srgb here = opaque = the white-box bug. Re-cut with RemoveBg if so.
-identify -format "%[channels]\n" "~/Downloads/[name].webp"   # expect: srgba
+identify -format "%[channels]\n" "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].webp"   # expect: srgba
 
 # 2. Build the optimized social-media thumbnail (sepia-flattened, max 512 wide).
 #    Social platforms don't honor transparency; the signature is already baked in.
-magick "~/Downloads/[name].png" -background "#EAE9DF" -flatten -resize 512x -quality 80 \
-  "~/Downloads/[name]-thumb-optimized.png"
+magick "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].png" -background "#EAE9DF" -flatten -resize 512x -quality 80 \
+  "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name]-thumb-optimized.png"
 
 # 3. Check final file sizes
-ls -lh ~/Downloads/[name].webp ~/Downloads/[name]-thumb-optimized.png
+ls -lh "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name].webp "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/[name]-thumb-optimized.png
 ```
 
 **🚨 The Step 7.1 `-annotate` "{{DA_NAME}}" signature is REQUIRED and is the ONLY sanctioned `-annotate` use. History: the signature was removed 2026-05-02, then explicitly RE-REQUIRED by {{PRINCIPAL_NAME}} on 2026-06-20 ("essay images need to always be signed by {{DA_NAME}}"). It must be the cursive signature hand (`SignPainter-HouseScript`, small, integrated — 2026-07-09), never formal calligraphy (Snell/Chancery/Savoye were rejected). Do NOT `-annotate` anything else onto the canvas — no watermark, no titles, no labels (the rare per-request figure labels are a separate, explicitly-asked-for case, color-coded to the figures).**
@@ -889,7 +889,7 @@ thumbnail: https://example.com/images/[name]-thumb-optimized.png
 **If WebP is over 500KB:**
 ```bash
 # Lower quality further
-cwebp -q 65 "~/Downloads/[name]-1024.png" -o "~/Downloads/[name].webp"
+cwebp -q 65 "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name]-1024.png" -o "${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}/[name].webp"
 ```
 
 **If thumbnail is over 600KB:**
@@ -913,7 +913,7 @@ brew install webp
 ### Integration Notes
 
 - **This step is AUTOMATIC** - do not ask the user if optimization should be done
-- **Happens in ~/Downloads/** before files are copied to final destination
+- **Happens in $LIFEOS_DOWNLOADS_DIR/** before files are copied to final destination
 - **Original high-res files are preserved** as archives
 - **Validation (Step 8) checks the optimized files**, not the originals
 

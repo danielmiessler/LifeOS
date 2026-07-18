@@ -38,7 +38,7 @@ Before any code lands, understand what's already there.
 
 ```bash
 TARGET="$PROJECT_PATH"
-OUT=~/Downloads/webdesign/integrate/$(date +%Y%m%d-%H%M%S)
+OUT="${LIFEOS_DOWNLOADS_DIR:-$HOME/Downloads}"/webdesign/integrate/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
 
 # Detect framework
