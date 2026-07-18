@@ -22,7 +22,7 @@
     "remotion": ">=4.0.0"
   },
   "devDependencies": {
-    "bun-types": "latest",
+    "@types/bun": "latest",
     "typescript": "^5.0.0"
   }
 }
