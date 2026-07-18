@@ -15,11 +15,13 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>LIFEOS_PULSE_DIR</key>
-        <string>__HOME__/.claude/LIFEOS/PULSE</string>
+        <string>__LIFEOS_DIR__/PULSE</string>
+        <key>LIFEOS_DIR</key>
+        <string>__LIFEOS_DIR__</string>
     </dict>
     <key>StandardOutPath</key>
-    <string>__HOME__/.claude/LIFEOS/PULSE/logs/menubar-stdout.log</string>
+    <string>__LIFEOS_DIR__/PULSE/logs/menubar-stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/.claude/LIFEOS/PULSE/logs/menubar-stderr.log</string>
+    <string>__LIFEOS_DIR__/PULSE/logs/menubar-stderr.log</string>
 </dict>
 </plist>

@@ -26,8 +26,9 @@
 import { existsSync, readFileSync, readdirSync, writeFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "./lifeos-root";
 
-const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
+const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(claudeDir());
 const OBS_DIR = join(CLAUDE_DIR, "LIFEOS", "MEMORY", "OBSERVABILITY");
 const SESSION_COSTS = join(OBS_DIR, "session-costs.jsonl");
 const PROJECTS_DIR = join(CLAUDE_DIR, "projects");

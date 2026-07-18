@@ -18,6 +18,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { createHash } from "crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { basename, dirname, join, relative } from "path";
+import { claudeDir } from "./lifeos-root";
 import {
   CONTEXT_FRESHNESS_REGISTRY,
   MARKER_RE,
@@ -33,7 +34,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS");
 const CLAUDE_DIR = dirname(LIFEOS_DIR);
 const SEED_ISO = "2026-05-03T23:00:00-07:00";
 const BACKUP_TS = "2026-05-03-23-00-00";

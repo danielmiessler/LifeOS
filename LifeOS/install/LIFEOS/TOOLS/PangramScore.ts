@@ -27,6 +27,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readFileSync, appendFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -35,13 +36,13 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 }
 
 
-const ENV_PATH = `${process.env.HOME}/.claude/.env`;
+const ENV_PATH = `${claudeDir()}/.env`;
 
 // Run-record: proof the detector actually executed on a specific text. The
 // WritingGate Stop hook reads this so its pass condition is "Pangram ran on
 // this content", not "a token string is present" (Forge audit 2026-07-01).
 const RUNS_PATH = join(
-  process.env.LIFEOS_DIR || `${process.env.HOME}/.claude/LIFEOS`,
+  process.env.LIFEOS_DIR || `${claudeDir()}/LIFEOS`,
   "MEMORY", "OBSERVABILITY", "pangram-runs.jsonl",
 );
 export function normalizeForHash(text: string): string {

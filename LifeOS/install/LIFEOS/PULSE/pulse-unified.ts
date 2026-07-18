@@ -21,10 +21,10 @@ import { parse } from "smol-toml"
 // ── Load .env before anything else ──
 
 const HOME = process.env.HOME ?? "~"
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
+const LIFEOS_DIR = join(claudeDir(), "LIFEOS")
 const PULSE_DIR = join(LIFEOS_DIR, "PULSE")
 
-const envPath = join(HOME, ".claude", ".env")
+const envPath = join(claudeDir(), ".env")
 try {
   const envContent = readFileSync(envPath, "utf-8")
   for (const line of envContent.split("\n")) {
@@ -58,6 +58,7 @@ import {
 } from "./lib"
 
 import { startHooks, handleHooksRequestAsync, hooksHealth } from "./modules/hooks"
+import { claudeDir } from "../TOOLS/lifeos-root";
 
 // Conditional imports — modules may not exist yet during incremental migration
 let voiceModule: any = null

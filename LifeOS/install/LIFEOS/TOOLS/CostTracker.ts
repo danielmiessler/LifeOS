@@ -31,9 +31,10 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync } from "fs";
 import { join } from "path";
 import { execSync } from "child_process";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME ?? "";
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = join(claudeDir(), "LIFEOS");
 const OBS_DIR = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY");
 const LEDGER_PATH = join(OBS_DIR, "anthropic-cost.jsonl");
 const CALL_SITES_PATH = join(OBS_DIR, "anthropic-call-sites.json");
@@ -129,11 +130,11 @@ async function fetchApiSpend(): Promise<{ month_used_usd: number | null; source:
 
 // Paths we scan (source-of-truth for LifeOS-local billing risk)
 const SCAN_ROOTS = [
-  join(HOME, ".claude", "LIFEOS", "PULSE"),
-  join(HOME, ".claude", "LIFEOS", "TOOLS"),
-  join(HOME, ".claude", "LIFEOS", "USER"),
-  join(HOME, ".claude", "skills"),
-  join(HOME, ".claude", "hooks"),
+  join(claudeDir(), "LIFEOS", "PULSE"),
+  join(claudeDir(), "LIFEOS", "TOOLS"),
+  join(claudeDir(), "LIFEOS", "USER"),
+  join(claudeDir(), "skills"),
+  join(claudeDir(), "hooks"),
 ];
 
 // Paths to exclude from scan

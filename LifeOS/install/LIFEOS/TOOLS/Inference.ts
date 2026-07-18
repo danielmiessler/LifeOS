@@ -113,6 +113,7 @@ export interface InferenceResult {
 }
 
 import { modelForEffort, pinnedModelForEffort, EFFORT_MODEL, LEVEL_TO_HARNESS_EFFORT, type EffortLevel, type HarnessEffort } from './models';
+import { claudeDir } from "./lifeos-root";
 
 // Level configurations — models resolve via models.ts EFFORT_MODEL (the single
 // edit point on a lineup change). No model names appear here. `effort` is the
@@ -177,7 +178,7 @@ export function verifyExecutedModel(modelUsage: unknown, expectedTier: string): 
  * exact drift this catches and makes auditable. Logging must never break inference. */
 function logModelVerification(entry: Record<string, unknown>): void {
   try {
-    const dir = join(process.env.HOME || '', '.claude', 'LIFEOS', 'MEMORY', 'OBSERVABILITY');
+    const dir = join(claudeDir(), 'LIFEOS', 'MEMORY', 'OBSERVABILITY');
     mkdirSync(dir, { recursive: true });
     appendFileSync(join(dir, 'model-verification.jsonl'), JSON.stringify({ ts: new Date().toISOString(), ...entry }) + '\n');
   } catch { /* observability must never break inference */ }

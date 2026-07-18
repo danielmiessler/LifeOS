@@ -36,9 +36,10 @@ import { readFile, appendFile, mkdir, stat } from "node:fs/promises";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = homedir();
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = join(claudeDir(), "LIFEOS");
 const WORK_DIR = join(LIFEOS_DIR, "MEMORY", "WORK");
 const FINDINGS_LOG = join(LIFEOS_DIR, "MEMORY", "VERIFICATION", "grok-findings.jsonl");
 const API_URL = "https://api.x.ai/v1/chat/completions";
@@ -109,7 +110,7 @@ interface AuditResponse {
 function loadEnv(): Record<string, string> {
   const envPath = process.env.LIFEOS_CONFIG_DIR
     ? join(process.env.LIFEOS_CONFIG_DIR, ".env")
-    : join(HOME, ".claude", ".env");
+    : join(claudeDir(), ".env");
   const env: Record<string, string> = {};
   try {
     for (const line of readFileSync(envPath, "utf-8").split("\n")) {

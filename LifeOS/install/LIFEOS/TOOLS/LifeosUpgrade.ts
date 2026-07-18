@@ -20,9 +20,10 @@
 import { existsSync, readFileSync, lstatSync, readlinkSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME ?? homedir();
-const CLAUDE_ROOT = join(HOME, ".claude");
+const CLAUDE_ROOT = join(claudeDir());
 
 interface MigrationContext {
   claudeRoot: string;

@@ -12,22 +12,24 @@
         <string>pulse.ts</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>__HOME__/.claude/LIFEOS/PULSE</string>
+    <string>__LIFEOS_DIR__/PULSE</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>HOME</key>
         <string>__HOME__</string>
         <key>PATH</key>
         <string>__HOME__/.bun/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>LIFEOS_DIR</key>
+        <string>__LIFEOS_DIR__</string>
     </dict>
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>__HOME__/.claude/LIFEOS/PULSE/logs/pulse-stdout.log</string>
+    <string>__LIFEOS_DIR__/PULSE/logs/pulse-stdout.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/.claude/LIFEOS/PULSE/logs/pulse-stderr.log</string>
+    <string>__LIFEOS_DIR__/PULSE/logs/pulse-stderr.log</string>
     <key>ThrottleInterval</key>
     <integer>30</integer>
 </dict>

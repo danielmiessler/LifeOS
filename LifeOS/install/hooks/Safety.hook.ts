@@ -50,6 +50,7 @@ import {
   type ToolCall,
 } from "./lib/safety-classifier";
 import { SECRET_VALUE_SHAPES } from "./lib/egress-class-core";
+import { getClaudeDir } from "./lib/paths";
 
 const STDIN_CAP_BYTES = 2 * 1024 * 1024;
 const CACHE_MAX_BYTES = 10 * 1024 * 1024;
@@ -60,7 +61,7 @@ const LIFEOS_DIR = process.env.LIFEOS_DIR
       /^\$\{?HOME\}?(?=\/|$)/,
       HOME,
     )
-  : join(HOME, ".claude", "LIFEOS");
+  : join(getClaudeDir(), "LIFEOS");
 const STATE_DIR = join(LIFEOS_DIR, "MEMORY", "STATE");
 const OBS_DIR = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY");
 const CACHE_PATH = join(STATE_DIR, "permission-cache.json");

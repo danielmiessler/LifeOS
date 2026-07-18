@@ -25,9 +25,10 @@ import { getDAName } from "./lib/identity"
 import { createHash } from "crypto";
 import { join, dirname } from "path";
 import { loadWorkConfig } from "./lib/work-config";
+import { getClaudeDir } from "./lib/paths";
 
 const HOME = process.env.HOME || "";
-const STATE_PATH = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE", "reminder-router-seen.json");
+const STATE_PATH = join(getClaudeDir(), "LIFEOS", "MEMORY", "STATE", "reminder-router-seen.json");
 
 interface HookInput {
   session_id?: string;

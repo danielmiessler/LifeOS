@@ -36,6 +36,7 @@ import { getDAName } from "../../hooks/lib/identity"
 
 import { join } from "path";
 import { loadWorkConfig } from "../../hooks/lib/work-config";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -47,7 +48,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 declare const Bun: { spawn: (cmd: string[], opts?: any) => any };
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS");
 const WORK_DIR = join(LIFEOS_DIR, "MEMORY", "WORK");
 const OBS_DIR = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY");
 const OBS_LOG = join(OBS_DIR, "worksweep.jsonl");
@@ -615,7 +616,7 @@ async function main(): Promise<void> {
   // Final step: regenerate the TASKLIST.md and push (best-effort, never blocks)
   if (!dryRun) {
     const proc = Bun.spawn(
-      ["bun", join(HOME, ".claude", "skills", "_ULWORK", "Tools", "RegenerateTasklist.ts"), "--commit-push"],
+      ["bun", join(claudeDir(), "skills", "_ULWORK", "Tools", "RegenerateTasklist.ts"), "--commit-push"],
       { stdout: "inherit", stderr: "inherit", timeout: 30000 },
     );
     await proc.exited;

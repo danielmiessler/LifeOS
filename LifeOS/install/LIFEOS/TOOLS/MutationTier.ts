@@ -35,10 +35,11 @@
 
 import { resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
+import { claudeDir } from "./lifeos-root";
 
 // ── Constants ──
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = pathResolve(claudeDir());
 
 export type Tier = "A" | "B" | "C" | "D";
 

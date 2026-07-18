@@ -14,6 +14,7 @@
 import { appendFileSync, existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 import {
   PENDING_PROPOSALS_PATH,
   inferProposalKind,
@@ -21,7 +22,7 @@ import {
 } from "../../TOOLS/MemoryTypes";
 
 const HOME = process.env.HOME ?? homedir();
-const OBS_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY");
+const OBS_DIR = join(claudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY");
 const PROPOSAL_REPLIES_LOG_PATH = join(OBS_DIR, "proposal-replies.jsonl");
 const IDENTITY_PROPOSALS_LOG_PATH = join(OBS_DIR, "identity-proposals.jsonl");
 
@@ -123,7 +124,7 @@ export function logProposalReply(event: Record<string, unknown>, path: string = 
 }
 
 export function formatProposalMessage(p: ProposalRow, home: string = HOME): string {
-  const fileLabel = p.target_file.replace(`${home}/.claude/`, "");
+  const fileLabel = p.target_file.replace(`${claudeDir()}/`, "");
   const conf = p.confidence.toFixed(2);
   const obs = p.observed_across_sessions ?? 1;
   // P1 2026-05-25: prepend subtype badge so the principal sees at a glance

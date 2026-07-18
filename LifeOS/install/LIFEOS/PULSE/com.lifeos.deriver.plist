@@ -9,17 +9,19 @@
     <array>
         <string>__BUN_PATH__</string>
         <string>run</string>
-        <string>__HOME__/.claude/LIFEOS/TOOLS/LearningPatternSynthesis.ts</string>
+        <string>__LIFEOS_DIR__/TOOLS/LearningPatternSynthesis.ts</string>
         <string>--hypothesize</string>
     </array>
     <key>WorkingDirectory</key>
-    <string>__HOME__/.claude</string>
+    <string>__CLAUDE_DIR__</string>
     <key>EnvironmentVariables</key>
     <dict>
         <key>HOME</key>
         <string>__HOME__</string>
         <key>PATH</key>
         <string>__HOME__/.local/bin:__HOME__/.bun/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>LIFEOS_DIR</key>
+        <string>__LIFEOS_DIR__</string>
     </dict>
     <key>StartCalendarInterval</key>
     <dict>
@@ -31,9 +33,9 @@
     <key>RunAtLoad</key>
     <false/>
     <key>StandardOutPath</key>
-    <string>__HOME__/.claude/LIFEOS/MEMORY/OBSERVABILITY/deriver.log</string>
+    <string>__LIFEOS_DIR__/MEMORY/OBSERVABILITY/deriver.log</string>
     <key>StandardErrorPath</key>
-    <string>__HOME__/.claude/LIFEOS/MEMORY/OBSERVABILITY/deriver.log</string>
+    <string>__LIFEOS_DIR__/MEMORY/OBSERVABILITY/deriver.log</string>
     <key>ThrottleInterval</key>
     <integer>60</integer>
 </dict>

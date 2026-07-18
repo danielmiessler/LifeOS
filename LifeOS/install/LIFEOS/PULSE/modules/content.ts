@@ -22,6 +22,7 @@ import { existsSync, mkdirSync, renameSync, rmSync, watch } from "fs";
 import { basename, dirname, join } from "path";
 import { homedir } from "os";
 import { LEGS, appendEvents, eventsPath, readState } from "../../TOOLS/Conveyor/Ledger";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const MODULE = "content";
 const STAGES = ["inbox", "prep", "produce", "review", "publishing", "done"] as const;
@@ -160,7 +161,7 @@ function deleteItem(id: string): Response {
 
   // 3. Artifacts (audio, transcript, derivatives).
   const artifacts = join(
-    process.env.LIFEOS_DIR || join(homedir(), ".claude", "LIFEOS"),
+    process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS"),
     "MEMORY", "STATE", "content-pipeline", "artifacts", id,
   );
   try {

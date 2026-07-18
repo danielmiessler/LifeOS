@@ -16,12 +16,13 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { claudeDir } from "./lifeos-root";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = path.join(claudeDir());
 const MEMORY_DIR = path.join(CLAUDE_DIR, "LIFEOS", "MEMORY");
 const USERNAME = process.env.USER || require("os").userInfo().username;
 const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", `-Users-${USERNAME}--claude`);  // Claude Code native storage

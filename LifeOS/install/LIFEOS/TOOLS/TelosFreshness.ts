@@ -33,6 +33,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { getDAName } from "../../hooks/lib/identity"
 
 import { basename, join } from "path";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -42,7 +43,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS");
 const TELOS_PATH = join(LIFEOS_DIR, "USER", "TELOS", "TELOS.md");
 const DA_IDENTITY_PATH = join(LIFEOS_DIR, "USER", "DIGITAL_ASSISTANT", "DA_IDENTITY.md");
 const PRINCIPAL_IDENTITY_PATH = join(LIFEOS_DIR, "USER", "PRINCIPAL", "PRINCIPAL_IDENTITY.md");

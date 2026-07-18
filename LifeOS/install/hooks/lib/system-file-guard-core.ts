@@ -15,9 +15,10 @@ import { join } from "node:path";
 import { homedir } from "node:os";
 import { createHash } from "node:crypto";
 import { isContained, isPatternAllowlisted, relativeToClaudeRoot } from "./containment-zones";
+import { getClaudeDir } from "./paths";
 
 const HOME = process.env.HOME ?? homedir();
-const CLAUDE_ROOT = join(HOME, ".claude");
+const CLAUDE_ROOT = join(getClaudeDir());
 const DEFAULT_DENY_LIST_PATH = join(CLAUDE_ROOT, "skills/_LIFEOS/DENY_LIST.txt");
 const DEFAULT_HASHES_PATH = join(CLAUDE_ROOT, "skills/_LIFEOS/DENY_HASHES.json");
 const DEFAULT_ENV_PATH = join(CLAUDE_ROOT, ".env");

@@ -32,6 +32,7 @@ import { execFileSync } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, parse } from "node:path";
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 const W = 1280;
 const H = 720;
@@ -41,7 +42,7 @@ const NAVY = "#1A2744";
 const PERIWINKLE = "#6B8DD6";
 const WHITE = "#FFFFFF";
 const VARIANT_BORDER: Record<string, string> = { core: "#316AE9", sponsored: "#306F1D" };
-const BRAND_LOGO = join(homedir(), ".claude", "LIFEOS", "USER", "CUSTOMIZATIONS", "SKILLS", "Art", "brand", "ti-logo-white.png");
+const BRAND_LOGO = join(claudeDir(), "LIFEOS", "USER", "CUSTOMIZATIONS", "SKILLS", "Art", "brand", "ti-logo-white.png");
 
 function arg(name: string, def?: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);

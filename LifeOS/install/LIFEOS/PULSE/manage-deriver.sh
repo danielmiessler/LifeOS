@@ -13,11 +13,15 @@
 
 set -euo pipefail
 
-PULSE_DIR="$HOME/.claude/LIFEOS/PULSE"
+# Derive paths from this script's OWN location (ships in <configRoot>/LIFEOS/PULSE),
+# not a hardcoded ~/.claude — correct for default AND custom LifeOS homes.
+PULSE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIFEOS_DIR_RESOLVED="$(dirname "$PULSE_DIR")"
+CLAUDE_DIR_RESOLVED="$(dirname "$LIFEOS_DIR_RESOLVED")"
 PLIST_NAME="com.lifeos.deriver"
 PLIST_SRC="$PULSE_DIR/$PLIST_NAME.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
-OBSERVABILITY_DIR="$HOME/.claude/LIFEOS/MEMORY/OBSERVABILITY"
+OBSERVABILITY_DIR="$LIFEOS_DIR_RESOLVED/MEMORY/OBSERVABILITY"
 
 if [ -x "$HOME/.bun/bin/bun" ]; then
   BUN_PATH="$HOME/.bun/bin/bun"
@@ -49,7 +53,7 @@ case "${1:-}" in
     if [ -f "$PLIST_DST" ]; then
       launchctl unload "$PLIST_DST" 2>/dev/null || true
     fi
-    sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
+    sed -e "s|__LIFEOS_DIR__|$LIFEOS_DIR_RESOLVED|g" -e "s|__CLAUDE_DIR__|$CLAUDE_DIR_RESOLVED|g" -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
     launchctl load "$PLIST_DST"
     echo "LifeOS deriver installed (bun: $BUN_PATH, schedule: daily 03:00)"
     ;;
@@ -81,7 +85,7 @@ case "${1:-}" in
 
   run-now)
     # One-shot manual invocation for testing / first-run priming.
-    exec "$BUN_PATH" run "$HOME/.claude/LIFEOS/TOOLS/LearningPatternSynthesis.ts" --hypothesize
+    exec "$BUN_PATH" run "$LIFEOS_DIR_RESOLVED/TOOLS/LearningPatternSynthesis.ts" --hypothesize
     ;;
 
   *)

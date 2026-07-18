@@ -4,10 +4,11 @@ import { resolve, join, basename } from "node:path";
 import { renderShell, renderPage } from "../ui/render";
 import type { PageData } from "../Schema/PulseSchema";
 import { PageDataSchema } from "../Schema/PulseSchema";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const HOME = process.env.HOME!;
-const FIX_DIR = resolve(HOME, ".claude", "LIFEOS", "PULSE", "Schema", "Fixtures");
-const OUT_DIR = resolve(HOME, ".claude", "LIFEOS", "PULSE", "Schema", "Snapshots");
+const FIX_DIR = resolve(claudeDir(), "LIFEOS", "PULSE", "Schema", "Fixtures");
+const OUT_DIR = resolve(claudeDir(), "LIFEOS", "PULSE", "Schema", "Snapshots");
 mkdirSync(OUT_DIR, { recursive: true });
 
 const fixtures = readdirSync(FIX_DIR).filter((f) => f.endsWith(".json") && !f.startsWith("invalid"));

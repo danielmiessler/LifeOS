@@ -34,8 +34,9 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, appendFileSync, rea
 import { join } from "path";
 import { homedir } from "os";
 import { DISPATCH_EXECUTES_FABLE } from "./models";
+import { claudeDir } from "./lifeos-root";
 
-const CLAUDE_DIR = join(homedir(), ".claude");
+const CLAUDE_DIR = join(claudeDir());
 const STATE_FILE = join(CLAUDE_DIR, "LIFEOS", "MEMORY", "STATE", "carrier-probe.json");
 const OBS_FILE = join(CLAUDE_DIR, "LIFEOS", "MEMORY", "OBSERVABILITY", "model-verification.jsonl");
 const MAX_AGE_DAYS = 30;

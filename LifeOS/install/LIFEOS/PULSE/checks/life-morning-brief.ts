@@ -11,9 +11,10 @@
 
 import { join } from "path"
 import { existsSync, readFileSync } from "fs"
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const HOME = process.env.HOME ?? ""
-const TELOS_DIR = join(HOME, ".claude", "LIFEOS", "USER", "TELOS")
+const TELOS_DIR = join(claudeDir(), "LIFEOS", "USER", "TELOS")
 
 function readFile(name: string): string {
   const p = join(TELOS_DIR, name)

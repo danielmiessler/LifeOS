@@ -32,9 +32,10 @@ import { readFileSync, writeFileSync, existsSync, appendFileSync, readdirSync } 
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { createHash, randomBytes } from "node:crypto";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || homedir();
-const CLAUDE = join(HOME, ".claude");
+const CLAUDE = join(claudeDir());
 const ENV_PATH = join(CLAUDE, ".env");
 const OUT_PATH = join(CLAUDE, "skills", "_LIFEOS", "DENY_HASHES.json");
 const MIN_LEN = 4;          // single tokens shorter than this are too FP-prone

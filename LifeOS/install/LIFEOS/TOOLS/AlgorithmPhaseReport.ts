@@ -17,8 +17,9 @@ import { readFileSync, writeFileSync, mkdirSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import { parseArgs } from "util";
+import { claudeDir } from "./lifeos-root";
 
-const STATE_DIR = join(homedir(), ".claude", "LIFEOS", "MEMORY", "STATE");
+const STATE_DIR = join(claudeDir(), "LIFEOS", "MEMORY", "STATE");
 const STATE_FILE = join(STATE_DIR, "algorithm-phase.json");
 
 interface AlgorithmState {

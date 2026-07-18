@@ -18,9 +18,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const MODULE_NAME = "assets";
-const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
+const CLAUDE_DIR = process.env.CLAUDE_CONFIG_DIR || join(claudeDir());
 const GEAR_PATH = join(CLAUDE_DIR, "LIFEOS", "USER", "GEAR.md");
 const NETWORK_DIR = join(CLAUDE_DIR, "LIFEOS", "MEMORY", "_NETWORK");
 const NETWORK_ASSETS_JSON = join(NETWORK_DIR, "assets.json");

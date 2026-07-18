@@ -14,9 +14,10 @@
 import { copyFileSync, appendFileSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { claudeDir } from "../lifeos-root";
 
 const CLIENT_PATH = join(homedir(), '.config', 'gws', 'client_secret.json');
-const ENV_PATH = join(homedir(), '.claude', '.env');
+const ENV_PATH = join(claudeDir(), '.env');
 const PORT = 8971;
 const REDIRECT = `http://127.0.0.1:${PORT}/callback`;
 const SCOPES = [

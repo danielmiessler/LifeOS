@@ -41,8 +41,9 @@ import { readdirSync, readFileSync, existsSync } from "node:fs";
 import { resolve as pathResolve, join as pathJoin } from "node:path";
 import { homedir } from "node:os";
 import { parseNote, slugFromPath, ALL_DIRS, type ParsedNote } from "./KnowledgeSchema";
+import { claudeDir } from "./lifeos-root";
 
-const KNOWLEDGE_DIR = pathResolve(homedir(), ".claude/LIFEOS/MEMORY/KNOWLEDGE");
+const KNOWLEDGE_DIR = pathResolve(claudeDir(), "LIFEOS/MEMORY/KNOWLEDGE");
 const DIRS = ALL_DIRS;
 
 interface Rec {

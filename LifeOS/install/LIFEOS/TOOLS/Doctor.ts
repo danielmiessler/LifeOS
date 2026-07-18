@@ -38,9 +38,10 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, chmodSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { createHash, randomBytes } from 'crypto';
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || '';
-const CONFIG_ROOT = process.env.CLAUDE_CONFIG_DIR || join(HOME, '.claude');
+const CONFIG_ROOT = process.env.CLAUDE_CONFIG_DIR || join(claudeDir());
 const LIFEOS_DIR = (process.env.LIFEOS_DIR || join(CONFIG_ROOT, 'LIFEOS'))
   .replace(/^\$HOME/, HOME).replace(/^~(?=\/)/, HOME);
 const STATE_DIR = join(LIFEOS_DIR, 'MEMORY', 'STATE');

@@ -27,9 +27,10 @@
 import { readFileSync, statSync, existsSync, readdirSync, realpathSync } from 'fs';
 import { join, resolve, dirname, relative, extname, sep } from 'path';
 import { execSync } from 'child_process';
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
+const CLAUDE_DIR = join(claudeDir());
 const LIFEOS_DIR = join(CLAUDE_DIR, 'LIFEOS');
 
 // ── Arg parsing (manual, zero deps) ──
@@ -288,7 +289,7 @@ const REF_PATTERNS: { re: RegExp; label: string }[] = [
   { re: new RegExp('`((?:LifeOS|hooks|skills|agents|Pulse|USER|MEMORY|Components|Algorithm|Tools|Workflows|References)\\/[\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-anchored' },
   // Backtick-quoted paths starting with ~/.claude/
   { re: new RegExp('`~\\/\\.claude\\/([\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-home' },
-  // Backtick-quoted paths with $HOME/.claude/ or ${HOME}/.claude/
+  // Backtick-quoted paths with $HOME/.claude/ or ${claudeDir()}/
   { re: new RegExp('`\\$(?:HOME|\\{HOME\\})\\/\\.claude\\/([\\w/@.-]+?' + EXT + ')`', 'g'), label: 'backtick-env-home' },
   // @-import at start of line: @LIFEOS/USER/FILE.md
   { re: /^@(LifeOS\/[\w/@.-]+\.md)/gm, label: 'at-import' },

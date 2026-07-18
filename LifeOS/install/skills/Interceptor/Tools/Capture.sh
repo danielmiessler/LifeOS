@@ -29,7 +29,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-USER_PREFS="${HOME}/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
+USER_PREFS="${LIFEOS_DIR:-$HOME/.claude/LIFEOS}/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
 
 usage() {
     cat <<EOF
@@ -214,7 +214,7 @@ MIN_STDDEV="${INTERCEPTOR_MIN_STDDEV:-0.017}"
 guard_skipped() {
     local reason="$1"
     echo "Capture.sh: ⚠️  BLANK-FRAME GUARD SKIPPED ($reason) — this capture is NOT checked for a black/blank frame; do not treat it as pixel-verified without looking. Install ImageMagick (brew install imagemagick) to enable." >&2
-    local log="${HOME}/.claude/LIFEOS/MEMORY/OBSERVABILITY/capture-guard.jsonl"
+    local log="${LIFEOS_DIR:-$HOME/.claude/LIFEOS}/MEMORY/OBSERVABILITY/capture-guard.jsonl"
     mkdir -p "$(dirname "$log")" 2>/dev/null || true
     printf '{"ts":"%s","event":"guard-skipped","reason":"%s","out":"%s"}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$reason" "$OUT" >> "$log" 2>/dev/null || true
 }

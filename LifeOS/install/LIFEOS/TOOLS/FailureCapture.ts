@@ -35,6 +35,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 import { join, basename } from 'path';
 import { inference } from './Inference';
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -43,7 +44,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 }
 
 
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME!, '.claude');
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir());
 
 interface FailureCaptureInput {
   transcriptPath: string;

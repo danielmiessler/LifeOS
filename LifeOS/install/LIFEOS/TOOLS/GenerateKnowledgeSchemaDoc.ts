@@ -16,12 +16,13 @@
 import { writeFileSync } from "node:fs";
 import { resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
+import { claudeDir } from "./lifeos-root";
 import {
   ENVELOPE, CANONICAL_TYPES, TYPE_TO_DIR, PER_TYPE_REQUIRED,
   RELATION_VOCAB, SOURCE_KINDS, STATUS_VALUES, SCHEMA_VERSION,
 } from "./KnowledgeSchema";
 
-const OUT = pathResolve(homedir(), ".claude/LIFEOS/MEMORY/KNOWLEDGE/_schema.md");
+const OUT = pathResolve(claudeDir(), "LIFEOS/MEMORY/KNOWLEDGE/_schema.md");
 
 function render(): string {
   const L: string[] = [];

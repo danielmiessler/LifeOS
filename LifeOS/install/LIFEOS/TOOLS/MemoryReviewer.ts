@@ -47,6 +47,7 @@ import { read as memoryWriterRead } from "./MemoryWriter";
 import { isKnownType, type TypedItem } from "./MemoryTypes";
 import { inference } from "./Inference";
 import { getPrincipalName, getDAName } from "../../hooks/lib/identity";
+import { claudeDir } from "./lifeos-root";
 import {
   applyProposalEdit,
   markProposal,
@@ -55,8 +56,8 @@ import {
 
 // ── Constants ──
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
-const HARNESS_PROJECTS_DIR = pathResolve(homedir(), ".claude", "projects");
+const CLAUDE_ROOT = pathResolve(claudeDir());
+const HARNESS_PROJECTS_DIR = pathResolve(claudeDir(), "projects");
 const RUNS_LOG_PATH = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/reviewer-runs.jsonl");
 const RUNS_DEBUG_DIR = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/reviewer-runs");
 const REVIEW_CONFIG_PATH = pathResolve(CLAUDE_ROOT, "LIFEOS/USER/CONFIG/memory-review.json");
@@ -681,7 +682,7 @@ async function smokeTest(): Promise<number> {
   const mockResponse = JSON.stringify({
     items: [
       { type: "memory", actor: "principal", content: "PREFERENCE: smoke E2E mock" },
-      { type: "proposal", target_file: pathJoin(homedir(), ".claude/LIFEOS/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md"), edit: "RULE: E2E mock", confidence: 0.5, rationale: "smoke" },
+      { type: "proposal", target_file: pathJoin(claudeDir(), "LIFEOS/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md"), edit: "RULE: E2E mock", confidence: 0.5, rationale: "smoke" },
     ],
   });
 

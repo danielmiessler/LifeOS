@@ -38,6 +38,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readFileSync, writeFileSync, existsSync, mkdirSync, appendFileSync } from "fs";
 import { join, dirname } from "path";
 import { createHash } from "crypto";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -47,7 +48,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS");
 const STATE_FILE = join(LIFEOS_DIR, "PULSE", "state", "notification-governor.json");
 const LOG_FILE = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "notification-governor.jsonl");
 const NOTIFY_URL = "http://localhost:31337/notify";

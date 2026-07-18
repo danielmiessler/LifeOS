@@ -23,6 +23,7 @@ import { globSync } from "fs";
 import { homedir } from "os";
 import { join } from "path";
 import { getEncoding } from "js-tiktoken";
+import { claudeDir } from "../lifeos-root";
 
 const enc = getEncoding("cl100k_base");
 
@@ -105,11 +106,11 @@ function* readJsonl(path: string): IterableIterator<Record<string, unknown>> {
 }
 
 function mainLogs(): string[] {
-  return glob(join(homedir(), ".claude/projects/*/*.jsonl"));
+  return glob(join(claudeDir(), "projects/*/*.jsonl"));
 }
 
 function sideLogs(): string[] {
-  return glob(join(homedir(), ".claude/projects/*/*/subagents/*.jsonl"));
+  return glob(join(claudeDir(), "projects/*/*/subagents/*.jsonl"));
 }
 
 function fmtNum(n: number, w = 0): string {
@@ -228,7 +229,7 @@ interface ApiCostSnapshot {
 }
 
 function loadLatestApiCostSnapshot(): ApiCostSnapshot | null {
-  const path = join(homedir(), ".claude/LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl");
+  const path = join(claudeDir(), "LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl");
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");

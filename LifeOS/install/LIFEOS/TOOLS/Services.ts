@@ -15,9 +15,12 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = homedir();
-const CLAUDE = join(HOME, ".claude");
+// Config root via the canonical resolver (LIFEOS_DIR env / self-location), NOT a
+// hardcoded ~/.claude — so `status`/install/uninstall target a custom LifeOS home too.
+const CLAUDE = claudeDir();
 const LIFEOS = join(CLAUDE, "LIFEOS");
 const TOOLS = join(LIFEOS, "TOOLS");
 const PULSE = join(LIFEOS, "PULSE");

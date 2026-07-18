@@ -9,8 +9,33 @@
  *   import { getLifeosDir, getClaudeDir, paiPath } from '';
  */
 
+import { existsSync } from 'fs';
 import { homedir } from 'os';
 import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+/**
+ * Walk up from this module's own location to the config root — the ancestor dir
+ * that has a `LIFEOS/` child (this file ships to `<configRoot>/hooks/lib/paths.ts`).
+ * Belt-and-suspenders for a hook/tool spawned WITHOUT `LIFEOS_DIR` in its env: without
+ * this, getClaudeDir() falls back to ~/.claude and a custom-home install leaks hook
+ * state (MEMORY/STATE/...) into the real ~/.claude. Returns null if nothing matches.
+ * Never throws.
+ */
+function selfConfigRoot(): string | null {
+  try {
+    let dir = dirname(fileURLToPath(import.meta.url)); // <configRoot>/hooks/lib
+    for (let i = 0; i < 8; i++) {
+      if (existsSync(join(dir, 'LIFEOS'))) return dir;
+      const parent = dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+  } catch {
+    /* fileURLToPath / fs can fail in exotic runtimes — fall through */
+  }
+  return null;
+}
 
 /**
  * Expand shell variables in a path string
@@ -51,6 +76,9 @@ export function getLifeosDir(): string {
     return expandPath(envLifeosDir);
   }
 
+  const self = selfConfigRoot();
+  if (self) return join(self, 'LIFEOS');
+
   return join(homedir(), '.claude', 'LIFEOS');
 }
 
@@ -83,6 +111,9 @@ export function getClaudeDir(): string {
   if (envLifeosDir) {
     return dirname(expandPath(envLifeosDir));
   }
+
+  const self = selfConfigRoot();
+  if (self) return self;
 
   return join(homedir(), '.claude');
 }

@@ -22,6 +22,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readHookInput, parseTranscriptFromInput } from './lib/hook-io';
 import { writeFileSync } from 'fs';
 import { join } from 'path';
+import { getClaudeDir } from "./lib/paths";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -43,7 +44,7 @@ async function main() {
 
   if (lastResponse) {
     try {
-      const paiDir = process.env.LIFEOS_DIR || join(process.env.HOME!, '.claude', 'LIFEOS');
+      const paiDir = process.env.LIFEOS_DIR || join(getClaudeDir(), 'LIFEOS');
       const cachePath = join(paiDir, 'MEMORY', 'STATE', 'last-response.txt');
       writeFileSync(cachePath, lastResponse.slice(0, 2000), 'utf-8');
     } catch (err) {

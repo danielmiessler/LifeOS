@@ -11,6 +11,7 @@
 
 import { existsSync, readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { claudeDir } from "./lifeos-root";
 
 interface Decision {
   timestamp: string;
@@ -44,7 +45,7 @@ interface SessionProgress {
 }
 
 // Progress files are now in STATE/progress/ (consolidated from MEMORY/PROGRESS/)
-const PROGRESS_DIR = join(process.env.HOME || '', '.claude', 'LIFEOS', 'MEMORY', 'STATE', 'progress');
+const PROGRESS_DIR = join(claudeDir(), 'LIFEOS', 'MEMORY', 'STATE', 'progress');
 
 function getProgressPath(project: string): string {
   return join(PROGRESS_DIR, `${project}-progress.json`);

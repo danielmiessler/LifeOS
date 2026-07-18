@@ -14,9 +14,10 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { parse as parseYaml } from 'yaml';
 import { loadLifeosConfig } from '../../LIFEOS/TOOLS/LifeosConfig';
+import { getClaudeDir } from "./paths";
 
 const HOME = process.env.HOME!;
-const SETTINGS_PATH = join(HOME, '.claude/settings.json');
+const SETTINGS_PATH = join(getClaudeDir(), "settings.json");
 
 // Identity-file paths derive from LifeosConfig's userDir. On fresh installs where
 // LIFEOS_CONFIG.toml hasn't been created yet, fall back to the conventional
@@ -26,7 +27,7 @@ function paiUserDir(): string {
   try {
     return loadLifeosConfig().paths.userDir;
   } catch {
-    return join(HOME, '.claude/LIFEOS/USER');
+    return join(getClaudeDir(), "LIFEOS/USER");
   }
 }
 const DA_IDENTITY_PATH = join(paiUserDir(), 'DIGITAL_ASSISTANT/DA_IDENTITY.md');

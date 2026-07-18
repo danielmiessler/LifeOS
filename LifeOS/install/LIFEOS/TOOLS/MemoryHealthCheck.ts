@@ -23,9 +23,10 @@
 
 import { existsSync, readFileSync, appendFileSync, mkdirSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || "";
-const CLAUDE = join(HOME, ".claude");
+const CLAUDE = join(claudeDir());
 const HOOKS_DIR = join(CLAUDE, "hooks");
 const TOOLS_DIR = join(CLAUDE, "LIFEOS/TOOLS");
 const OBS_DIR = join(CLAUDE, "LIFEOS/MEMORY/OBSERVABILITY");

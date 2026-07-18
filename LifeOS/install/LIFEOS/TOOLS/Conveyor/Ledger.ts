@@ -18,6 +18,7 @@
 import { appendFileSync, mkdirSync, readFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { homedir } from 'os';
+import { claudeDir } from "../lifeos-root";
 
 // Derivative legs per the ratified produce map (master ISA D-12):
 // youtube = long-form UL-bumper edit + full-metadata upload; shorts = _VIDEO Clips;
@@ -59,7 +60,7 @@ export interface ContentState {
 
 export function eventsPath(): string {
   return join(
-    process.env.LIFEOS_DIR || join(homedir(), '.claude', 'LIFEOS'),
+    process.env.LIFEOS_DIR || join(claudeDir(), 'LIFEOS'),
     'MEMORY',
     'STATE',
     'content-pipeline',

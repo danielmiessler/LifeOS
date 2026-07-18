@@ -2,6 +2,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 type FlagValue = string | boolean;
 type ParsedArgs = {
@@ -657,7 +658,7 @@ function isHostConfig(value: unknown): value is HostConfig {
 }
 
 function loadFleetConfig(): HostConfig[] | JsonObject {
-  const configPath = join(homedir(), ".claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/CMUX/fleet.json");
+  const configPath = join(claudeDir(), "LIFEOS/USER/CUSTOMIZATIONS/SKILLS/CMUX/fleet.json");
   if (!existsSync(configPath)) {
     return {
       ok: false,

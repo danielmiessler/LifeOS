@@ -33,8 +33,9 @@ import {
   PENDING_PROPOSALS_PATH,
 } from "./MemoryTypes";
 import { read as readMemory } from "./MemoryWriter";
+import { claudeDir } from "./lifeos-root";
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = pathResolve(claudeDir());
 const LIFEOS_DIR = pathJoin(CLAUDE_ROOT, "LIFEOS");
 const IDEAS_DIR = pathJoin(LIFEOS_DIR, "MEMORY", "IDEAS");
 const KNOWLEDGE_DIR = pathJoin(LIFEOS_DIR, "MEMORY", "KNOWLEDGE");

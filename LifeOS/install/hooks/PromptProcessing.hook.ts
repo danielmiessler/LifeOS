@@ -47,6 +47,7 @@ import type { AlgorithmTabPhase } from './lib/tab-constants';
 import { paiPath } from './lib/paths';
 import { updateSessionNameInWorkJson, upsertSession } from './lib/isa-utils';
 import { isDesktopChannel, logSkippedVoice, getNotificationChannel } from './lib/notification-channel';
+import { getClaudeDir } from "./lib/paths";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -81,7 +82,7 @@ function appendPromptProcessingTelemetry(entry: Record<string, unknown>): void {
 
 // ── Constants ──
 
-const BASE_DIR = process.env.LIFEOS_DIR || join(process.env.HOME!, '.claude', 'LIFEOS');
+const BASE_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), 'LIFEOS');
 const SESSION_NAMES_PATH = paiPath('MEMORY', 'STATE', 'session-names.json');
 const LOCK_PATH = SESSION_NAMES_PATH + '.lock';
 const MIN_PROMPT_LENGTH = 3;

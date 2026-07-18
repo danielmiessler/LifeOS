@@ -4,9 +4,10 @@ declare const Bun: any;
 import { readFileSync, statSync, existsSync, readdirSync } from "node:fs";
 import { join, basename } from "node:path";
 import { homedir } from "node:os";
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 const HOME = homedir();
-const LIFEOS_DIR = join(HOME, ".claude");
+const LIFEOS_DIR = join(claudeDir());
 const STATE_DIR = join(LIFEOS_DIR, "LIFEOS", "MEMORY", "STATE");
 const WORK_DIR = join(LIFEOS_DIR, "LIFEOS", "MEMORY", "WORK");
 // Claude Code names each project dir by its absolute path with "/" and "." mapped to "-",
@@ -352,7 +353,7 @@ async function searchIsaBodies(tokens: string[], since: Date | null, until: Date
 async function searchJsonl(tokens: string[], since: Date | null, until: Date | null = null): Promise<Result[]> {
   if (tokens.length === 0 || !existsSync(JSONL_DIR)) return [];
   const realDir = JSONL_DIR;
-  if (!realDir.startsWith(join(HOME, ".claude", "Projects", PROJECT_SLUG))) return [];
+  if (!realDir.startsWith(join(claudeDir(), "Projects", PROJECT_SLUG))) return [];
   const pattern = tokens.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
   const out = await ripgrep(pattern, realDir, ["--glob", "*.jsonl", "-c"]);
   const byFile = new Map<string, { hits: number; path: string }>();

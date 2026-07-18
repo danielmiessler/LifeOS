@@ -12,10 +12,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const MODULE_NAME = "projects";
 const PROJECTS_PATH = join(
-  process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"),
+  process.env.CLAUDE_CONFIG_DIR || join(claudeDir()),
   "LIFEOS",
   "USER",
   "PROJECTS.md",

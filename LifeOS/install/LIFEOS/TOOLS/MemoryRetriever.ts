@@ -42,6 +42,7 @@ import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import { spawnSync } from "child_process";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -54,7 +55,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 // ============================================================================
 
 const HOME = process.env.HOME!;
-const LIFEOS_DIR = process.env.LIFEOS_DIR || path.join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || path.join(claudeDir(), "LIFEOS");
 const KNOWLEDGE_DIR = path.join(LIFEOS_DIR, "MEMORY", "KNOWLEDGE");
 const DOMAINS = ["People", "Companies", "Ideas", "Research"];
 
@@ -457,8 +458,8 @@ function formatResults(
 // dual-tier prefetch, no graph traversal on hot path).
 
 const MEMORY_FILES: ReadonlyArray<{ path: string; title: string }> = [
-  { path: path.join(HOME, ".claude", "LIFEOS", "USER", "PRINCIPAL", "PRINCIPAL_MEMORY.md"), title: "Principal Memory" },
-  { path: path.join(HOME, ".claude", "LIFEOS", "USER", "DIGITAL_ASSISTANT", "DA_MEMORY.md"), title: "DA Memory" },
+  { path: path.join(claudeDir(), "LIFEOS", "USER", "PRINCIPAL", "PRINCIPAL_MEMORY.md"), title: "Principal Memory" },
+  { path: path.join(claudeDir(), "LIFEOS", "USER", "DIGITAL_ASSISTANT", "DA_MEMORY.md"), title: "DA Memory" },
 ];
 
 const RELEVANT_CACHE_TTL_MS = 60_000;
@@ -632,7 +633,7 @@ function formatRelevantBlock(results: RelevantResultItem[]): string {
   if (results.length === 0) return "";
   const lines: string[] = ["## RELEVANT MEMORY"];
   for (const r of results) {
-    const shortPath = r.path.replace(HOME + "/.claude/", "");
+    const shortPath = r.path.replace(claudeDir() + "/", "");
     lines.push("");
     lines.push(`### [${r.type} · ${r.score.toFixed(1)}] ${r.title}`);
     lines.push(`<!-- ${shortPath} -->`);

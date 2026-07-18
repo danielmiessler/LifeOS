@@ -20,6 +20,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { existsSync, mkdirSync, readFileSync, renameSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { firstBannedHit } from "./lib/banned-vocab";
+import { getClaudeDir } from "./lib/paths";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -42,7 +43,7 @@ interface DriftState {
 
 const STDIN_TIMEOUT_MS = 300;
 const MIN_TURNS_BETWEEN_FIRES = 5;
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME || "", ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const LAST_RESPONSE_PATH = join(LIFEOS_DIR, "MEMORY", "STATE", "last-response.txt");
 const STATE_PATH = join(LIFEOS_DIR, "MEMORY", "STATE", "drift-reminder.json");
 const INITIAL_STATE: DriftState = {

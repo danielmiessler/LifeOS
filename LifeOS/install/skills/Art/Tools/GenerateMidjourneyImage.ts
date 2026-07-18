@@ -23,6 +23,7 @@ import { DiscordBotClient } from '../lib/discord-bot.js';
 import { MidjourneyClient, MidjourneyError } from '../lib/midjourney-client.js';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -40,7 +41,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
  * This ensures API keys are available regardless of how the CLI is invoked
  */
 async function loadEnv(): Promise<void> {
-  const paiDir = process.env.LIFEOS_DIR || resolve(process.env.HOME!, '.claude');
+  const paiDir = process.env.LIFEOS_DIR || resolve(claudeDir());
   const envPath = resolve(paiDir, '.env');
   try {
     const envContent = await readFile(envPath, 'utf-8');

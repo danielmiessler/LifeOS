@@ -10,6 +10,7 @@
  *   bun LIFEOS/TOOLS/HealthSync.ts auth oura
  */
 import { join } from "node:path";
+import { claudeDir } from "./lifeos-root";
 import type {
   Ctx,
   CurrentJson,
@@ -42,10 +43,8 @@ type CliCommand = "pull" | "status" | "current" | "auth";
 const HOME = process.env.HOME || "";
 const PREFIX = "[HealthSync]";
 const SOURCE_NAMES: readonly SourceName[] = ["oura", "eightsleep", "apple", "function"];
-const CURRENT_PATH = join(HOME, ".claude", "LIFEOS", "USER", "HEALTH", "current.json");
-const HEALTHSYNC_LOG_PATH = join(
-  HOME,
-  ".claude",
+const CURRENT_PATH = join(claudeDir(), "LIFEOS", "USER", "HEALTH", "current.json");
+const HEALTHSYNC_LOG_PATH = join(claudeDir(),
   "LIFEOS",
   "MEMORY",
   "OBSERVABILITY",

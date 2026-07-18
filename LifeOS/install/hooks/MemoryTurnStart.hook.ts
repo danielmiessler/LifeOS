@@ -25,6 +25,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
+import { getClaudeDir } from "./lib/paths";
 
 // ── Hot-layer injection gate (2026-07-11, context-window cleanup #1) ─────────
 // The <pai-memory> block is ~1.5K tokens; injecting it EVERY prompt duplicated
@@ -33,7 +34,7 @@ import { homedir } from "node:os";
 // prompts without an injection (compaction backstop — a post-compact window
 // must re-see memory within a bounded number of turns). The 🧠 delta line and
 // the cadence tick remain every-turn: the visible contract is unchanged.
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = pathResolve(getClaudeDir());
 const STATE_DIR = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/STATE/memory-inject");
 const PRINCIPAL_MEMORY = pathResolve(CLAUDE_ROOT, "LIFEOS/USER/PRINCIPAL/PRINCIPAL_MEMORY.md");
 const DA_MEMORY = pathResolve(CLAUDE_ROOT, "LIFEOS/USER/DIGITAL_ASSISTANT/DA_MEMORY.md");

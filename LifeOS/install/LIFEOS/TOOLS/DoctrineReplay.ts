@@ -22,8 +22,9 @@
 import { readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { homedir } from "node:os";
+import { claudeDir } from "./lifeos-root";
 
-const WORK_DIR = join(homedir(), ".claude/LIFEOS/MEMORY/WORK");
+const WORK_DIR = join(claudeDir(), "LIFEOS/MEMORY/WORK");
 
 type IsaMeta = {
   slug: string;

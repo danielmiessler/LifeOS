@@ -21,8 +21,9 @@ import { fetchElections } from "./FetchElections.ts"
 import { fetchArrests } from "./FetchArrests.ts"
 import { fetchNews } from "./FetchNews.ts"
 import { fetchCrime } from "./FetchCrime.ts"
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
-const DATA_DIR = join(homedir(), ".claude", "LIFEOS", "MEMORY", "DATA", "LocalIntelligence")
+const DATA_DIR = join(claudeDir(), "LIFEOS", "MEMORY", "DATA", "LocalIntelligence")
 
 const fetchers: Record<SectionKey, Fetcher> = {
   construction: fetchConstruction,

@@ -47,6 +47,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readFileSync } from 'fs'
 import { homedir } from 'os'
 import { join } from 'path'
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -64,7 +65,7 @@ const colors = {
 function loadEnv(): Record<string, string> {
   const envPath = process.env.LIFEOS_CONFIG_DIR
     ? join(process.env.LIFEOS_CONFIG_DIR, '.env')
-    : join(homedir(), '.claude', '.env')
+    : join(claudeDir(), '.env')
   const env: Record<string, string> = {}
   try {
     const content = readFileSync(envPath, 'utf-8')

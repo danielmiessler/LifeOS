@@ -28,12 +28,13 @@
 import { readdirSync, readFileSync, writeFileSync, renameSync, existsSync } from "node:fs";
 import { resolve as pathResolve, join as pathJoin } from "node:path";
 import { homedir } from "node:os";
+import { claudeDir } from "./lifeos-root";
 import {
   parseNote, serializeNote, normalize, validate,
   DIR_TO_TYPE, slugFromPath, type CanonicalType,
 } from "./KnowledgeSchema";
 
-const KNOWLEDGE_DIR = pathResolve(homedir(), ".claude/LIFEOS/MEMORY/KNOWLEDGE");
+const KNOWLEDGE_DIR = pathResolve(claudeDir(), "LIFEOS/MEMORY/KNOWLEDGE");
 const DIRS = ["People", "Companies", "Ideas", "Research", "Blogs"] as const;
 
 interface NoteOutcome {

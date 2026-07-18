@@ -5,14 +5,15 @@ After=network.target
 [Service]
 Type=simple
 ExecStart=__BUN_PATH__ run pulse.ts
-WorkingDirectory=__HOME__/.claude/LIFEOS/PULSE
+WorkingDirectory=__LIFEOS_DIR__/PULSE
 Restart=on-failure
 RestartSec=30
 TimeoutStopSec=5
 Environment=HOME=__HOME__
 Environment=PATH=__HOME__/.bun/bin:/usr/local/bin:/usr/bin:/bin
-StandardOutput=append:__HOME__/.claude/LIFEOS/PULSE/logs/pulse-stdout.log
-StandardError=append:__HOME__/.claude/LIFEOS/PULSE/logs/pulse-stderr.log
+Environment=LIFEOS_DIR=__LIFEOS_DIR__
+StandardOutput=append:__LIFEOS_DIR__/PULSE/logs/pulse-stdout.log
+StandardError=append:__LIFEOS_DIR__/PULSE/logs/pulse-stderr.log
 
 [Install]
 WantedBy=default.target

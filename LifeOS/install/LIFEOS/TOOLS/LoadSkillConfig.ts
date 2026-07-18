@@ -18,6 +18,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join, basename } from 'path';
 import { homedir } from 'os';
 import { parse as parseYaml } from 'yaml';
+import { claudeDir } from "./lifeos-root";
 
 // Types
 interface CustomizationMetadata {
@@ -35,7 +36,7 @@ interface ExtendManifest {
 
 // Constants
 const HOME = homedir();
-const CUSTOMIZATION_DIR = join(HOME, '.claude', 'LIFEOS', 'USER', 'SKILLCUSTOMIZATIONS');
+const CUSTOMIZATION_DIR = join(claudeDir(), 'LIFEOS', 'USER', 'SKILLCUSTOMIZATIONS');
 
 /**
  * Deep merge two objects recursively

@@ -40,7 +40,7 @@ set -euo pipefail
 # Source per-machine USER customizations if present (Chrome profile dir name,
 # pinned context ID, working-profile deny-list). Lives outside the public skill
 # body so the skill stays generic.
-USER_PREFS="${HOME}/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
+USER_PREFS="${LIFEOS_DIR:-$HOME/.claude/LIFEOS}/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
 if [ -f "$USER_PREFS" ]; then
     # shellcheck disable=SC1090
     . "$USER_PREFS"

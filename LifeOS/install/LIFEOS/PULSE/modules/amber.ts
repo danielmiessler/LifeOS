@@ -20,9 +20,10 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const MODULE_NAME = "amber";
-const HOME = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
+const HOME = process.env.CLAUDE_CONFIG_DIR || join(claudeDir());
 const KNOWLEDGE_DIR = join(HOME, "LIFEOS", "MEMORY", "KNOWLEDGE");
 const X_STATE_DIR = join(HOME, "skills", "_X", "State");
 const ENV_PATH = join(HOME, ".env");

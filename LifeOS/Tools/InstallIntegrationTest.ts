@@ -144,6 +144,41 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   check(S, "no writes to <home>/.claude", !existsSync(join(fakeHome, ".claude")));
   check(S, "no writes to <home>/.config/LIFEOS", !existsSync(join(fakeHome, ".config", "LIFEOS")));
 
+  // ─── Scenario D: Pulse runtime + launchd wiring is custom-home-aware ──
+  // DeployCore (above) shipped LIFEOS/PULSE + LIFEOS/TOOLS/lifeos-root.ts into the
+  // custom root. The whole runtime layer must resolve the custom root — not ~/.claude.
+  // configRoot here is `<fakeHome>/lifeos-home` (NO ".claude" in the name), so a clean
+  // "zero .claude" assertion catches any surviving hardcode, exactly like settings.json.
+  const SP = "D:pulse-custom-home";
+  const lifeosDir = join(configRoot, "LIFEOS");
+  const pulseDir = join(lifeosDir, "PULSE");
+
+  check(SP, "canonical resolver lifeos-root.ts deployed under custom root", existsSync(join(lifeosDir, "TOOLS", "lifeos-root.ts")));
+  check(SP, "a PULSE module routes through the resolver (codemod shipped)",
+    existsSync(join(pulseDir, "modules", "memory.ts")) && readFileSync(join(pulseDir, "modules", "memory.ts"), "utf-8").includes("lifeos-root"),
+    "memory.ts does not import lifeos-root");
+
+  const pulsePlistTpl = join(pulseDir, "com.lifeos.pulse.plist");
+  if (existsSync(pulsePlistTpl)) {
+    const tpl = readFileSync(pulsePlistTpl, "utf-8");
+    check(SP, "pulse plist template is __LIFEOS_DIR__-based (no __HOME__/.claude)",
+      tpl.includes("__LIFEOS_DIR__") && !tpl.includes("__HOME__/.claude"), tpl.match(/__HOME__\/\.claude\S*/)?.[0] ?? "");
+  }
+
+  // `manage.sh render` performs the real substitution (self-locating its own dir) —
+  // no launchctl load, so it is safe in CI.
+  const manage = join(pulseDir, "manage.sh");
+  check(SP, "manage.sh deployed under custom root", existsSync(manage));
+  if (existsSync(manage)) {
+    const render = Bun.spawnSync(["bash", manage, "render"], { env, stdout: "pipe", stderr: "pipe" });
+    const plist = render.stdout.toString();
+    check(SP, "rendered pulse plist has ZERO .claude references", plist.length > 0 && !plist.includes(".claude"),
+      (plist.match(/\S*\.claude\S*/g) || []).slice(0, 3).join(", ") || render.stderr.toString().slice(0, 300));
+    check(SP, "no unresolved __LIFEOS_DIR__ placeholder", plist.length > 0 && !plist.includes("__LIFEOS_DIR__"), plist.slice(0, 200));
+    check(SP, "WorkingDirectory targets <configRoot>/LIFEOS/PULSE", plist.includes(`<string>${pulseDir}</string>`), plist.slice(0, 500));
+    check(SP, "LIFEOS_DIR env set to <configRoot>/LIFEOS", plist.includes(`<string>${lifeosDir}</string>`), plist.slice(0, 500));
+  }
+
   // ─── Scenario B: self-symlink guard ────────────────────────────────
   const SG = "B:self-symlink-guard";
   // Simulate the installer re-run inside a live session: LIFEOS_CONFIG_DIR

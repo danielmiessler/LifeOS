@@ -34,6 +34,7 @@ import louvain from "graphology-communities-louvain";
 import pagerank from "graphology-metrics/centrality/pagerank";
 import * as fs from "fs";
 import * as path from "path";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -43,7 +44,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 
 const HOME = process.env.HOME!;
-const LIFEOS_DIR = process.env.LIFEOS_DIR || path.join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || path.join(claudeDir(), "LIFEOS");
 const MEMORY = path.join(LIFEOS_DIR, "MEMORY");
 const KNOWLEDGE_DIR = path.join(MEMORY, "KNOWLEDGE");
 const WORK_DIR = path.join(MEMORY, "WORK");

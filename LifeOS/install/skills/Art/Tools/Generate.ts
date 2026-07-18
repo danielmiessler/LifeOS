@@ -38,7 +38,7 @@ import { extname, resolve } from "node:path";
  * This ensures API keys are available regardless of how the CLI is invoked
  */
 async function loadEnv(): Promise<void> {
-  const paiDir = process.env.LIFEOS_DIR || resolve(process.env.HOME!, '.claude');
+  const paiDir = process.env.LIFEOS_DIR || resolve(claudeDir());
   const envPath = resolve(paiDir, '.env');
   try {
     const envContent = await readFile(envPath, 'utf-8');
@@ -218,7 +218,7 @@ async function detectMimeType(filePath: string): Promise<string> {
 // ============================================================================
 
 // LifeOS directory for documentation paths
-const LIFEOS_DIR = process.env.LIFEOS_DIR || `${process.env.HOME}/.claude`;
+const LIFEOS_DIR = process.env.LIFEOS_DIR || `${claudeDir()}`;
 
 function showHelp(): void {
   console.log(`
@@ -352,7 +352,7 @@ MORE INFO:
  *   --workflow=<bad-name>   → exit 1 listing valid workflow names.
  */
 function enforceWorkflowDiscipline(parsed: Partial<CLIArgs>): void {
-  const workflowsDir = `${process.env.HOME}/.claude/skills/Art/Workflows`;
+  const workflowsDir = `${claudeDir()}/skills/Art/Workflows`;
   let availableWorkflows: string[] = [];
   try {
     // readdirSync via Bun.readdirSync isn't a thing; use Node fs sync via dynamic
@@ -681,6 +681,7 @@ function enhancePromptForTransparency(prompt: string): string {
 
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {

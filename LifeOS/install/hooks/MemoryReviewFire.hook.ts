@@ -25,8 +25,9 @@ import { appendFileSync, existsSync, mkdirSync, readFileSync, renameSync, writeF
 import { spawn } from "node:child_process";
 import { dirname, resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
+import { getClaudeDir } from "./lib/paths";
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = pathResolve(getClaudeDir());
 const STATE_PATH = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/review-state.json");
 const CONFIG_PATH = pathResolve(CLAUDE_ROOT, "LIFEOS/USER/CONFIG/memory-review.json");
 const FIRE_LOG_PATH = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/reviewer-fires.jsonl");

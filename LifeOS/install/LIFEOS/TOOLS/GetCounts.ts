@@ -42,6 +42,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 import { readdirSync, existsSync, statSync } from "fs";
 import { join } from "path";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -51,7 +52,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 
 const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const CLAUDE_DIR = join(claudeDir());
 // skills/, hooks/, settings.json live under CLAUDE_DIR.
 // MEMORY/, USER/ live under LIFEOS_DIR (which is CLAUDE_DIR/PAI).
 const LIFEOS_DIR = process.env.LIFEOS_DIR || join(CLAUDE_DIR, "LIFEOS");
@@ -143,7 +144,7 @@ function countSkills(): number {
  * count — only what Claude Code will actually fire.
  */
 function countHooks(): number {
-  const settingsPath = join(HOME, ".claude", "settings.json");
+  const settingsPath = join(claudeDir(), "settings.json");
   try {
     const fs = require('fs');
     const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));

@@ -33,9 +33,10 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || '';
-const CLAUDE_DIR = join(HOME, '.claude');
+const CLAUDE_DIR = join(claudeDir());
 const LIFEOS_DIR = join(CLAUDE_DIR, 'LIFEOS');
 const TOOLS_DIR = join(LIFEOS_DIR, 'TOOLS');
 const DOC_DIR = join(LIFEOS_DIR, 'DOCUMENTATION');

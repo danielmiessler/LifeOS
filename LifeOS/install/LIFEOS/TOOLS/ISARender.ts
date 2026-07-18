@@ -19,17 +19,18 @@ import { readFileSync, writeFileSync, existsSync, statSync, renameSync, readdirS
 import { resolve, dirname, basename, join } from "node:path";
 import { spawn } from "node:child_process";
 import { homedir } from "node:os";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || homedir();
-const TOOLS_DIR = resolve(HOME, ".claude/LIFEOS/TOOLS");
+const TOOLS_DIR = resolve(claudeDir(), "LIFEOS/TOOLS");
 const TEMPLATE_HTML = join(TOOLS_DIR, "ISARender/template.html");
 const TEMPLATE_CSS = join(TOOLS_DIR, "ISARender/template.css");
 // Brand logo: user override via LIFEOS_BRAND_LOGO_PATH env var (absolute path),
 // else system default under PAI/ASSETS/, else inert (empty src).
 const BRAND_LOGO_PATH_OVERRIDE = process.env.LIFEOS_BRAND_LOGO_PATH ?? "";
-const BRAND_LOGO_PATH_DEFAULT = resolve(HOME, ".claude/LIFEOS/ASSETS/pai-logo.png");
-const WORK_DIR = resolve(HOME, ".claude/LIFEOS/MEMORY/WORK");
-const WORK_JSON = resolve(HOME, ".claude/LIFEOS/MEMORY/STATE/work.json");
+const BRAND_LOGO_PATH_DEFAULT = resolve(claudeDir(), "LIFEOS/ASSETS/pai-logo.png");
+const WORK_DIR = resolve(claudeDir(), "LIFEOS/MEMORY/WORK");
+const WORK_JSON = resolve(claudeDir(), "LIFEOS/MEMORY/STATE/work.json");
 
 const PHASES = ["observe", "think", "plan", "build", "execute", "verify", "learn", "complete"];
 

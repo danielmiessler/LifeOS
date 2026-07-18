@@ -37,8 +37,9 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { getPrincipal } from '../../../hooks/lib/identity';
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
-const TELOS_DIR = join(process.env.HOME!, '.claude', 'LIFEOS', 'USER', 'TELOS');
+const TELOS_DIR = join(claudeDir(), 'LIFEOS', 'USER', 'TELOS');
 const BACKUPS_DIR = join(TELOS_DIR, 'Backups');
 // Changelog file: prefer whichever casing already exists (older installs used
 // 'Updates.md'; the docs and scaffold use 'updates.md'), so case-sensitive

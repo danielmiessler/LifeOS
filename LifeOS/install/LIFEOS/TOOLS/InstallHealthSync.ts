@@ -9,6 +9,7 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "fs";
 import { join } from "path";
+import { claudeDir } from "./lifeos-root";
 
 type SpawnProcess = {
   exited: Promise<number>;
@@ -30,7 +31,7 @@ type LaunchctlResult = {
 };
 
 const HOME = process.env.HOME || "";
-const TEMPLATE_PATH = join(HOME, ".claude", "LIFEOS", "TOOLS", "com.lifeos.healthsync.plist.template");
+const TEMPLATE_PATH = join(claudeDir(), "LIFEOS", "TOOLS", "com.lifeos.healthsync.plist.template");
 const LAUNCH_AGENTS_DIR = join(HOME, "Library", "LaunchAgents");
 const TARGET_PLIST = join(LAUNCH_AGENTS_DIR, "com.lifeos.healthsync.plist");
 const LABEL = "com.lifeos.healthsync";

@@ -40,8 +40,9 @@ import { homedir } from "node:os";
 // event-sourced write path. This file previously carried a duplicate
 // tmp+rename implementation; that was the one writer outside writeRegistry.
 import { readRegistry, writeRegistry } from "../../hooks/lib/isa-utils";
+import { claudeDir } from "./lifeos-root";
 
-const CLAUDE_ROOT = pathResolve(homedir(), ".claude");
+const CLAUDE_ROOT = pathResolve(claudeDir());
 const SESSION_NAMES_JSON = pathJoin(CLAUDE_ROOT, "LIFEOS/MEMORY/STATE/session-names.json");
 
 interface WorkSession {

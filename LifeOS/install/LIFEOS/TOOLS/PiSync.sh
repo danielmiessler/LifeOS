@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-LifeOS=~/.claude
+LifeOS="$(dirname "${LIFEOS_DIR:-$HOME/.claude/LIFEOS}")"
 PI=~/.pi/agent
 
 [ -d "$PI" ] || { echo "✗ ~/.pi/agent missing"; exit 1; }

@@ -2,7 +2,13 @@
 # LifeOS Pulse — Process Management
 # Usage: manage.sh {start|stop|restart|status|install|uninstall}
 
-PULSE_DIR="$HOME/.claude/LIFEOS/PULSE"
+# Resolve PULSE_DIR from this script's OWN location — not a hardcoded ~/.claude.
+# manage.sh always ships alongside the PULSE tree it manages, so this is correct for
+# both the default install (~/.claude/LIFEOS/PULSE) and a custom LifeOS home
+# (LIFEOS_HOME install, e.g. ~/Project/.claude/LIFEOS/PULSE). __LIFEOS_DIR__ in the
+# plist/service template is substituted with the derived <configRoot>/LIFEOS below.
+PULSE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LIFEOS_DIR_RESOLVED="$(dirname "$PULSE_DIR")"
 PLIST_NAME="com.lifeos.pulse"
 PLIST_SRC="$PULSE_DIR/$PLIST_NAME.plist"
 PLIST_DST="$HOME/Library/LaunchAgents/$PLIST_NAME.plist"
@@ -43,7 +49,7 @@ case "$1" in
       if [ ! -f "$PLIST_DST" ]; then
         # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
         # no-op on plists that already have literal paths.
-        sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
+        sed -e "s|__LIFEOS_DIR__|$LIFEOS_DIR_RESOLVED|g" -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
       fi
       launchctl load "$PLIST_DST" 2>/dev/null
       echo "LifeOS Pulse started"
@@ -118,7 +124,7 @@ case "$1" in
       sleep 1
       # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
       # no-op on service files that already have literal paths.
-      sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$SERVICE_SRC" > "$SERVICE_DST"
+      sed -e "s|__LIFEOS_DIR__|$LIFEOS_DIR_RESOLVED|g" -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$SERVICE_SRC" > "$SERVICE_DST"
       # Ensure user services survive logout/reboot (no-op if already enabled)
       loginctl enable-linger "$USER" 2>/dev/null || true
       systemctl --user daemon-reload
@@ -136,7 +142,7 @@ case "$1" in
 
       # Substitute __HOME__ + __BUN_PATH__ placeholders (public template);
       # no-op on plists that already have literal paths.
-      sed -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
+      sed -e "s|__LIFEOS_DIR__|$LIFEOS_DIR_RESOLVED|g" -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$PLIST_SRC" > "$PLIST_DST"
       launchctl load "$PLIST_DST"
     fi
 
@@ -168,8 +174,16 @@ case "$1" in
     echo "LifeOS Pulse uninstalled"
     ;;
 
+  render)
+    # Dry-run: print the substituted launchd plist (macOS) or systemd unit (Linux)
+    # to stdout WITHOUT loading it. Lets you inspect the wiring — and the install
+    # integration test assert it targets the resolved (custom) home, not ~/.claude.
+    if [ "$OS" = "Linux" ]; then SRC="$SERVICE_SRC"; else SRC="$PLIST_SRC"; fi
+    sed -e "s|__LIFEOS_DIR__|$LIFEOS_DIR_RESOLVED|g" -e "s|__HOME__|$HOME|g" -e "s|__BUN_PATH__|$BUN_PATH|g" "$SRC"
+    ;;
+
   *)
-    echo "Usage: $0 {start|stop|restart|status|install|uninstall}"
+    echo "Usage: $0 {start|stop|restart|status|install|uninstall|render}"
     exit 1
     ;;
 esac

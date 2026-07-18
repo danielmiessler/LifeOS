@@ -21,9 +21,10 @@ import { readdirSync, existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
 import { paiUserDir } from "./LifeosConfig";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME!;
-const CLAUDE_DIR = join(HOME, ".claude");
+const CLAUDE_DIR = join(claudeDir());
 
 // =============================================================================
 // Terminal Width Detection

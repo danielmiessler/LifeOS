@@ -12,10 +12,11 @@
 
 import { join, basename, dirname } from "path"
 import { existsSync, readFileSync, writeFileSync, appendFileSync, readdirSync, statSync, mkdirSync } from "fs"
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const HOME = process.env.HOME ?? ""
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
-const PROJECTS_DIR = join(HOME, ".claude", "projects")
+const LIFEOS_DIR = join(claudeDir(), "LIFEOS")
+const PROJECTS_DIR = join(claudeDir(), "projects")
 const OUTPUT_FILE = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "session-costs.jsonl")
 const STATE_FILE = join(LIFEOS_DIR, "PULSE", "Performance", "aggregator-state.json")
 

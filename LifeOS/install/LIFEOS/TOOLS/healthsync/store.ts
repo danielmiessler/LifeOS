@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { appendFileSync, chmodSync, mkdirSync, renameSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { claudeDir } from "../lifeos-root";
 import type {
   Ctx,
   DayFile,
@@ -10,10 +11,10 @@ import type {
 } from "./types";
 
 const HOME = process.env.HOME || "";
-const ENV_PATH = join(HOME, ".claude", ".env");
-const STATE_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE");
-const DATA_DIR = join(HOME, ".claude", "LIFEOS", "USER", "HEALTH", "DATA");
-const OBS_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY");
+const ENV_PATH = join(claudeDir(), ".env");
+const STATE_DIR = join(claudeDir(), "LIFEOS", "MEMORY", "STATE");
+const DATA_DIR = join(claudeDir(), "LIFEOS", "USER", "HEALTH", "DATA");
+const OBS_DIR = join(claudeDir(), "LIFEOS", "MEMORY", "OBSERVABILITY");
 const TOKENS_PATH = join(STATE_DIR, "healthsync-tokens.json");
 const STATE_PATH = join(STATE_DIR, "healthsync-state.json");
 

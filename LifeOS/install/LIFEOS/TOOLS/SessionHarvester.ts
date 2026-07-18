@@ -22,16 +22,17 @@
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
-import { getLearningCategory, isLearningCapture } from "../../../.claude/hooks/lib/learning-utils";
+import { getLearningCategory, isLearningCapture } from "../../hooks/lib/learning-utils";
+import { claudeDir } from "./lifeos-root";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
-const CLAUDE_DIR = path.join(process.env.HOME!, ".claude");
+const CLAUDE_DIR = path.join(claudeDir());
 // Derive the project slug dynamically from CLAUDE_DIR (works on macOS and Linux)
-// macOS: ${HOME}/.claude → ${HARNESS_USER_DIR}
-// Linux: ${HOME}/.claude → ${HARNESS_USER_DIR}
+// macOS: ${claudeDir()} → ${HARNESS_USER_DIR}
+// Linux: ${claudeDir()} → ${HARNESS_USER_DIR}
 const CWD_SLUG = CLAUDE_DIR.replace(/[\/\.]/g, "-");
 const PROJECTS_DIR = path.join(CLAUDE_DIR, "projects", CWD_SLUG);
 const LEARNING_DIR = path.join(CLAUDE_DIR, "LIFEOS", "MEMORY", "LEARNING");

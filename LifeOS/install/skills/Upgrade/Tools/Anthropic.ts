@@ -28,6 +28,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { createHash } from 'crypto';
 import { join } from 'path';
 import { homedir } from 'os';
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 // Types
 interface Source {
@@ -85,7 +86,7 @@ interface State {
 
 // Config
 const HOME = homedir();
-const SKILL_DIR = join(HOME, '.claude', 'skills', 'Upgrade');
+const SKILL_DIR = join(claudeDir(), 'skills', 'Upgrade');
 const STATE_DIR = join(SKILL_DIR, 'State');
 const STATE_FILE = join(STATE_DIR, 'last-check.json');
 const SOURCES_FILE = join(SKILL_DIR, 'sources.json');

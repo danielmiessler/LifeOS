@@ -40,8 +40,9 @@ import {
 import { appendFileSync, mkdirSync, existsSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
 import { createHash } from "crypto";
+import { getClaudeDir } from "./lib/paths";
 
-const LIFEOS = process.env.LIFEOS_DIR || join(process.env.HOME!, ".claude", "LIFEOS");
+const LIFEOS = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const OBS_PATH = join(LIFEOS, "MEMORY", "OBSERVABILITY", "verification-gate.jsonl");
 const STATE_PATH = join(LIFEOS, "MEMORY", "STATE", "verification-gate-blocked.json");
 

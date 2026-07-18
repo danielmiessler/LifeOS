@@ -33,6 +33,7 @@ import { join, extname } from "path"
 import { readFileSync, readdirSync, existsSync, realpathSync, statSync, watch, type FSWatcher } from "fs"
 import YAML from "yaml"
 import { effortToCanonicalTierName } from "../../../hooks/lib/effort"
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -69,7 +70,7 @@ export interface ObservabilityConfig {
 // ── Path Construction ──
 
 const HOME = process.env.HOME ?? ""
-const LIFEOS_DIR = join(HOME, ".claude", "LIFEOS")
+const LIFEOS_DIR = join(claudeDir(), "LIFEOS")
 const MEMORY_DIR = join(LIFEOS_DIR, "MEMORY")
 
 const WORK_JSON_PATH = join(MEMORY_DIR, "STATE", "work.json")
@@ -78,7 +79,7 @@ const SUBAGENT_EVENTS_PATH = join(MEMORY_DIR, "OBSERVABILITY", "subagent-events.
 const VOICE_EVENTS_PATH = join(MEMORY_DIR, "VOICE", "voice-events.jsonl")
 const TOOL_FAILURES_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-failures.jsonl")
 const TOOL_ACTIVITY_PATH = join(MEMORY_DIR, "OBSERVABILITY", "tool-activity.jsonl")
-const SETTINGS_PATH = join(HOME, ".claude", "settings.json")
+const SETTINGS_PATH = join(claudeDir(), "settings.json")
 const LADDER_DIR = join(HOME, "Projects", "Ladder")
 
 const DEFAULT_DASHBOARD_DIR = join(LIFEOS_DIR, "PULSE", "Observability", "out")
@@ -156,7 +157,7 @@ function getDashboardDir(): string {
   const dir = config.dashboard_dir ?? DEFAULT_DASHBOARD_DIR
   // Resolve relative paths against Pulse directory
   if (!dir.startsWith("/")) {
-    return join(HOME, ".claude", "LIFEOS", "PULSE", dir)
+    return join(claudeDir(), "LIFEOS", "PULSE", dir)
   }
   return dir
 }
@@ -1640,7 +1641,7 @@ function readDirMdFiles(dir: string): { name: string, content: string, sections:
 
 function handleUserIndexApi(filter: string | null): Response {
   try {
-    const LIFEOS_DIR = process.env.LIFEOS_DIR || join(process.env.HOME || "", ".claude", "LIFEOS")
+    const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS")
     const indexPath = join(LIFEOS_DIR, "PULSE", "state", "user-index.json")
     const raw = Bun.file(indexPath)
     if (!raw.size) {

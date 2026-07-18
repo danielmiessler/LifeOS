@@ -12,12 +12,13 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync } from "fs";
 import { join } from "path";
 import { spawnSync } from "child_process";
+import { claudeDir } from "./lifeos-root";
 
 const HOME = process.env.HOME || "";
-const TEMPLATE = join(HOME, ".claude", "LIFEOS", "TOOLS", "com.lifeos.commitmentsweep.plist.template");
+const TEMPLATE = join(claudeDir(), "LIFEOS", "TOOLS", "com.lifeos.commitmentsweep.plist.template");
 const TARGET_DIR = join(HOME, "Library", "LaunchAgents");
 const TARGET = join(TARGET_DIR, "com.lifeos.commitmentsweep.plist");
-const STATE_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE");
+const STATE_DIR = join(claudeDir(), "LIFEOS", "MEMORY", "STATE");
 const LABEL = "com.lifeos.commitmentsweep";
 
 function uid(): string {

@@ -19,6 +19,7 @@
 import { readFile } from "node:fs/promises"
 import { join } from "node:path"
 import { homedir } from "node:os"
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 export interface Hometown {
   city: string
@@ -42,9 +43,7 @@ export class NoHometownError extends Error {
   }
 }
 
-const IDENTITY_DEFAULT = join(
-  homedir(),
-  ".claude",
+const IDENTITY_DEFAULT = join(claudeDir(),
   "LIFEOS",
   "USER",
   "PRINCIPAL",

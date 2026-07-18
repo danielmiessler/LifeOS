@@ -13,6 +13,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { claudeDir } from "./lifeos-root";
 
 /**
  * Snapshot of the last merge output, written alongside every successful
@@ -21,9 +22,7 @@ import os from "node:os";
  * edits that haven't been merged yet never read as "drift" and never get
  * clobbered back into the overlay (the 2026-07-11 hooks-BPE incident).
  */
-export const MERGE_SNAPSHOT_PATH = path.join(
-  os.homedir(),
-  ".claude",
+export const MERGE_SNAPSHOT_PATH = path.join(claudeDir(),
   "LIFEOS",
   "MEMORY",
   "STATE",

@@ -28,6 +28,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, appendFileSync, renameSync } from "fs";
 import { join } from "path";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -39,8 +40,8 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 declare const Bun: { spawn: (cmd: string[], opts?: any) => any };
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
-const X_DIR = join(HOME, ".claude", "skills", "_X");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS");
+const X_DIR = join(claudeDir(), "skills", "_X");
 const BOOKMARKS_TOOL = join(X_DIR, "Tools", "bookmarks.ts");
 const BOOKMARK_ISSUE_TOOL = join(X_DIR, "Tools", "bookmark-issue.ts");
 const INFERENCE_TOOL = join(LIFEOS_DIR, "TOOLS", "Inference.ts");

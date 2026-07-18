@@ -28,9 +28,10 @@ import {
   statSync,
 } from "node:fs";
 import { join } from "node:path";
+import { claudeDir } from "../../TOOLS/lifeos-root";
 
 const HOME = process.env.HOME || "";
-const CLAUDE = join(HOME, ".claude");
+const CLAUDE = join(claudeDir());
 const OBS_DIR = join(CLAUDE, "LIFEOS/MEMORY/OBSERVABILITY");
 
 const REVIEW_STATE = join(OBS_DIR, "review-state.json");

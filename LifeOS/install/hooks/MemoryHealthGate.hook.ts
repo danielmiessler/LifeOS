@@ -16,9 +16,10 @@
 
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
+import { getClaudeDir } from "./lib/paths";
 
 const HOME = process.env.HOME || "";
-const CHECK = join(HOME, ".claude/LIFEOS/TOOLS/MemoryHealthCheck.ts");
+const CHECK = join(getClaudeDir(), "LIFEOS/TOOLS/MemoryHealthCheck.ts");
 
 try {
   const out = execFileSync("bun", [CHECK], {

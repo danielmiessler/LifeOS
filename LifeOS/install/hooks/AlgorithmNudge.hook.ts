@@ -48,8 +48,9 @@
 
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+import { getClaudeDir } from "./lib/paths";
 
-const PAI = join(process.env.HOME || '', '.claude');
+const PAI = join(getClaudeDir());
 const WORK_JSON = join(PAI, 'LIFEOS', 'MEMORY', 'STATE', 'work.json');
 const STATE_DIR = join(PAI, 'LIFEOS', 'MEMORY', 'STATE', 'isa-nudge');
 const SKILLS_DIR = join(PAI, 'skills');

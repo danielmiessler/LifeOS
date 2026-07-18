@@ -19,6 +19,7 @@
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { claudeDir } from "../../../LIFEOS/TOOLS/lifeos-root";
 
 // ============================================================================
 // Types
@@ -67,9 +68,7 @@ interface PromptOutput {
 // Constants
 // ============================================================================
 
-const ART_AESTHETIC_PATH = resolve(
-  process.env.HOME!,
-  ".claude/LIFEOS/Aesthetic.md"
+const ART_AESTHETIC_PATH = resolve(claudeDir(), "LIFEOS/Aesthetic.md"
 );
 
 const COLOR_HEX_MAP: Record<TokyoNightColor, string> = {

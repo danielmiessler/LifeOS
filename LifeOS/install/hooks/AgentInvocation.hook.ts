@@ -34,6 +34,7 @@ import { homedir } from 'os';
 import { paiPath } from './lib/paths';
 import { getISOTimestamp } from './lib/time';
 import { EFFORT_MODEL, ALIAS, CROSS_VENDOR } from '../LIFEOS/TOOLS/models';
+import { getClaudeDir } from "./lib/paths";
 
 interface AgentToolInput {
   subagent_type?: string;
@@ -60,7 +61,7 @@ function resolveDispatch(subagentType: string, inputModel?: string): { model: st
   if (CROSS_VENDOR[cvKey]) return { model: CROSS_VENDOR[cvKey], level: 'cross-vendor' };
   if (inputModel) return { model: inputModel, level: levelForModel(inputModel) };
   try {
-    const fm = readFileSync(join(homedir(), '.claude', 'agents', `${subagentType}.md`), 'utf-8').slice(0, 4000);
+    const fm = readFileSync(join(getClaudeDir(), 'agents', `${subagentType}.md`), 'utf-8').slice(0, 4000);
     const m = fm.match(/^model:\s*(\S+)/m);
     if (m) return { model: m[1], level: `${levelForModel(m[1])}-pin` };
   } catch { /* no agent file — built-in type */ }

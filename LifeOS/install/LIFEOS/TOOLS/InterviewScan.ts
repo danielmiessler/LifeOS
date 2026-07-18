@@ -26,6 +26,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 import { readTelosFreshness, sectionSlug, type SectionFreshness } from "./TelosFreshness";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -35,7 +36,7 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 
 const HOME = process.env.HOME || "";
-const LIFEOS_DIR = process.env.LIFEOS_DIR || join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || join(claudeDir(), "LIFEOS");
 const USER_DIR = join(LIFEOS_DIR, "USER");
 const TELOS_DIR = join(USER_DIR, "TELOS");
 const TELOS_PATH = join(TELOS_DIR, "TELOS.md");
@@ -98,7 +99,7 @@ const REGISTRY: RegistryTarget[] = [
     prompts: ["Main DA voice — pick from ElevenLabs library, or stick with default Rachel (21m00Tcm4TlvDq8ikWAM)?",
               "Algorithm voice (used for phase transitions) — default Adam (pNInz6obpgDQGcFmaJgB) is fine?",
               "Want voice notifications on by default? (default: yes)"] },
-  { phase: 0, path: join(HOME, ".claude", ".env"), name: ".env/credentials", category: "setup", leverage: 10,
+  { phase: 0, path: join(claudeDir(), ".env"), name: ".env/credentials", category: "setup", leverage: 10,
     prompts: ["ANTHROPIC_API_KEY — required for inference. Paste here (will write to .env, won't echo back)?",
               "ELEVENLABS_API_KEY — required for voice notifications. Skip if you don't want voice.",
               "GH_TOKEN — optional, only if you want the work pipeline. Skip if not using GitHub issues.",

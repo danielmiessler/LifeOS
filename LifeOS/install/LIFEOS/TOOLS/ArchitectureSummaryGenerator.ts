@@ -21,6 +21,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { parseArgs } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { claudeDir } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -34,12 +35,12 @@ for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 // ============================================================================
 
 const HOME = process.env.HOME!;
-const LIFEOS_DIR = process.env.LIFEOS_DIR || path.join(HOME, ".claude", "LIFEOS");
+const LIFEOS_DIR = process.env.LIFEOS_DIR || path.join(claudeDir(), "LIFEOS");
 const ARCH_SOURCE = path.join(LIFEOS_DIR, "DOCUMENTATION", "LifeosSystemArchitecture.md");
 const SUMMARY_OUTPUT = path.join(LIFEOS_DIR, "DOCUMENTATION", "ARCHITECTURE_SUMMARY.md");
 const ALGORITHM_DIR = path.join(LIFEOS_DIR, "ALGORITHM");
 const MEMORY_SYSTEM_DOC = path.join(LIFEOS_DIR, "DOCUMENTATION", "Memory", "MemorySystem.md");
-const CLAUDE_MD = path.join(HOME, ".claude", "CLAUDE.md");
+const CLAUDE_MD = path.join(claudeDir(), "CLAUDE.md");
 
 // ============================================================================
 // Version detection (source-of-truth lookups — no hardcoded versions)
@@ -274,7 +275,7 @@ function cmdCheck(): void {
 
   const sourceMtime = getMtime(ARCH_SOURCE);
   const summaryMtime = getMtime(SUMMARY_OUTPUT);
-  const claudeMdMtime = getMtime(path.join(HOME, ".claude", "CLAUDE.md"));
+  const claudeMdMtime = getMtime(path.join(claudeDir(), "CLAUDE.md"));
 
   if (sourceMtime > summaryMtime || claudeMdMtime > summaryMtime) {
     console.log("STALE: Source files are newer than summary");

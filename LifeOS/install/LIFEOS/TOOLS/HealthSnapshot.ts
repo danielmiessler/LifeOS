@@ -4,6 +4,7 @@ import { existsSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
 import { loadLifeosConfig } from "./LifeosConfig"
+import { claudeDir } from "./lifeos-root";
 
 const INBOX = join(homedir(), "Library/Mobile Documents/com~apple~CloudDocs/PAI/health/inbox")
 const PROCESSED = join(homedir(), "Library/Mobile Documents/com~apple~CloudDocs/PAI/health/processed")
@@ -11,7 +12,7 @@ const PROCESSED = join(homedir(), "Library/Mobile Documents/com~apple~CloudDocs/
 // a relocated LIFEOS_USER_DIR Just Works.
 const SNAPSHOTS = ((): string => {
   try { return join(loadLifeosConfig().paths.userDir, "TELOS/HEALTH/snapshots") }
-  catch { return join(homedir(), ".claude/LIFEOS/USER/TELOS/HEALTH/snapshots") }
+  catch { return join(claudeDir(), "LIFEOS/USER/TELOS/HEALTH/snapshots") }
 })()
 
 type HealthSnapshot = {

@@ -22,7 +22,7 @@
 set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREFS="${HOME}/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
+PREFS="${LIFEOS_DIR:-$HOME/.claude/LIFEOS}/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
 # shellcheck disable=SC1090
 [ -f "$PREFS" ] && . "$PREFS"
 

@@ -24,9 +24,10 @@ import { readFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { homedir } from "node:os";
 import { evaluateWrite, extractNewContent } from "./lib/system-file-guard-core";
+import { getClaudeDir } from "./lib/paths";
 
 const HOME = process.env.HOME ?? homedir();
-const LOG_PATH = join(HOME, ".claude/LIFEOS/MEMORY/OBSERVABILITY/system-file-guard.jsonl");
+const LOG_PATH = join(getClaudeDir(), "LIFEOS/MEMORY/OBSERVABILITY/system-file-guard.jsonl");
 
 interface HookInput {
   session_id?: string;
