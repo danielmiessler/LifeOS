@@ -53,6 +53,35 @@ bun Tools/DetectEnv.ts
 
 Read its output. It reports the OS (macOS / Linux / Windows), the harness (Claude Code / Cursor / Cline / Codex / Gemini / other), the config root, and whether LifeOS is already present. **Every path below comes from this — don't assume `~/.claude` or any single harness.**
 
+### 2.5 The install-location choice — default home or a custom directory
+
+LifeOS normally installs into the harness's config root — right for a human who wants LifeOS in **every** session. But that makes LifeOS global: its `CLAUDE.md`, hooks, and settings load into *every* Claude Code session, including plain coding work. A human who also wants to use Claude Code **without** LifeOS should install it into a custom directory instead — LifeOS then loads only when launched against that root, and plain `claude` stays vanilla. The same mechanism gives you an **isolated second instance** (e.g. a project-scoped assistant in `~/MyProject/.claude`).
+
+**Ask once.** If `LIFEOS_HOME` is not already set, offer your human the choice now, before anything is written:
+
+> "Install LifeOS into the default location (`<configRoot from DetectEnv>`) so it's active in every session, or into a custom directory so you can keep using Claude Code without LifeOS and opt in per launch?"
+
+Default answer → proceed unchanged; don't mention custom homes again. Custom answer → export the directory they name as `LIFEOS_HOME` for **every** subsequent step (and re-run `DetectEnv` to confirm the resolved `configRoot`/`configDir`). If `LIFEOS_HOME` is already set (e.g. by `install.sh --home`), skip the question and just confirm the target.
+
+The override, settable up front instead:
+
+```
+export LIFEOS_HOME=~/MyProject/.claude        # or: bash install.sh --home ~/MyProject/.claude
+```
+
+What it changes, and what it doesn't:
+
+- `LIFEOS_HOME` moves **only where LifeOS installs** (`configRoot`: `LIFEOS/`, `settings.json`, `hooks/`, `skills/`, `CLAUDE.md`). It is NOT `CLAUDE_CONFIG_DIR` — it doesn't relocate the harness's own config or disable merging with your global `~/.claude` at runtime.
+- The private user-data home (`configDir`, symlink target of `<configRoot>/LIFEOS/USER`) follows the custom home to `<configRoot>/USER-data`, so two instances never share one USER tree. Override with `--config-dir` on `ScaffoldUser`/`LinkUser` if you want it elsewhere.
+- The install tools retarget everything the harness reads literally — `settings.json` env values and permission globs, and every hook command — to the custom root. `DetectEnv` reports the resolved `configRoot`/`configDir`; verify the written `settings.json` contains no `~/.claude` references.
+
+**The runtime half (don't skip):** installing into a custom home only places the files — the harness must also LOAD them. For Claude Code there are two ways:
+
+1. **Project-scoped `.claude`** (recommended for a per-project assistant): install into `<project>/.claude` and launch Claude Code from `<project>` — it picks the directory's `.claude` up as project settings alongside your global config.
+2. **Whole-config relocation:** launch with `CLAUDE_CONFIG_DIR=<configRoot> claude` — the harness then uses ONLY that config dir (no global merge). This is the right tool when the instance should be fully self-contained.
+
+Wire the `lifeos` launch command (step 7) against the custom `<configRoot>` either way — that part is identical.
+
 ### 3. Scan for conflicts (read-only)
 
 ```

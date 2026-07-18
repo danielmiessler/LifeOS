@@ -10,7 +10,7 @@
  */
 
 import { homedir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
 
 /**
  * Expand shell variables in a path string
@@ -59,14 +59,29 @@ export function getLifeosDir(): string {
  *
  * Plugin install: CLAUDE_PLUGIN_ROOT is the flattened plugin root that plays the
  * live ~/.claude role (skills/ and hooks/ sit directly under it, matching live
- * .claude/skills and .claude/hooks). Live default: ~/.claude — byte-identical to
- * pre-plugin behavior, since CLAUDE_PLUGIN_ROOT is unset on a normal install.
+ * .claude/skills and .claude/hooks).
+ *
+ * Custom LifeOS home (LIFEOS_HOME install): LIFEOS_DIR is `<configRoot>/LIFEOS`,
+ * so the config root is its parent — deriving it here keeps every consumer
+ * (settings, skills, hooks, .env) inside the custom home instead of silently
+ * falling back to ~/.claude. Must stay BELOW the plugin guard: bin/pai exports
+ * LIFEOS_DIR equal to CLAUDE_PLUGIN_ROOT, where dirname() would escape the root.
+ *
+ * Live default: ~/.claude — byte-identical to pre-plugin behavior, since
+ * CLAUDE_PLUGIN_ROOT and LIFEOS_DIR are unset on a plain install and LIFEOS_DIR
+ * is ~/.claude/LIFEOS (same parent) on a default one.
  */
 export function getClaudeDir(): string {
   const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT;
 
   if (pluginRoot) {
     return expandPath(pluginRoot);
+  }
+
+  const envLifeosDir = process.env.LIFEOS_DIR;
+
+  if (envLifeosDir) {
+    return dirname(expandPath(envLifeosDir));
   }
 
   return join(homedir(), '.claude');

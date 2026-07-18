@@ -20,7 +20,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { detectDevTree } from "./InstallEngine";
+import { detectDevTree, resolveConfigDir, resolveConfigRoot } from "./InstallEngine";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -37,9 +37,8 @@ function main(): void {
     const i = a.indexOf(f);
     return i >= 0 && a[i + 1] && !a[i + 1].startsWith("--") ? a[i + 1] : undefined;
   };
-  const home = process.env.HOME || "";
-  const configRoot = get("--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
-  const configDir = get("--config-dir") || process.env.LIFEOS_CONFIG_DIR || join(home, ".config", "LIFEOS");
+  const configRoot = resolveConfigRoot(get("--config-root"));
+  const configDir = resolveConfigDir(configRoot, get("--config-dir"));
   const apply = a.includes("--apply");
   const allowDev = a.includes("--allow-dev");
 

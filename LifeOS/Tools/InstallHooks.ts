@@ -9,14 +9,20 @@
  * The skill's Setup workflow shows the user the exact change (from the dry-run
  * counts) and gets explicit permission BEFORE calling this with --apply.
  *
+ * Custom LifeOS home (LIFEOS_HOME / --config-root ≠ ~/.claude): the payload's
+ * hook commands ship as `$HOME/.claude/hooks/...`; they are retargeted to the
+ * real `<configRoot>/hooks/...` (absolute — the shell evaluates hook commands,
+ * but the hooks live under configRoot, not under any env var Claude Code
+ * guarantees) before the merge. A default install merges the payload verbatim.
+ *
  * Usage:
  *   bun InstallHooks.ts [--config-root <dir>] [--skill-root <dir>] [--apply] [--allow-dev]
  *   (dry-run by default — reports added/skipped without writing)
  */
 
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
-import { detectDevTree, mergeHooks } from "./InstallEngine";
+import { join, resolve } from "node:path";
+import { detectDevTree, mergeHooks, resolveConfigRoot } from "./InstallEngine";
 
 interface Args { configRoot: string; skillRoot: string; apply: boolean; allowDev: boolean; }
 
@@ -26,13 +32,40 @@ function parseArgs(): Args {
     const i = a.indexOf(flag);
     return i >= 0 && a[i + 1] && !a[i + 1].startsWith("--") ? a[i + 1] : undefined;
   };
-  const home = process.env.HOME || "";
   return {
-    configRoot: get("--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude"),
+    configRoot: resolveConfigRoot(get("--config-root")),
     skillRoot: get("--skill-root") || join(import.meta.dir, ".."),
     apply: a.includes("--apply"),
     allowDev: a.includes("--allow-dev"),
   };
+}
+
+// Every spelling of the default root the payload's hook commands may use.
+const DEFAULT_ROOT_FORMS = ["${HOME}/.claude", "$HOME/.claude", "~/.claude"];
+
+/**
+ * Retarget the default-root spellings in every incoming `command` string to the
+ * real config root (custom home only). Mutates in place; returns replacements.
+ */
+function retargetHookCommands(incoming: Record<string, Array<{ hooks?: Array<{ command?: string }> }>>, configRoot: string): number {
+  let replaced = 0;
+  for (const groups of Object.values(incoming ?? {})) {
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups) {
+      if (!Array.isArray(group.hooks)) continue;
+      for (const h of group.hooks) {
+        if (typeof h.command !== "string") continue;
+        let cmd = h.command;
+        for (const form of DEFAULT_ROOT_FORMS) {
+          const parts = cmd.split(form);
+          replaced += parts.length - 1;
+          cmd = parts.join(configRoot);
+        }
+        h.command = cmd;
+      }
+    }
+  }
+  return replaced;
 }
 
 function countFilesRec(dir: string): number {
@@ -61,6 +94,10 @@ function main(): void {
   }
   const incoming = JSON.parse(readFileSync(hooksJsonPath, "utf-8"))?.hooks ?? {};
 
+  const home = process.env.HOME || "";
+  const isCustomRoot = home !== "" && resolve(configRoot) !== resolve(join(home, ".claude"));
+  const commandsRetargeted = isCustomRoot ? retargetHookCommands(incoming, configRoot) : 0;
+
   // The hook SCRIPTS (*.hook.ts|sh + lib/**) live beside hooks.json in the payload.
   // Merging hooks.json into settings.json wires commands that point at these files,
   // so they MUST be copied onto disk too — else every hook resolves to a nonexistent
@@ -79,12 +116,15 @@ function main(): void {
 
   const { merged, added, skipped } = mergeHooks(existingHooks as never, incoming);
 
-  const report = { ok: true, apply, settingsPath, added, skipped, events: Object.keys(merged).length, hooksDestDir, hookFiles };
+  const report = { ok: true, apply, settingsPath, added, skipped, events: Object.keys(merged).length, hooksDestDir, hookFiles, customRoot: isCustomRoot ? configRoot : undefined, commandsRetargeted: isCustomRoot ? commandsRetargeted : undefined };
 
   if (!apply) {
     console.log(JSON.stringify({ ...report, dryRun: true, note: "no changes written; re-run with --apply after permission" }, null, 2));
     process.exit(0);
   }
+
+  // A custom home (and ~/.claude on a clean machine) may not exist yet.
+  mkdirSync(configRoot, { recursive: true });
 
   // Back up settings.json before writing (only if it exists).
   let backup: string | undefined;

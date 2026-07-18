@@ -11,7 +11,7 @@
  */
 
 import { join } from "node:path";
-import { activateImports, detectDevTree } from "./InstallEngine";
+import { activateImports, detectDevTree, resolveConfigRoot } from "./InstallEngine";
 
 function main(): void {
   const a = process.argv.slice(2);
@@ -19,8 +19,7 @@ function main(): void {
     const i = a.indexOf(f);
     return i >= 0 && a[i + 1] && !a[i + 1].startsWith("--") ? a[i + 1] : undefined;
   };
-  const home = process.env.HOME || "";
-  const configRoot = get("--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+  const configRoot = resolveConfigRoot(get("--config-root"));
   const apply = a.includes("--apply");
   const allowDev = a.includes("--allow-dev");
 

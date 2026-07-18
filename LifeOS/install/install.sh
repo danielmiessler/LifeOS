@@ -19,8 +19,33 @@
 #
 #   Local/offline install (no network):
 #     LIFEOS_SRC=/path/to/LIFEOS_RELEASES/<version> bash install.sh
+#
+#   Custom LifeOS home (install somewhere other than ~/.claude — e.g. a
+#   project-scoped `.claude` so a second, isolated LifeOS can live beside
+#   your global one):
+#     bash install.sh --home ~/MyProject/.claude
+#     LIFEOS_HOME=~/MyProject/.claude bash install.sh        # equivalent
+#   The var is exported so the agentic `/lifeos-setup` (launched below in
+#   the same shell) installs into it too — without it, the setup offers
+#   the location choice interactively. See INSTALL.md § 2.5 for how a
+#   custom home is LOADED at runtime.
 # ═══════════════════════════════════════════════════════════════════
 set -euo pipefail
+
+# ─── Args ─────────────────────────────────────────────────────────
+# --home <dir> sets LIFEOS_HOME (the custom LifeOS home). Env var form works too.
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --home)   LIFEOS_HOME="${2:?--home needs a directory}"; shift 2 ;;
+    --home=*) LIFEOS_HOME="${1#--home=}"; shift ;;
+    *)        echo "unknown argument: $1 (supported: --home <dir>)" >&2; exit 1 ;;
+  esac
+done
+LIFEOS_HOME="${LIFEOS_HOME:-}"
+if [ -n "$LIFEOS_HOME" ]; then
+  case "$LIFEOS_HOME" in "~"*) LIFEOS_HOME="${HOME}${LIFEOS_HOME#\~}" ;; esac
+  export LIFEOS_HOME
+fi
 
 # ─── Release resolution — always the latest published release ─────
 # No pin: this resolves the newest GitHub Release at run time, so every new
@@ -127,10 +152,12 @@ success "bun ($(command -v bun), v$(bun --version 2>/dev/null))"
 # ─── Step 2: Detect harness (no clobber) ─────────────────────────
 step "2/5  Detecting your harness"
 if [ -z "$LIFEOS_SKILLS_DIR" ]; then
-  if [ -d "$HOME/.claude" ]; then LIFEOS_SKILLS_DIR="$HOME/.claude/skills"
+  if [ -n "$LIFEOS_HOME" ]; then LIFEOS_SKILLS_DIR="$LIFEOS_HOME/skills"
+  elif [ -d "$HOME/.claude" ]; then LIFEOS_SKILLS_DIR="$HOME/.claude/skills"
   elif [ -d "$HOME/.config/claude" ]; then LIFEOS_SKILLS_DIR="$HOME/.config/claude/skills"
   else LIFEOS_SKILLS_DIR="$HOME/.claude/skills"; fi
 fi
+[ -n "$LIFEOS_HOME" ] && info "Custom LifeOS home: ${BOLD}${LIFEOS_HOME/#$HOME/~}${RESET} (LIFEOS_HOME exported for the setup)"
 info "Skills dir: ${BOLD}${LIFEOS_SKILLS_DIR/#$HOME/~}${RESET}"
 TARGET="$LIFEOS_SKILLS_DIR/LifeOS"
 if [ -e "$TARGET" ]; then

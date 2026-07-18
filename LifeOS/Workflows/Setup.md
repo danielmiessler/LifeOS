@@ -18,10 +18,15 @@ Deployment is **two tiers**, and the install presents them that way:
 
 The skill ships everything for both tiers in its payload; nothing activates without the matching consent.
 
+## Root plumbing (applies to EVERY step)
+
+`DetectEnv` reports `configRoot` (where LifeOS installs: `LIFEOS/`, `settings.json`, `hooks/`, `CLAUDE.md`) and `configDir` (the private user-data home; `<configRoot>/LIFEOS/USER` symlinks into it). A custom LifeOS home (`LIFEOS_HOME` env / `install.sh --home`) changes both. **Pass them explicitly to every tool call** — `--config-root <configRoot>` on all tools, plus `--config-dir <configDir>` on `ScaffoldUser`/`LinkUser`/`SeedPulse` — and use `<configRoot>` wherever a step writes a file or wires a command. Never assume `~/.claude`. (The tools resolve the same defaults themselves via `InstallEngine.resolveConfigRoot/resolveConfigDir`, so the flags are belt-and-suspenders — but explicit beats inherited env.)
+
 ## Steps
 
-1. **DetectEnv** — `bun Tools/DetectEnv.ts` → `{os, harness, display, ssh, bun, existingInstall, isDevTree, settingsExists, claudeMdExists}`. Thin entry point over the sibling `Tools/InstallEngine.ts` (`detectEnv()`) — a reshaped, bare-skill subset of the legacy installer engine.
+1. **DetectEnv** — `bun Tools/DetectEnv.ts` → `{os, harness, display, ssh, bun, existingInstall, isDevTree, settingsExists, claudeMdExists, configRoot, configDir}`. Thin entry point over the sibling `Tools/InstallEngine.ts` (`detectEnv()`) — a reshaped, bare-skill subset of the legacy installer engine.
    - **If `isDevTree` → STOP.** Never mutate the author's source repo. Print the refusal and exit.
+   - **The install-location choice:** if `LIFEOS_HOME` is NOT set, ask the user once — install into the default `<configRoot>` (LifeOS active in every session), or into a custom directory (keep plain Claude Code vanilla and opt into LifeOS per launch; also how you run an isolated second instance)? Default → proceed unchanged. Custom → export the named dir as `LIFEOS_HOME` for every subsequent step and re-run DetectEnv. If `LIFEOS_HOME` IS set (e.g. via `install.sh --home`), skip the question and just confirm the target ("Installing LifeOS into `<configRoot>` — correct?") before any write.
 2. **ScanConflicts** (read-only) — `bun Tools/ScanConflicts.ts` → existing settings hooks, skill-name collisions, existing populated config tree. Produces the branch decision for `LinkUser`.
 3. **Prereqs** — confirm `bun` present; confirm harness is one of the supported set; surface any missing prerequisite as a plain-language fix, do not auto-install system packages.
    - **If `harness.confidence` is `"assumed"`, confirm the harness with the user before branching** — detection was a guess (config dir without the harness binary, or the clean-machine default), and a leftover `~/.claude` dir must not send a non-Claude-Code install down the Claude Code path (hooks + `lifeos` alias both require the `claude` CLI). Ask which harness is actually running this setup, and branch on the answer.
@@ -60,3 +65,4 @@ The skill ships everything for both tiers in its payload; nothing activates with
 ## Notes
 - Cross-platform: branch on `DetectEnv.os` for hook command shapes and path separators.
 - Cross-harness: branch on `DetectEnv.harness` for the skills-dir location and hook command shapes; every harness gets the same imperative, permissioned hook install.
+- Custom LifeOS home: with `LIFEOS_HOME` set, `InstallSettings` retargets the template's `~/.claude` strings (env values, permission globs, guidance) and `InstallHooks` retargets the payload's hook commands to `<configRoot>` — verify afterwards that the written `settings.json` contains no `~/.claude` references. Remind the user of the runtime half per `INSTALL.md` § 2.5 (the install-location choice): the harness must be LAUNCHED against that root (project-scoped `.claude`, or `CLAUDE_CONFIG_DIR`) or LifeOS won't load.

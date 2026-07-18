@@ -67,6 +67,8 @@ curl -fsSL https://ourlifeos.ai/install.sh | bash
 
 Either path needs a capable AI coding harness — we build and run on [Claude Code](https://docs.claude.com/claude-code) — and [bun](https://bun.sh).
 
+**Custom home:** LifeOS installs into `~/.claude` by default, which makes it active in **every** Claude Code session — great if that's what you want. If you'd rather keep plain Claude Code vanilla and opt into LifeOS deliberately (or run an isolated project-scoped instance like `~/MyProject/.claude`), install it into its own directory: set `LIFEOS_HOME` or pass `--home <dir>` to the install script — the AI-driven install also offers the choice interactively. See [INSTALL.md § 2.5 — the install-location choice](LifeOS/INSTALL.md) for details, including how a custom home is loaded at runtime.
+
 ## Core Components
 
 **The unique features** — the parts you won't find anywhere else, plus the subsystems underneath. See them live and click through on **[ourlifeos.ai](https://ourlifeos.ai)**.

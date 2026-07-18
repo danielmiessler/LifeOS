@@ -18,7 +18,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { copyMissing, detectDevTree } from "./InstallEngine";
+import { checkUserDataSeparation, copyMissing, detectDevTree, resolveConfigDir, resolveConfigRoot } from "./InstallEngine";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -33,9 +33,8 @@ function main(): void {
     const i = a.indexOf(f);
     return i >= 0 && a[i + 1] && !a[i + 1].startsWith("--") ? a[i + 1] : undefined;
   };
-  const home = process.env.HOME || "";
-  const configRoot = get("--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
-  const configDir = get("--config-dir") || process.env.LIFEOS_CONFIG_DIR || join(home, ".config", "LIFEOS");
+  const configRoot = resolveConfigRoot(get("--config-root"));
+  const configDir = resolveConfigDir(configRoot, get("--config-dir"));
   const skillRoot = get("--skill-root") || join(import.meta.dir, "..");
   const apply = a.includes("--apply");
   const allowDev = a.includes("--allow-dev");
@@ -43,6 +42,12 @@ function main(): void {
   if (detectDevTree(configRoot) && !allowDev) {
     console.log(JSON.stringify({ ok: false, refused: "dev-tree", detail: `${configRoot} is a source tree — refusing to scaffold.` }, null, 2));
     process.exit(2);
+  }
+
+  const separation = checkUserDataSeparation(configRoot, configDir);
+  if (!separation.ok) {
+    console.log(JSON.stringify({ ok: false, refused: "user-data-separation", detail: separation.detail }, null, 2));
+    process.exit(1);
   }
 
   const templateUser = join(skillRoot, "install", "USER");

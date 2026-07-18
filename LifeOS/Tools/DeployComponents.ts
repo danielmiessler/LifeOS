@@ -35,7 +35,7 @@
 import { execFileSync } from "node:child_process";
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { copyMissing, detectDevTree } from "./InstallEngine";
+import { copyMissing, detectDevTree, resolveConfigRoot } from "./InstallEngine";
 
 // Enhancement components are the à-la-carte half of setup. The "LifeOS Core"
 // (skills + system prompt + base settings + CLAUDE.md) is installed by Setup's
@@ -386,7 +386,7 @@ function deploy(component: Component, ctx: Ctx): ComponentResult {
 function main(): void {
   const a = process.argv.slice(2);
   const home = process.env.HOME || "";
-  const configRoot = arg(a, "--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+  const configRoot = resolveConfigRoot(arg(a, "--config-root"));
   const skillRoot = arg(a, "--skill-root") || join(import.meta.dir, "..");
   const apply = a.includes("--apply");
   const allowDev = a.includes("--allow-dev");
