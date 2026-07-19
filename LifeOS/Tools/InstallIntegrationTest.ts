@@ -187,8 +187,15 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
     check(SP, "rendered pulse plist has ZERO .claude references", plist.length > 0 && !plist.includes(".claude"),
       (plist.match(/\S*\.claude\S*/g) || []).slice(0, 3).join(", ") || render.stderr.toString().slice(0, 300));
     check(SP, "no unresolved __LIFEOS_DIR__ placeholder", plist.length > 0 && !plist.includes("__LIFEOS_DIR__"), plist.slice(0, 200));
-    check(SP, "WorkingDirectory targets <configRoot>/LIFEOS/PULSE", plist.includes(`<string>${pulseDir}</string>`), plist.slice(0, 500));
-    check(SP, "LIFEOS_DIR env set to <configRoot>/LIFEOS", plist.includes(`<string>${lifeosDir}</string>`), plist.slice(0, 500));
+    // Format differs per OS: macOS renders a launchd plist (<string>PATH</string>);
+    // Linux renders a systemd unit (WorkingDirectory=PATH / Environment=LIFEOS_DIR=PATH).
+    const isLinux = process.platform === "linux";
+    check(SP, "WorkingDirectory targets <configRoot>/LIFEOS/PULSE",
+      isLinux ? plist.includes(`WorkingDirectory=${pulseDir}`) : plist.includes(`<string>${pulseDir}</string>`),
+      plist.slice(0, 500));
+    check(SP, "LIFEOS_DIR env set to <configRoot>/LIFEOS",
+      isLinux ? plist.includes(`LIFEOS_DIR=${lifeosDir}`) : plist.includes(`<string>${lifeosDir}</string>`),
+      plist.slice(0, 500));
   }
 
   // Execute both deployed resolvers with every root env scrubbed. This verifies
