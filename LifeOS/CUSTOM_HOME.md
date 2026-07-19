@@ -25,7 +25,7 @@ from any caller directory. The installed `lifeos` launcher preserves normal
 global+project merging for `<project>/.claude` roots by starting from the project
 parent; arbitrary custom roots use `CLAUDE_CONFIG_DIR` for the spawned process.
 
-## Two layers had to become root-aware
+## Three layers had to become root-aware
 
 **1. The install / deploy pipeline** (DetectEnv, DeployCore, InstallSettings,
 InstallHooks, ScaffoldUser, LinkUser, DeployComponents). These already accept
@@ -39,6 +39,25 @@ written `settings.json` must contain **zero** `~/.claude` references.
 computed `join(homedir(), ".claude")` inline, so a custom-home install would
 still read/write `~/.claude` at runtime — leaking state (e.g. `MEMORY/STATE/…`)
 into the wrong tree. This is the layer the PR makes root-agnostic.
+
+**3. The instruction layer** — the model-read markdown (SKILL.md files, skill
+workflows, `LIFEOS/DOCUMENTATION`, agents). These files carry literal shell
+commands and file references like `bun ~/.claude/LIFEOS/TOOLS/Foo.ts`, and the
+model executes them verbatim — on a custom-home install they fail (or worse,
+touch a parallel default install). The payload markdown was rewritten to two
+env vars that every session carries via the settings template's `env` block:
+
+- `$LIFEOS_DIR` → `<configRoot>/LIFEOS` (existing) — for everything under `LIFEOS/`.
+- `$LIFEOS_ROOT` → `<configRoot>` (new) — for root-level paths (`skills/`,
+  `hooks/`, `agents/`, `History/`, `Pulse/`, `settings.json`, `.env`, …).
+
+Both values are `$HOME`-expanded at write time and retargeted by
+`InstallSettings` on a custom root, so the same markdown works on default and
+custom installs alike. Deliberately **not** rewritten: `~/.claude/projects/`
+(the harness's own session storage, which genuinely stays under `~/.claude`),
+prose describing the default install location, historical changelog entries,
+and the system prompt's constitutional privacy rule (a semantic change owned
+by upstream, not this PR).
 
 ## How we changed all the paths — one pattern, applied mechanically
 

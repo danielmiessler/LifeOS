@@ -107,10 +107,21 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
       `found: ${(settingsRaw.match(/[^"\s]*\.claude[^"\s]*/g) || []).slice(0, 5).join(", ")}`);
     check(S, "env.LIFEOS_DIR points at the custom root", settings.env?.LIFEOS_DIR === join(configRoot, "LIFEOS"), String(settings.env?.LIFEOS_DIR));
     check(S, "env.LIFEOS_CONFIG_DIR points at the user-data home", settings.env?.LIFEOS_CONFIG_DIR === configDir, String(settings.env?.LIFEOS_CONFIG_DIR));
+    check(S, "env.LIFEOS_ROOT points at the custom root", settings.env?.LIFEOS_ROOT === configRoot, String(settings.env?.LIFEOS_ROOT));
     check(S, "permission globs carry the custom root", JSON.stringify(settings.permissions?.allow ?? []).includes(`Write(${configRoot}/**)`), "no retargeted Write glob found");
     const hookCmds = JSON.stringify(settings.hooks ?? {});
     check(S, "merged hook commands carry the custom root", hookCmds.includes(join(configRoot, "hooks")), hookCmds.slice(0, 500));
     check(S, "hook paths with spaces are shell-quoted", hookCmds.includes(`'${join(configRoot, "hooks")}`), hookCmds.slice(0, 500));
+  }
+
+  // Instruction layer: deployed model-read markdown must not carry executable
+  // default-root paths — the `~/.claude/LIFEOS` form is what the payload codemod
+  // rewrote to `$LIFEOS_DIR`/`$LIFEOS_ROOT` (changelogs are historical records).
+  {
+    const mdRoots = [join(configRoot, "skills"), join(configRoot, "LIFEOS", "DOCUMENTATION")].filter((d) => existsSync(d));
+    const g = Bun.spawnSync(["grep", "-rlE", "(~|\\$HOME|\\$\\{HOME\\})/\\.claude/LIFEOS", "--include=*.md", ...mdRoots]);
+    const hits = g.stdout.toString().trim().split("\n").filter(Boolean).filter((f) => !/changelog/i.test(f));
+    check(S, "deployed markdown has no hardcoded ~/.claude/LIFEOS paths", mdRoots.length > 0 && hits.length === 0, hits.slice(0, 5).join(", ") || `scanned: ${mdRoots.join(", ")}`);
   }
 
   // CLAUDE.md overlay (Setup step 4 does this by hand) + ScaffoldUser + LinkUser + ActivateImports

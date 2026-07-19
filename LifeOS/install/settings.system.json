@@ -3,6 +3,7 @@
   "skillListingBudgetFraction": 0.15,
   "env": {
     "LIFEOS_DIR": "$HOME/.claude/LIFEOS",
+    "LIFEOS_ROOT": "$HOME/.claude",
     "PROJECTS_DIR": "$HOME/Projects",
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
     "API_TIMEOUT_MS": "1800000",
