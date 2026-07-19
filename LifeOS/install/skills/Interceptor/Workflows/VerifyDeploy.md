@@ -29,8 +29,8 @@ Verify a deployment by opening the target URL in real Chrome and capturing a **f
 ### 0. Preflight Isolation Gate (MANDATORY first step)
 
 ```bash
-source ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
-bash ~/.claude/skills/Interceptor/Tools/EnsureTestProfile.sh
+source $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/EnsureTestProfile.sh
 ```
 
 `EnsureTestProfile.sh` runs the isolation gate AND auto-recovers: if the test profile window just isn't open (exit 5/6) it launches the configured profile, polls until the pinned context connects, and prints `READY`. It only ever succeeds after the gate passes (pinned-UUID match + Default-deny), so a wrong launch can never be driven. Non-zero exit → STOP and surface the message verbatim; do not fall back to the Default profile. (Call `PreflightIsolation.sh` directly when you explicitly want the gate with NO auto-launch.) `INTERCEPTOR_TEST_CONTEXT_ID` is the pinned isolated context; every browser verb below passes it. Screenshots go through `Tools/Capture.sh`, never raw `interceptor screenshot`.
@@ -94,9 +94,9 @@ Third-party 4xx (trackers, ads) is noted, not failing.
 ### 5. Probe D — screenshot
 
 ```bash
-bash ~/.claude/skills/Interceptor/Tools/Capture.sh "<DEPLOY_URL>"
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/Capture.sh "<DEPLOY_URL>"
 # long pages:
-bash ~/.claude/skills/Interceptor/Tools/Capture.sh "<DEPLOY_URL>" --full
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/Capture.sh "<DEPLOY_URL>" --full
 ```
 
 `Capture.sh` re-runs the isolation gate, routes to the pinned context, prefers the DOM-render path (no foreground needed), and prints the absolute saved-image path on its only stdout line. Read that image to visually confirm rendering. Never call raw `interceptor screenshot` here — it loses the deny-Default guard and CWD-destination handling.

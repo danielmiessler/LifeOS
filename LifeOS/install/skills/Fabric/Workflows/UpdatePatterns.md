@@ -29,7 +29,7 @@ curl -s -X POST http://localhost:31337/notify \
 ### Step 2: Check Current Pattern Count
 
 ```bash
-CURRENT_COUNT=$(ls -1 ~/.claude/skills/Fabric/Patterns/ 2>/dev/null | wc -l | tr -d ' ')
+CURRENT_COUNT=$(ls -1 $LIFEOS_ROOT/skills/Fabric/Patterns/ 2>/dev/null | wc -l | tr -d ' ')
 echo "Current patterns: $CURRENT_COUNT"
 ```
 
@@ -48,13 +48,13 @@ This updates patterns in `~/.config/fabric/patterns/`.
 Copy updated patterns to the Fabric skill's local storage:
 
 ```bash
-rsync -av --delete ~/.config/fabric/patterns/ ~/.claude/skills/Fabric/Patterns/
+rsync -av --delete ~/.config/fabric/patterns/ $LIFEOS_ROOT/skills/Fabric/Patterns/
 ```
 
 ### Step 5: Report Results
 
 ```bash
-NEW_COUNT=$(ls -1 ~/.claude/skills/Fabric/Patterns/ 2>/dev/null | wc -l | tr -d ' ')
+NEW_COUNT=$(ls -1 $LIFEOS_ROOT/skills/Fabric/Patterns/ 2>/dev/null | wc -l | tr -d ' ')
 echo ""
 echo "Pattern update complete!"
 echo "Previous count: $CURRENT_COUNT"
@@ -71,7 +71,7 @@ Confirm critical patterns are present:
 
 ```bash
 for pattern in extract_wisdom summarize create_threat_model analyze_claims; do
-  if [ -d ~/.claude/skills/Fabric/Patterns/$pattern ]; then
+  if [ -d $LIFEOS_ROOT/skills/Fabric/Patterns/$pattern ]; then
     echo "✓ $pattern"
   else
     echo "✗ $pattern MISSING"
@@ -96,7 +96,7 @@ else
 fi
 
 # Sync patterns
-rsync -av --delete patterns/ ~/.claude/skills/Fabric/Patterns/
+rsync -av --delete patterns/ $LIFEOS_ROOT/skills/Fabric/Patterns/
 
 # Cleanup
 cd /tmp && rm -rf fabric
@@ -110,10 +110,10 @@ After update, verify with:
 
 ```bash
 # Count patterns
-ls -1 ~/.claude/skills/Fabric/Patterns/ | wc -l
+ls -1 $LIFEOS_ROOT/skills/Fabric/Patterns/ | wc -l
 
 # List recent additions (if patterns have dates)
-ls -lt ~/.claude/skills/Fabric/Patterns/ | head -10
+ls -lt $LIFEOS_ROOT/skills/Fabric/Patterns/ | head -10
 ```
 
 ---

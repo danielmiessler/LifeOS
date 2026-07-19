@@ -37,14 +37,14 @@ Read the pattern's system.md file:
 
 ```bash
 PATTERN_NAME="[selected_pattern]"
-PATTERN_PATH="$HOME/.claude/skills/Fabric/Patterns/$PATTERN_NAME/system.md"
+PATTERN_PATH="$LIFEOS_ROOT/skills/Fabric/Patterns/$PATTERN_NAME/system.md"
 
 if [ -f "$PATTERN_PATH" ]; then
   cat "$PATTERN_PATH"
 else
   echo "Pattern not found: $PATTERN_NAME"
   echo "Available patterns:"
-  ls ~/.claude/skills/Fabric/Patterns/ | head -20
+  ls $LIFEOS_ROOT/skills/Fabric/Patterns/ | head -20
 fi
 ```
 
@@ -103,7 +103,7 @@ Use when native URL fetching fails.
 **Invocation** — run in the BACKGROUND so it does not block the summary:
 
 ```bash
-bun ~/.claude/skills/_HARVEST/Tools/harvest.ts "<the same input the user sent into summarize>"
+bun $LIFEOS_ROOT/skills/_HARVEST/Tools/harvest.ts "<the same input the user sent into summarize>"
 ```
 
 Use `Bash` with `run_in_background: true`. The CLI handles source detection (URL / YouTube / text), body fetch, Arbol classification, and executor dispatch — never re-implement the writer here.
@@ -191,7 +191,7 @@ User Request
     │   ├─ "micro" or "tldr" → create_micro_summary
     │   └─ Default → summarize
     │   *(auto-harvest side-effect: any summarize-family pattern with a URL or
-    │    text ≥200 chars also fires `~/.claude/skills/_HARVEST/Tools/harvest.ts`
+    │    text ≥200 chars also fires `$LIFEOS_ROOT/skills/_HARVEST/Tools/harvest.ts`
     │    in the background — see Step 4b)*
     │
     ├─ Contains "threat model"?
@@ -250,7 +250,7 @@ User Request
 
 **Pattern not found:**
 ```
-Pattern '[name]' not found in ~/.claude/skills/Fabric/Patterns/
+Pattern '[name]' not found in $LIFEOS_ROOT/skills/Fabric/Patterns/
 
 Similar patterns:
 - [suggestion 1]

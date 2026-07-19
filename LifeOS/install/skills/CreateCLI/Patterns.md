@@ -249,7 +249,7 @@ PHILOSOPHY:
   - Documented: This help + README
   - Testable: Predictable behavior
 
-For full documentation: ~/.claude/LIFEOS/TOOLS/${CLI_NAME}/README.md
+For full documentation: $LIFEOS_DIR/TOOLS/${CLI_NAME}/README.md
 Version: ${VERSION}
 `);
 }

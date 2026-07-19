@@ -24,7 +24,7 @@ Defined in `LIFEOS/TOOLS/MutationTier.ts` as a closed allowlist (default-deny):
 | **C** | Propose-only (Telegram approval, or auto-apply at confidence ≥ 0.70) | `PRINCIPAL_IDENTITY.md`, `DA_IDENTITY.md`, `WRITINGSTYLE.md`, `DEFINITIONS.md`, `CANONICAL_CONTENT.md`, `RESUME.md`, `OPERATIONAL_RULES.md` |
 | **D** | Untouchable by memory subsystem | Everything else |
 
-A new file added to `~/.claude/` is Tier D by default until a code change promotes it.
+A new file added to `$LIFEOS_ROOT/` is Tier D by default until a code change promotes it.
 
 ## Coverage matrix
 

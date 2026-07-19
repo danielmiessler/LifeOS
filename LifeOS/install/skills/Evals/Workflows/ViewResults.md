@@ -20,7 +20,7 @@ Running the **ViewResults** workflow in the **Evals** skill to display eval resu
 Per-run output (source of truth):
 
 ```
-~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/<run-id>/results.json
+$LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/<run-id>/results.json
 ```
 
 Each `results.json` contains the run summary, per-trial scores, grader outputs, and failure details. The `LIFEOS/MEMORY/STATE/Evals-Results/` directory is the canonical store — query it with standard tools (`jq`, `rg`, `cat`).
@@ -33,27 +33,27 @@ Each `results.json` contains the run summary, per-trial scores, grader outputs, 
 
 ```bash
 # Show all runs for a use case (newest first)
-ls -1t ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/
+ls -1t $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/
 
 # Or via SuiteManager
-bun run ~/.claude/skills/Evals/Tools/SuiteManager.ts list
+bun run $LIFEOS_ROOT/skills/Evals/Tools/SuiteManager.ts list
 ```
 
 ### Step 2: View latest run summary
 
 ```bash
 # Latest run results.json
-LATEST=$(ls -1t ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/ | head -1)
-cat ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/$LATEST/results.json | jq '.summary'
+LATEST=$(ls -1t $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/ | head -1)
+cat $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/$LATEST/results.json | jq '.summary'
 
 # Or for a specific run
-cat ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/<run-id>/results.json | jq '.summary'
+cat $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/<run-id>/results.json | jq '.summary'
 ```
 
 ### Step 3: Check saturation (when a suite is graduating capability → regression)
 
 ```bash
-bun run ~/.claude/skills/Evals/Tools/SuiteManager.ts check-saturation <suite-name>
+bun run $LIFEOS_ROOT/skills/Evals/Tools/SuiteManager.ts check-saturation <suite-name>
 ```
 
 ### Step 4: View per-trial scores or failure detail

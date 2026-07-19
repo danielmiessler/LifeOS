@@ -6,8 +6,8 @@ Intelligent pattern selection for Fabric CLI. Automatically selects the right pa
 
 **The Fabric skill has moved to a dedicated skill directory.**
 
-**Primary Skill:** `~/.claude/skills/Fabric/SKILL.md`
-**Patterns Location:** `~/.claude/skills/Fabric/Patterns/`
+**Primary Skill:** `$LIFEOS_ROOT/skills/Fabric/SKILL.md`
+**Patterns Location:** `$LIFEOS_ROOT/skills/Fabric/Patterns/`
 
 For pattern updates, use: "update fabric patterns" → invokes Fabric skill's UpdatePatterns workflow.
 
@@ -257,7 +257,7 @@ fabric "your text here" -p [pattern]
 
 ## Updating Patterns
 
-Patterns are managed by the Fabric skill at `~/.claude/skills/Fabric/`.
+Patterns are managed by the Fabric skill at `$LIFEOS_ROOT/skills/Fabric/`.
 
 **To update patterns:**
 
@@ -266,7 +266,7 @@ Say: "update fabric patterns" → invokes Fabric skill's UpdatePatterns workflow
 **To see all available patterns:**
 
 ```bash
-ls ~/.claude/skills/Fabric/Patterns/
+ls $LIFEOS_ROOT/skills/Fabric/Patterns/
 ```
 
 ## 💡 Usage Examples
@@ -341,10 +341,10 @@ cat wisdom.txt | fabric -p create_5_sentence_summary
 
 ## Supplementary Resources
 
-**Full Pattern List:** `ls ~/.claude/skills/Fabric/Patterns/`
-**Fabric Skill:** `~/.claude/skills/Fabric/SKILL.md`
+**Full Pattern List:** `ls $LIFEOS_ROOT/skills/Fabric/Patterns/`
+**Fabric Skill:** `$LIFEOS_ROOT/skills/Fabric/SKILL.md`
 **Fabric Documentation:** https://github.com/danielmiessler/fabric
-**Pattern Templates:** See `~/.claude/skills/Fabric/Patterns/official_pattern_template/`
+**Pattern Templates:** See `$LIFEOS_ROOT/skills/Fabric/Patterns/official_pattern_template/`
 
 ## 🔑 Key Insight
 

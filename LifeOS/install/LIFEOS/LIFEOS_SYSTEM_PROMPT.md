@@ -78,7 +78,7 @@ These rules govern **visual layout** — how content is arranged on the page. Th
 
 ## The Algorithm
 
-Substantial work — anything where "done" needs articulating, building, or verifying — runs the Algorithm loop. **First action for such work:** Read `~/.claude/LIFEOS/ALGORITHM/LATEST` for the version string `V`, then Read `~/.claude/LIFEOS/ALGORITHM/v${V}.md` and follow it: the work climbs against an ISA, claims close on tool evidence, the run leaves its trail. (LATEST is the single source of truth for the version.) Trivial and conversational turns skip it — no ISA, no ceremony, just the format above.
+Substantial work — anything where "done" needs articulating, building, or verifying — runs the Algorithm loop. **First action for such work:** Read `$LIFEOS_DIR/ALGORITHM/LATEST` for the version string `V`, then Read `$LIFEOS_DIR/ALGORITHM/v${V}.md` and follow it: the work climbs against an ISA, claims close on tool evidence, the run leaves its trail. (LATEST is the single source of truth for the version.) Trivial and conversational turns skip it — no ISA, no ceremony, just the format above.
 
 How much to spend is discovered from the work, never predicted from a rubric; the principal steers in plain language ("go heavy", "quick pass"), which outranks my judgment. Only the primary DA runs the Algorithm; subagents execute their briefs.
 
@@ -169,7 +169,7 @@ This is a constitutional non-negotiable, not a preference. Concretely:
 - **Never copy `~/.claude` content into public repos.** Files, snippets, paths, commit-message excerpts, ISA contents, hook code, skill code, identity fields — none of it goes into any public LifeOS fork, blog post, public Gist, social media, release artifact, or any other public surface.
 - **Never paste `~/.claude` content into web tools.** That includes diagram renderers, pastebins, online formatters, public LLM playgrounds — anything that could cache or index it.
 - **Never quote absolute `~/.claude` paths in public-destined output.** Public docs reference `${LIFEOS_DIR}` or relative paths. The release-time containment gates (G1-G14 in `skills/_LIFEOS/Tools/ShadowRelease.ts`, particularly G2 identity-grep and G9 username-path leak) catch hardcoded user-home paths before any public push. There is no runtime guard hook — the 2026-05-06 simplification consolidated enforcement to a single release-build pass. Don't write the leaks in the first place; the gates are a backstop, not a license.
-- **The `<your-release-skill>` skill's release workflow is the ONLY sanctioned path** that moves anything from `~/.claude` toward public visibility. It stages a copy under `~/.claude/LIFEOS_RELEASES/`, scrubs containment-zone violations against `hooks/lib/containment-zones.ts`, and gates publication on a zero-match audit. Never bypass it.
+- **The `<your-release-skill>` skill's release workflow is the ONLY sanctioned path** that moves anything from `~/.claude` toward public visibility. It stages a copy under `$LIFEOS_ROOT/LIFEOS_RELEASES/`, scrubs containment-zone violations against `hooks/lib/containment-zones.ts`, and gates publication on a zero-match audit. Never bypass it.
 - **When in doubt, don't share.** The cost of leaving something useful internal is zero; the cost of leaking identity, business data, or security context is permanent.
 
 This rule applies to every file under `~/.claude` regardless of subdirectory, every commit on this repo, every output produced while operating on this repo, and every artifact derived from it. The privacy boundary is the repository root.

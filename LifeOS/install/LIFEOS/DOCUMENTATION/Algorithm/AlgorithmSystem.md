@@ -66,7 +66,7 @@ A registry of known-good refactors **intentionally deferred** because they're pr
 
 **Status:** Deferred. Re-open trigger: a second concrete artifact-owner needs interview-shaped clarification.
 
-**Current state (N=1):** the ISA Interview workflow (`~/.claude/skills/ISA/Workflows/Interview.md`) walks an ISA's thin sections, asks one question at a time, writes answers back. Telos has a parallel-shape workflow (`~/.claude/skills/Telos/Workflows/Update.md`) performing single-section TELOS edits.
+**Current state (N=1):** the ISA Interview workflow (`$LIFEOS_ROOT/skills/ISA/Workflows/Interview.md`) walks an ISA's thin sections, asks one question at a time, writes answers back. Telos has a parallel-shape workflow (`$LIFEOS_ROOT/skills/Telos/Workflows/Update.md`) performing single-section TELOS edits.
 
 **Why not extract today:** at N=1.5 (ISA fully real, Telos parallel-but-different), DRY-ing into a shared `Clarify(artifact, schema, thin_section_detector, question_generator)` primitive would force a speculative API shape. The mechanic differs in cadence (per-task vs quarterly), audience (task-deliverable vs life-context), and detector logic (section-fillability vs TELOS-freshness staleness).
 

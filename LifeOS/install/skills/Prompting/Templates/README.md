@@ -120,7 +120,7 @@ Statistical reporting with confidence intervals.
 ### Basic Rendering
 
 ```bash
-bun run ~/.claude/skills/Prompting/Tools/RenderTemplate.ts \
+bun run $LIFEOS_ROOT/skills/Prompting/Tools/RenderTemplate.ts \
   --template Primitives/Roster.hbs \
   --data Data/Agents.yaml \
   --output Compiled/AgentRoster.md
@@ -164,7 +164,7 @@ bun run ~/.claude/skills/Prompting/Tools/RenderTemplate.ts \
 If anything breaks, rollback to v2.5.0:
 
 ```bash
-cd ~/.claude
+cd $LIFEOS_ROOT
 git checkout v2.5.0
 # Or to just undo templating:
 rm -rf Templates/
@@ -229,7 +229,7 @@ The RenderTemplate.ts engine provides these custom Handlebars helpers:
 ### Render a Template
 
 ```bash
-bun run ~/.claude/skills/Prompting/Tools/RenderTemplate.ts \
+bun run $LIFEOS_ROOT/skills/Prompting/Tools/RenderTemplate.ts \
   --template Primitives/Roster.hbs \
   --data Data/Agents.yaml \
   --output Compiled/AgentRoster.md
@@ -238,7 +238,7 @@ bun run ~/.claude/skills/Prompting/Tools/RenderTemplate.ts \
 ### Preview Without Writing
 
 ```bash
-bun run ~/.claude/skills/Prompting/Tools/RenderTemplate.ts \
+bun run $LIFEOS_ROOT/skills/Prompting/Tools/RenderTemplate.ts \
   --template Evals/Judge.hbs \
   --data path/to/judge-config.yaml \
   --preview
@@ -247,7 +247,7 @@ bun run ~/.claude/skills/Prompting/Tools/RenderTemplate.ts \
 ### Validate Template Syntax
 
 ```bash
-bun run ~/.claude/skills/Prompting/Tools/ValidateTemplate.ts \
+bun run $LIFEOS_ROOT/skills/Prompting/Tools/ValidateTemplate.ts \
   --template Primitives/Briefing.hbs \
   --data Data/sample-briefing.yaml
 ```
@@ -304,7 +304,7 @@ This system is based on research from:
 
 ## Related Documentation
 
-- `~/.claude/LIFEOS/Prompting.md` (Templating section)
-- `~/.claude/History/research/2025-12/2025-12-09-templating-system-research.md`
-- `~/.claude/History/learnings/2025-12/2025-12-09-021700_LEARNING_complete-templating-system-and-evals-integration.md`
-- `~/.claude/skills/Evals/SKILL.md`
+- `$LIFEOS_DIR/Prompting.md` (Templating section)
+- `$LIFEOS_ROOT/History/research/2025-12/2025-12-09-templating-system-research.md`
+- `$LIFEOS_ROOT/History/learnings/2025-12/2025-12-09-021700_LEARNING_complete-templating-system-and-evals-integration.md`
+- `$LIFEOS_ROOT/skills/Evals/SKILL.md`

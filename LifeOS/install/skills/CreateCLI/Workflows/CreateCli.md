@@ -279,7 +279,7 @@ const format = formatIdx !== -1 ? args[formatIdx + 1] : 'json';
 4. **Value flags**: `--flag <value>` for choices
 5. **Composable**: Flags should combine logically
 
-**Reference:** `~/.claude/LIFEOS/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Configuration Flags section)
+**Reference:** `$LIFEOS_DIR/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Configuration Flags section)
 
 ---
 
@@ -374,7 +374,7 @@ PHILOSOPHY:
   - Documented: Full help and examples
   - Testable: Predictable behavior
 
-For more information, see ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/README.md
+For more information, see $LIFEOS_DIR/TOOLS/{{CLI_NAME}}/README.md
 
 Version: 1.0.0
 `);
@@ -540,7 +540,7 @@ main().catch((error) => {
 
 ## Full Documentation
 
-See: ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/README.md
+See: $LIFEOS_DIR/TOOLS/{{CLI_NAME}}/README.md
 ```
 
 ---
@@ -606,7 +606,7 @@ See: ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/README.md
 
 **Validation Commands:**
 ```bash
-cd ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/
+cd $LIFEOS_DIR/TOOLS/{{CLI_NAME}}/
 chmod +x {{CLI_NAME}}.ts
 ./{{CLI_NAME}}.ts --help
 ./{{CLI_NAME}}.ts --version
@@ -614,7 +614,7 @@ chmod +x {{CLI_NAME}}.ts
 
 **Report to user:**
 ```
-✅ CLI Created: ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/
+✅ CLI Created: $LIFEOS_DIR/TOOLS/{{CLI_NAME}}/
 
 Files generated:
 - {{CLI_NAME}}.ts ({{LINE_COUNT}} lines)
@@ -629,7 +629,7 @@ Next steps:
 2. Test: ./{{CLI_NAME}}.ts --help
 3. Use: ./{{CLI_NAME}}.ts {{EXAMPLE_COMMAND}}
 
-Documentation: ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/README.md
+Documentation: $LIFEOS_DIR/TOOLS/{{CLI_NAME}}/README.md
 ```
 
 ---
@@ -641,7 +641,7 @@ Documentation: ~/.claude/LIFEOS/TOOLS/{{CLI_NAME}}/README.md
 
 **Generated Output:**
 ```
-✅ CLI Created: ~/.claude/LIFEOS/TOOLS/notioncli/
+✅ CLI Created: $LIFEOS_DIR/TOOLS/notioncli/
 
 Files generated:
 - notioncli.ts (342 lines)
@@ -660,7 +660,7 @@ Commands available:
 Next steps:
 1. Add `NOTION_API_KEY=your_key` to the LifeOS config root's `.env`
 2. Test: notioncli databases
-3. Read: ~/.claude/LIFEOS/TOOLS/notioncli/README.md
+3. Read: $LIFEOS_DIR/TOOLS/notioncli/README.md
 
 The CLI follows llcli pattern with type safety, error handling,
 and comprehensive documentation.
@@ -754,7 +754,7 @@ Show real usage examples, not just flag descriptions.
 Run `--help` and version command before reporting success.
 
 ### 8. **Follow llcli Pattern**
-Use proven structure from ~/.claude/LIFEOS/TOOLS/llcli/ as reference.
+Use proven structure from $LIFEOS_DIR/TOOLS/llcli/ as reference.
 
 ---
 

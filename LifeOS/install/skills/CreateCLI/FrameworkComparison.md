@@ -102,7 +102,7 @@ main().catch(error => {
 - ✅ Fast development priority
 
 ### Reference Implementation
-**Location:** `~/.claude/LIFEOS/TOOLS/llcli/llcli.ts` (327 lines)
+**Location:** `$LIFEOS_DIR/TOOLS/llcli/llcli.ts` (327 lines)
 **Commands:** today, date, search
 **Pattern:** Exactly what this tier generates
 
@@ -470,7 +470,7 @@ Check dist/ folder size. Tier 1 CLIs are <100 KB.
 ---
 
 **Sources:**
-- llcli production implementation (~/.claude/LIFEOS/TOOLS/llcli/)
+- llcli production implementation ($LIFEOS_DIR/TOOLS/llcli/)
 - Commander.js 12.x documentation
 - oclif core documentation
 - Perplexity research (32 sub-queries on CLI frameworks)

@@ -10,7 +10,7 @@ effort: medium
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Art/`
+`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Art/`
 
 If this directory exists, load and apply:
 - `PREFERENCES.md` - Aesthetic preferences, default model, output location
@@ -71,7 +71,7 @@ Reading the workflow's caps-warning, mentally noting "do the workflow," then com
 ### Workflow → command (copy-paste)
 
 ```bash
-bun ~/.claude/skills/Art/Tools/Generate.ts \
+bun $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
   --workflow=<WorkflowName> \
   --model nano-banana-pro \
   --prompt "..." \
@@ -199,7 +199,7 @@ Route to the appropriate workflow based on the request.
 - Character design specifications
 - Scene composition rules
 
-**Load from:** `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Art/PREFERENCES.md`
+**Load from:** `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Art/PREFERENCES.md`
 
 ---
 
@@ -207,7 +207,7 @@ Route to the appropriate workflow based on the request.
 
 **User customization** may include reference images for consistent style.
 
-Check `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Art/PREFERENCES.md` for:
+Check `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Art/PREFERENCES.md` for:
 - Reference image locations
 - Style examples by use case
 - Character and scene reference guidance
@@ -351,7 +351,7 @@ User: "create icon for the skill system pack"
 - **`--remove-bg` is unsafe for thin-linework technical diagrams.** rembg classifies thin black ink on a light field as "background" and strips it, leaving a near-empty ghost. Documented 2026-05-11 on the free-will flowchart. Mitigations: (a) prompt for *thick* saturated linework first so rembg has a strong signal, or (b) skip `--remove-bg` entirely when the destination background matches the image's background (blog page is sepia #EAE9DF — opaque sepia diagram on sepia page composites with zero visible seam, no alpha needed).
 - **Logo fidelity breaks in 3D/perspective scenes even with a reference image.** Documented 2026-06-11 on the UL wallpaper set: straight-on and macro scenes held the glyph topology in 7/7 rolls, but the isometric 3D scene closed the open mark into a loop and dropped its isolated dot. For any perspective/3D composition with a logo, add topology-locked negative language to the prompt ("do not close the shape into a loop", "do not omit the isolated dot", name every stroke and terminal) on top of `--reference-image`, and vision-verify the topology specifically.
 - **nano-banana-pro "4K 16:9" is actually 5504×3072 (43:24, ~0.8% wider than 16:9), saved as .jpg even when `--output` says .png.** Disclose the native ratio when the spec says 16:9, and probe the real filename before Read/delivery.
-- **White-box-on-cream bug (2026-06-20): flattening an OPAQUE jpeg on `#EAE9DF` is a no-op.** nano-banana-pro returns an opaque JPEG; `magick -background "#EAE9DF" -flatten` only fills *alpha*, so the model's baked near-white ground survives and paints a white rectangle on the cream blog page ("it has a fucking white background"). For inline blog headers, cut true alpha FIRST (`bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts`), then derive the WebP, and verify `identify -format "%[channels]" inline.webp` == `srgba`. Opaque-sepia inline is valid ONLY on an image that already has alpha. See Essay.md Step 7.0.5.
+- **White-box-on-cream bug (2026-06-20): flattening an OPAQUE jpeg on `#EAE9DF` is a no-op.** nano-banana-pro returns an opaque JPEG; `magick -background "#EAE9DF" -flatten` only fills *alpha*, so the model's baked near-white ground survives and paints a white rectangle on the cream blog page ("it has a fucking white background"). For inline blog headers, cut true alpha FIRST (`bun $LIFEOS_DIR/TOOLS/RemoveBg.ts`), then derive the WebP, and verify `identify -format "%[channels]" inline.webp` == `srgba`. Opaque-sepia inline is valid ONLY on an image that already has alpha. See Essay.md Step 7.0.5.
 - **Essay headers: run the Step 5A Best-Image Deliberation before prompting (2026-07-09 principal directive).** Subject-list prompts produce rejected flat tableaus; a composition reasoned deeply from the essay's specific argument — scene concepts compared, every element given a narrative role, connected structure — produces accepted images. The deliberation is the mandatory step; devices like cutaways are possible outcomes, not rules. See Essay.md Step 5A.
 - **Interior-white ban (2026-07-09, "giant white space" incident):** prompt large flat surfaces (desks, panels, windows, paper) as "warm cream paper tone", never bright white or unstated — baked-white interiors survive rembg intact and render as giant white rectangles on the cream page. Inside-the-subject sibling of the 2026-06-20 white-box bug. Also trim white padding off any external screenshot before embedding (`magick -fuzz 4% -trim` + sepia border).
 - **Reference-image edits: negative text loses to the reference (2026-07-09 studio-background session).** When nano-banana-pro keeps reproducing an unwanted object that exists in the reference photo (e.g. a second floor lamp), "do NOT add/duplicate" prompt language fails ~7/8 rolls — the model preserves what it sees over what you forbid. Fix: roll until ONE output has the corrected composition, then use THAT output as the new `--reference-image` for the remaining variations; compliance jumped to 7/7. Editing the reference beats describing the edit.
@@ -362,7 +362,7 @@ User: "create icon for the skill system pack"
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Art","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> ~/.claude/LIFEOS/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Art","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

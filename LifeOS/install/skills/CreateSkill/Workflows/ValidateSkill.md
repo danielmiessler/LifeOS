@@ -20,7 +20,7 @@ Running the **ValidateSkill** workflow in the **CreateSkill** skill to validate 
 **REQUIRED FIRST:** Read the canonical structure:
 
 ```
-~/.claude/LIFEOS/DOCUMENTATION/Skills/SkillSystem.md
+$LIFEOS_DIR/DOCUMENTATION/Skills/SkillSystem.md
 ```
 
 ---
@@ -28,7 +28,7 @@ Running the **ValidateSkill** workflow in the **CreateSkill** skill to validate 
 ## Step 2: Read the Target Skill
 
 ```bash
-~/.claude/skills/[SkillName]/SKILL.md
+$LIFEOS_ROOT/skills/[SkillName]/SKILL.md
 ```
 
 ---
@@ -37,7 +37,7 @@ Running the **ValidateSkill** workflow in the **CreateSkill** skill to validate 
 
 ### Skill Directory
 ```bash
-ls ~/.claude/skills/ | grep -i [skillname]
+ls $LIFEOS_ROOT/skills/ | grep -i [skillname]
 ```
 
 Verify TitleCase:
@@ -46,7 +46,7 @@ Verify TitleCase:
 
 ### Workflow Files
 ```bash
-ls ~/.claude/skills/[SkillName]/Workflows/
+ls $LIFEOS_ROOT/skills/[SkillName]/Workflows/
 ```
 
 Verify TitleCase:
@@ -55,7 +55,7 @@ Verify TitleCase:
 
 ### Tool Files
 ```bash
-ls ~/.claude/skills/[SkillName]/Tools/
+ls $LIFEOS_ROOT/skills/[SkillName]/Tools/
 ```
 
 Verify TitleCase:
@@ -148,7 +148,7 @@ Common confusable pairs to check: research-style skills (Research vs investigati
 Every skill ships with the LifeOS public release. Verify the skill is clean of personal/sensitive content:
 
 ```bash
-rg -i "danielmiessler|unsupervised|ULAdmin|thesurface|human3|ul\.live|/Users/[a-z]+/" ~/.claude/skills/[SkillName]/
+rg -i "danielmiessler|unsupervised|ULAdmin|thesurface|human3|ul\.live|/Users/[a-z]+/" $LIFEOS_ROOT/skills/[SkillName]/
 ```
 
 **Check for violations:**
@@ -158,7 +158,7 @@ rg -i "danielmiessler|unsupervised|ULAdmin|thesurface|human3|ul\.live|/Users/[a-
 - User-specific absolute paths (`/Users/<name>/...`) — use `~/` instead
 - Personal domain names (<author>.example, <product>.example, <brand>.example) — unless the skill is specifically about operating that domain
 
-**Zero matches = PASS.** Any match = FAIL, recommend moving to `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/` or rewriting in generic language.
+**Zero matches = PASS.** Any match = FAIL, recommend moving to `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/` or rewriting in generic language.
 
 ---
 
@@ -176,7 +176,7 @@ Apply the bitter lesson test to the skill's instructions:
 ## Step 6: Check Workflow Files
 
 ```bash
-ls ~/.claude/skills/[SkillName]/Workflows/
+ls $LIFEOS_ROOT/skills/[SkillName]/Workflows/
 ```
 
 Verify:
@@ -190,7 +190,7 @@ Verify:
 ## Step 7: Check Structure
 
 ```bash
-ls -la ~/.claude/skills/[SkillName]/
+ls -la $LIFEOS_ROOT/skills/[SkillName]/
 ```
 
 Verify:
@@ -208,7 +208,7 @@ Verify:
 
 Check each tool for flag-based configuration:
 ```bash
-bun ~/.claude/skills/[SkillName]/Tools/[ToolName].ts --help
+bun $LIFEOS_ROOT/skills/[SkillName]/Tools/[ToolName].ts --help
 ```
 
 Verify the tool exposes behavioral configuration via flags:
@@ -222,7 +222,7 @@ Verify the tool exposes behavioral configuration via flags:
 For workflows that call CLI tools, check for intent-to-flag mapping tables:
 
 ```bash
-grep -l "Intent-to-Flag" ~/.claude/skills/[SkillName]/Workflows/*.md
+grep -l "Intent-to-Flag" $LIFEOS_ROOT/skills/[SkillName]/Workflows/*.md
 ```
 
 **Required pattern in workflows with CLI tools:**
@@ -235,7 +235,7 @@ grep -l "Intent-to-Flag" ~/.claude/skills/[SkillName]/Workflows/*.md
 | (default) | `--model sonnet` | Balanced |
 ```
 
-**Reference:** `~/.claude/LIFEOS/DOCUMENTATION/Tools/CliFirstArchitecture.md`
+**Reference:** `$LIFEOS_DIR/DOCUMENTATION/Tools/CliFirstArchitecture.md`
 
 ---
 

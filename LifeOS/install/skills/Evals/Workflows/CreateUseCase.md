@@ -34,12 +34,12 @@ Ask the user:
 ### Step 2: Create Use Case Directory
 
 ```bash
-mkdir -p ~/.claude/skills/Evals/UseCases/<name>/{test-cases,golden-outputs,prompts}
+mkdir -p $LIFEOS_ROOT/skills/Evals/UseCases/<name>/{test-cases,golden-outputs,prompts}
 ```
 
 ### Step 3: Create Config File
 
-Create `~/.claude/skills/Evals/UseCases/<name>/config.yaml`:
+Create `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/config.yaml`:
 
 ```yaml
 name: <use_case_name>
@@ -97,7 +97,7 @@ models:
 
 ### Step 4: Create Initial Prompt Version
 
-Create `~/.claude/skills/Evals/UseCases/<name>/prompts/v1.0.0.md`:
+Create `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/prompts/v1.0.0.md`:
 
 ```markdown
 # <Task Name> Prompt v1.0.0
@@ -121,7 +121,7 @@ Create `~/.claude/skills/Evals/UseCases/<name>/prompts/v1.0.0.md`:
 
 ### Step 5: Create Test Cases
 
-Create test cases in `~/.claude/skills/Evals/UseCases/<name>/test-cases/`:
+Create test cases in `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/test-cases/`:
 
 Each test case is a YAML file:
 
@@ -173,7 +173,7 @@ Golden outputs serve as:
 
 ### Step 7: Create README
 
-Create `~/.claude/skills/Evals/UseCases/<name>/README.md`:
+Create `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/README.md`:
 
 ```markdown
 # <Use Case Name>
@@ -208,7 +208,7 @@ Create `~/.claude/skills/Evals/UseCases/<name>/README.md`:
 ## Running Evaluations
 
 \`\`\`bash
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <name>
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <name>
 \`\`\`
 
 ## Version History
@@ -220,18 +220,18 @@ bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <name>
 
 ```bash
 # Check structure
-ls -la ~/.claude/skills/Evals/UseCases/<name>/
+ls -la $LIFEOS_ROOT/skills/Evals/UseCases/<name>/
 
 # Validate suite via SuiteManager
-bun run ~/.claude/skills/Evals/Tools/SuiteManager.ts show <name>
+bun run $LIFEOS_ROOT/skills/Evals/Tools/SuiteManager.ts show <name>
 ```
 
 ### Step 9: Run Initial Eval
 
 ```bash
 # Run first evaluation to verify setup
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <name>
-cat ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<name>/$(ls -1t ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<name>/ | head -1)/results.json | jq '.summary'
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <name>
+cat $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<name>/$(ls -1t $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<name>/ | head -1)/results.json | jq '.summary'
 ```
 
 Review:

@@ -39,27 +39,27 @@ Thread 0 output gates synthesis. No recommendation may be emitted without a Prio
 Spawn 5 parallel agents (`subagent_type=Explore`) to inventory current LifeOS state. Each returns an inventory with file:line evidence.
 
 **Agent 0a — Algorithm & Capabilities**
-Read: `~/.claude/LIFEOS/ALGORITHM/LATEST` + the file it points to, `mode-detection.md`, `~/.claude/LIFEOS/DOCUMENTATION/Algorithm/AlgorithmSystem.md`.
+Read: `$LIFEOS_DIR/ALGORITHM/LATEST` + the file it points to, `mode-detection.md`, `$LIFEOS_DIR/DOCUMENTATION/Algorithm/AlgorithmSystem.md`.
 Extract: phase definitions and gates, verification doctrine (advisor rules, live-probe, conflict resolution), preflight gates, capabilities table, mode-detection triggers, browser-first / env-probe / feedback-memory-lookup / parallelization rules.
 Return: state inventory with file:line evidence, ≤500 words.
 
 **Agent 0b — Security Patterns & Inspectors**
-Read: `~/.claude/hooks/Safety.hook.ts`, `~/.claude/hooks/lib/safety-classifier.ts`, `~/.claude/settings.json` (the `permissions.deny` block).
+Read: `$LIFEOS_ROOT/hooks/Safety.hook.ts`, `$LIFEOS_ROOT/hooks/lib/safety-classifier.ts`, `$LIFEOS_ROOT/settings.json` (the `permissions.deny` block).
 Extract: every pattern category the classifier matches (name + shape + action), Bash bypass coverage (backslash-escaped flags, /dev/tcp/, /dev/udp/, env-var-prefixed commands, /proc/, git filter-branch, ptrace), deny/ask/allow precedence.
 Return: inventory with file:line evidence; flag what's present AND what's missing.
 
 **Agent 0c — Hooks & Settings**
-Read: `~/.claude/settings.json` (hooks, env, permissions, pai sections); list `~/.claude/hooks/*.hook.ts`.
+Read: `$LIFEOS_ROOT/settings.json` (hooks, env, permissions, pai sections); list `$LIFEOS_ROOT/hooks/*.hook.ts`.
 Extract: hook inventory by event (SessionStart, PreToolUse, PostToolUse, Stop, PreCompact, etc.), orphaned hooks (on disk but unwired), empty event arrays, notable env/permission/pai values.
 Return: inventory with file:line evidence; flag wiring gaps.
 
 **Agent 0d — Recent Decisions & Feedback Memory**
-Scan: top 20 most-recent `~/.claude/LIFEOS/MEMORY/WORK/` dirs (skim ISAs), `MEMORY/KNOWLEDGE/`, `MEMORY/LEARNING/`, `~/.claude/projects/${HARNESS_USER_DIR}/memory/feedback_*.md`, `project_*.md`.
+Scan: top 20 most-recent `$LIFEOS_DIR/MEMORY/WORK/` dirs (skim ISAs), `MEMORY/KNOWLEDGE/`, `MEMORY/LEARNING/`, `~/.claude/projects/${HARNESS_USER_DIR}/memory/feedback_*.md`, `project_*.md`.
 Extract: recent decisions affecting upgrades (rejected/deferred/completed), relevant feedback entries, KNOWLEDGE entries that explicitly evaluated proposals.
 Return: inventory with paths; flag anything that would DENY a future recommendation.
 
 **Agent 0e — Skill Surface**
-Scan: `~/.claude/skills/*/SKILL.md` (description fields), `~/.claude/skills/_LIFEOS/TOOLS/*.ts`, `~/.claude/skills/CreateSkill/Tools/*.ts` (validators).
+Scan: `$LIFEOS_ROOT/skills/*/SKILL.md` (description fields), `$LIFEOS_ROOT/skills/_LIFEOS/TOOLS/*.ts`, `$LIFEOS_ROOT/skills/CreateSkill/Tools/*.ts` (validators).
 Extract: skill counts/categories, existence of Monitor/Advisor/PreCompact wrappers, CreateSkill description-length cap, ToolActivityTracker capture scope (diffs? stdout? git state?).
 Return: inventory with file:line evidence.
 
@@ -69,11 +69,11 @@ Return: inventory with file:line evidence.
 
 Spawn 4 parallel agents (`subagent_type=general-purpose`):
 
-**Agent 1 — TELOS:** read `~/.claude/LIFEOS/USER/TELOS/*.md`. Extract current high-priority goals, active focus areas, key challenges, project themes.
+**Agent 1 — TELOS:** read `$LIFEOS_DIR/USER/TELOS/*.md`. Extract current high-priority goals, active focus areas, key challenges, project themes.
 
-**Agent 2 — Recent Work:** read `~/.claude/LIFEOS/MEMORY/STATE/work.json` and recent `MEMORY/WORK/` dirs (last 7 days). Extract active projects, recurring patterns, open tasks, recent accomplishments.
+**Agent 2 — Recent Work:** read `$LIFEOS_DIR/MEMORY/STATE/work.json` and recent `MEMORY/WORK/` dirs (last 7 days). Extract active projects, recurring patterns, open tasks, recent accomplishments.
 
-**Agent 3 — LifeOS State:** list `~/.claude/skills/`, `~/.claude/hooks/`, read `~/.claude/settings.json`. Extract installed skills, active hooks, configuration highlights, obvious gaps or opportunities.
+**Agent 3 — LifeOS State:** list `$LIFEOS_ROOT/skills/`, `$LIFEOS_ROOT/hooks/`, read `$LIFEOS_ROOT/settings.json`. Extract installed skills, active hooks, configuration highlights, obvious gaps or opportunities.
 
 **Agent 4 — Tech Stack:** from PROJECTS.md and recent work, identify primary languages, frameworks, deployment targets, key integrations.
 
@@ -86,17 +86,17 @@ Run: `bun ${LIFEOS_SKILL_DIR}/Tools/Anthropic.ts`.
 For each finding (release notes, GitHub commits, doc updates), extract specific techniques: exact syntax/API/configuration, quoted documentation showing usage, which LifeOS component this improves, before/after code where applicable. Skip findings with no concrete technique. Do NOT return vague "new release available" entries.
 
 **Agent 2 — YouTube Channels**
-1. Load channel config: `bun ~/.claude/LIFEOS/TOOLS/LoadSkillConfig.ts ../youtube-channels.json`.
+1. Load channel config: `bun $LIFEOS_DIR/TOOLS/LoadSkillConfig.ts ../youtube-channels.json`.
 2. For each channel: `yt-dlp --flat-playlist --dump-json 'https://www.youtube.com/@channelhandle/videos' 2>/dev/null | head -5`.
 3. Compare against `../State/youtube-videos.json`.
-4. For new videos: `bun ~/.claude/LIFEOS/TOOLS/GetTranscript.ts '<video-url>'`.
+4. For new videos: `bun $LIFEOS_DIR/TOOLS/GetTranscript.ts '<video-url>'`.
 5. From each transcript, extract specific techniques: code patterns, configurations, command examples, with timestamps and exact quotes. Skip videos with no extractable techniques.
 
 **Agent 3 — Custom Sources**
-Check `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Upgrade/` for additional source definitions beyond YouTube and GitHub trending. If sources exist, check them for updates. Return findings, or empty list with note "No custom sources configured".
+Check `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Upgrade/` for additional source definitions beyond YouTube and GitHub trending. If sources exist, check them for updates. Return findings, or empty list with note "No custom sources configured".
 
 **Agent 4 — GitHub Trending**
-1. Load `github_trending` config from `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Upgrade/user-sources.json`. If `enabled: false` or missing, return `{ github_trending: false, note: "disabled or not configured" }`.
+1. Load `github_trending` config from `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Upgrade/user-sources.json`. If `enabled: false` or missing, return `{ github_trending: false, note: "disabled or not configured" }`.
 2. `LOOKBACK_DATE = today - lookback_days` (default 14).
 3. For each `query` in `github_trending.queries`:
    ```bash
@@ -122,7 +122,7 @@ Output feeds Step 5 (Filter and Score) as source type `Claude Code Guide` and is
 
 Spawn 1 parallel agent (`subagent_type=general-purpose`):
 
-Read `~/.claude/LIFEOS/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl`. Full methodology: `Workflows/MineReflections.md`. Quick summary:
+Read `$LIFEOS_DIR/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl`. Full methodology: `Workflows/MineReflections.md`. Quick summary:
 1. Parse each line as JSON.
 2. Prioritize entries with `implied_sentiment <= 5`, `within_budget: false`, or `criteria_failed > 0`.
 3. Cluster Q2 answers (algorithm improvements) by similarity.

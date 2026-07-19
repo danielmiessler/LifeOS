@@ -182,7 +182,7 @@ interface StopPayload extends BasePayload {
 | `Safety.hook.ts` | WebFetch / WebSearch | Tag external content with "treat as data" warning + injection-shape marker. Same file as the PermissionRequest hook below; dispatches by event. | No | `lib/safety-classifier.ts` |
 | `QuestionAnswered.hook.ts` | AskUserQuestion | Reset tab state after question answered | No | Kitty terminal |
 | `ISASync.hook.ts` | Edit / Write / MultiEdit | Sync ISA frontmatter → `work.json` + KV push | No | `MEMORY/WORK/`, `work.json` |
-| `CheckpointPerISC.hook.ts` | Edit / Write / MultiEdit | Auto-commit per-ISC durability checkpoint | No | `~/.claude/checkpoint-repos.txt` |
+| `CheckpointPerISC.hook.ts` | Edit / Write / MultiEdit | Auto-commit per-ISC durability checkpoint | No | `$LIFEOS_ROOT/checkpoint-repos.txt` |
 | `TelosSummarySync.hook.ts` | Edit / Write / MultiEdit | Regenerate `PRINCIPAL_TELOS.md` on TELOS edits | No | `GenerateTelosSummary.ts` |
 | `ToolActivityTracker.hook.ts` | (catch-all) | Ground-truth audit log of every tool call | No | `MEMORY/OBSERVABILITY/tool-activity.jsonl` |
 
@@ -413,8 +413,8 @@ Hooks are configured in `settings.json` under the `hooks` key:
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "$HOME/.claude/hooks/KittyEnvPersist.hook.ts" },
-          { "type": "command", "command": "$HOME/.claude/hooks/LoadContext.hook.ts" }
+          { "type": "command", "command": "$LIFEOS_ROOT/hooks/KittyEnvPersist.hook.ts" },
+          { "type": "command", "command": "$LIFEOS_ROOT/hooks/LoadContext.hook.ts" }
         ]
       }
     ],
@@ -422,7 +422,7 @@ Hooks are configured in `settings.json` under the `hooks` key:
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "$HOME/.claude/hooks/ContextReduction.hook.sh" }
+          { "type": "command", "command": "$LIFEOS_ROOT/hooks/ContextReduction.hook.sh" }
         ]
       }
     ],
@@ -430,7 +430,7 @@ Hooks are configured in `settings.json` under the `hooks` key:
       {
         "matcher": "WebFetch",
         "hooks": [
-          { "type": "command", "command": "$HOME/.claude/hooks/Safety.hook.ts" }
+          { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts" }
         ]
       }
     ],
@@ -438,7 +438,7 @@ Hooks are configured in `settings.json` under the `hooks` key:
       {
         "matcher": "Write|Edit|MultiEdit|Bash",
         "hooks": [
-          { "type": "command", "command": "$HOME/.claude/hooks/Safety.hook.ts" }
+          { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts" }
         ]
       }
     ]
@@ -579,7 +579,7 @@ When modifying ANY hook:
 
 1. Verify `Safety.hook.ts` registered on `PermissionRequest` with matcher `Write|Edit|MultiEdit|Bash`
 2. Test: `echo '{"session_id":"t","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"ls /tmp"}}' | bun hooks/Safety.hook.ts` — should emit `{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}`
-3. Tail observability: `tail -f ~/.claude/LIFEOS/MEMORY/OBSERVABILITY/permission-decisions.jsonl`
+3. Tail observability: `tail -f $LIFEOS_DIR/MEMORY/OBSERVABILITY/permission-decisions.jsonl`
 
 ---
 

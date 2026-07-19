@@ -85,7 +85,7 @@ This step matters — bad eval queries lead to bad descriptions.
 First, collect all skill names and descriptions:
 
 ```bash
-rg '^(name|description):' ~/.claude/skills/*/SKILL.md ~/.claude/skills/*/*/SKILL.md --no-filename 2>/dev/null | head -200
+rg '^(name|description):' $LIFEOS_ROOT/skills/*/SKILL.md $LIFEOS_ROOT/skills/*/*/SKILL.md --no-filename 2>/dev/null | head -200
 ```
 
 Then spawn a **single** Agent subagent that evaluates ALL queries at once (batching avoids 20+ separate agent spawns):

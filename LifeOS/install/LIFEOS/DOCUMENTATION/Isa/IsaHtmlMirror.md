@@ -11,7 +11,7 @@ The ISA is the canonical articulation of "done" for any Algorithm run. It lives 
 
 ## Canonical Theme — UL Technical v1.0.0 (2026-05-13)
 
-**The UL Technical theme is the official HTML format for every ISA in the system going forward.** Tokyo-Night-Storm-derived dark navy ground (`--ul-bg-base: #0d1325`), JetBrains Mono throughout, lavender-white type, calm cyan/violet accents, status-pill ISC rows that read "OPEN / DONE / WIP / ANTI / ANTE" at a glance. Lives at `~/.claude/LIFEOS/TOOLS/ISARender/template.css`.
+**The UL Technical theme is the official HTML format for every ISA in the system going forward.** Tokyo-Night-Storm-derived dark navy ground (`--ul-bg-base: #0d1325`), JetBrains Mono throughout, lavender-white type, calm cyan/violet accents, status-pill ISC rows that read "OPEN / DONE / WIP / ANTI / ANTE" at a glance. Lives at `$LIFEOS_DIR/TOOLS/ISARender/template.css`.
 
 **Lineage.** The theme was specified by the Pulse-side parent design at `MEMORY/WORK/20260513-pulse-ul-theme-2-hackery-dark-blue/ISA.md` (token palette, naming convention, dimension preservation rules) and applied to the ISA mirror surface by `MEMORY/WORK/20260513-isa-html-mirror-redesign-dark-hackery/ISA.md` plus the status-clarity refinement at `MEMORY/WORK/20260513-isa-template-status-clarity-canonize-backfill/ISA.md`.
 
@@ -48,7 +48,7 @@ Three trigger primitives. None of them fire during in-flight authoring. The user
 |---|---|---|
 | **Initial completion** | `ISASync.hook.ts` (PostToolUse Edit/Write) | Frontmatter `phase:` transitions to the literal string `complete`. The render produces the sibling `ISA.html` for the first time. |
 | **Post-completion update batch** | `ISARenderOnStop.hook.ts` (Stop event) | The assistant's turn ends, and at least one ISA was edited during the turn, AND that ISA has **reached completion at least once**. The fast signal is an existing `<dir-of-ISA.md>/ISA.html`; the cold-path signal (html missing) reads the frontmatter directly — `phase: complete`, `iteration > 1`, or a `resumed_from_phase` marker. Pre-completion edits on a brand-new iteration-1 ISA never fire. |
-| **Manual** | direct CLI / `/render-isa` slash command | The operator invokes `bun ~/.claude/LIFEOS/TOOLS/ISARender.ts <slug-or-path>` from any shell. Bypasses the completion gate. Always works. |
+| **Manual** | direct CLI / `/render-isa` slash command | The operator invokes `bun $LIFEOS_DIR/TOOLS/ISARender.ts <slug-or-path>` from any shell. Bypasses the completion gate. Always works. |
 
 The completion gate is the doctrinal centerpiece — "has this ISA ever been completed?", with `ISA.html` existence as the fast proxy and the frontmatter as the cold-path backstop. It means:
 - During the FIRST authoring pass (iteration 1, never completed), the ISA churns; no render fires.
@@ -58,11 +58,11 @@ The completion gate is the doctrinal centerpiece — "has this ISA ever been com
 
 ## The engine
 
-`~/.claude/LIFEOS/TOOLS/ISARender.ts` — single Bun script, ~470 LOC, hand-rolled ISA-aware markdown parser. No external dependencies; no `marked`, no Handlebars, no Bun install side effects.
+`$LIFEOS_DIR/TOOLS/ISARender.ts` — single Bun script, ~470 LOC, hand-rolled ISA-aware markdown parser. No external dependencies; no `marked`, no Handlebars, no Bun install side effects.
 
 | Surface | Behavior |
 |---|---|
-| Invocation | `bun ~/.claude/LIFEOS/TOOLS/ISARender.ts <slug-or-path>` |
+| Invocation | `bun $LIFEOS_DIR/TOOLS/ISARender.ts <slug-or-path>` |
 | Slug resolution | path → resolved directly; slug → looked up via `MEMORY/STATE/work.json`, or by scanning `MEMORY/WORK/` for a matching directory name |
 | Output | `<dir-of-ISA.md>/ISA.html`, atomically written via `tmp + rename` |
 | Cold render | ~25ms wall-clock on a typical E4 ISA |
@@ -114,7 +114,7 @@ Key behavior:
 ## File layout
 
 ```
-~/.claude/
+$LIFEOS_ROOT/
 ├── LIFEOS/TOOLS/
 │   ├── ISARender.ts                          # CLI entry point
 │   └── ISARender/

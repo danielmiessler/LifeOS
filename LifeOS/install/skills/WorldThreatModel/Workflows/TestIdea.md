@@ -16,7 +16,7 @@ to assess viability across time horizons.
 
 ## Prerequisites
 
-- World models must exist at `~/.claude/LIFEOS/MEMORY/RESEARCH/WorldModels/`
+- World models must exist at `$LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/`
 - If models don't exist, prompt user to run UpdateModels workflow first
 
 ## Tier Detection
@@ -31,7 +31,7 @@ Detect from user prompt:
 ### Step 0: Validate Models Exist
 
 ```
-Check ~/.claude/LIFEOS/MEMORY/RESEARCH/WorldModels/ for all 11 model files.
+Check $LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/ for all 11 model files.
 If any missing: "World models incomplete. Run 'update world models' first."
 If models older than 30 days: warn user but proceed.
 ```
@@ -59,7 +59,7 @@ For **Standard and Deep tiers:** Invoke FirstPrinciples skill to classify assump
 
 ### Step 3: Run Against World Models
 
-Read all 11 model files from `~/.claude/LIFEOS/MEMORY/RESEARCH/WorldModels/`.
+Read all 11 model files from `$LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/`.
 
 #### Fast Tier (~2 min)
 Single-agent analysis:

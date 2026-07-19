@@ -15,8 +15,8 @@ version: 1.2.50
 
 **Event-Driven Automation Infrastructure**
 
-**Location:** `~/.claude/hooks/`
-**Configuration:** `~/.claude/settings.json` (GENERATED — merged from `settings.system.json` + `LIFEOS/USER/CONFIG/settings.user.json` by `MergeSettings.ts`; for events the user file defines as a plain array — UserPromptSubmit, PostToolUse, PreToolUse, Stop, SessionEnd — the user array REPLACES the system array, so `settings.json` is the only registration truth)
+**Location:** `$LIFEOS_ROOT/hooks/`
+**Configuration:** `$LIFEOS_ROOT/settings.json` (GENERATED — merged from `settings.system.json` + `LIFEOS/USER/CONFIG/settings.user.json` by `MergeSettings.ts`; for events the user file defines as a plain array — UserPromptSubmit, PostToolUse, PreToolUse, Stop, SessionEnd — the user array REPLACES the system array, so `settings.json` is the only registration truth)
 **Status:** Active — hook count auto-computed by `UpdateCounts.ts` at session end
 
 > **Post-consolidation state (2026-07-11 hooks-BPE pass).** 30 distinct `.hook.ts` files are registered in `settings.json` (31 counting `ContextReduction.hook.sh`), plus 2 Pulse HTTP routes; **38 `.hook.ts` files exist on disk.** The 8 files that are on disk but NOT registered directly are not dead — each is imported as a `run()`/`check()` module by a consolidating dispatcher and still runnable standalone via its own shim: `SystemFileGuard`, `CommunicationSkillGuard`, `EgressClassGuard` → `PreToolGuard`; `VerificationGate`, `WritingGate` → `StopGates`; `LoadMemory`, `MemoryDeltaSurface` → `MemoryTurnStart`; `LoopDetector` → `PostToolObserver`. The consolidation retired `TheRouter` entirely (mode/tier classification abolished; model rungs now live in `LIFEOS/TOOLS/models.ts` + `AgentInvocation.hook.ts`) and folded a family of single-purpose loggers/gates/painters into `EventLogger`, `TabState`, `StopGates`, `MemoryTurnStart`, `MemoryReviewFire`, and `PostToolObserver`. Details per event below.
@@ -30,13 +30,13 @@ The LifeOS hook system is an event-driven automation infrastructure built on Cla
 **Core Capabilities:**
 - **Session Management** - Auto-load context, capture summaries, manage state
 - **Voice Notifications** - Text-to-speech announcements for task completions
-- **History Capture** - Automatic work/learning documentation to `~/.claude/LIFEOS/MEMORY/`
+- **History Capture** - Automatic work/learning documentation to `$LIFEOS_DIR/MEMORY/`
 - **Security Validation** - Active (v5+, consolidated 2026-05-14) — Single `Safety.hook.ts` dispatching by `hook_event_name`: PermissionRequest gates outgoing tool calls via the shape classifier in `lib/safety-classifier.ts` (auto-allows safe shapes, neutral on dangerous/credential/injection); PostToolUse tags WebFetch/WebSearch responses with the "treat as data" warning + injection marker. Replaces the prior split between `SmartApprover.hook.ts` and `PromptInjection.hook.ts`. The v4.0 Inspector Pipeline was deleted 2026-05-06. See `LIFEOS/DOCUMENTATION/Security/README.md`.
 - **Multi-Agent Support** - Agent-specific hooks with voice routing
 - **Tab Titles** - Dynamic terminal tab updates with task context
 - **Unified Event Stream** - All hooks emit structured events to `events.jsonl` for real-time observability
 
-**Key Principle:** Most hooks run asynchronously and fail gracefully. Security hooks (e.g. `hooks/Safety.hook.ts`) are synchronous — the PermissionRequest path emits `decision: allow` JSON when safe (otherwise stdout is empty and the native engine prompts). All `.ts` hooks have `#!/usr/bin/env bun` shebangs and `+x` permissions — settings.json references them directly (e.g., `$HOME/.claude/hooks/Safety.hook.ts`) without a `bun` prefix. HTTP hooks (SkillGuard, AgentGuard) run via Pulse routes on `localhost:31337`.
+**Key Principle:** Most hooks run asynchronously and fail gracefully. Security hooks (e.g. `hooks/Safety.hook.ts`) are synchronous — the PermissionRequest path emits `decision: allow` JSON when safe (otherwise stdout is empty and the native engine prompts). All `.ts` hooks have `#!/usr/bin/env bun` shebangs and `+x` permissions — settings.json references them directly (e.g., `$LIFEOS_ROOT/hooks/Safety.hook.ts`) without a `bun` prefix. HTTP hooks (SkillGuard, AgentGuard) run via Pulse routes on `localhost:31337`.
 
 **Freshness Authority:** When adding or modifying hooks, consult the `claude-code-guide` agent to verify current hook event types, return value schemas, and available fields.
 
@@ -59,11 +59,11 @@ Claude Code supports the following hook events:
   "SessionStart": [
     {
       "hooks": [
-        { "type": "command", "command": "bun $HOME/.claude/hooks/HookHealer.hook.ts", "timeout": 10 },
-        { "type": "command", "command": "$HOME/.claude/hooks/KittyEnvPersist.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/LoadContext.hook.ts" },
-        { "type": "command", "command": "bun $HOME/.claude/LIFEOS/TOOLS/FreshnessCache.ts --quiet", "timeout": 5, "async": true },
-        { "type": "command", "command": "bun $HOME/.claude/LIFEOS/TOOLS/SettingsBackport.ts; bun $HOME/.claude/LIFEOS/TOOLS/MergeSettings.ts --system $HOME/.claude/settings.system.json --user $HOME/.claude/LIFEOS/USER/CONFIG/settings.user.json --output $HOME/.claude/settings.json", "timeout": 15, "async": true }
+        { "type": "command", "command": "bun $LIFEOS_ROOT/hooks/HookHealer.hook.ts", "timeout": 10 },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/KittyEnvPersist.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/LoadContext.hook.ts" },
+        { "type": "command", "command": "bun $LIFEOS_DIR/TOOLS/FreshnessCache.ts --quiet", "timeout": 5, "async": true },
+        { "type": "command", "command": "bun $LIFEOS_DIR/TOOLS/SettingsBackport.ts; bun $LIFEOS_DIR/TOOLS/MergeSettings.ts --system $LIFEOS_ROOT/settings.system.json --user $LIFEOS_DIR/USER/CONFIG/settings.user.json --output $LIFEOS_ROOT/settings.json", "timeout": 15, "async": true }
       ]
     }
   ]
@@ -94,17 +94,17 @@ Claude Code supports the following hook events:
   "SessionEnd": [
     {
       "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/WorkCompletionLearning.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/SessionCleanup.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/UpdateCounts.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/MemoryHealthGate.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/DocIntegrity.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/IntegrityCheck.hook.ts" }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/WorkCompletionLearning.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/SessionCleanup.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/UpdateCounts.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/MemoryHealthGate.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/DocIntegrity.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/IntegrityCheck.hook.ts" }
       ]
     },
     {
       "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/ULWorkSync.hook.ts", "timeout": 60 }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/ULWorkSync.hook.ts", "timeout": 60 }
       ]
     }
   ]
@@ -136,12 +136,12 @@ Claude Code supports the following hook events:
 ```json
 {
   "UserPromptSubmit": [
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/PromptProcessing.hook.ts", "timeout": 30, "async": true } ] },
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/SatisfactionCapture.hook.ts", "timeout": 20, "async": true } ] },
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/ReminderRouter.hook.ts", "timeout": 5, "async": true } ] },
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/DriftReminder.hook.ts", "timeout": 5, "async": true } ] },
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/MemoryTurnStart.hook.ts", "timeout": 8 } ] },
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/AlgorithmNudge.hook.ts", "timeout": 5, "async": true } ] }
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/PromptProcessing.hook.ts", "timeout": 30, "async": true } ] },
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/SatisfactionCapture.hook.ts", "timeout": 20, "async": true } ] },
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/ReminderRouter.hook.ts", "timeout": 5, "async": true } ] },
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/DriftReminder.hook.ts", "timeout": 5, "async": true } ] },
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/MemoryTurnStart.hook.ts", "timeout": 8 } ] },
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/AlgorithmNudge.hook.ts", "timeout": 5, "async": true } ] }
   ]
 }
 ```
@@ -203,12 +203,12 @@ Claude Code supports the following hook events:
   "Stop": [
     {
       "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/LastResponseCache.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/TabState.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/VoiceCompletion.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/ISARenderOnStop.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/StopGates.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/MemoryReviewFire.hook.ts" }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/LastResponseCache.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/TabState.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/VoiceCompletion.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/ISARenderOnStop.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/StopGates.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/MemoryReviewFire.hook.ts" }
       ]
     }
   ]
@@ -266,14 +266,14 @@ Each Stop hook is a self-contained `.hook.ts` file that reads stdin via shared `
 ```json
 {
   "PreToolUse": [
-    { "matcher": "Bash", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/ContextReduction.hook.sh" } ] },
+    { "matcher": "Bash", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/ContextReduction.hook.sh" } ] },
     { "matcher": "Skill", "hooks": [ { "type": "http", "url": "http://localhost:31337/hooks/skill-guard" } ] },
     { "matcher": "Agent", "hooks": [
         { "type": "http", "url": "http://localhost:31337/hooks/agent-guard" },
-        { "type": "command", "command": "$HOME/.claude/hooks/AgentInvocation.hook.ts" }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/AgentInvocation.hook.ts" }
     ] },
-    { "matcher": "AskUserQuestion", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/TabState.hook.ts" } ] },
-    { "matcher": "Bash|Write|Edit|MultiEdit", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/PreToolGuard.hook.ts" } ] }
+    { "matcher": "AskUserQuestion", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/TabState.hook.ts" } ] },
+    { "matcher": "Bash|Write|Edit|MultiEdit", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/PreToolGuard.hook.ts" } ] }
   ]
 }
 ```
@@ -300,27 +300,27 @@ Each check is wrapped in its own try/catch so one guard throwing can never suppr
 ```json
 {
   "PostToolUse": [
-    { "matcher": "Agent", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/AgentInvocation.hook.ts" } ] },
-    { "matcher": "WebFetch", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/Safety.hook.ts", "timeout": 5 } ] },
-    { "matcher": "WebSearch", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/Safety.hook.ts", "timeout": 5 } ] },
-    { "matcher": "mcp__.*([Gg]mail|[Mm]ail|[Dd]rive|[Cc]alendar|[Ii]nbox).*", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/Safety.hook.ts", "timeout": 5 } ] },
-    { "matcher": "ToolSearch", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/Safety.hook.ts", "timeout": 5 } ] },
-    { "matcher": "AskUserQuestion", "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/TabState.hook.ts" } ] },
+    { "matcher": "Agent", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/AgentInvocation.hook.ts" } ] },
+    { "matcher": "WebFetch", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts", "timeout": 5 } ] },
+    { "matcher": "WebSearch", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts", "timeout": 5 } ] },
+    { "matcher": "mcp__.*([Gg]mail|[Mm]ail|[Dd]rive|[Cc]alendar|[Ii]nbox).*", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts", "timeout": 5 } ] },
+    { "matcher": "ToolSearch", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts", "timeout": 5 } ] },
+    { "matcher": "AskUserQuestion", "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/TabState.hook.ts" } ] },
     { "matcher": "Write", "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/ISASync.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/CheckpointPerISC.hook.ts", "timeout": 30 }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/ISASync.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/CheckpointPerISC.hook.ts", "timeout": 30 }
     ] },
     { "matcher": "Edit", "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/ISASync.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/CheckpointPerISC.hook.ts", "timeout": 30 }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/ISASync.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/CheckpointPerISC.hook.ts", "timeout": 30 }
     ] },
     { "matcher": "MultiEdit", "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/ISASync.hook.ts" },
-        { "type": "command", "command": "$HOME/.claude/hooks/CheckpointPerISC.hook.ts", "timeout": 30 }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/ISASync.hook.ts" },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/CheckpointPerISC.hook.ts", "timeout": 30 }
     ] },
     { "hooks": [
-        { "type": "command", "command": "$HOME/.claude/hooks/PostToolObserver.hook.ts", "timeout": 5 },
-        { "type": "command", "command": "$HOME/.claude/hooks/EventLogger.hook.ts", "timeout": 5, "async": true }
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/PostToolObserver.hook.ts", "timeout": 5 },
+        { "type": "command", "command": "$LIFEOS_ROOT/hooks/EventLogger.hook.ts", "timeout": 5, "async": true }
     ] }
   ]
 }
@@ -361,8 +361,8 @@ Each check is wrapped in its own try/catch so one guard throwing can never suppr
 ```json
 {
   "PostToolUseFailure": [
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/EventLogger.hook.ts" } ] },
-    { "hooks": [ { "type": "command", "command": "$HOME/.claude/hooks/AlgorithmNudge.hook.ts", "timeout": 5 } ] }
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/EventLogger.hook.ts" } ] },
+    { "hooks": [ { "type": "command", "command": "$LIFEOS_ROOT/hooks/AlgorithmNudge.hook.ts", "timeout": 5 } ] }
   ]
 }
 ```
@@ -394,7 +394,7 @@ Each check is wrapped in its own try/catch so one guard throwing can never suppr
       "hooks": [
         {
           "type": "command",
-          "command": "$HOME/.claude/hooks/EventLogger.hook.ts"
+          "command": "$LIFEOS_ROOT/hooks/EventLogger.hook.ts"
         }
       ]
     }
@@ -446,7 +446,7 @@ To restore: `git revert 31a4b9ad9` (or `git show pre-bpe-cuts-2026-05-06:hooks/T
       "hooks": [
         {
           "type": "command",
-          "command": "$HOME/.claude/hooks/TaskGovernance.hook.ts"
+          "command": "$LIFEOS_ROOT/hooks/TaskGovernance.hook.ts"
         }
       ]
     }
@@ -471,7 +471,7 @@ To restore: `git revert 31a4b9ad9` (or `git show pre-bpe-cuts-2026-05-06:hooks/T
       "hooks": [
         {
           "type": "command",
-          "command": "$HOME/.claude/hooks/EventLogger.hook.ts"
+          "command": "$LIFEOS_ROOT/hooks/EventLogger.hook.ts"
         }
       ]
     }
@@ -509,24 +509,24 @@ To restore: `git revert c43dbc019`.
 ## Configuration
 
 ### Location
-**File:** `~/.claude/settings.json`
+**File:** `$LIFEOS_ROOT/settings.json`
 **Section:** `"hooks": { ... }`
 
 ### Environment Variables
-Hooks have access to all environment variables from `~/.claude/settings.json` `"env"` section:
+Hooks have access to all environment variables from `$LIFEOS_ROOT/settings.json` `"env"` section:
 
 ```json
 {
   "env": {
-    "LIFEOS_DIR": "$HOME/.claude",
+    "LIFEOS_DIR": "$LIFEOS_ROOT",
     "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "64000"
   }
 }
 ```
 
 **Key Variables:**
-- `LIFEOS_DIR` - LifeOS installation directory (typically `~/.claude`)
-- Hook scripts reference `$HOME/.claude` in command paths
+- `LIFEOS_DIR` - LifeOS installation directory (typically `$LIFEOS_ROOT`)
+- Hook scripts reference `$LIFEOS_ROOT` in command paths
 
 ### Identity Configuration (Central to Install Wizard)
 
@@ -584,7 +584,7 @@ const VOICE_ID = getVoiceId();        // from settings.json daidentity.voices.ma
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/my-hook.ts --arg value"
+            "command": "$LIFEOS_ROOT/hooks/my-hook.ts --arg value"
           }
         ]
       }
@@ -721,7 +721,7 @@ else if (hookData.cwd && hookData.cwd.includes('/agents/')) {
 }
 ```
 
-**Session Mapping:** `~/.claude/LIFEOS/MEMORY/STATE/agent-sessions.json`
+**Session Mapping:** `$LIFEOS_DIR/MEMORY/STATE/agent-sessions.json`
 ```json
 {
   "session-id-abc123": "engineer",
@@ -768,7 +768,7 @@ else if (hookData.cwd && hookData.cwd.includes('/agents/')) {
 - 🧠 Brain - AI inference in progress (Haiku/Sonnet thinking)
 - ⚙️ Gear - Processing/working state
 
-**Full Documentation:** See `~/.claude/LIFEOS/DOCUMENTATION/Pulse/TerminalTabs.md`
+**Full Documentation:** See `$LIFEOS_DIR/DOCUMENTATION/Pulse/TerminalTabs.md`
 
 ---
 
@@ -862,9 +862,9 @@ main();
 
 ### Step 3: Make Executable
 ```bash
-chmod +x ~/.claude/hooks/my-custom-hook.ts
+chmod +x $LIFEOS_ROOT/hooks/my-custom-hook.ts
 ```
-> **Note:** Not needed when using the `bun` prefix in settings.json — all LifeOS hooks use `bun $HOME/.claude/hooks/...` which doesn't require the execute bit.
+> **Note:** Not needed when using the `bun` prefix in settings.json — all LifeOS hooks use `bun $LIFEOS_ROOT/hooks/...` which doesn't require the execute bit.
 
 ### Step 4: Add to settings.json
 ```json
@@ -875,7 +875,7 @@ chmod +x ~/.claude/hooks/my-custom-hook.ts
         "hooks": [
           {
             "type": "command",
-            "command": "$HOME/.claude/hooks/my-custom-hook.ts"
+            "command": "$LIFEOS_ROOT/hooks/my-custom-hook.ts"
           }
         ]
       }
@@ -887,7 +887,7 @@ chmod +x ~/.claude/hooks/my-custom-hook.ts
 ### Step 5: Test
 ```bash
 # Test hook directly
-echo '{"session_id":"test","transcript_path":"/tmp/test.jsonl","hook_event_name":"Stop"}' | bun ~/.claude/hooks/my-custom-hook.ts
+echo '{"session_id":"test","transcript_path":"/tmp/test.jsonl","hook_event_name":"Stop"}' | bun $LIFEOS_ROOT/hooks/my-custom-hook.ts
 ```
 
 ### Step 6: Restart Claude Code
@@ -934,7 +934,7 @@ await Promise.race([readPromise, timeoutPromise]);
 
 ### 6. **Environment Access**
 - All `settings.json` env vars available via `process.env`
-- Use `$HOME/.claude` in settings.json for portability
+- Use `$LIFEOS_ROOT` in settings.json for portability
 - Access in code via `process.env.LIFEOS_DIR`
 
 ### 7. **Logging**
@@ -949,18 +949,18 @@ await Promise.race([readPromise, timeoutPromise]);
 ### Hook Not Running
 
 **Check:**
-1. Is hook script executable? `chmod +x ~/.claude/hooks/my-hook.ts` (not needed when using `bun` prefix — all LifeOS hooks use `bun` prefix)
-2. Is path correct in settings.json? Use `bun $HOME/.claude/hooks/...`
-3. Is settings.json valid JSON? `jq . ~/.claude/settings.json`
+1. Is hook script executable? `chmod +x $LIFEOS_ROOT/hooks/my-hook.ts` (not needed when using `bun` prefix — all LifeOS hooks use `bun` prefix)
+2. Is path correct in settings.json? Use `bun $LIFEOS_ROOT/hooks/...`
+3. Is settings.json valid JSON? `jq . $LIFEOS_ROOT/settings.json`
 4. Did you restart Claude Code after editing settings.json?
 
 **Debug:**
 ```bash
 # Test hook directly
-echo '{"session_id":"test","transcript_path":"/tmp/test.jsonl","hook_event_name":"Stop"}' | bun ~/.claude/hooks/my-hook.ts
+echo '{"session_id":"test","transcript_path":"/tmp/test.jsonl","hook_event_name":"Stop"}' | bun $LIFEOS_ROOT/hooks/my-hook.ts
 
 # Check hook logs (stderr output)
-tail -f ~/.claude/hooks/debug.log  # If you add logging
+tail -f $LIFEOS_ROOT/hooks/debug.log  # If you add logging
 ```
 
 ---
@@ -992,7 +992,7 @@ setTimeout(() => {
 1. Is voice server running? `curl http://localhost:31337/health`
 2. Is voice_id correct? See `settings.json` `daidentity.voices` for mappings
 3. Is message format correct? `{"message":"...", "voice_id":"...", "title":"..."}`
-4. Is ElevenLabs API key in `~/.claude/.env`?
+4. Is ElevenLabs API key in `$LIFEOS_ROOT/.env`?
 
 **Debug:**
 ```bash
@@ -1012,25 +1012,25 @@ curl -X POST http://localhost:31337/notify \
 ### Work Not Capturing
 
 **Check:**
-1. Does `~/.claude/LIFEOS/MEMORY/` directory exist?
-2. Does `work.json` contain an entry for this session? `jq '.sessions | to_entries[] | select(.value.sessionUUID == "<uuid>")' ~/.claude/LIFEOS/MEMORY/STATE/work.json`
-3. Is hook actually running? Check `~/.claude/LIFEOS/MEMORY/RAW/` for events
-4. File permissions? `ls -la ~/.claude/LIFEOS/MEMORY/WORK/`
+1. Does `$LIFEOS_DIR/MEMORY/` directory exist?
+2. Does `work.json` contain an entry for this session? `jq '.sessions | to_entries[] | select(.value.sessionUUID == "<uuid>")' $LIFEOS_DIR/MEMORY/STATE/work.json`
+3. Is hook actually running? Check `$LIFEOS_DIR/MEMORY/RAW/` for events
+4. File permissions? `ls -la $LIFEOS_DIR/MEMORY/WORK/`
 
 **Debug:**
 ```bash
 # All sessions in the registry, sorted by recency:
-jq '.sessions | to_entries | map({slug: .key, phase: .value.phase, mode: .value.mode, updatedAt: .value.updatedAt}) | sort_by(.updatedAt) | reverse' ~/.claude/LIFEOS/MEMORY/STATE/work.json
+jq '.sessions | to_entries | map({slug: .key, phase: .value.phase, mode: .value.mode, updatedAt: .value.updatedAt}) | sort_by(.updatedAt) | reverse' $LIFEOS_DIR/MEMORY/STATE/work.json
 
 # Hot session list via the Pulse API (uses the same data):
 curl -s http://localhost:31337/api/algorithm | jq '.algorithms | map({sessionId, phase: .currentPhase, active})'
 
 # Check recent work directories
-ls -lt ~/.claude/LIFEOS/MEMORY/WORK/ | head -10
-ls -lt ~/.claude/LIFEOS/MEMORY/LEARNING/$(date +%Y-%m)/ | head -10
+ls -lt $LIFEOS_DIR/MEMORY/WORK/ | head -10
+ls -lt $LIFEOS_DIR/MEMORY/LEARNING/$(date +%Y-%m)/ | head -10
 
 # Check UUID-collision anomalies (multiple ISAs on one harness UUID):
-tail ~/.claude/LIFEOS/MEMORY/OBSERVABILITY/work-anomalies.jsonl
+tail $LIFEOS_DIR/MEMORY/OBSERVABILITY/work-anomalies.jsonl
 ```
 
 **Common Issues:**
@@ -1054,17 +1054,17 @@ tail ~/.claude/LIFEOS/MEMORY/OBSERVABILITY/work-anomalies.jsonl
 ### Agent Detection Failing
 
 **Check:**
-1. Is `~/.claude/LIFEOS/MEMORY/STATE/agent-sessions.json` writable?
+1. Is `$LIFEOS_DIR/MEMORY/STATE/agent-sessions.json` writable?
 2. Is `[AGENT:type]` tag in `🎯 COMPLETED:` line?
 3. Is agent running from correct directory? (`/agents/name/`)
 
 **Debug:**
 ```bash
 # Check session mappings
-cat ~/.claude/LIFEOS/MEMORY/STATE/agent-sessions.json | jq .
+cat $LIFEOS_DIR/MEMORY/STATE/agent-sessions.json | jq .
 
 # Check subagent-stop debug log
-tail -f ~/.claude/hooks/subagent-stop-debug.log
+tail -f $LIFEOS_ROOT/hooks/subagent-stop-debug.log
 ```
 
 **Fix:**
@@ -1102,14 +1102,14 @@ grep '"type":"user"' "$(ls -d ~/.claude/projects/*/ | head -1)"*.jsonl | head -1
 ### Context Loading Issues (SessionStart)
 
 **Check:**
-1. Does `~/.claude/CLAUDE.md` exist?
+1. Does `$LIFEOS_ROOT/CLAUDE.md` exist?
 2. Is `LoadContext.hook.ts` executable?
 3. Is `LIFEOS_DIR` env variable set correctly?
 
 **Debug:**
 ```bash
 # Test context loading directly
-bun ~/.claude/hooks/LoadContext.hook.ts
+bun $LIFEOS_ROOT/hooks/LoadContext.hook.ts
 
 # Should output <system-reminder> with SKILL.md content
 ```
@@ -1117,7 +1117,7 @@ bun ~/.claude/hooks/LoadContext.hook.ts
 **Common Issues:**
 - Subagent sessions loading main context → Fixed (subagent detection in hook)
 - File not found → Check `LIFEOS_DIR` environment variable
-- Permission denied → `chmod +x ~/.claude/hooks/LoadContext.hook.ts` (not needed when using `bun` prefix — all LifeOS hooks use `bun` prefix)
+- Permission denied → `chmod +x $LIFEOS_ROOT/hooks/LoadContext.hook.ts` (not needed when using `bun` prefix — all LifeOS hooks use `bun` prefix)
 
 ---
 
@@ -1132,7 +1132,7 @@ Hooks in same event execute **sequentially** in order defined in settings.json:
   "Stop": [
     {
       "hooks": [
-        { "command": "$HOME/.claude/hooks/VoiceCompletion.hook.ts" }  // Example: one of several Stop hooks
+        { "command": "$LIFEOS_ROOT/hooks/VoiceCompletion.hook.ts" }  // Example: one of several Stop hooks
       ]
     }
   ]
@@ -1236,9 +1236,9 @@ Hooks in same event execute **sequentially** in order defined in settings.json:
 
 ## Related Documentation
 
-- **Voice System:** `~/.claude/`
+- **Voice System:** `$LIFEOS_ROOT/`
 - **Agent System:** `LIFEOS/DOCUMENTATION/Agents/AgentSystem.md`
-- **History/Memory:** `~/.claude/LIFEOS/DOCUMENTATION/Memory/MemorySystem.md`
+- **History/Memory:** `$LIFEOS_DIR/DOCUMENTATION/Memory/MemorySystem.md`
 
 ---
 
@@ -1353,23 +1353,23 @@ RETIRED IN THE 2026-07-11 HOOKS-BPE PASS (deleted or folded):
   SystemFileGuard+CommunicationSkillGuard+EgressClassGuard → PreToolGuard.
 
 KEY FILES:
-~/.claude/settings.json              Hook configuration (GENERATED by MergeSettings.ts — read, don't hand-edit)
-~/.claude/settings.system.json       System-side hook/permission source (SYSTEM)
-~/.claude/LIFEOS/USER/CONFIG/settings.user.json  User-side source (USER); its plain-array events REPLACE the system array
-~/.claude/LIFEOS/TOOLS/MergeSettings.ts  Merges system + user → settings.json (runs async at SessionStart)
-~/.claude/hooks/                     Hook scripts (39 files: 38 .hook.ts + ContextReduction.hook.sh; 30 .hook.ts registered)
-~/.claude/hooks/handlers/            Handler modules (7 files)
-~/.claude/hooks/lib/                 Shared libraries (27 files)
-~/.claude/hooks/lib/learning-utils.ts Learning categorization
-~/.claude/hooks/lib/time.ts          PST timestamp utilities
-~/.claude/LIFEOS/MEMORY/WORK/               Work tracking
-~/.claude/LIFEOS/MEMORY/LEARNING/           Learning captures
-~/.claude/LIFEOS/MEMORY/STATE/              Runtime state
-~/.claude/LIFEOS/MEMORY/STATE/events.jsonl  Unified event log (append-only)
-~/.claude/LIFEOS/MEMORY/OBSERVABILITY/      Tool failures, agent spawns, config changes
+$LIFEOS_ROOT/settings.json              Hook configuration (GENERATED by MergeSettings.ts — read, don't hand-edit)
+$LIFEOS_ROOT/settings.system.json       System-side hook/permission source (SYSTEM)
+$LIFEOS_DIR/USER/CONFIG/settings.user.json  User-side source (USER); its plain-array events REPLACE the system array
+$LIFEOS_DIR/TOOLS/MergeSettings.ts  Merges system + user → settings.json (runs async at SessionStart)
+$LIFEOS_ROOT/hooks/                     Hook scripts (39 files: 38 .hook.ts + ContextReduction.hook.sh; 30 .hook.ts registered)
+$LIFEOS_ROOT/hooks/handlers/            Handler modules (7 files)
+$LIFEOS_ROOT/hooks/lib/                 Shared libraries (27 files)
+$LIFEOS_ROOT/hooks/lib/learning-utils.ts Learning categorization
+$LIFEOS_ROOT/hooks/lib/time.ts          PST timestamp utilities
+$LIFEOS_DIR/MEMORY/WORK/               Work tracking
+$LIFEOS_DIR/MEMORY/LEARNING/           Learning captures
+$LIFEOS_DIR/MEMORY/STATE/              Runtime state
+$LIFEOS_DIR/MEMORY/STATE/events.jsonl  Unified event log (append-only)
+$LIFEOS_DIR/MEMORY/OBSERVABILITY/      Tool failures, agent spawns, config changes
 
 INFERENCE TOOL (for hooks needing AI):
-Path: ~/.claude/LIFEOS/TOOLS/Inference.ts
+Path: $LIFEOS_DIR/TOOLS/Inference.ts
 Import: import { inference } from '../../.claude/LIFEOS/TOOLS/Inference'
 Levels: fast (haiku/15s) | standard (sonnet/30s) | smart (opus/90s)
 
@@ -1495,7 +1495,7 @@ Hooks call `appendEvent()` as a secondary write **alongside** their existing sta
 
 ```typescript
 // Inside an existing hook, AFTER the normal state write:
-// appendEvent() writes to ~/.claude/LIFEOS/MEMORY/STATE/events.jsonl
+// appendEvent() writes to $LIFEOS_DIR/MEMORY/STATE/events.jsonl
 appendEvent({ type: 'work.created', source: 'ISASync', slug: 'my-task' });
 ```
 
@@ -1531,10 +1531,10 @@ Events use a dot-separated topic hierarchy for filtering. A `custom.*` escape ha
 
 ```bash
 # Live tail (real-time monitoring)
-tail -f ~/.claude/LIFEOS/MEMORY/STATE/events.jsonl | jq
+tail -f $LIFEOS_DIR/MEMORY/STATE/events.jsonl | jq
 
 # Filter by type
-tail -f ~/.claude/LIFEOS/MEMORY/STATE/events.jsonl | jq 'select(.type | startswith("algorithm."))'
+tail -f $LIFEOS_DIR/MEMORY/STATE/events.jsonl | jq 'select(.type | startswith("algorithm."))'
 
 # Programmatic (Node/Bun fs.watch)
 import { watch } from 'fs';

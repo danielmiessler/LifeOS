@@ -11,7 +11,7 @@ A production bug where any one agent might solve it — but you can't predict wh
 1. **Launch the race.** One workspace, N surfaces, each running the same launch command against the same problem:
 
    ```bash
-   bun ~/.claude/skills/CMUX/Tools/cmux.ts race \
+   bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts race \
      --feature checkout-500 --agents 4 --cwd ~/Projects/App \
      --cmd "claude 'The /checkout endpoint 500s on empty cart. Find and fix it.'"
    ```
@@ -32,13 +32,13 @@ A production bug where any one agent might solve it — but you can't predict wh
 3. **Poll for a winner.** Watch all four; `monitor` classifies each surface idle/working/done/awaiting and fires {{DA_NAME}} voice the moment one hits `done`:
 
    ```bash
-   bun ~/.claude/skills/CMUX/Tools/cmux.ts monitor --workspace workspace:7 --interval 3
+   bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts monitor --workspace workspace:7 --interval 3
    ```
 
 4. **Capture the winning answer.** Read the surface that finished first:
 
    ```bash
-   bun ~/.claude/skills/CMUX/Tools/cmux.ts read --surface surface:32 --lines 80
+   bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts read --surface surface:32 --lines 80
    ```
 
    Save the diff / explanation from `text`. That's the keeper.
@@ -59,18 +59,18 @@ Serial retries pay the full latency of each failed attempt before you learn anyt
 
 ```bash
 # 1. six agents at the login regression, each free to pick its own theory
-bun ~/.claude/skills/CMUX/Tools/cmux.ts race \
+bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts race \
   --feature login-lockout --agents 6 --cwd ~/Projects/App \
   --cmd "claude 'Prod: all logins fail with 401 since the last deploy. Root-cause and patch.'"
 
 # 2. watch; voice fires on first done
-bun ~/.claude/skills/CMUX/Tools/cmux.ts monitor --workspace workspace:9 --interval 2
+bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts monitor --workspace workspace:9 --interval 2
 
 # 3. race-4 solved it first — grab the fix
-bun ~/.claude/skills/CMUX/Tools/cmux.ts read --surface surface:44 --lines 100
+bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts read --surface surface:44 --lines 100
 
 # 4. close the other five, ship race-4's patch
-bun ~/.claude/skills/CMUX/Tools/cmux.ts flash --workspace workspace:9   # mark the winner visually
+bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts flash --workspace workspace:9   # mark the winner visually
 ```
 
 Watching mechanics live in Monitor.md; named parallel teams (not racing the same problem) live in Fleet.md.

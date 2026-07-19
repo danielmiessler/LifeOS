@@ -39,7 +39,7 @@ Iteration 3+: Continue until coverage gates pass
 
 All artifacts persist at:
 ```
-~/.claude/LIFEOS/MEMORY/RESEARCH/{YYYY-MM}/{YYYY-MM-DD}_{topic-slug}/
+$LIFEOS_DIR/MEMORY/RESEARCH/{YYYY-MM}/{YYYY-MM-DD}_{topic-slug}/
 ```
 
 
@@ -340,7 +340,7 @@ IF either gate FAILS:
 
 ## Domain Template Packs
 
-Templates live at `~/.claude/skills/Research/Templates/{DomainName}.md`
+Templates live at `$LIFEOS_ROOT/skills/Research/Templates/{DomainName}.md`
 
 Each template pack defines:
 1. **Entity categories** for this domain (what types of things to discover)

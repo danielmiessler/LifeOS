@@ -15,7 +15,7 @@ version: 1.5.19
 The ISA is the single source of truth for the thing being articulated.
 The AI writes all ISA content directly using Write/Edit tools and the ISA skill workflows. Hooks only read ISAs to sync state.
 
-**v2.7 (Algorithm v6.2.0+, still current at v6.3.0):** the body grew from six sections to **twelve in fixed order**: Problem, Vision, Out of Scope, Principles, Constraints, Goal, Criteria, Test Strategy, Features, Decisions, Changelog, Verification. Three-guardrail taxonomy locks the conceptual surface (Principles bind thinking, Constraints bind solution space, Out of Scope binds vision, Anti-criteria bind test surface). Tier Completeness Gate is HARD at every tier (E1 = Goal+Criteria; E5 = all twelve + active Interview). New ID-stability rule prevents ISC renumbering on edit. New `## Changelog` section uses Deutsch conjecture/refutation/learning format. Empty sections never appear. The ISA Skill at `~/.claude/skills/ISA/` owns the canonical template and six workflows; Algorithm at OBSERVE invokes `Skill("ISA", "scaffold from prompt at tier T")` at E2+. Full skeleton, tier gate table, three-guardrail table, and ID-stability rule live in the skill's SKILL.md and `Examples/canonical-isa.md`. The Append workflow gates the Changelog format and refuses partial entries (all four pieces — `conjectured`, `refuted by`, `learned`, `criterion now` — are required).
+**v2.7 (Algorithm v6.2.0+, still current at v6.3.0):** the body grew from six sections to **twelve in fixed order**: Problem, Vision, Out of Scope, Principles, Constraints, Goal, Criteria, Test Strategy, Features, Decisions, Changelog, Verification. Three-guardrail taxonomy locks the conceptual surface (Principles bind thinking, Constraints bind solution space, Out of Scope binds vision, Anti-criteria bind test surface). Tier Completeness Gate is HARD at every tier (E1 = Goal+Criteria; E5 = all twelve + active Interview). New ID-stability rule prevents ISC renumbering on edit. New `## Changelog` section uses Deutsch conjecture/refutation/learning format. Empty sections never appear. The ISA Skill at `$LIFEOS_ROOT/skills/ISA/` owns the canonical template and six workflows; Algorithm at OBSERVE invokes `Skill("ISA", "scaffold from prompt at tier T")` at E2+. Full skeleton, tier gate table, three-guardrail table, and ID-stability rule live in the skill's SKILL.md and `Examples/canonical-isa.md`. The Append workflow gates the Changelog format and refuses partial entries (all four pieces — `conjectured`, `refuted by`, `learned`, `criterion now` — are required).
 
 **v2.6 (Algorithm v6.0.0+):** Two ISA homes are now canonical:
 - **Project ISAs** at `<project>/ISA.md` — for any thing with persistent identity (applications, CLI tools, libraries, content pipelines, infrastructure, the Algorithm itself). Lives in the project's repo as system of record. Tasks operating on the project read/modify/extend this single file.
@@ -284,7 +284,7 @@ algorithm_config:
 - `started`: Set once at creation. Never modified.
 - `updated`: Set on every Edit/Write. Use current ISO 8601 timestamp.
 - `iteration`: Omitted on first run. Set to `2` on first continuation, incremented thereafter.
-- `algorithm_config`: Omitted for interactive mode. Written during OBSERVE when mode is ideate, optimize, or loop. Contains resolved parameter values (after preset → focus → overrides resolution). The `params` section always contains the RESOLVED values, not raw user input. Full parameter schema: `~/.claude/LIFEOS/ALGORITHM/parameter-schema.md`.
+- `algorithm_config`: Omitted for interactive mode. Written during OBSERVE when mode is ideate, optimize, or loop. Contains resolved parameter values (after preset → focus → overrides resolution). The `params` section always contains the RESOLVED values, not raw user input. Full parameter schema: `$LIFEOS_DIR/ALGORITHM/parameter-schema.md`.
 
 ## Body Sections (v2.7)
 
@@ -451,7 +451,7 @@ This rule **is** the operational form of hard-to-variability. An ISC that has a 
 - **v5.5.0+ Spec v2.5:** added `## Goal` section as the hard-to-vary prose spine (1–3 sentences, required when ideal state isn't trivially captured by `task` frontmatter); explicit living-document doctrine (ISA tightens through pursuit; refinements logged in `## Decisions` with `refined:` prefix); nested ISCs allowed natively for organizing complex ISAs (granularity rule applies at leaves); re-anchored the granularity rule as the operational form of hard-to-variability (testability ≡ hard-to-variability). Tier floors count atomic testable claims (leaves when nested). All v2.4 ISAs continue to parse — the four additions are additive. New ISAs from v2.5 onward should include `## Goal` when non-trivial.
 - **Algorithm v6.0.0 / Spec v2.6:** Two ISA homes are canonical — Project ISAs at `<project>/ISA.md` for things with persistent identity, Task ISAs at `MEMORY/WORK/{slug}/ISA.md` for ad-hoc work.
 - **Algorithm v6.1.0:** Thinking-capability floor becomes HARD at every tier; tier ISC count floor becomes HARD on count at E4/E5; cannot be relaxed via "show your math".
-- **Algorithm v6.2.0 / Spec v2.7 (current shape):** body grew to **twelve sections in fixed order** — Problem, Vision, Out of Scope, Principles, Constraints, Goal, Criteria, Test Strategy, Features, Decisions, Changelog, Verification. Three-guardrail taxonomy locked. ID-stability rule (no re-numbering on edit). The **ISA Skill** at `~/.claude/skills/ISA/` owns canonical workflows (Scaffold, Interview, CheckCompleteness, Reconcile, Seed, Append). `## Changelog` uses Deutsch conjecture/refutation/learning format; partial entries refused.
+- **Algorithm v6.2.0 / Spec v2.7 (current shape):** body grew to **twelve sections in fixed order** — Problem, Vision, Out of Scope, Principles, Constraints, Goal, Criteria, Test Strategy, Features, Decisions, Changelog, Verification. Three-guardrail taxonomy locked. ID-stability rule (no re-numbering on edit). The **ISA Skill** at `$LIFEOS_ROOT/skills/ISA/` owns canonical workflows (Scaffold, Interview, CheckCompleteness, Reconcile, Seed, Append). `## Changelog` uses Deutsch conjecture/refutation/learning format; partial entries refused.
 - **Algorithm v6.3.0 (current):** thinking-capability vocabulary becomes a **closed enumeration** (verbatim list of 19 names). Phantom thinking-capability names are CRITICAL FAILURE. **Capability-Name Audit Gate** fires at OBSERVE→THINK boundary. The ISA file shape itself is unchanged from v2.7 — v6.3.0 is a doctrine-layer evolution, not a format-layer one.
 
 ### ## Experiments (optimize mode only)
@@ -514,7 +514,7 @@ Evidence for each criterion. Written during VERIFY phase.
 ## File Location
 
 ```
-~/.claude/LIFEOS/MEMORY/WORK/{slug}/ISA.md
+$LIFEOS_DIR/MEMORY/WORK/{slug}/ISA.md
 ```
 
 Directory created with `mkdir -p MEMORY/WORK/{slug}/` during OBSERVE. Legacy `PRD.md` files in this path are inert — the fallback was removed at Algorithm v4.2.0 and the system is now at v6.3.0.
@@ -553,7 +553,7 @@ Key design choices:
 - **Checkboxes over EARS/BDD**: Simpler to parse, write, and verify. ISC pattern proven over 48+ ISAs.
 - **YAML frontmatter over JSON**: Universal standard (Jekyll, Hugo, Astro, Kiro, spec-kit all use it).
 - **Convention-based sections**: Sections appear when needed, not as empty boilerplate.
-- **Reference file pattern**: This spec lives at `~/.claude/LIFEOS/DOCUMENTATION/Isa/IsaFormat.md`, not inline in CLAUDE.md. Saves ~2,500 tokens/response.
+- **Reference file pattern**: This spec lives at `$LIFEOS_DIR/DOCUMENTATION/Isa/IsaFormat.md`, not inline in CLAUDE.md. Saves ~2,500 tokens/response.
 - **Universal primitive (v2.5)**: The same artifact structure serves software, science, art, philosophy, life decisions, business strategy. Hard-to-variability is the universal quality standard for the writing; testability is its operational form; the scientific method is verification; refinement through pursuit is the living document.
 - **Bitter Pill discipline (v2.5)**: No structural fields a smarter model would render unnecessary. Probe fields, separate Ideal State / Current State sections, separate Variation Audit section, and tier-gated additions were all proposed and rejected during v2.5 design — clear ISC text + recurring ILA at phase boundaries do the same work without scaffolding.
 

@@ -85,7 +85,7 @@ curl -X POST http://localhost:31337/notify \
 ```
 
 2. **Load your complete knowledge base:**
-   - Read: `~/.claude/agents/GrokResearcherContext.md`
+   - Read: `$LIFEOS_ROOT/agents/GrokResearcherContext.md`
    - This loads all necessary Skills, standards, and domain knowledge
    - DO NOT proceed until you've read this file
 
@@ -182,16 +182,16 @@ You excel at separating facts from narrative, focusing on what's true rather tha
 
 ```bash
 # default: full Grok search — web + X together, returns answer + source URLs
-bun ~/.claude/LIFEOS/TOOLS/Grok.ts "<your research question>"
+bun $LIFEOS_DIR/TOOLS/Grok.ts "<your research question>"
 
 # web only (general/news, no social)
-bun ~/.claude/LIFEOS/TOOLS/Grok.ts --web-only "<query>"
+bun $LIFEOS_DIR/TOOLS/Grok.ts --web-only "<query>"
 
 # X only (pure social sentiment), structured output for parsing
-bun ~/.claude/LIFEOS/TOOLS/Grok.ts --x-only --json "contrarian takes on <topic> trending on X"
+bun $LIFEOS_DIR/TOOLS/Grok.ts --x-only --json "contrarian takes on <topic> trending on X"
 
 # add code execution (let Grok compute/analyze mid-search)
-bun ~/.claude/LIFEOS/TOOLS/Grok.ts --code "<query needing a calculation>"
+bun $LIFEOS_DIR/TOOLS/Grok.ts --code "<query needing a calculation>"
 ```
 
 Run this FIRST on any research task. Results carry citation URLs — fold them straight into your Evidence section. Reach for WebSearch/WebFetch only to verify or extend what Grok returns, never as the primary pass.

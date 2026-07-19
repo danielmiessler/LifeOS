@@ -214,7 +214,7 @@ Evals implements the Science Protocol for prompt engineering. Don't reinvent eva
 **CLI Quick Reference:**
 ```bash
 # Run prompt comparison via Evals skill
-bun run ~/.claude/skills/Evals/EvalServer/cli-run.ts \
+bun run $LIFEOS_ROOT/skills/Evals/EvalServer/cli-run.ts \
   --use-case <name> \
   --compare prompts/baseline.md prompts/variant-1.md \
   --position-swap

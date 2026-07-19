@@ -27,11 +27,11 @@ Reproduce a reported bug by opening the affected page in real Chrome BEFORE read
 ### 0. Preflight Isolation Gate (MANDATORY first step)
 
 ```bash
-source ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
-bash ~/.claude/skills/Interceptor/Tools/PreflightIsolation.sh
+source $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/PreflightIsolation.sh
 ```
 
-Prefer `bash ~/.claude/skills/Interceptor/Tools/EnsureTestProfile.sh` — it runs the gate and auto-launches the test profile if it isn't open (exit 5/6), only proceeding after the pinned-UUID match passes. Non-zero exit → STOP and surface the message verbatim; do not fall back to the Default profile. `INTERCEPTOR_TEST_CONTEXT_ID` is the pinned isolated context; every browser verb below passes it. Reproduce in the isolated profile by default; only route to the main profile if the bug is specifically tied to the operator's signed-in session (and they said so). Screenshots go through `Tools/Capture.sh`, never raw `interceptor screenshot`.
+Prefer `bash $LIFEOS_ROOT/skills/Interceptor/Tools/EnsureTestProfile.sh` — it runs the gate and auto-launches the test profile if it isn't open (exit 5/6), only proceeding after the pinned-UUID match passes. Non-zero exit → STOP and surface the message verbatim; do not fall back to the Default profile. `INTERCEPTOR_TEST_CONTEXT_ID` is the pinned isolated context; every browser verb below passes it. Reproduce in the isolated profile by default; only route to the main profile if the bug is specifically tied to the operator's signed-in session (and they said so). Screenshots go through `Tools/Capture.sh`, never raw `interceptor screenshot`.
 
 ### 1. Open the Affected Page (in the isolated profile)
 
@@ -44,7 +44,7 @@ Do NOT read code first. Do NOT form theories. Open the page and look at it.
 ### 2. Capture Visual State
 
 ```bash
-bash ~/.claude/skills/Interceptor/Tools/Capture.sh "<BUG_URL>"
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/Capture.sh "<BUG_URL>"
 ```
 
 Read the printed image path. Is the reported bug visible? Document what you see vs what's expected.

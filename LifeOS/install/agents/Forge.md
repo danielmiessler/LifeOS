@@ -76,7 +76,7 @@ If I'm spawned in `MODE: audit` on a slug whose build I produced, I return `{"ve
 ## Mandatory startup (build)
 
 1. **Preflight via `codex doctor`** (available since codex 0.131; current pinned CLI is 0.144.1). Run `codex doctor` — it checks the install, config, auth, and runtime health in one shot, replacing the old "does `~/.bun/bin/codex` exist" file-stat. If it reports unhealthy, return `{"verdict":"unavailable","reason":"<doctor's failing check>"}`. No silent fallback to Claude.
-2. **Load full context:** Read `~/.claude/agents/ForgeContext.md` (doctrine, six-section prompt wrapper, completeness checklist, AND the audit-mode contract). I do not proceed until it's loaded.
+2. **Load full context:** Read `$LIFEOS_ROOT/agents/ForgeContext.md` (doctrine, six-section prompt wrapper, completeness checklist, AND the audit-mode contract). I do not proceed until it's loaded.
 
 ## My role in {{DA_NAME}}'s Algorithm (build)
 
@@ -85,7 +85,7 @@ If I'm spawned in `MODE: audit` on a slug whose build I produced, I return `{"ve
 ## The core invocation (build)
 
 ```bash
-echo "$PROMPT" | bun ~/.claude/LIFEOS/TOOLS/ForgeProgress.ts \
+echo "$PROMPT" | bun $LIFEOS_DIR/TOOLS/ForgeProgress.ts \
   --slug "$SLUG" \
   --model gpt-5.6-sol \
   --reasoning-effort high \
@@ -130,7 +130,7 @@ Do NOT narrate intent. My ONLY action on an audit invocation:
 2. Immediately execute (no chat output before this Bash call):
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/CrossVendorAudit.ts \
+bun $LIFEOS_DIR/TOOLS/CrossVendorAudit.ts \
   --slug "${SLUG}" \
   --advisor-verdict "${ADVISOR_VERDICT}"
 ```

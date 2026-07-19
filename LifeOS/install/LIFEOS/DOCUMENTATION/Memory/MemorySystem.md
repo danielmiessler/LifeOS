@@ -11,12 +11,12 @@ version: 1.5.19
 This is not a narrow event log or a preferences store. This is LifeOS's comprehensive knowledge system — the full shared memory between the principal and the DA. If we built knowledge together, it belongs here. That includes: work tracking, learnings from failures and successes, research and OSINT investigations, contact dossiers, security events, runtime state, voice events, observability metrics, and any other knowledge that would be valuable in future conversations.
 
 **One storage layer:**
-- **LifeOS MEMORY** (`~/.claude/LIFEOS/MEMORY/`) — structured, hook-driven, entity-based
+- **LifeOS MEMORY** (`$LIFEOS_DIR/MEMORY/`) — structured, hook-driven, entity-based
 
 LifeOS MEMORY is the system of record. Claude Code's built-in auto-memory (`~/.claude/projects/<project>/memory/`) is disabled by design (`autoMemoryEnabled: false` in shipped settings, plus deny rules on that path) — see "Claude Code Auto-Memory & Auto-Dream" below.
 
 **Version:** 8.2.0 (Proposal Subtypes + Session Rename CLI, 2026-05-25; preserves 8.1 inventory + drift + autonomic loop + health gate)
-**Location:** `~/.claude/LIFEOS/MEMORY/`
+**Location:** `$LIFEOS_DIR/MEMORY/`
 
 ---
 
@@ -109,7 +109,7 @@ Confidence guidance:
 
 ### Curation coverage at a glance
 
-The reviewer + four-tier classifier covers a defined slice of `~/.claude/` content. The canonical coverage matrix (which files the system curates, which it ignores, which other autonomic pipelines own) lives in [`CurationCoverage.md`](./CurationCoverage.md).
+The reviewer + four-tier classifier covers a defined slice of `$LIFEOS_ROOT/` content. The canonical coverage matrix (which files the system curates, which it ignores, which other autonomic pipelines own) lives in [`CurationCoverage.md`](./CurationCoverage.md).
 
 ### Four mutation tiers
 
@@ -163,8 +163,8 @@ When all three hold, the next Stop hook spawns the reviewer subprocess. New User
 ### Reading status
 
 ```
-bun ~/.claude/LIFEOS/TOOLS/MemoryStatus.ts          # human-formatted block
-bun ~/.claude/LIFEOS/TOOLS/MemoryStatus.ts --json   # machine-readable
+bun $LIFEOS_DIR/TOOLS/MemoryStatus.ts          # human-formatted block
+bun $LIFEOS_DIR/TOOLS/MemoryStatus.ts --json   # machine-readable
 ```
 
 Reports hot-layer file utilization, corpus sizes, pending-proposals depth, reviewer state, last reviewer run, last retrieval.
@@ -259,7 +259,7 @@ Verdict: fresh-with-misses
 
 ## Directory Inventory (authoritative)
 
-This is the canonical list of every directory under `~/.claude/LIFEOS/MEMORY/`. The `MemoryDirIntegrity.ts` drift handler (called by `DocIntegrity.hook.ts` on Stop) parses this table and warns whenever the on-disk tree contains a directory not listed here, or this table lists a directory that no longer exists. Add new memory subsystems by adding a row to this table FIRST, then creating the directory.
+This is the canonical list of every directory under `$LIFEOS_DIR/MEMORY/`. The `MemoryDirIntegrity.ts` drift handler (called by `DocIntegrity.hook.ts` on Stop) parses this table and warns whenever the on-disk tree contains a directory not listed here, or this table lists a directory that no longer exists. Add new memory subsystems by adding a row to this table FIRST, then creating the directory.
 
 | Directory | Class | Status | Purpose | Primary writers |
 |-----------|-------|--------|---------|-----------------|
@@ -664,7 +664,7 @@ An append-only JSONL file where hooks emit structured, typed events alongside th
 
 The `MemoryDirIntegrity.ts` handler (run from `DocIntegrity.hook.ts` on Stop) keeps the Directory Inventory table above honest. On every Stop where any system file changed, it:
 
-1. Lists every directory under `~/.claude/LIFEOS/MEMORY/` (one level deep, excluding `.git`, `.DS_Store`, etc.)
+1. Lists every directory under `$LIFEOS_DIR/MEMORY/` (one level deep, excluding `.git`, `.DS_Store`, etc.)
 2. Parses the Directory Inventory table in this file
 3. Reports any directory on disk not in the table (**unknown subsystem**)
 4. Reports any directory in the table not on disk (**missing subsystem** — only flagged for `active` rows; `reserved` rows are allowed to be empty or absent)
@@ -707,17 +707,17 @@ WisdomCrossFrameSynthesizer → analyzes FRAMES/ → writes PRINCIPLES/
 ### Check current work
 ```bash
 # All sessions (active + resumable), keyed by slug:
-jq '.sessions | to_entries | map({slug: .key, phase: .value.phase, updatedAt: .value.updatedAt}) | sort_by(.updatedAt) | reverse' ~/.claude/LIFEOS/MEMORY/STATE/work.json
+jq '.sessions | to_entries | map({slug: .key, phase: .value.phase, updatedAt: .value.updatedAt}) | sort_by(.updatedAt) | reverse' $LIFEOS_DIR/MEMORY/STATE/work.json
 
 # Just the non-complete ones:
-jq '.sessions | to_entries | map(select(.value.phase != "complete")) | from_entries' ~/.claude/LIFEOS/MEMORY/STATE/work.json
+jq '.sessions | to_entries | map(select(.value.phase != "complete")) | from_entries' $LIFEOS_DIR/MEMORY/STATE/work.json
 
-ls ~/.claude/LIFEOS/MEMORY/WORK/ | tail -5
+ls $LIFEOS_DIR/MEMORY/WORK/ | tail -5
 ```
 
 ### Check ratings
 ```bash
-tail ~/.claude/LIFEOS/MEMORY/LEARNING/SIGNALS/ratings.jsonl
+tail $LIFEOS_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl
 ```
 
 ### View session transcripts
@@ -732,89 +732,89 @@ tail ~/.claude/projects/-Users-{username}--claude/$(ls -t ~/.claude/projects/-Us
 
 ### Check learnings
 ```bash
-ls ~/.claude/LIFEOS/MEMORY/LEARNING/SYSTEM/
-ls ~/.claude/LIFEOS/MEMORY/LEARNING/ALGORITHM/
-ls ~/.claude/LIFEOS/MEMORY/LEARNING/SYNTHESIS/
+ls $LIFEOS_DIR/MEMORY/LEARNING/SYSTEM/
+ls $LIFEOS_DIR/MEMORY/LEARNING/ALGORITHM/
+ls $LIFEOS_DIR/MEMORY/LEARNING/SYNTHESIS/
 ```
 
 ### Check failures
 ```bash
 # List recent failure captures
-ls -lt ~/.claude/LIFEOS/MEMORY/LEARNING/FAILURES/$(date +%Y-%m)/ 2>/dev/null | head -10
+ls -lt $LIFEOS_DIR/MEMORY/LEARNING/FAILURES/$(date +%Y-%m)/ 2>/dev/null | head -10
 
 # View a specific failure
-cat ~/.claude/LIFEOS/MEMORY/LEARNING/FAILURES/2026-01/*/CONTEXT.md | head -100
+cat $LIFEOS_DIR/MEMORY/LEARNING/FAILURES/2026-01/*/CONTEXT.md | head -100
 
 # Migrate historical low ratings to FAILURES
-bun run ~/.claude/LIFEOS/TOOLS/FailureCapture.ts --migrate
+bun run $LIFEOS_DIR/TOOLS/FailureCapture.ts --migrate
 ```
 
 ### Check observability
 ```bash
 # Recent tool failures
-tail ~/.claude/LIFEOS/MEMORY/OBSERVABILITY/tool-failures.jsonl | jq .
+tail $LIFEOS_DIR/MEMORY/OBSERVABILITY/tool-failures.jsonl | jq .
 
 # Anthropic spend ledger
-tail ~/.claude/LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl | jq .
+tail $LIFEOS_DIR/MEMORY/OBSERVABILITY/anthropic-cost.jsonl | jq .
 
 # Config edits this session
-tail ~/.claude/LIFEOS/MEMORY/OBSERVABILITY/config-changes.jsonl | jq .
+tail $LIFEOS_DIR/MEMORY/OBSERVABILITY/config-changes.jsonl | jq .
 ```
 
 ### Check relationship notes
 ```bash
 # Today's note
-cat ~/.claude/LIFEOS/MEMORY/RELATIONSHIP/$(date +%Y-%m)/$(date +%Y-%m-%d).md 2>/dev/null
+cat $LIFEOS_DIR/MEMORY/RELATIONSHIP/$(date +%Y-%m)/$(date +%Y-%m-%d).md 2>/dev/null
 
 # Generate a reflection
-bun run ~/.claude/LIFEOS/TOOLS/RelationshipReflect.ts
+bun run $LIFEOS_DIR/TOOLS/RelationshipReflect.ts
 ```
 
 ### Check multi-session progress
 ```bash
-ls ~/.claude/LIFEOS/MEMORY/STATE/progress/
+ls $LIFEOS_DIR/MEMORY/STATE/progress/
 ```
 
 ### Run harvesting tools
 ```bash
 # Harvest learnings from recent sessions
-bun run ~/.claude/LIFEOS/TOOLS/SessionHarvester.ts --recent 10
+bun run $LIFEOS_DIR/TOOLS/SessionHarvester.ts --recent 10
 
 # Mine conversations for decisions, preferences, milestones, problems
-bun run ~/.claude/LIFEOS/TOOLS/SessionHarvester.ts --mine --recent 10
+bun run $LIFEOS_DIR/TOOLS/SessionHarvester.ts --mine --recent 10
 
 # Generate pattern synthesis
-bun run ~/.claude/LIFEOS/TOOLS/LearningPatternSynthesis.ts --week
+bun run $LIFEOS_DIR/TOOLS/LearningPatternSynthesis.ts --week
 ```
 
 ### Retrieve knowledge (compressed context)
 ```bash
 # Search knowledge archive with BM25 ranking
-bun run ~/.claude/LIFEOS/TOOLS/MemoryRetriever.ts "query terms"
+bun run $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "query terms"
 
 # Raw excerpts without LLM compression
-bun run ~/.claude/LIFEOS/TOOLS/MemoryRetriever.ts "query terms" --raw --top 5
+bun run $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "query terms" --raw --top 5
 ```
 
 ### Navigate knowledge graph
 ```bash
 # Graph stats: nodes, edges, clusters
-bun run ~/.claude/LIFEOS/TOOLS/KnowledgeGraph.ts stats
+bun run $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts stats
 
 # BFS traversal from a note
-bun run ~/.claude/LIFEOS/TOOLS/KnowledgeGraph.ts traverse <slug> --hops 2
+bun run $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts traverse <slug> --hops 2
 
 # Directly connected notes
-bun run ~/.claude/LIFEOS/TOOLS/KnowledgeGraph.ts related <slug>
+bun run $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts related <slug>
 
 # Find notes by tag
-bun run ~/.claude/LIFEOS/TOOLS/KnowledgeGraph.ts find <tag>
+bun run $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts find <tag>
 ```
 
 ### Check the inventory drift hook
 ```bash
 # Run the drift handler ad-hoc against current MEMORY/
-bun run ~/.claude/hooks/handlers/MemoryDirIntegrity.ts
+bun run $LIFEOS_ROOT/hooks/handlers/MemoryDirIntegrity.ts
 ```
 
 ---
@@ -924,13 +924,13 @@ bun run ~/.claude/hooks/handlers/MemoryDirIntegrity.ts
 - Consolidated WORKSYSTEM.md into MEMORYSYSTEM.md
 
 **2026-01-09:** v4.0 — Major restructure
-- Moved BACKUPS to `~/.claude/BACKUPS/` (outside MEMORY)
+- Moved BACKUPS to `$LIFEOS_ROOT/BACKUPS/` (outside MEMORY)
 - Renamed RAW-OUTPUTS to RAW
 - All directories now ALL CAPS
 
 **2026-01-05:** v1.0 — Unified Memory System migration
-- Previous: `~/.claude/history/`, `~/.claude/context/`, `~/.claude/progress/`
-- Current: `~/.claude/LIFEOS/MEMORY/`
+- Previous: `$LIFEOS_ROOT/history/`, `$LIFEOS_ROOT/context/`, `$LIFEOS_ROOT/progress/`
+- Current: `$LIFEOS_DIR/MEMORY/`
 - Files migrated: 8,415+
 
 ---
@@ -980,7 +980,7 @@ LifeOS doesn't control auto-dream activation. With auto-memory disabled there is
 - **Hook System:** `../Hooks/HookSystem.md`
 - **Architecture:** `../LifeosSystemArchitecture.md`
 - **ISA format:** `../IsaFormat.md`
-- **Drift handler source:** `~/.claude/hooks/handlers/MemoryDirIntegrity.ts`
+- **Drift handler source:** `$LIFEOS_ROOT/hooks/handlers/MemoryDirIntegrity.ts`
 
 ### Retrieval absence statements + tag-match semantics (2026-06-10)
 

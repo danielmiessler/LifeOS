@@ -67,7 +67,7 @@ Ask the user:
 
 ```bash
 # Check prompts exist
-ls ~/.claude/skills/Evals/UseCases/<name>/prompts/
+ls $LIFEOS_ROOT/skills/Evals/UseCases/<name>/prompts/
 
 # Should see both versions:
 # v1.0.0.md
@@ -76,7 +76,7 @@ ls ~/.claude/skills/Evals/UseCases/<name>/prompts/
 
 ### Step 3: Create Comparison Config
 
-Create `~/.claude/skills/Evals/UseCases/<name>/comparisons/<comparison-name>.yaml`:
+Create `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/comparisons/<comparison-name>.yaml`:
 
 ```yaml
 comparison:
@@ -120,8 +120,8 @@ Run the suite once per prompt version via `AlgorithmBridge.ts`. The use-case con
 
 ```bash
 # Run v1.0.0 first, then v1.1.0
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-v1.0.0
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-v1.1.0
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-v1.0.0
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-v1.1.0
 ```
 
 Position-swap protection (for pairwise judges that may favor the first/second option presented) is implemented inside the judge config — see the `position_swap: true` flag on `pairwise_comparison` graders in the use-case `config.yaml`. The grader handles randomization; the runner doesn't need a separate flag.
@@ -294,10 +294,10 @@ focus: "depth"
 For detailed comparison setup, use the Comparison template:
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $LIFEOS_ROOT/Templates/Tools/RenderTemplate.ts \
   -t Evals/Comparison.hbs \
-  -d ~/.claude/skills/Evals/UseCases/<name>/comparisons/<name>.yaml \
-  -o ~/.claude/skills/Evals/UseCases/<name>/comparisons/<name>-setup.md \
+  -d $LIFEOS_ROOT/skills/Evals/UseCases/<name>/comparisons/<name>.yaml \
+  -o $LIFEOS_ROOT/skills/Evals/UseCases/<name>/comparisons/<name>-setup.md \
   --preview
 ```
 

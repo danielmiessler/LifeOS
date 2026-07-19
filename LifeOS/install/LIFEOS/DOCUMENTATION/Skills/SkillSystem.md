@@ -51,7 +51,7 @@ version: 1.5.1
 ### Public skills (`TitleCase`) — ship in the LifeOS public release
 - ONLY templated, safe, public, ready content
 - Generic instructions any LifeOS user could follow; placeholder values, public API references
-- Can reference `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/` at runtime for per-user tweaks
+- Can reference `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/` at runtime for per-user tweaks
 - Exported to the public LifeOS repository as-is
 
 **Forbidden in public skills:**
@@ -67,7 +67,7 @@ version: 1.5.1
 ### Private skills (`_ALLCAPS`) — never leave the local repo
 - Anything goes: real names, real domains, real customers, real internal infra
 - The underscore IS the safety boundary; release tooling skips them
-- The decision rule: *"Could this skill be dropped, as-is, into a stranger's `~/.claude/skills/` and just work?"* If no, it must be `_ALLCAPS`
+- The decision rule: *"Could this skill be dropped, as-is, into a stranger's `$LIFEOS_ROOT/skills/` and just work?"* If no, it must be `_ALLCAPS`
 
 **Decision test — these triggers FORCE `_ALLCAPS` naming:**
 
@@ -87,12 +87,12 @@ version: 1.5.1
 
 **Listing skills by category:**
 ```bash
-ls -1 ~/.claude/skills/ | grep -v '^_'   # Public (TitleCase)
-ls -1 ~/.claude/skills/ | grep '^_'      # Private (_ALLCAPS)
+ls -1 $LIFEOS_ROOT/skills/ | grep -v '^_'   # Public (TitleCase)
+ls -1 $LIFEOS_ROOT/skills/ | grep '^_'      # Private (_ALLCAPS)
 ```
 
 **Pattern for per-user layering in public skills:**
-A public skill can be templated to load runtime customizations from `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/PREFERENCES.md`. The skill body stays generic; the customization file overlays per-instance context. **Do not use SKILLCUSTOMIZATIONS to smuggle private content into a public skill** — if the skill *requires* private context to function, it must be renamed `_ALLCAPS`.
+A public skill can be templated to load runtime customizations from `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/PREFERENCES.md`. The skill body stays generic; the customization file overlays per-instance context. **Do not use SKILLCUSTOMIZATIONS to smuggle private content into a public skill** — if the skill *requires* private context to function, it must be renamed `_ALLCAPS`.
 
 **NEVER hardcode personal data in public skills.**
 
@@ -112,7 +112,7 @@ All skills include this standard instruction block after the YAML frontmatter:
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/{SkillName}/`
+`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/{SkillName}/`
 
 If this directory exists, load and apply:
 - `PREFERENCES.md` - User preferences and configuration
@@ -124,7 +124,7 @@ These define user-specific preferences. If the directory does not exist, proceed
 ### Directory Structure
 
 ```
-~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/
+$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/
 ├── README.md                    # Documentation for this system
 ├── Art/                         # Art skill customizations
 │   ├── EXTEND.yaml              # Extension manifest
@@ -177,7 +177,7 @@ description: "What this customization adds"
 
 ### Creating a Customization
 
-1. **Create directory**: `mkdir -p ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/SkillName`
+1. **Create directory**: `mkdir -p $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/SkillName`
 2. **Create EXTEND.yaml**: Define what files to load and merge strategy
 3. **Create PREFERENCES.md**: User preferences for this skill
 4. **Add additional files**: Any skill-specific configurations
@@ -252,7 +252,7 @@ science_cycle_time: meso
 - **Research** - Investigation through hypotheses and evidence gathering
 - **Council** - Debate as parallel hypothesis testing
 
-**See:** `~/.claude/skills/Science/Protocol.md` for the full protocol interface
+**See:** `$LIFEOS_ROOT/skills/Science/Protocol.md` for the full protocol interface
 
 ### 2. Markdown Body (Workflow Routing + Examples + Documentation)
 
@@ -278,7 +278,7 @@ science_cycle_time: meso
    Running the **WorkflowName** workflow in the **SkillName** skill to ACTION...
    ```
 
-**Full documentation:** `~/.claude/LIFEOS/DOCUMENTATION/Notifications/NotificationSystem.md`
+**Full documentation:** `$LIFEOS_DIR/DOCUMENTATION/Notifications/NotificationSystem.md`
 
 ## Workflow Routing
 
@@ -453,7 +453,7 @@ SkillSearch('art tools')        # Loads Tools.md from skill root
 Or reference them directly:
 ```bash
 # Read specific context file
-Read ~/.claude/skills/Art/Aesthetic.md
+Read $LIFEOS_ROOT/skills/Art/Aesthetic.md
 ```
 
 Context files can reference workflows and tools:
@@ -538,7 +538,7 @@ Don't bother for:
 
 Use the CreateSkill skill's CanonicalizeSkill workflow:
 ```
-~/.claude/skills/CreateSkill/Workflows/CanonicalizeSkill.md
+$LIFEOS_ROOT/skills/CreateSkill/Workflows/CanonicalizeSkill.md
 ```
 
 Or manually:
@@ -546,14 +546,14 @@ Or manually:
 2. Update YAML frontmatter to single-line description
 3. Add `## Workflow Routing` table
 4. Add `## Examples` section
-5. Move backups to `~/.claude/LIFEOS/MEMORY/Backups/`
+5. Move backups to `$LIFEOS_DIR/MEMORY/Backups/`
 6. Verify against checklist
 
 ### How to Test Effectiveness
 
 After creating or canonicalizing a skill, verify it actually improves outcomes:
 ```
-~/.claude/skills/CreateSkill/Workflows/TestSkill.md
+$LIFEOS_ROOT/skills/CreateSkill/Workflows/TestSkill.md
 ```
 
 This runs the skill against real prompts with a no-skill baseline comparison. If the skill underperforms, use `ImproveSkill.md` to iterate. If the description doesn't trigger reliably, use `OptimizeDescription.md` to test and refine trigger accuracy.
@@ -617,7 +617,7 @@ description: Complete blog workflow. USE WHEN user mentions doing anything with 
 
 ## Complete Canonical Example: a personal blogging skill
 
-**Reference:** any well-formed skill in `~/.claude/skills/` follows the same pattern; private personal skills use the `_NAME/` form below.
+**Reference:** any well-formed skill in `$LIFEOS_ROOT/skills/` follows the same pattern; private personal skills use the `_NAME/` form below.
 
 ```yaml
 ---
@@ -646,7 +646,7 @@ Complete blog workflow.
    Running the **WorkflowName** workflow in the **Blogging** skill to ACTION...
    ```
 
-**Full documentation:** `~/.claude/LIFEOS/DOCUMENTATION/Notifications/NotificationSystem.md`
+**Full documentation:** `$LIFEOS_DIR/DOCUMENTATION/Notifications/NotificationSystem.md`
 
 ## Core Paths
 
@@ -860,7 +860,7 @@ bun ToolName.ts \
 \`\`\`
 ```
 
-**See:** `~/.claude/LIFEOS/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Workflow-to-Tool Integration section)
+**See:** `$LIFEOS_DIR/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Workflow-to-Tool Integration section)
 
 ---
 
@@ -965,7 +965,7 @@ bun Generate.ts \
 4. **Value flags**: `--flag <value>` for choices
 5. **Composable**: Flags should combine logically
 
-**See:** `~/.claude/LIFEOS/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Configuration Flags section) for full documentation
+**See:** `$LIFEOS_DIR/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Configuration Flags section) for full documentation
 
 ### Tool Structure
 
@@ -975,7 +975,7 @@ bun Generate.ts \
  * ToolName.ts - Brief description
  *
  * Usage:
- *   bun ~/.claude/skills/SkillName/Tools/ToolName.ts <command> [options]
+ *   bun $LIFEOS_ROOT/skills/SkillName/Tools/ToolName.ts <command> [options]
  *
  * Commands:
  *   start     Start the thing
@@ -1093,5 +1093,5 @@ This system ensures:
 
 ## Related Systems
 
-- **Master Architecture:** `~/.claude/LIFEOS/DOCUMENTATION/LifeosSystemArchitecture.md` — authoritative system-of-systems reference
-- **Knowledge Archive:** `~/.claude/LIFEOS/MEMORY/KNOWLEDGE/` — entity-based archive with 4 types (People, Companies, Ideas, Research), managed by Algorithm LEARN phase (direct writes), `LIFEOS/TOOLS/KnowledgeHarvester.ts` (validation/maintenance), and the `/knowledge` skill. Topic is a tag, not a domain. Skills that perform research or analysis can query the archive for accumulated knowledge.
+- **Master Architecture:** `$LIFEOS_DIR/DOCUMENTATION/LifeosSystemArchitecture.md` — authoritative system-of-systems reference
+- **Knowledge Archive:** `$LIFEOS_DIR/MEMORY/KNOWLEDGE/` — entity-based archive with 4 types (People, Companies, Ideas, Research), managed by Algorithm LEARN phase (direct writes), `LIFEOS/TOOLS/KnowledgeHarvester.ts` (validation/maintenance), and the `/knowledge` skill. Topic is a tag, not a domain. Skills that perform research or analysis can query the archive for accumulated knowledge.

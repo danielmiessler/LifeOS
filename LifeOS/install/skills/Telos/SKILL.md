@@ -28,7 +28,7 @@ effort: medium
 
 ## What It Does
 
-Reads and updates two kinds of context. Personal TELOS: the principal's life context — goals, beliefs, wisdom, books, movies, challenges, narratives, strategies, mission, models, predictions, traumas, frames, lessons, wrong-beliefs — at `~/.claude/LIFEOS/USER/TELOS/`, updated through the Update workflow with timestamped backups. Project TELOS: analyzes a directory of .md/.csv files to extract dependency chains (PROBLEMS→GOALS→STRATEGIES→PROJECTS), bottlenecks, alignment, and progress, then produces a McKinsey-style report, n=24 narrative points, or a Next.js dashboard built by parallel engineers.
+Reads and updates two kinds of context. Personal TELOS: the principal's life context — goals, beliefs, wisdom, books, movies, challenges, narratives, strategies, mission, models, predictions, traumas, frames, lessons, wrong-beliefs — at `$LIFEOS_DIR/USER/TELOS/`, updated through the Update workflow with timestamped backups. Project TELOS: analyzes a directory of .md/.csv files to extract dependency chains (PROBLEMS→GOALS→STRATEGIES→PROJECTS), bottlenecks, alignment, and progress, then produces a McKinsey-style report, n=24 narrative points, or a Next.js dashboard built by parallel engineers.
 
 ## The Problem
 
@@ -38,7 +38,7 @@ Life context and project state both sprawl across many files, and acting on them
 
 **TELOS** (Telic Evolution and Life Operating System) is a context-gathering system with two applications:
 
-1. **Personal TELOS** - {PRINCIPAL.NAME}'s life context system (beliefs, goals, lessons, wisdom) at `~/.claude/LIFEOS/USER/TELOS/`
+1. **Personal TELOS** - {PRINCIPAL.NAME}'s life context system (beliefs, goals, lessons, wisdom) at `$LIFEOS_DIR/USER/TELOS/`
 2. **Project TELOS** - Analysis framework for organizations/projects (relationships, dependencies, goals, progress)
 
 The skill detects which context a request means (see Context Detection below), then routes to the right workflow. Personal updates always go through the Update workflow so backups and changelog entries happen automatically. Project analysis scans the target directory, builds a relationship graph, and renders the output format you asked for.
@@ -116,7 +116,7 @@ User: "write a TELOS report for Acme Corp"
 
 | User Request | Context | Location |
 |--------------|---------|----------|
-| "my TELOS", "my goals", "my beliefs", "add to TELOS" | Personal TELOS | `~/.claude/LIFEOS/USER/TELOS/` |
+| "my TELOS", "my goals", "my beliefs", "add to TELOS" | Personal TELOS | `$LIFEOS_DIR/USER/TELOS/` |
 | "Alma", "TELOSAPP", "analyze [project]", "dashboard for" | Project TELOS | User-specified directory |
 | "analyze ~/path/to/project" | Project TELOS | Specified path |
 
@@ -128,14 +128,14 @@ User: "write a TELOS report for Acme Corp"
 
 **CRITICAL PATH:** All personal TELOS files are located at:
 ```
-~/.claude/LIFEOS/USER/TELOS/
+$LIFEOS_DIR/USER/TELOS/
 ```
 
 Personal TELOS lives in the CORE USER directory, NOT directly under the Telos skill directory.
 
 ## Personal TELOS Framework
 
-All files located in `~/.claude/LIFEOS/USER/TELOS/`:
+All files located in `$LIFEOS_DIR/USER/TELOS/`:
 
 ### Core Philosophy
 - **TELOS.md** - Main framework document
@@ -172,11 +172,11 @@ All files located in `~/.claude/LIFEOS/USER/TELOS/`:
 
 ```bash
 # View specific file
-read ~/.claude/LIFEOS/USER/TELOS/GOALS.md
-read ~/.claude/LIFEOS/USER/TELOS/BELIEFS.md
+read $LIFEOS_DIR/USER/TELOS/GOALS.md
+read $LIFEOS_DIR/USER/TELOS/BELIEFS.md
 
 # View recent updates
-read ~/.claude/LIFEOS/USER/TELOS/updates.md
+read $LIFEOS_DIR/USER/TELOS/updates.md
 ```
 
 ### Update Personal TELOS
@@ -337,7 +337,7 @@ The deliverable is an interactive Next.js dashboard that renders the analysis ag
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Telos","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> ~/.claude/LIFEOS/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Telos","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

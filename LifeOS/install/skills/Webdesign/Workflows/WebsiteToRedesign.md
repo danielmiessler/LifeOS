@@ -32,7 +32,7 @@ mkdir -p "$OUT"
 curl -sL "$URL" > "$OUT/original.html"
 
 # Extract tokens from the live site
-bun ~/.claude/skills/Webdesign/Tools/VerifyDesign.ts "$URL" "$OUT/original-verify"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts "$URL" "$OUT/original-verify"
 ```
 
 ### 2. Critique Pass
@@ -74,9 +74,9 @@ The one memorable element: $DIFFERENTIATOR
 ### 4. Submit to Claude Design
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts open
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts upload "$OUT/original.png"
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "$(cat $OUT/brief.md)"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts open
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts upload "$OUT/original.png"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "$(cat $OUT/brief.md)"
 ```
 
 ### 5. Iterate
@@ -93,8 +93,8 @@ Use `RefinePrototype.md` workflow for refinements. Common redesign iterations:
 Before export, capture the new design and compare:
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/redesigned.png"
-bun ~/.claude/skills/Webdesign/Tools/VerifyDesign.ts --compare "$OUT/original.png" "$OUT/redesigned.png" "$OUT/compare"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/redesigned.png"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts --compare "$OUT/original.png" "$OUT/redesigned.png" "$OUT/compare"
 ```
 
 ### 7. Export + Integrate

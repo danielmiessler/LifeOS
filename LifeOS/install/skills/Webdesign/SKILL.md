@@ -62,7 +62,7 @@ When invoked standalone for a greenfield design, the skill produces a self-conta
 User-specific design preferences (color palette, typography, spacing grid, animation timing, framework defaults) live at:
 
 ```
-~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Webdesign/
+$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Webdesign/
 ├── PREFERENCES.md     # Design tokens, preferred frameworks
 ├── README.md
 └── EXTEND.yaml

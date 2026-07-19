@@ -40,7 +40,7 @@ Add one or more commands to an existing CLI without breaking existing functional
 
 ```bash
 # Find CLI location
-ls -la ~/.claude/LIFEOS/TOOLS/[cli-name]/
+ls -la $LIFEOS_DIR/TOOLS/[cli-name]/
 # or
 ls -la ~/Projects/[project]/
 ```

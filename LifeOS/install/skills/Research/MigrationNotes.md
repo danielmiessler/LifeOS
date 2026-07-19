@@ -14,36 +14,36 @@ Successfully migrated 4 research commands to the research skill's workflows dire
 ## Files Migrated
 
 ### 1. Claude WebSearch Research
-- **Source:** `~/.claude/commands/perform-claude-research.md`
-- **Destination:** `~/.claude/skills/Research/Workflows/ClaudeResearch.md`
+- **Source:** `$LIFEOS_ROOT/commands/perform-claude-research.md`
+- **Destination:** `$LIFEOS_ROOT/skills/Research/Workflows/ClaudeResearch.md`
 - **Size:** 3.6K
 - **Description:** Intelligent query decomposition with Claude's WebSearch tool (free, no API keys)
 - **Triggers:** "claude research", "use websearch", "claude only"
 
 ### 2. Perplexity API Research
-- **Source:** `~/.claude/commands/perform-perplexity-research.md`
-- **Destination:** `~/.claude/skills/Research/Workflows/PerplexityResearch.md`
+- **Source:** `$LIFEOS_ROOT/commands/perform-perplexity-research.md`
+- **Destination:** `$LIFEOS_ROOT/skills/Research/Workflows/PerplexityResearch.md`
 - **Size:** 8.1K
 - **Description:** Fast web search with query decomposition via Perplexity API
 - **Triggers:** "perplexity research", "use perplexity", "sonar"
 
 ### 3. Interview Preparation
-- **Source:** `~/.claude/commands/perform-interview-research.md`
-- **Destination:** `~/.claude/skills/Research/Workflows/InterviewResearch.md`
+- **Source:** `$LIFEOS_ROOT/commands/perform-interview-research.md`
+- **Destination:** `$LIFEOS_ROOT/skills/Research/Workflows/InterviewResearch.md`
 - **Size:** 4.4K
 - **Description:** Tyler Cowen-style interview prep with Shannon surprise principle
 - **Triggers:** "interview research", "prepare interview questions", "sponsored interview"
 
 ### 4. AI Trends Analysis
-- **Source:** `~/.claude/commands/analyze-ai-trends.md`
-- **Destination:** `~/.claude/skills/Research/Workflows/AnalyzeAiTrends.md`
+- **Source:** `$LIFEOS_ROOT/commands/analyze-ai-trends.md`
+- **Destination:** `$LIFEOS_ROOT/skills/Research/Workflows/AnalyzeAiTrends.md`
 - **Size:** 3.0K
 - **Description:** Deep trend analysis across historical AI news logs
 - **Triggers:** "analyze ai trends", "trend analysis", "ai industry trends"
 
 ## Workflows Directory Status
 
-**Location:** `~/.claude/skills/Research/Workflows/`
+**Location:** `$LIFEOS_ROOT/skills/Research/Workflows/`
 
 **Note (2026-01):** Conduct.md and PerplexityResearch.md were later removed. Perplexity functionality consolidated into QuickResearch.md (single-agent) and StandardResearch.md (multi-agent).
 
@@ -86,7 +86,7 @@ Each workflow has:
 
 ✅ **ALL ORIGINALS PRESERVED**
 
-The original command files remain in `~/.claude/commands/`:
+The original command files remain in `$LIFEOS_ROOT/commands/`:
 - `perform-claude-research.md` ✓
 - `perform-perplexity-research.md` ✓
 - `perform-interview-research.md` ✓

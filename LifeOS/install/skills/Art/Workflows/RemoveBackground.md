@@ -56,13 +56,13 @@ Use the LifeOS `RemoveBg.ts` wrapper, which calls local `rembg` and handles the 
 
 ```bash
 # Single file (overwrites; renames .jpg→.png)
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts input-image.png
+bun $LIFEOS_DIR/TOOLS/RemoveBg.ts input-image.png
 
 # Single file with explicit output path
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts input-image.jpg output-image.png
+bun $LIFEOS_DIR/TOOLS/RemoveBg.ts input-image.jpg output-image.png
 
 # Batch (overwrites each in place)
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts img1.png img2.png img3.png
+bun $LIFEOS_DIR/TOOLS/RemoveBg.ts img1.png img2.png img3.png
 ```
 
 If you need to call `rembg` directly:
@@ -104,13 +104,13 @@ cp output-image.png /destination/path/transparent-image.png
 ### Example 1: Remove background from a diagram
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts ~/Downloads/TheAlgorithm.png
+bun $LIFEOS_DIR/TOOLS/RemoveBg.ts ~/Downloads/TheAlgorithm.png
 ```
 
 ### Example 2: Remove background and save with new name
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts \
+bun $LIFEOS_DIR/TOOLS/RemoveBg.ts \
   ~/your-site/public/images/logo-with-bg.png \
   ~/your-site/public/images/logo-transparent.png
 ```
@@ -119,7 +119,7 @@ bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts \
 
 ```bash
 cd ~/Downloads
-bun ~/.claude/LIFEOS/TOOLS/RemoveBg.ts diagram-*.png
+bun $LIFEOS_DIR/TOOLS/RemoveBg.ts diagram-*.png
 ```
 
 ---

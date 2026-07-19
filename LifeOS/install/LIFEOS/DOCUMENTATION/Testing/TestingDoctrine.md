@@ -11,9 +11,9 @@ version: 1.0.24
 
 > Testing is how the Life OS knows what it knows (`LIFEOS/DOCUMENTATION/LifeOs/LifeOsThesis.md`): the hill-climb only counts when each step is verified, and `bun test` is the canonical probe behind every ISC claim. An unverified gap-closure is a guess wearing a checkmark.
 
-> **TL;DR.** Tests for LifeOS run on `bun test`. The shared harness lives at `~/.claude/test/harness.ts` and exports zero-external-dep helpers (`paiTestEnv`, `tempDir`, `claudeFixture`, platform predicates, custom matchers). Tests live in a parallel `~/.claude/test/` tree that mirrors the source API surface — *not* co-located. Coverage is corpus-based: every documented hook, skill workflow, and tool surface gets at least one test file. No retries, no hardcoded ports, no time-based waits, no per-test timeouts. The ISA's `## Test Strategy` `tool: bun test path/to/foo.test.ts` is the canonical bridge from criterion to probe.
+> **TL;DR.** Tests for LifeOS run on `bun test`. The shared harness lives at `$LIFEOS_ROOT/test/harness.ts` and exports zero-external-dep helpers (`paiTestEnv`, `tempDir`, `claudeFixture`, platform predicates, custom matchers). Tests live in a parallel `$LIFEOS_ROOT/test/` tree that mirrors the source API surface — *not* co-located. Coverage is corpus-based: every documented hook, skill workflow, and tool surface gets at least one test file. No retries, no hardcoded ports, no time-based waits, no per-test timeouts. The ISA's `## Test Strategy` `tool: bun test path/to/foo.test.ts` is the canonical bridge from criterion to probe.
 
-This document is the result of a deep analysis of how the Bun project itself (`oven-sh/bun`) achieves its reputation for thorough test coverage and harness discipline, mapped onto LifeOS's TypeScript surface. Citations to Bun source are inline; the full research lives at `~/.claude/LIFEOS/MEMORY/WORK/20260507-bun-testing-doctrine-analysis/ISA.md`.
+This document is the result of a deep analysis of how the Bun project itself (`oven-sh/bun`) achieves its reputation for thorough test coverage and harness discipline, mapped onto LifeOS's TypeScript surface. Citations to Bun source are inline; the full research lives at `$LIFEOS_DIR/MEMORY/WORK/20260507-bun-testing-doctrine-analysis/ISA.md`.
 
 ---
 
@@ -29,7 +29,7 @@ The ISA already declares the test surface (Algorithm v6.3.0 doctrine: *"the ISA 
 
 | Pattern | Bun source | LifeOS adoption |
 |---------|-----------|--------------|
-| **Single shared harness, zero external deps** | `test/harness.ts` (1985 lines, 98 exports, header comment forbids external deps) | `~/.claude/test/harness.ts` |
+| **Single shared harness, zero external deps** | `test/harness.ts` (1985 lines, 98 exports, header comment forbids external deps) | `$LIFEOS_ROOT/test/harness.ts` |
 | **Parallel `test/` tree mirroring API surface, not co-location** | `src/bun.js/api/spawn.zig` → `test/js/bun/spawn/*.test.ts` | `hooks/<Hook>.hook.ts` → `test/hooks/<Hook>.hook.test.ts` |
 | **Subprocess testing for CLI behavior** | 591 of 1526 test files spawn `bun` | `Inference.ts`, hook handlers tested via `Bun.spawn` (the former `TheRouter.hook.ts` suite was removed with the hook, 2026-07-11) |
 | **`tempDir` with `DisposableString`** | `test/harness.ts:263-294` | `paiTempDir(prefix, fileMap)` returns `using`-disposable |
@@ -60,11 +60,11 @@ The ISA already declares the test surface (Algorithm v6.3.0 doctrine: *"the ISA 
 
 These are non-negotiable. Violations get caught at the ISA `## Test Strategy` review or at the VERIFY-phase Forge cross-vendor audit.
 
-### 1. The harness is `~/.claude/test/harness.ts`. Zero external deps.
+### 1. The harness is `$LIFEOS_ROOT/test/harness.ts`. Zero external deps.
 
 It must be importable before `bun install` runs. It depends only on Bun built-ins (`Bun`, `bun:test`, `node:fs`, `node:path`, `node:os`). Adding a dependency to `package.json` for the harness is a CRITICAL FAILURE.
 
-### 2. Tests live at `~/.claude/test/<surface>/<name>.test.ts`.
+### 2. Tests live at `$LIFEOS_ROOT/test/<surface>/<name>.test.ts`.
 
 Mirror the source path, not co-locate. Map:
 
@@ -226,7 +226,7 @@ This is strictly stronger than the example form — it catches `ANTHROPIC_API_KE
 
 ## bunfig.toml
 
-LifeOS's test config lives at `~/.claude/bunfig.toml` `[test]` section:
+LifeOS's test config lives at `$LIFEOS_ROOT/bunfig.toml` `[test]` section:
 
 ```toml
 [test]
@@ -250,7 +250,7 @@ coveragePathIgnorePatterns = [
 # coverageThreshold = { line = 0.8, function = 0.9, statement = 0.85 }
 ```
 
-`bun test` from `~/.claude/` walks `test/` and runs every `*.test.ts`.
+`bun test` from `$LIFEOS_ROOT/` walks `test/` and runs every `*.test.ts`.
 
 ---
 
@@ -317,7 +317,7 @@ Phases 2–5 are tracked separately as PROJECTS.md entries; they're not part of 
 - ❌ Adding a `--retry 3` flag to any test invocation in CI. Banned.
 - ❌ Hardcoding port `31337` in a Pulse test. Use `port: 0` and capture.
 - ❌ `await Bun.sleep(2000)` to "let the hook finish." Wait on the actual signal.
-- ❌ Reading real `~/.claude/LIFEOS/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md` from a test. Use a fixture.
+- ❌ Reading real `$LIFEOS_DIR/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md` from a test. Use a fixture.
 - ❌ Spawning real `claude` subprocess in a test. Use a fixture-replay subprocess.
 - ❌ Inventing an `acceptance.yaml` or `acceptance.ts` parallel to the ISA. The ISA IS the test harness.
 
@@ -325,9 +325,9 @@ Phases 2–5 are tracked separately as PROJECTS.md entries; they're not part of 
 
 ## Cross-references
 
-- Algorithm doctrine on ISA-as-test-harness: `~/.claude/LIFEOS/ALGORITHM/v8.4.0.md` § Doctrine (line 17)
-- ISA format spec: `~/.claude/LIFEOS/DOCUMENTATION/Isa/IsaFormat.md`
+- Algorithm doctrine on ISA-as-test-harness: `$LIFEOS_DIR/ALGORITHM/v8.4.0.md` § Doctrine (line 17)
+- ISA format spec: `$LIFEOS_DIR/DOCUMENTATION/Isa/IsaFormat.md`
 - Bun test docs: <https://bun.sh/docs/cli/test>, <https://bun.sh/docs/test/writing>, <https://bun.sh/docs/test/lifecycle>, <https://bun.sh/docs/test/snapshots>, <https://bun.sh/docs/test/coverage>, <https://bun.sh/docs/test/mocks>
 - Bun's own test doctrine: <https://github.com/oven-sh/bun/blob/main/test/CLAUDE.md>
 - Bun harness source: <https://github.com/oven-sh/bun/blob/main/test/harness.ts>
-- Working scaffold (this ISA's deliverable): `~/.claude/test/harness.ts`, `~/.claude/test/tools/Inference.test.ts`, `~/.claude/bunfig.toml`
+- Working scaffold (this ISA's deliverable): `$LIFEOS_ROOT/test/harness.ts`, `$LIFEOS_ROOT/test/tools/Inference.test.ts`, `$LIFEOS_ROOT/bunfig.toml`

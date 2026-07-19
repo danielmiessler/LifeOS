@@ -202,12 +202,12 @@ Three primitives for non-blocking work. Pick the right one:
 
 ## Knowledge Archive Access
 
-Delegated agents can query the **Knowledge Archive** (`~/.claude/LIFEOS/MEMORY/KNOWLEDGE/`) for accumulated knowledge organized by 4 entity types: People (human beings), Companies (organizations), Ideas (insights/theses/analyses), Research (longer-form research notes). Topic is a tag, not a domain. Managed by Algorithm LEARN phase (direct writes), `LIFEOS/TOOLS/KnowledgeHarvester.ts` (validation/maintenance), and the `/knowledge` skill. Include archive query instructions in agent prompts when the task benefits from prior research or domain context.
+Delegated agents can query the **Knowledge Archive** (`$LIFEOS_DIR/MEMORY/KNOWLEDGE/`) for accumulated knowledge organized by 4 entity types: People (human beings), Companies (organizations), Ideas (insights/theses/analyses), Research (longer-form research notes). Topic is a tag, not a domain. Managed by Algorithm LEARN phase (direct writes), `LIFEOS/TOOLS/KnowledgeHarvester.ts` (validation/maintenance), and the `/knowledge` skill. Include archive query instructions in agent prompts when the task benefits from prior research or domain context.
 
 ---
 
 **See Also:**
-- `~/.claude/LIFEOS/DOCUMENTATION/LifeosSystemArchitecture.md` — Master architecture reference (system-of-systems)
+- `$LIFEOS_DIR/DOCUMENTATION/LifeosSystemArchitecture.md` — Master architecture reference (system-of-systems)
 - SKILL.md > Delegation (Quick Reference) - Condensed trigger table
 - Workflows/Delegation.md - Operational delegation procedures
 - Workflows/BackgroundDelegation.md - Background agent patterns

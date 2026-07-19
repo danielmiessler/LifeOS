@@ -144,7 +144,7 @@ open ~/Projects/Wallpaper/blue-purple-circuits.png
 ### Step 4: Generate
 
 ```bash
-bun run ~/.claude/skills/Art/Tools/Generate.ts \
+bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
   --workflow=EmbossedLogoWallpaper \
   --model nano-banana-pro \
   --prompt "[CONSTRUCTED_PROMPT]" \

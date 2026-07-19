@@ -106,7 +106,7 @@ NO other text.
 ### Step 5: Generate Image
 
 ```bash
-bun run ~/.claude/skills/art/Tools/Generate.ts \
+bun run $LIFEOS_ROOT/skills/art/Tools/Generate.ts \
   --model nano-banana-pro \
   --prompt "[YOUR PROMPT]" \
   --size 2K \

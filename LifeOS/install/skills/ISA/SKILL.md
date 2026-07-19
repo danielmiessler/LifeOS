@@ -218,12 +218,12 @@ The Algorithm at OBSERVE invokes this skill to scaffold or read an ISA. The skil
 - PLAN: `Skill("ISA", "extract feature <name> as ephemeral file")` → ephemeral excerpt.
 - LEARN: `Skill("ISA", "reconcile <ephemeral-path> → <master-path>")` → deterministic merge.
 
-The Algorithm doctrine spec at `~/.claude/LIFEOS/ALGORITHM/v7.0.0.md` (or LATEST) governs invocation cadence. This skill is invocation-agnostic — it works the same whether called by the Algorithm or directly by the user.
+The Algorithm doctrine spec at `$LIFEOS_DIR/ALGORITHM/v7.0.0.md` (or LATEST) governs invocation cadence. This skill is invocation-agnostic — it works the same whether called by the Algorithm or directly by the user.
 
 ---
 
 ## Format spec cross-reference
 
-The full ISA format spec lives at `~/.claude/LIFEOS/DOCUMENTATION/Isa/IsaFormat.md`. This skill implements that spec; if there is ever a contradiction, the format spec wins and this skill is updated to match.
+The full ISA format spec lives at `$LIFEOS_DIR/DOCUMENTATION/Isa/IsaFormat.md`. This skill implements that spec; if there is ever a contradiction, the format spec wins and this skill is updated to match.
 
-The system-architecture doc — five identities, three-guardrail taxonomy, fourteen-section body, six workflows, two homes, subsystem relationships — lives at `~/.claude/LIFEOS/DOCUMENTATION/Isa/IsaSystem.md`. Read that for the conceptual frame; read this file (and `IsaFormat.md`) for the operational contract.
+The system-architecture doc — five identities, three-guardrail taxonomy, fourteen-section body, six workflows, two homes, subsystem relationships — lives at `$LIFEOS_DIR/DOCUMENTATION/Isa/IsaSystem.md`. Read that for the conceptual frame; read this file (and `IsaFormat.md`) for the operational contract.

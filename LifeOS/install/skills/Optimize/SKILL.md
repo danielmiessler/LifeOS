@@ -43,10 +43,10 @@ Inspired by Karpathy's [autoresearch](https://github.com/karpathy/autoresearch) 
 ### Eval Mode (skill/prompt/agent targets)
 
 ```
-/optimize --target "~/.claude/skills/ExtractWisdom"
-/optimize --target "~/.claude/skills/Research/Workflows/QuickResearch.md"
+/optimize --target "$LIFEOS_ROOT/skills/ExtractWisdom"
+/optimize --target "$LIFEOS_ROOT/skills/Research/Workflows/QuickResearch.md"
 /optimize --target "prompts/my-prompt.md"
-/optimize --target "~/.claude/skills/ExtractWisdom" --max-experiments 20
+/optimize --target "$LIFEOS_ROOT/skills/ExtractWisdom" --max-experiments 20
 ```
 
 In eval mode, the system automatically:
@@ -117,9 +117,9 @@ When `/optimize` is invoked, the Algorithm enters with `mode: optimize` in the I
 ISC criteria become **guard rails** — assertions that must hold true across ALL experiments. Guard rails must REMAIN satisfied perpetually. A violation triggers automatic revert regardless of score improvement.
 
 **Reference files:**
-- `~/.claude/LIFEOS/ALGORITHM/optimize-loop.md` — the full loop protocol
-- `~/.claude/LIFEOS/ALGORITHM/eval-guide.md` — how to write good eval criteria
-- `~/.claude/LIFEOS/ALGORITHM/target-types.md` — target detection and ISC generation
+- `$LIFEOS_DIR/ALGORITHM/optimize-loop.md` — the full loop protocol
+- `$LIFEOS_DIR/ALGORITHM/eval-guide.md` — how to write good eval criteria
+- `$LIFEOS_DIR/ALGORITHM/target-types.md` — target detection and ISC generation
 
 ## Examples
 
@@ -155,7 +155,7 @@ ISC criteria become **guard rails** — assertions that must hold true across AL
 
 **Optimize a skill's Extract workflow:**
 ```
-/optimize --target "~/.claude/skills/ExtractWisdom" --max-experiments 15
+/optimize --target "$LIFEOS_ROOT/skills/ExtractWisdom" --max-experiments 15
 ```
 
 **Optimize a standalone prompt:**
@@ -165,7 +165,7 @@ ISC criteria become **guard rails** — assertions that must hold true across AL
 
 **Optimize with custom criteria:**
 ```
-/optimize --target "~/.claude/skills/Research/Workflows/QuickResearch.md" \
+/optimize --target "$LIFEOS_ROOT/skills/Research/Workflows/QuickResearch.md" \
   --criteria "Does the output contain specific facts with sources?" \
             "Is the output structured with clear sections?" \
             "Does the output avoid generic filler?" \

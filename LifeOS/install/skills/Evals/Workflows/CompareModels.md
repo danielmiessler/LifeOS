@@ -46,7 +46,7 @@ models:
 
 ### Step 3: Create Model Comparison Config
 
-Create `~/.claude/skills/Evals/UseCases/<name>/model-comparisons/<comparison-name>.yaml`:
+Create `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/model-comparisons/<comparison-name>.yaml`:
 
 ```yaml
 model_comparison:
@@ -98,18 +98,18 @@ Run the same suite once per model via `AlgorithmBridge.ts`, then collect the per
 
 ```bash
 # Sequential — three runs, one per model
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-claude
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gpt
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gemini
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-claude
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gpt
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gemini
 
 # Parallel — same three runs in the background
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-claude &
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gpt &
-bun run ~/.claude/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gemini &
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-claude &
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gpt &
+bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>-gemini &
 wait
 ```
 
-Each run's `results.json` lands at `~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>-<model>/<run-id>/results.json`. Side-by-side comparison is done by reading those JSONs (`jq`) — there is no built-in cross-model comparison CLI in this skill.
+Each run's `results.json` lands at `$LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>-<model>/<run-id>/results.json`. Side-by-side comparison is done by reading those JSONs (`jq`) — there is no built-in cross-model comparison CLI in this skill.
 5. View side-by-side results
 
 ### Step 5: Collect Results
@@ -123,10 +123,10 @@ Results stored in:
 Use Report template:
 
 ```bash
-bun run ~/.claude/Templates/Tools/RenderTemplate.ts \
+bun run $LIFEOS_ROOT/Templates/Tools/RenderTemplate.ts \
   -t Evals/Report.hbs \
-  -d ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/models/<run-id>/summary.yaml \
-  -o ~/.claude/LIFEOS/MEMORY/STATE/Evals-Results/<use-case>/models/<run-id>/report.md
+  -d $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/models/<run-id>/summary.yaml \
+  -o $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/models/<run-id>/report.md
 ```
 
 ### Step 7: Analyze Results

@@ -8,7 +8,7 @@ Read the target path and content to classify into one of five types:
 
 | Type | Detection Rule |
 |------|---------------|
-| **skill** | Directory contains `SKILL.md`, or path points to a skill directory under `~/.claude/skills/` |
+| **skill** | Directory contains `SKILL.md`, or path points to a skill directory under `$LIFEOS_ROOT/skills/` |
 | **prompt** | Standalone `.md` or `.txt` file containing prompt instructions (no SKILL.md in parent) |
 | **agent** | `.md` file with agent frontmatter (`name`, `description`, tools/capabilities fields) |
 | **code** | Source file(s) with `metric_command` provided in ISA — `.ts`, `.js`, `.py`, `.go`, etc. |

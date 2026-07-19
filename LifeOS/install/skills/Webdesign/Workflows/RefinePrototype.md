@@ -17,7 +17,7 @@ Required:
 ### 1. Verify Session
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot /tmp/current.png
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot /tmp/current.png
 ```
 
 Confirm a live prototype is visible. If not, the session expired or was closed — restart with `CreatePrototype`.
@@ -39,18 +39,18 @@ Use adjustment knobs first (they're fastest and reversible). Fall back to conver
 
 **Adjustment knob (most refinements fit here):**
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts adjust --property "spacing" --delta "+20%"
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts adjust --property "primary-color" --value "#2D5A3F"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts adjust --property "spacing" --delta "+20%"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts adjust --property "primary-color" --value "#2D5A3F"
 ```
 
 **Inline comment:**
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts comment --selector "hero-section" --text "Make this 30% shorter and shift the CTA left-aligned"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts comment --selector "hero-section" --text "Make this 30% shorter and shift the CTA left-aligned"
 ```
 
 **Conversational prompt:**
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "Remove the testimonial section. Add a pricing comparison table above the footer. Keep the current aesthetic."
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "Remove the testimonial section. Add a pricing comparison table above the footer. Keep the current aesthetic."
 ```
 
 ### 4. Wait for Regeneration
@@ -60,12 +60,12 @@ bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "Remove the tes
 ### 5. Screenshot and Compare
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/v${N}.png"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/v${N}.png"
 ```
 
 Use `compare` flag for before/after:
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts compare /tmp/current.png "$OUT/v${N}.png"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts compare /tmp/current.png "$OUT/v${N}.png"
 ```
 
 ### 6. Loop or Export

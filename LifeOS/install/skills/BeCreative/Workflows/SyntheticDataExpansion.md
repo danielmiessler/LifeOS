@@ -30,7 +30,7 @@ Running **SyntheticDataExpansion** in **BeCreative**...
 
 ## Outputs
 
-Written to `~/.claude/LIFEOS/MEMORY/WORK/{slug}/synthetic-data/`:
+Written to `$LIFEOS_DIR/MEMORY/WORK/{slug}/synthetic-data/`:
 
 - `seed.json` — the original seed corpus
 - `schema.json` — the validation schema

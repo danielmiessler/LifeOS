@@ -24,8 +24,8 @@ curl -s -X POST http://localhost:31337/notify \
 Two readers. Both at the start. The constitutional context is on file; we ground every prompt in what's there, never in what we'd ask if we had no idea.
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/TelosFreshness.ts --json          # per-section TELOS
-bun -e "import { readContextFreshness } from '$HOME/.claude/LIFEOS/TOOLS/TelosFreshness'; console.log(JSON.stringify(readContextFreshness(), null, 2))"
+bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts --json          # per-section TELOS
+bun -e "import { readContextFreshness } from '$LIFEOS_DIR/TOOLS/TelosFreshness'; console.log(JSON.stringify(readContextFreshness(), null, 2))"
 ```
 
 Or via Pulse (single round-trip):
@@ -37,7 +37,7 @@ curl -s http://localhost:31337/api/telos/freshness | jq # per-section TELOS
 
 Parse and combine into a single sorted list of stale items — TELOS sections AND constitutional files share the same conceptual surface from the principal's view. Sort most-stale-first by days-over-threshold.
 
-If `readContextFreshness()` reports a file with `why: "no frontmatter"`, the migration hasn't been run on that file. Stop and prompt: *"<file> doesn't have the freshness convention yet. Want me to run `bun ~/.claude/LIFEOS/TOOLS/MigrateContextFreshness.ts` first?"*
+If `readContextFreshness()` reports a file with `why: "no frontmatter"`, the migration hasn't been run on that file. Stop and prompt: *"<file> doesn't have the freshness convention yet. Want me to run `bun $LIFEOS_DIR/TOOLS/MigrateContextFreshness.ts` first?"*
 
 If `readContextFreshness()` reports a file with `why: "source missing"`, the file's `derived_from:` source doesn't have a freshness signal — the derivative can't inherit one. Surface this to the principal: *"<file> derives from <source> which has no freshness frontmatter. Want me to add it?"*
 
@@ -119,10 +119,10 @@ workflow (and equivalent principal-driven review flows) should call it.
 
 ```bash
 # TELOS section — section-level marker
-bun ~/.claude/LIFEOS/TOOLS/TelosFreshness.ts --bump <slug>
+bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts --bump <slug>
 
 # Constitutional file — review marker (NOT bumpContextTimestamp; that's for writes)
-bun -e "import { bumpReviewedTimestamp } from '$HOME/.claude/LIFEOS/TOOLS/TelosFreshness'; console.log(bumpReviewedTimestamp('<absolute-path>', 'user'))"
+bun -e "import { bumpReviewedTimestamp } from '$LIFEOS_DIR/TOOLS/TelosFreshness'; console.log(bumpReviewedTimestamp('<absolute-path>', 'user'))"
 ```
 
 Without this, files stay at grade F forever because no other path sets `last_reviewed:`.
@@ -149,8 +149,8 @@ The principal can say "next", "skip", "enough", "stop", "later" at any prompt. H
 When the principal says enough:
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/TelosFreshness.ts        # final TELOS state
-bun ~/.claude/LIFEOS/TOOLS/ContextAudit.ts          # content quality findings (read-only)
+bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts        # final TELOS state
+bun $LIFEOS_DIR/TOOLS/ContextAudit.ts          # content quality findings (read-only)
 ```
 
 Voice-summarize:
@@ -160,8 +160,8 @@ Voice-summarize:
 Regenerate the auto-derived files so future sessions pick up source changes:
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/GenerateTelosSummary.ts 2>/dev/null || true
-bun ~/.claude/LIFEOS/TOOLS/ArchitectureSummaryGenerator.ts generate 2>/dev/null || true
+bun $LIFEOS_DIR/TOOLS/GenerateTelosSummary.ts 2>/dev/null || true
+bun $LIFEOS_DIR/TOOLS/ArchitectureSummaryGenerator.ts generate 2>/dev/null || true
 ```
 
 Send a Pulse `/reload` so the freshness cache invalidates:
@@ -229,7 +229,7 @@ voice-confirm
 
 ## Failure modes
 
-- **Migration not run yet.** First call to `readContextFreshness()` returns one or more files with `why: "no frontmatter"`. Run `bun ~/.claude/LIFEOS/TOOLS/MigrateContextFreshness.ts` once before continuing.
+- **Migration not run yet.** First call to `readContextFreshness()` returns one or more files with `why: "no frontmatter"`. Run `bun $LIFEOS_DIR/TOOLS/MigrateContextFreshness.ts` once before continuing.
 - **Pulse not running.** Voice notifications fail silently; HTTP routes return connection errors. Conversation continues using the lib directly.
 - **Source missing for a derived file.** `architecture_summary` may show `why: "source missing"` if `LifeosSystemArchitecture.md` has no `last_updated` frontmatter. Surface to the principal; offer to add it.
 - **Slug not found by bumpTelosTimestamp.** Returns `sectionFound: false`. Re-check `sectionSlug(headingText)`.

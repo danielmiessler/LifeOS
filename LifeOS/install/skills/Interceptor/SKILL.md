@@ -8,7 +8,7 @@ effort: medium
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/`
+`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
@@ -50,7 +50,7 @@ Interceptor is a Chrome extension that operates through the actual browser UI pl
 **Tool:** `interceptor` CLI — Chrome/Brave extension that controls the real browser from inside, plus a macOS bridge that drives native apps, OS-level input, and full VM lifecycle.
 **Repo:** https://github.com/Hacker-Valley-Media/Interceptor
 **Install:** `~/Projects/interceptor` (built from source — see `Workflows/Update.md`)
-**Chrome "Load unpacked" target:** `~/.claude/skills/Interceptor/Extension/` — a **pinned copy** (not a symlink) of upstream `extension/dist`, captured by `Tools/Pin.sh`; provenance recorded in `Extension/PINNED_FROM.txt` (source path, manifest version, content SHA256, timestamp). Chrome disables unpacked extensions on every manifest bump, so after any binary upgrade the copy must be **re-pinned and reloaded**. It does NOT auto-follow upstream.
+**Chrome "Load unpacked" target:** `$LIFEOS_ROOT/skills/Interceptor/Extension/` — a **pinned copy** (not a symlink) of upstream `extension/dist`, captured by `Tools/Pin.sh`; provenance recorded in `Extension/PINNED_FROM.txt` (source path, manifest version, content SHA256, timestamp). Chrome disables unpacked extensions on every manifest bump, so after any binary upgrade the copy must be **re-pinned and reloaded**. It does NOT auto-follow upstream.
 **Pinned binary:** `0.22.2` — `interceptor --version` reports `0.22.2 (580a7de, 2026-07-04)`. Upstream is now a **three-surface** control plane: **Browser** + **macOS** + **iOS** (drive an owned, Developer-Mode iPhone via an on-device XCUITest runner over WiFi — `interceptor ios *`).
 
 ### Capabilities Overview — Six Verb Trees
@@ -110,7 +110,7 @@ CDP-based browser automation gets detected by sites. Interceptor is a Chrome ext
 Before any `interceptor open|read|act|inspect|screenshot|navigate|tab|monitor|net|cookies|scroll|click|type` lands in Chrome, the workflow runs the gate. Prefer the **auto-recovering entry point** — it runs the gate and, if the test profile window just isn't open, launches it and re-verifies before returning:
 
 ```bash
-bash ~/.claude/skills/Interceptor/Tools/EnsureTestProfile.sh   # runs the gate; auto-launches the test profile on exit 5/6; prints READY on success
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/EnsureTestProfile.sh   # runs the gate; auto-launches the test profile on exit 5/6; prints READY on success
 ```
 
 `EnsureTestProfile.sh` wraps `PreflightIsolation.sh` (the raw gate — still callable directly when you want no auto-launch). Both exit non-zero on any unrecoverable failure; on non-zero, STOP and surface — never fall back to Default. The gate asserts these invariants:
@@ -172,7 +172,7 @@ Operating rule: if the user asks for native and `status` reports `mode: browser-
 
 ### Prerequisites
 
-- Chrome or Brave (or Edge/Vivaldi on supported platforms) running with the Interceptor extension loaded — load it once via `chrome://extensions/` → Developer Mode → "Load unpacked" → `~/.claude/skills/Interceptor/Extension/`
+- Chrome or Brave (or Edge/Vivaldi on supported platforms) running with the Interceptor extension loaded — load it once via `chrome://extensions/` → Developer Mode → "Load unpacked" → `$LIFEOS_ROOT/skills/Interceptor/Extension/`
 - `interceptor` CLI in PATH (`/opt/homebrew/bin/interceptor`)
 - `interceptor-daemon` in PATH (`/opt/homebrew/bin/interceptor-daemon`)
 - Native messaging manifest registered (`bash ~/Projects/interceptor/scripts/install.sh --chrome --skip-extension`)
@@ -315,7 +315,7 @@ Agent(subagent_type="general-purpose", prompt="
   Refs use eN syntax (no @ prefix) from tree output. Treat refs as short-lived.
   Background-first: only --activate and app activate move focus.
   PROFILE ISOLATION (MANDATORY GATE): the FIRST action of this task is
-    bash ~/.claude/skills/Interceptor/Tools/PreflightIsolation.sh
+    bash $LIFEOS_ROOT/skills/Interceptor/Tools/PreflightIsolation.sh
   If that script exits non-zero, STOP and surface the message verbatim — do NOT
   fall back to operating against the Default profile, and do NOT use screencapture
   or osascript as substitutes. After the preflight returns OK, every browser
@@ -373,9 +373,9 @@ Agent(subagent_type="general-purpose", prompt="
 - **Multiple tabs at the same URL confuse routing without `--context`.** When two tabs both load `localhost:5180/`, `tab switch <id>` reports `ok` but the visually-active Chrome tab may not change. Either close duplicates, work from a freshly-opened single tab, or pass `--context <id>` to scope unambiguously.
 - **`eval` is CSP-blocked on most sites.** Use `eval --main` to run in the page's main world. Even with `--main`, strict CSP (`script-src 'self'`) still blocks string-eval; pass small expressions, avoid `Function`-constructor patterns.
 - **Bridge needs Sparkle.framework.** When rebuilding from source on Apple Silicon, the bridge won't load until `Sparkle.framework` is installed at `/usr/local/Frameworks/`. The running bridge is the `.app`-bundle binary at `~/.local/share/interceptor/interceptor-bridge.app/Contents/MacOS/interceptor-bridge` (LaunchAgent `com.interceptor.bridge`, plist `~/Library/LaunchAgents/com.interceptor.bridge.plist`), NOT `/usr/local/bin/interceptor-bridge` (stale copy). The Update workflow handles this; symptom of forgetting is `bridge: not running` with `dyld[*]: Library not loaded: @rpath/Sparkle.framework/...` in `/tmp/interceptor-bridge.stderr.log`. *(2026-05-03, bridge topology corrected 2026-06-17.)*
-- **Manifest version bump = manual extension reload + re-pin required.** Chrome does not auto-reload unpacked extensions. `~/.claude/skills/Interceptor/Extension/` is a pinned COPY, not a symlink — it does not auto-follow upstream. After a binary upgrade, re-pin via the Update workflow, then delete the existing extension card in `chrome://extensions` and Load Unpacked again from `~/.claude/skills/Interceptor/Extension/`. The extension `key` is deterministic so the extension ID stays stable across reloads.
+- **Manifest version bump = manual extension reload + re-pin required.** Chrome does not auto-reload unpacked extensions. `$LIFEOS_ROOT/skills/Interceptor/Extension/` is a pinned COPY, not a symlink — it does not auto-follow upstream. After a binary upgrade, re-pin via the Update workflow, then delete the existing extension card in `chrome://extensions` and Load Unpacked again from `$LIFEOS_ROOT/skills/Interceptor/Extension/`. The extension `key` is deterministic so the extension ID stays stable across reloads.
 - **"native port disconnected" is NOT a screenshot error.** It's the daemon logging that Chrome's Native-Messaging stdio port dropped (extension SW recycled / Chrome closed); the daemon survives and falls through to its WebSocket transport. If neither WS nor relay is up, commands queue (cap 50) and time out. **Fix = reconnect the extension** (reload the tab / re-open the configured browser), not restarting the daemon.
-- **"screenshot-runner.js could not load" = per-frame injection failure.** (The old "html-to-image library not loaded" error is gone — v0.18.3 replaced the library with a native renderer.) The page disallows script injection (`chrome://`, Web Store, PDF viewer, strict-CSP frame), the tab navigated mid-inject, OR — most common after a binary upgrade — a **stale loaded extension** whose bundled runner doesn't match the daemon. **Fix = reload/re-pin the extension** (Load Unpacked from `~/.claude/skills/Interceptor/Extension/`).
+- **"screenshot-runner.js could not load" = per-frame injection failure.** (The old "html-to-image library not loaded" error is gone — v0.18.3 replaced the library with a native renderer.) The page disallows script injection (`chrome://`, Web Store, PDF viewer, strict-CSP frame), the tab navigated mid-inject, OR — most common after a binary upgrade — a **stale loaded extension** whose bundled runner doesn't match the daemon. **Fix = reload/re-pin the extension** (Load Unpacked from `$LIFEOS_ROOT/skills/Interceptor/Extension/`).
 - **Daemon↔extension WebSocket can wedge in a half-alive state — try other verb trees BEFORE declaring Interceptor unusable.** Symptom: `status`/`contexts`/`tabs` answer (control-plane message types) while `screenshot`/`eval` hang at timeout (data-plane types). Each verb in the Capabilities Overview uses a different WebSocket message type, so a wedge on `screenshot` rarely affects `eval`, `net log`, `tree`, `read --markdown`, `monitor`, or `inspect`. Recovery ladder: (1) **swap the capture path** (pixel↔DOM-render — a different message type often unwedges) or substitute a verb from another capability class — `read --markdown` / `eval --main document.body.innerText` instead of `screenshot`, `net log` for failed requests; (2) one `pkill -f interceptor-daemon` + a single retry; (3) reload the extension (surface: *"Interceptor extension is wedged — please reload it from chrome://extensions/."*) and STOP. Only after all three fail, tell the operator verification cannot be captured — **never fall back to `screencapture` / `osascript`.** **The recurring mistake this catches: claiming "Interceptor is broken" after a single `screenshot` timeout when `eval` would have answered the question in one tool call.** *(2026-05-13, sharpened 2026-06-17.)*
 - **Dead-bridge self-heal (macOS `macos_*` paths only — browser screenshot does NOT need the bridge).** "Loaded" ≠ "running" — probe the process via `interceptor status`, not just `launchctl list`:
   ```bash
@@ -422,5 +422,5 @@ Passes all major bot detection:
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Interceptor","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> ~/.claude/LIFEOS/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Interceptor","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
 ```

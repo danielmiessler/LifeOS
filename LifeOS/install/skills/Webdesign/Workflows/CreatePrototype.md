@@ -44,7 +44,7 @@ Use the prompt patterns in `References/InputFormats.md`.
 ### 3. Open Claude Design
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts open
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts open
 ```
 
 This opens `claude.ai/design` in the authenticated Interceptor-controlled Chrome session. First-run may require a headed login; subsequent runs are headless.
@@ -52,7 +52,7 @@ This opens `claude.ai/design` in the authenticated Interceptor-controlled Chrome
 ### 4. Submit the Brief
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "$(cat /tmp/brief.md)"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts prompt "$(cat /tmp/brief.md)"
 ```
 
 Wait for Claude Design to produce the first version (typically 20-60 seconds).
@@ -62,7 +62,7 @@ Wait for Claude Design to produce the first version (typically 20-60 seconds).
 ```bash
 OUT=~/Downloads/webdesign/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/v1.png"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts screenshot "$OUT/v1.png"
 ```
 
 Review the screenshot. If it matches the brief, proceed to step 6. If not, hand to `RefinePrototype.md`.
@@ -80,13 +80,13 @@ Choose based on next step:
 | Static one-off page | `html` |
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/DriveClaudeDesign.ts export bundle "$OUT"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts export bundle "$OUT"
 ```
 
 ### 7. Verify
 
 ```bash
-bun ~/.claude/skills/Webdesign/Tools/VerifyDesign.ts "$OUT/index.html" "$OUT/verify"
+bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts "$OUT/index.html" "$OUT/verify"
 ```
 
 Produces a screenshot at the expected viewport plus an axe-core accessibility report. Fix any critical issues before declaring done.

@@ -35,26 +35,26 @@ This tool replaces ad-hoc bash scripts with a maintainable, version-controlled i
 
 1. **Install the CLI:**
    ```bash
-   cd ~/.claude/LIFEOS/TOOLS/llcli
+   cd $LIFEOS_DIR/TOOLS/llcli
    chmod +x llcli.ts
    ```
 
 2. **Add to PATH (optional):**
    ```bash
    # Add to ~/.zshrc or ~/.bashrc
-   export PATH="$HOME/.claude/LIFEOS/TOOLS/llcli:$PATH"
+   export PATH="$LIFEOS_DIR/TOOLS/llcli:$PATH"
    ```
 
 3. **Configure API Key:**
 
-   Add to `~/.claude/.env`:
+   Add to `$LIFEOS_ROOT/.env`:
    ```bash
    LIMITLESS_API_KEY=your_api_key_here
    ```
 
 4. **Verify Installation:**
    ```bash
-   ~/.claude/LIFEOS/TOOLS/llcli/llcli.ts --help
+   $LIFEOS_DIR/TOOLS/llcli/llcli.ts --help
    ```
 
 ---
@@ -267,7 +267,7 @@ diff \
 
 ### Environment Variables
 
-**Location:** `~/.claude/.env`
+**Location:** `$LIFEOS_ROOT/.env`
 
 **Required:**
 ```bash
@@ -360,17 +360,17 @@ llcli.ts
 
 ### "LIMITLESS_API_KEY not found"
 
-**Solution:** Add API key to `~/.claude/.env`:
+**Solution:** Add API key to `$LIFEOS_ROOT/.env`:
 ```bash
-echo "LIMITLESS_API_KEY=your_key" >> ~/.claude/.env
+echo "LIMITLESS_API_KEY=your_key" >> $LIFEOS_ROOT/.env
 ```
 
-### "Cannot read ~/.claude/.env file"
+### "Cannot read $LIFEOS_ROOT/.env file"
 
 **Solution:** Create the file:
 ```bash
-touch ~/.claude/.env
-chmod 600 ~/.claude/.env
+touch $LIFEOS_ROOT/.env
+chmod 600 $LIFEOS_ROOT/.env
 ```
 
 ### "bun: command not found"
@@ -384,7 +384,7 @@ curl -fsSL https://bun.sh/install | bash
 
 **Solution:** Make executable:
 ```bash
-chmod +x ~/.claude/LIFEOS/TOOLS/llcli/llcli.ts
+chmod +x $LIFEOS_DIR/TOOLS/llcli/llcli.ts
 ```
 
 ### API Errors
@@ -449,12 +449,12 @@ Replace script calls:
 
 **Old:**
 ```bash
-~/.claude/skills/lifelog/Scripts/fetch-lifelogs.sh today "" 20
+$LIFEOS_ROOT/skills/lifelog/Scripts/fetch-lifelogs.sh today "" 20
 ```
 
 **New:**
 ```bash
-~/.claude/LIFEOS/TOOLS/llcli/llcli.ts today --limit 20
+$LIFEOS_DIR/TOOLS/llcli/llcli.ts today --limit 20
 ```
 
 ### With Workflows
@@ -537,8 +537,8 @@ MIT
 ## Support
 
 For issues, questions, or contributions:
-- File: `~/.claude/LIFEOS/TOOLS/llcli/`
-- Skill: `~/.claude/skills/lifelog/`
+- File: `$LIFEOS_DIR/TOOLS/llcli/`
+- Skill: `$LIFEOS_ROOT/skills/lifelog/`
 - Constitution: `~/.claude/`
 
 ---

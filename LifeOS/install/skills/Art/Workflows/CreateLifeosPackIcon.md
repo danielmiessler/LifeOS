@@ -91,7 +91,7 @@ BACKGROUND: Dark (#0a0a0f) - will be removed for transparency.
 
 **Command:**
 ```bash
-bun run ~/.claude/skills/Art/Tools/Generate.ts \
+bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
   --workflow=CreateLifeosPackIcon \
   --model nano-banana-pro \
   --prompt "[YOUR_PROMPT]" \
@@ -133,7 +133,7 @@ file ${PROJECTS_DIR}/LIFEOS/Packs/icons/[PACK_NAME].png
 ### Example 1: Hook System Pack
 
 ```bash
-bun run ~/.claude/skills/Art/Tools/Generate.ts \
+bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
   --workflow=CreateLifeosPackIcon \
   --model nano-banana-pro \
   --prompt "A stylized hook or fishing hook shape representing event hooks in software, simple flat icon design, 256x256 pixels. COLOR PALETTE: Primary electric blue (#4a90d9), Accent purple (#8b5cf6) sparingly. STYLE: Modern flat icon, simple enough to read at 64x64, no text, centered. BACKGROUND: Dark (#0a0a0f)." \
@@ -146,7 +146,7 @@ bun run ~/.claude/skills/Art/Tools/Generate.ts \
 ### Example 2: Core Install Pack
 
 ```bash
-bun run ~/.claude/skills/Art/Tools/Generate.ts \
+bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
   --workflow=CreateLifeosPackIcon \
   --model nano-banana-pro \
   --prompt "A download arrow pointing into a foundation/base structure representing core installation, simple flat icon design, 256x256 pixels. COLOR PALETTE: Primary electric blue (#4a90d9), Accent purple (#8b5cf6) sparingly. STYLE: Modern flat icon, simple enough to read at 64x64, no text, centered. BACKGROUND: Dark (#0a0a0f)." \
@@ -159,7 +159,7 @@ bun run ~/.claude/skills/Art/Tools/Generate.ts \
 ### Example 3: Memory System Pack
 
 ```bash
-bun run ~/.claude/skills/Art/Tools/Generate.ts \
+bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
   --workflow=CreateLifeosPackIcon \
   --model nano-banana-pro \
   --prompt "A brain with memory/data flowing in and out representing an AI memory system, simple flat icon design, 256x256 pixels. COLOR PALETTE: Primary electric blue (#4a90d9), Accent purple (#8b5cf6) sparingly. STYLE: Modern flat icon, simple enough to read at 64x64, no text, centered. BACKGROUND: Dark (#0a0a0f)." \
@@ -211,7 +211,7 @@ Before marking icon complete:
 
 ## Related Workflows
 
-- `~/.claude/skills/_LIFEOS/Workflows/CreateRelease.md` - Release workflow (may include icon generation)
+- `$LIFEOS_ROOT/skills/_LIFEOS/Workflows/CreateRelease.md` - Release workflow (may include icon generation)
 
 *Note: Previously referenced CreatePack.md, ValidatePack.md, and LifeosIntegrityCheck.md have been removed.*
 

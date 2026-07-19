@@ -40,7 +40,7 @@ This workflow handles ANY input via the Parser skill:
 **For YouTube:**
 ```bash
 # Get transcript via Parser skill
-# Load: ~/.claude/skills/Parser/Workflows/ExtractYoutube.md
+# Load: $LIFEOS_ROOT/skills/Parser/Workflows/ExtractYoutube.md
 ```
 
 **For articles/blogs:**
@@ -362,7 +362,7 @@ Cannot proceed - fix logical issues before rendering
 
 **MANDATORY: Apply LifeOS Theme**
 ```typescript
-import { LIFEOS_THEME } from '~/.claude/skills/Remotion/theme'
+import { LIFEOS_THEME } from '$LIFEOS_ROOT/skills/Remotion/theme'
 
 // All components MUST use:
 // - LIFEOS_THEME.colors for all colors
@@ -545,6 +545,6 @@ User: animate this content: "The three pillars of AI safety are..."
 ## Integration with Art Skill
 
 This workflow inherits visual theming from Art preferences:
-- Load: `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Art/PREFERENCES.md`
+- Load: `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Art/PREFERENCES.md`
 - Apply: Charcoal aesthetic, purple accents, organic animations
 - Reference: `~/.claude/`

@@ -5,7 +5,7 @@ Execute audio edits with ffmpeg. Reads an edit decision list and applies cuts wi
 ## Usage
 
 ```bash
-bun ~/.claude/skills/AudioEditor/Tools/Edit.ts <audio-file> <edits.json> [--output <path>]
+bun $LIFEOS_ROOT/skills/AudioEditor/Tools/Edit.ts <audio-file> <edits.json> [--output <path>]
 ```
 
 ## Options

@@ -5,8 +5,8 @@ Extract structured information from a webpage — a fact, value, list, table con
 ## Preflight Isolation Gate (MANDATORY first step)
 
 ```bash
-source ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
-bash ~/.claude/skills/Interceptor/Tools/PreflightIsolation.sh
+source $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/PreflightIsolation.sh
 ```
 
 Non-zero exit → STOP and surface the message verbatim. Do not fall back to the Default profile. Every browser verb in this workflow passes `--context "$INTERCEPTOR_TEST_CONTEXT_ID"` (the pinned isolated context from `preferences.env`) — the examples below omit it for brevity, but append it to each call. Screenshots, if any, go through `Tools/Capture.sh`, never raw `interceptor screenshot`.

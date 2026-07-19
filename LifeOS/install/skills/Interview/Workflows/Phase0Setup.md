@@ -22,7 +22,7 @@ curl -s -X POST http://localhost:31337/notify \
 Run the scanner to see Phase 0 completeness:
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/InterviewScan.ts --json | jq '.targets[] | select(.phase == 0)'
+bun $LIFEOS_DIR/TOOLS/InterviewScan.ts --json | jq '.targets[] | select(.phase == 0)'
 ```
 
 If every Phase 0 target reads ≥80% complete, **skip this workflow** and route to TelosCheckin.
@@ -38,7 +38,7 @@ Walk the six setup targets one at a time. Each writes to a specific file. Voice-
 | 0.1 | **DA Identity** — name, full name, color, role, personality summary | `USER/DIGITAL_ASSISTANT/DA_IDENTITY.md` (always — YAML frontmatter holds structured schema, body holds prose); `USER/DA/{name}/DA_IDENTITY.md` (if multi-DA structure exists or principal opts in) | DA_IDENTITY.md no longer reads "LifeOS" / "LifeOS Assistant" |
 | 0.2 | **Principal Identity** — name (with pronunciation), location, timezone, role, focus | `USER/PRINCIPAL/PRINCIPAL_IDENTITY.md` Quick Reference section | PRINCIPAL_IDENTITY.md no longer reads "User" with "(interview)" markers |
 | 0.3 | **Voice IDs** — main DA voice + algorithm voice (offer ElevenLabs library link or "use defaults") | `USER/DIGITAL_ASSISTANT/DA_IDENTITY.md` Voice section + `PULSE/PULSE.toml` `[voice]` block | Voice IDs no longer match the generic Rachel/Adam defaults |
-| 0.4 | **Credentials** — ANTHROPIC_API_KEY, ELEVENLABS_API_KEY (skippable with explanation), optional GH_TOKEN, STRIPE_KEY | `~/.claude/.env` (or `~/.config/LIFEOS/.env` symlink target) | `.env` exists with at least ANTHROPIC_API_KEY set |
+| 0.4 | **Credentials** — ANTHROPIC_API_KEY, ELEVENLABS_API_KEY (skippable with explanation), optional GH_TOKEN, STRIPE_KEY | `$LIFEOS_ROOT/.env` (or `~/.config/LIFEOS/.env` symlink target) | `.env` exists with at least ANTHROPIC_API_KEY set |
 | 0.5 | **First project** — at least one row so PROJECTS routing works | `USER/PROJECTS.md` table + Routing Aliases | PROJECTS.md has ≥1 non-sample row |
 | 0.6 | **Work repo** — GitHub repo for issues OR explicit "skip + disable work pipeline" | `USER/WORK/config.yaml` `WORK.REPO` field; or `[work] enabled = false` in PULSE.toml | USER/WORK/config.yaml WORK.REPO points at an existing repo |
 
@@ -56,7 +56,7 @@ Walk the six setup targets one at a time. Each writes to a specific file. Voice-
 4. Credentials (0.4) — never echo keys back to the principal in voice. Confirm only "captured ANTHROPIC_API_KEY" / "captured ELEVENLABS_API_KEY". If the principal pastes a key in chat, immediately write it to `.env` and ask the principal to clear it from scrollback.
 5. After Phase 0 completes, **regenerate PRINCIPAL_TELOS.md** (it interpolates the principal name) and **send a Pulse `/reload`** so the running daemon picks up the new identity:
    ```bash
-   bun ~/.claude/LIFEOS/TOOLS/GenerateTelosSummary.ts 2>/dev/null || true
+   bun $LIFEOS_DIR/TOOLS/GenerateTelosSummary.ts 2>/dev/null || true
    curl -s -X POST http://localhost:31337/reload > /dev/null 2>&1 &
    ```
 6. Voice the transition:

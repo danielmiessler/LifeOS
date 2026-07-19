@@ -30,7 +30,7 @@ The skill reads the constitutional files via the freshness tooling, scores each 
 **Routing decision (run before either workflow):**
 
 ```bash
-bun ~/.claude/LIFEOS/TOOLS/InterviewScan.ts --json | jq '[.targets[] | select(.phase == 0 and .completeness_score < 80)] | length'
+bun $LIFEOS_DIR/TOOLS/InterviewScan.ts --json | jq '[.targets[] | select(.phase == 0 and .completeness_score < 80)] | length'
 ```
 
 - `> 0` → run **Phase0Setup** first, then ContextCheckin.
@@ -41,13 +41,13 @@ bun ~/.claude/LIFEOS/TOOLS/InterviewScan.ts --json | jq '[.targets[] | select(.p
 - The TELOS is on file. **Read it before asking.** Generic "what's your mission?" prompts are forbidden when TELOS is populated.
 - Staleness is **information, not failure** — a 95-day-old Goals section might still be right; the prompt is "still right?", not "you're behind."
 - **Per-entry on typed-ID sections** (G3, M0, P2…), **section-level on prose** (Current State, Sparks).
-- **Bump on every approved edit:** `bun ~/.claude/LIFEOS/TOOLS/TelosFreshness.ts --bump <slug>`. Without this the staleness signal degrades to noise.
+- **Bump on every approved edit:** `bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts --bump <slug>`. Without this the staleness signal degrades to noise.
 - **Stop signals are sacred.** "Enough" / "stop" / "later" exits gracefully. State persists in the file itself.
 - **ID-stability rule:** G3 stays G3 even when edited or dropped; new entries get the next sequential ID.
 
 ## Gotchas
 
-- **Migration must run once before TelosCheckin works.** A TELOS without YAML frontmatter (no `last_updated:`) returns `fileUpdated: null` and every section reads as stale. Run `bun ~/.claude/LIFEOS/TOOLS/MigrateTelosFreshness.ts` once; idempotent and content-preserving (verifies sha256 of stripped content).
+- **Migration must run once before TelosCheckin works.** A TELOS without YAML frontmatter (no `last_updated:`) returns `fileUpdated: null` and every section reads as stale. Run `bun $LIFEOS_DIR/TOOLS/MigrateTelosFreshness.ts` once; idempotent and content-preserving (verifies sha256 of stripped content).
 - **The slug is normalized:** "Current State" → `current_state`, "Wrong (Things I've been wrong about)" → `wrong`, "2036 — A Day in the Life…" → `2036`. Always run heading text through `sectionSlug()` from `TelosFreshness.ts`.
 - **Pulse caches freshness for 60s.** After bumping, the next `/api/telos/freshness/summary` call returns the cached value until invalidation. Send `/reload` (POST) to invalidate the cache immediately, or wait 60s.
 - **TelosRenderer (`GenerateTelosSummary.ts`) preserves the markers.** It splits by `^## ` headings; the per-section HTML comments live inside the section body and are not re-emitted in `PRINCIPAL_TELOS.md`. Safe to run after edits.

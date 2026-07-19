@@ -68,4 +68,4 @@ Public-data only. No paid people-search aggregators, no bypassing CAPTCHAs.
 
 ## Optional Customization Layer
 
-Per-user source overrides go in `~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/LocalIntelligence/PREFERENCES.md`. Examples: an OpenStates API key for higher rate limits, a Google News topic ID, additional regional newspaper RSS feeds. The skill body never hardcodes any of this.
+Per-user source overrides go in `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/LocalIntelligence/PREFERENCES.md`. Examples: an OpenStates API key for higher rate limits, a Google News topic ID, additional regional newspaper RSS feeds. The skill body never hardcodes any of this.

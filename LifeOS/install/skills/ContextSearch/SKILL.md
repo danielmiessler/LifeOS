@@ -11,7 +11,7 @@ effort: low
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/ContextSearch/`
+`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/ContextSearch/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
@@ -40,7 +40,7 @@ Single-tool skill — no `Workflows/` directory. Every invocation routes to the 
 ## Run the search
 
 ```bash
-bun run ~/.claude/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --pretty --limit 10
+bun run $LIFEOS_ROOT/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --pretty --limit 10
 ```
 
 The tool auto-detects TTY for output mode; explicit `--pretty` keeps the human-readable block when the skill is invoked from inside a Claude Code session (where stdout is not a true TTY). Pipe to `--json` for structured output to jq.
@@ -49,13 +49,13 @@ The tool auto-detects TTY for output mode; explicit `--pretty` keeps the human-r
 
 ```bash
 # Limit results
-bun run ~/.claude/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --limit 5
+bun run $LIFEOS_ROOT/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --limit 5
 
 # Constrain by date
-bun run ~/.claude/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --since 2026-05-01
+bun run $LIFEOS_ROOT/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --since 2026-05-01
 
 # JSON for programmatic use
-bun run ~/.claude/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --json | jq '.results[0]'
+bun run $LIFEOS_ROOT/skills/ContextSearch/Tools/ContextSearch.ts "$ARGUMENTS" --json | jq '.results[0]'
 ```
 
 The tool also parses date phrases inline: `"yesterday markdown"` becomes a bounded since/until of yesterday only, plus token search for `markdown`.
@@ -132,5 +132,5 @@ User: "what did I work on last week?"
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"ContextSearch","workflow":"Search","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> ~/.claude/LIFEOS/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"ContextSearch","workflow":"Search","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
 ```

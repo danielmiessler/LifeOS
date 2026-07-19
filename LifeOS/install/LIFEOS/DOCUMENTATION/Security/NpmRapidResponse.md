@@ -13,7 +13,7 @@ Fire this runbook when ANY new npm supply-chain advisory drops (TanStack-style w
 
 ## Standing defense (already in place)
 
-- **`minimumReleaseAge = 86400`** in `~/.bunfig.toml` and `~/.claude/bunfig.toml` rejects any package published in the last 24 hours. The May 11 Mini Shai-Hulud worm lived 3 hours from publish to npm-pull; this filter neutralizes that attack window without requiring vendor trust.
+- **`minimumReleaseAge = 86400`** in `~/.bunfig.toml` and `$LIFEOS_ROOT/bunfig.toml` rejects any package published in the last 24 hours. The May 11 Mini Shai-Hulud worm lived 3 hours from publish to npm-pull; this filter neutralizes that attack window without requiring vendor trust.
 - **Bun's `trustedDependencies` allowlist** — transitive packages don't get to run lifecycle scripts unless their name is in your `package.json`'s `trustedDependencies` array. Default-deny on transitive scripts.
 - **All active CI Actions SHA-pinned** in each project's `.github/workflows/` directory with Dependabot auto-PR'ing bumps weekly.
 
@@ -30,13 +30,13 @@ Pull the named compromised packages and their version ranges into a working note
 IOC='@evil/pkg-one|@evil/pkg-two|"some-package":'
 
 # Scan all lockfiles
-find ~/Projects ~/LocalProjects ~/.claude -maxdepth 6 \
+find ~/Projects ~/LocalProjects $LIFEOS_ROOT -maxdepth 6 \
   \( -name "bun.lock" -o -name "package-lock.json" -o -name "yarn.lock" -o -name "pnpm-lock.yaml" \) \
   -not -path "*/node_modules/*" -not -path "*/LIFEOS_RELEASES/*" -not -path "*/.next/*" \
   2>/dev/null | xargs rg -l "$IOC"
 
 # Scan all package.json (for declared deps that may have lockfile drift)
-find ~/Projects ~/LocalProjects ~/.claude -maxdepth 6 -name "package.json" \
+find ~/Projects ~/LocalProjects $LIFEOS_ROOT -maxdepth 6 -name "package.json" \
   -not -path "*/node_modules/*" -not -path "*/LIFEOS_RELEASES/*" -not -path "*/.next/*" \
   2>/dev/null | xargs rg -l "$IOC"
 ```
@@ -49,7 +49,7 @@ If either returns hits → record the project path + version, then per-project r
 
 ```bash
 # Replace dates with the advisory's worm window
-for lf in $(find ~/Projects ~/LocalProjects ~/.claude -maxdepth 6 -name "bun.lock" -not -path "*/node_modules/*" 2>/dev/null); do
+for lf in $(find ~/Projects ~/LocalProjects $LIFEOS_ROOT -maxdepth 6 -name "bun.lock" -not -path "*/node_modules/*" 2>/dev/null); do
   mt=$(stat -f "%Sm" -t "%Y-%m-%d" "$lf" 2>/dev/null)
   case "$mt" in
     YYYY-MM-DD|YYYY-MM-DD)  # <-- replace with worm window dates
@@ -77,7 +77,7 @@ bun install --frozen-lockfile
 - npm token (if any) — `npm token list`, revoke, regenerate
 - GitHub PAT (any token used in CI on the host) — `gh auth refresh`
 - AWS / GCP / Azure on dev hosts where install ran during worm window
-- See `~/.claude/skills/_INCIDENT_RESPONSE/SKILL.md` for the full rotation protocol
+- See `$LIFEOS_ROOT/skills/_INCIDENT_RESPONSE/SKILL.md` for the full rotation protocol
 
 ## Hardening levers (one per attack surface)
 
@@ -102,7 +102,7 @@ bun install --frozen-lockfile
 ## Reference
 
 - May 11, 2026 Mini Shai-Hulud worm postmortem: https://tanstack.com/blog/npm-supply-chain-compromise-postmortem
-- Audit ISA that produced this runbook: `~/.claude/LIFEOS/MEMORY/WORK/20260520-npm-exposure-audit/ISA.md`
-- Implementation ISA: `~/.claude/LIFEOS/MEMORY/WORK/20260520-npm-hardening-implementation/ISA.md`
+- Audit ISA that produced this runbook: `$LIFEOS_DIR/MEMORY/WORK/20260520-npm-exposure-audit/ISA.md`
+- Implementation ISA: `$LIFEOS_DIR/MEMORY/WORK/20260520-npm-hardening-implementation/ISA.md`
 - Bun bunfig docs: https://bun.sh/docs/runtime/bunfig
 - `_INCIDENT_RESPONSE` skill for the parallel credential rotation protocol.

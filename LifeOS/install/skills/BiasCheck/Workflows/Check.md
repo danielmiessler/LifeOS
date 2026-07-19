@@ -75,7 +75,7 @@ If any of these are not stated, list it as "not disclosed" — non-disclosure is
 
 ## Step 4 — Three-Layer Analysis
 
-Use the bias taxonomy at `BiasTaxonomy.md` as the catalog of categories. Load it with `Read ~/.claude/skills/BiasCheck/BiasTaxonomy.md`. Apply selectively — not every category fires for every source.
+Use the bias taxonomy at `BiasTaxonomy.md` as the catalog of categories. Load it with `Read $LIFEOS_ROOT/skills/BiasCheck/BiasTaxonomy.md`. Apply selectively — not every category fires for every source.
 
 ### Layer 1 — Biases inside the data
 
@@ -214,5 +214,5 @@ Before delivering, verify:
 After completing, append:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"BiasCheck","workflow":"Check","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> ~/.claude/LIFEOS/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"BiasCheck","workflow":"Check","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
 ```

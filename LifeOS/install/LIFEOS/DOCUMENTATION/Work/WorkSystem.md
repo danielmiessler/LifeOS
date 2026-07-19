@@ -89,7 +89,7 @@ Fires on every prompt. Precision-biased regex looks for `remind me to X`, `resea
 
 ### 3. Periodic sweep — `LIFEOS/TOOLS/WorkSweep.ts` + launchd 60min
 
-Runs every 60 minutes via `~/Library/LaunchAgents/com.lifeos.worksweep.plist` (installed via `bun ~/.claude/LIFEOS/TOOLS/InstallWorkSweep.ts`). Four sub-sweeps:
+Runs every 60 minutes via `~/Library/LaunchAgents/com.lifeos.worksweep.plist` (installed via `bun $LIFEOS_DIR/TOOLS/InstallWorkSweep.ts`). Four sub-sweeps:
 
 | Sub-sweep | Trigger | Output |
 |-----------|---------|--------|
@@ -112,7 +112,7 @@ Safety:
 
 ## Label taxonomy
 
-The canonical label list lives at `USER/WORK/labels.yml` and gets pushed to the configured repo by `bun ~/.claude/skills/_ULWORK/Tools/BootstrapLabels.ts`. Additive — never deletes existing labels.
+The canonical label list lives at `USER/WORK/labels.yml` and gets pushed to the configured repo by `bun $LIFEOS_ROOT/skills/_ULWORK/Tools/BootstrapLabels.ts`. Additive — never deletes existing labels.
 
 | Family | Members | Purpose |
 |--------|---------|---------|
@@ -174,13 +174,13 @@ A `<da-name>-can-take` label serves as the queue marker for "the DA should pick 
 
 | Layer | Lives in | Contains | Ships in release? |
 |-------|----------|----------|-------------------|
-| **System code (public)** | `~/.claude/LIFEOS/PULSE/`, `~/.claude/LIFEOS/TOOLS/`, generic capture hooks under `~/.claude/hooks/` | Modules, CLIs, generic hooks | YES — scrubbed, public-clean |
-| **Private components** | `~/.claude/skills/_ULWORK/`, `~/.claude/hooks/ULWorkSync.hook.ts` | Underscore-private skill + principal-specific SessionEnd capture hook (target the private UL work repo) | NO — rsync-excluded from the public release payload, same as any underscore-prefixed private skill |
-| **User config** | `~/.claude/LIFEOS/USER/WORK/` | `labels.yml`, `config.yaml`, `work_repo.json`, `README.md` | NO — USER zone, excluded by containment |
-| **Templates for new users** | `~/.claude/skills/_LIFEOS/RELEASE_TEMPLATES/WORK_REPO/` | README template, TASKLIST starter, .github/labels.yml, ISSUE_TEMPLATE, workflows | YES — placeholder substitution at user-setup time (planned, not yet built) |
+| **System code (public)** | `$LIFEOS_DIR/PULSE/`, `$LIFEOS_DIR/TOOLS/`, generic capture hooks under `$LIFEOS_ROOT/hooks/` | Modules, CLIs, generic hooks | YES — scrubbed, public-clean |
+| **Private components** | `$LIFEOS_ROOT/skills/_ULWORK/`, `$LIFEOS_ROOT/hooks/ULWorkSync.hook.ts` | Underscore-private skill + principal-specific SessionEnd capture hook (target the private UL work repo) | NO — rsync-excluded from the public release payload, same as any underscore-prefixed private skill |
+| **User config** | `$LIFEOS_DIR/USER/WORK/` | `labels.yml`, `config.yaml`, `work_repo.json`, `README.md` | NO — USER zone, excluded by containment |
+| **Templates for new users** | `$LIFEOS_ROOT/skills/_LIFEOS/RELEASE_TEMPLATES/WORK_REPO/` | README template, TASKLIST starter, .github/labels.yml, ISSUE_TEMPLATE, workflows | YES — placeholder substitution at user-setup time (planned, not yet built) |
 | **Live repo** | The configured private GitHub repo | Issues, TASKLIST.md, README, SOPs, CHANGELOG | NO — user's private property |
 
-A new LifeOS user runs `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts --bootstrap <owner/repo>` (planned). That single command verifies the repo is private, writes the privacy-attested `work_repo.json`, runs BootstrapLabels to seed the taxonomy, clones the template into the new repo with placeholder substitution, commits, and pushes. From that point the entire system points at their repo with zero code changes.
+A new LifeOS user runs `bun $LIFEOS_ROOT/skills/_ULWORK/Tools/SetWorkRepo.ts --bootstrap <owner/repo>` (planned). That single command verifies the repo is private, writes the privacy-attested `work_repo.json`, runs BootstrapLabels to seed the taxonomy, clones the template into the new repo with placeholder substitution, commits, and pushes. From that point the entire system points at their repo with zero code changes.
 
 ## Failure modes
 
@@ -197,10 +197,10 @@ A new LifeOS user runs `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts --boot
 ## Setup for a new LifeOS user
 
 1. Create a private GitHub repo
-2. `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts --bootstrap <owner/repo>` (planned — for now do steps 3-5 manually)
-3. `bun ~/.claude/skills/_ULWORK/Tools/BootstrapLabels.ts --repo <owner/repo>` to seed the label taxonomy
-4. Restart Pulse: `bash ~/.claude/LIFEOS/PULSE/manage.sh restart`
-5. `bun ~/.claude/LIFEOS/TOOLS/InstallWorkSweep.ts` to register the launchd job
+2. `bun $LIFEOS_ROOT/skills/_ULWORK/Tools/SetWorkRepo.ts --bootstrap <owner/repo>` (planned — for now do steps 3-5 manually)
+3. `bun $LIFEOS_ROOT/skills/_ULWORK/Tools/BootstrapLabels.ts --repo <owner/repo>` to seed the label taxonomy
+4. Restart Pulse: `bash $LIFEOS_DIR/PULSE/manage.sh restart`
+5. `bun $LIFEOS_DIR/TOOLS/InstallWorkSweep.ts` to register the launchd job
 6. Run any Algorithm session — `ULWorkSync.hook.ts` opens the first issue at SessionEnd; sweep catches everything else within an hour
 
 ## Tunables

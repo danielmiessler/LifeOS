@@ -8,7 +8,7 @@ version: 1.2.14
 
 **Voice notifications for LifeOS workflows and task execution.**
 
-> **Infrastructure:** The voice notification endpoint (`http://localhost:31337/notify`) is served by the unified Pulse daemon (`~/.claude/LIFEOS/PULSE/`). Voice is implemented at `~/.claude/LIFEOS/PULSE/VoiceServer/voice.ts` and routed through Pulse -- there is no separate VoiceServer process. One daemon, one port, one launchd plist (`com.lifeos.pulse`).
+> **Infrastructure:** The voice notification endpoint (`http://localhost:31337/notify`) is served by the unified Pulse daemon (`$LIFEOS_DIR/PULSE/`). Voice is implemented at `$LIFEOS_DIR/PULSE/VoiceServer/voice.ts` and routed through Pulse -- there is no separate VoiceServer process. One daemon, one port, one launchd plist (`com.lifeos.pulse`).
 
 > **Pronunciation normalization:** Before any text reaches ElevenLabs it passes through two transforms — `applyPronunciations()` (literal term map from `LIFEOS/USER/PRINCIPAL/PRONUNCIATIONS.json`) wrapped around `disambiguateHomographs()` (`LIFEOS/PULSE/lib/homographs.ts`). The homograph stage exists because ElevenLabs guesses a reading from context and gets some words wrong; the worst offender is "live", where the broadcast/adjective sense (/laɪv/ — "the site is live", "live-verified") otherwise reads as the verb (/lɪv/ — "where you live"). It respells **only** context-matched broadcast occurrences to `lyve`, never a flat substitution, so verb uses ("live freely") stay correct. Adding a new spoken phrasing that reads wrong means adding a context regex, not a global replace. Shared by both the VoiceServer (`voice.ts`) and the Telegram voice path (`modules/telegram.ts`) so every spoken channel reads identically.
 
@@ -120,7 +120,7 @@ curl -s -X POST http://localhost:31337/notify \
 | **{DA_IDENTITY.NAME}** (default) | `{DA_IDENTITY.VOICEID}` | Use for most workflows |
 | **Priya** (Artist) | `21m00Tcm4TlvDq8ikWAM` | Art skill workflows |
 
-**Full voice registry:** `LIFEOS/DOCUMENTATION/Agents/AgentSystem.md` (see Named Agents) and `~/.claude/settings.json` (daidentity.voices.main.voiceId)
+**Full voice registry:** `LIFEOS/DOCUMENTATION/Agents/AgentSystem.md` (see Named Agents) and `$LIFEOS_ROOT/settings.json` (daidentity.voices.main.voiceId)
 
 ---
 
@@ -218,7 +218,7 @@ Notifications are automatically routed based on event type:
 
 ### Configuration
 
-Located in `~/.claude/settings.json`:
+Located in `$LIFEOS_ROOT/settings.json`:
 
 ```json
 {
@@ -282,7 +282,7 @@ Topic name acts as password - use random string for security.
 
 ### Implementation
 
-The notification service is in `~/.claude/hooks/lib/notifications.ts`:
+The notification service is in `$LIFEOS_ROOT/hooks/lib/notifications.ts`:
 
 ```typescript
 import { notify, notifyTaskComplete, notifyBackgroundAgent, notifyError } from './lib/notifications';
@@ -306,7 +306,7 @@ await sendDiscord("Message", { title: "Title", color: 0x00ff00 });
 ## Event Log Channel (events.jsonl)
 
 
-Events are emitted directly from each hook via `fs.appendFileSync` to `~/.claude/LIFEOS/MEMORY/OBSERVABILITY/*.jsonl` — synchronous, fire-and-forget, no shared transport library. This channel is additive — it does not replace any of the notification channels above, and hooks emit events alongside their existing state writes and notifications.
+Events are emitted directly from each hook via `fs.appendFileSync` to `$LIFEOS_DIR/MEMORY/OBSERVABILITY/*.jsonl` — synchronous, fire-and-forget, no shared transport library. This channel is additive — it does not replace any of the notification channels above, and hooks emit events alongside their existing state writes and notifications.
 
 ---
 

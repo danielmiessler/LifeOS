@@ -11,7 +11,7 @@ The ISA — Ideal State Artifact — is the universal primitive that holds the a
 The companion documents:
 
 - **Format spec** — `LIFEOS/DOCUMENTATION/Isa/IsaFormat.md` — the file-shape contract: frontmatter fields, body section schemas, ID-stability rule, status markers.
-- **Skill** — `~/.claude/skills/ISA/SKILL.md` — the workflows that generate, refine, score, and merge ISAs (Scaffold, Interview, CheckCompleteness, Reconcile, Seed, Append).
+- **Skill** — `$LIFEOS_ROOT/skills/ISA/SKILL.md` — the workflows that generate, refine, score, and merge ISAs (Scaffold, Interview, CheckCompleteness, Reconcile, Seed, Append).
 - **Algorithm doctrine** — `LIFEOS/ALGORITHM/v8.4.0.md` (or LATEST) — the invocation cadence: when each workflow fires across the seven Algorithm phases.
 
 If this document and the format spec disagree, the format spec wins and this document updates to match.
@@ -100,7 +100,7 @@ The ISC count also has a tier floor: at E2+ the natural granular decomposition m
 
 ## Six Workflows
 
-The ISA skill at `~/.claude/skills/ISA/` owns six workflows. They map verb-in-the-request to a deterministic procedure.
+The ISA skill at `$LIFEOS_ROOT/skills/ISA/` owns six workflows. They map verb-in-the-request to a deterministic procedure.
 
 | Workflow | Trigger Verbs | Purpose |
 |----------|---------------|---------|
@@ -153,7 +153,7 @@ The ISA is the artifact every other LifeOS subsystem orbits.
 - **Memory** (`LIFEOS/DOCUMENTATION/Memory/MemorySystem.md`) — task ISAs live under `MEMORY/WORK/{slug}/`. The Memory subsystem provides the directory structure and the WORK→LEARNING→KNOWLEDGE compaction lifecycle. Task ISAs are archived to KNOWLEDGE when their associated learnings have been harvested.
 - **Skills** (`LIFEOS/DOCUMENTATION/Skills/SkillSystem.md`) — the ISA skill is one skill among many; it follows the same canonical form (TitleCase directory for public, `_ALLCAPS` for private; `Workflows/` + optional `Tools/` + optional `Examples/`; mandatory voice-notification block; mandatory Gotchas section).
 - **Hooks** (`LIFEOS/DOCUMENTATION/Hooks/HookSystem.md`) — `ISASync.hook.ts` watches Edit/Write events on ISA frontmatter and syncs `phase` and `progress` to Pulse via `work.json`. `CheckpointPerISC.hook.ts` auto-commits per-ISC transitions. Hooks only read the ISA; the ISA is mutated by the AI directly via Edit/Write or via the ISA skill's workflows.
-- **CreateSkill** (`~/.claude/skills/CreateSkill/SKILL.md`) — the public-skill content rule that the ISA skill itself must obey. Public skills like ISA are stranger-safe; private skills like `<your-release-skill>` carry identity-bound content.
+- **CreateSkill** (`$LIFEOS_ROOT/skills/CreateSkill/SKILL.md`) — the public-skill content rule that the ISA skill itself must obey. Public skills like ISA are stranger-safe; private skills like `<your-release-skill>` carry identity-bound content.
 - **Pulse** (`LIFEOS/DOCUMENTATION/Pulse/PulseSystem.md`) — renders ISA `phase` and `progress` in real-time. The dashboard's phase widget reflects ISA frontmatter mutations as they happen.
 
 The ISA is the gravitational center the rest of the system orbits — every task is a transition from current state to ideal state, and the ISA is what articulates the ideal state for that specific task or project.
@@ -163,8 +163,8 @@ The ISA is the gravitational center the rest of the system orbits — every task
 ## Cross-References
 
 - **Format spec (file-shape contract):** `LIFEOS/DOCUMENTATION/Isa/IsaFormat.md`
-- **Skill (workflow implementations):** `~/.claude/skills/ISA/SKILL.md`
-- **Skill canonical example:** `~/.claude/skills/ISA/Examples/canonical-isa.md`
+- **Skill (workflow implementations):** `$LIFEOS_ROOT/skills/ISA/SKILL.md`
+- **Skill canonical example:** `$LIFEOS_ROOT/skills/ISA/Examples/canonical-isa.md`
 - **Algorithm doctrine:** `LIFEOS/ALGORITHM/v8.4.0.md` (current); `LIFEOS/ALGORITHM/LATEST` for version pointer
 - **Algorithm system doc:** `LIFEOS/DOCUMENTATION/Algorithm/AlgorithmSystem.md`
 - **Memory system doc:** `LIFEOS/DOCUMENTATION/Memory/MemorySystem.md`

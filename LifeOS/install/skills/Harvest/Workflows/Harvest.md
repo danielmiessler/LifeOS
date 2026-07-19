@@ -81,7 +81,7 @@ Rules for the report:
 Every harvest ends by preserving the source as a KNOWLEDGE note, regardless of how thin the mining verdict was:
 
 ```bash
-bun ~/.claude/skills/_HARVEST/Tools/harvest.ts "<original input>"
+bun $LIFEOS_ROOT/skills/_HARVEST/Tools/harvest.ts "<original input>"
 ```
 
 - Runs the canonical Arbol pipeline (`_F_HARVEST` classify → `HarvestExecutor.ts` write). Never write to `MEMORY/KNOWLEDGE/` by hand.

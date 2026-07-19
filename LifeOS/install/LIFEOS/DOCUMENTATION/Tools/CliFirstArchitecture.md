@@ -596,7 +596,7 @@ AI should orchestrate deterministic tools, not replace them with ad-hoc promptin
 
 ## Related Documentation
 
-- **Architecture**: `~/.claude/LIFEOS/DOCUMENTATION/LifeosSystemArchitecture.md`
+- **Architecture**: `$LIFEOS_DIR/DOCUMENTATION/LifeosSystemArchitecture.md`
 
 ---
 

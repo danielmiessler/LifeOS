@@ -7,8 +7,8 @@ Taking a screenshot of a webpage for a vision-language model (VLM) to read. Use 
 ## Preflight Isolation Gate (MANDATORY first step)
 
 ```bash
-source ~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
-bash ~/.claude/skills/Interceptor/Tools/PreflightIsolation.sh
+source $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/PreflightIsolation.sh
 ```
 
 Non-zero exit → STOP and surface the message verbatim. Do not fall back to the Default profile. Capture goes through `Tools/Capture.sh`, which re-runs this gate, routes to `INTERCEPTOR_TEST_CONTEXT_ID`, and resolves the destination to `~/Downloads/` for review artifacts — never raw `interceptor screenshot`.
@@ -18,7 +18,7 @@ Non-zero exit → STOP and surface the message verbatim. Do not fall back to the
 **1 command.** The agent-default recipe below IS the budget.
 
 ```bash
-bash ~/.claude/skills/Interceptor/Tools/Capture.sh --current
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/Capture.sh --current
 ```
 
 If the first screenshot doesn't answer the question, do NOT take a second exploratory screenshot — re-evaluate whether pixels are actually the answer. The "exploratory then second screenshot" pattern is the failure mode this budget exists to prevent. If you need a second capture, scope it tightly with the underlying `--selector`, `--element <ref>`, or `--region X,Y,W,H` flags — still 1 command, not a re-take.
@@ -26,7 +26,7 @@ If the first screenshot doesn't answer the question, do NOT take a second explor
 ## The agent-default recipe
 
 ```bash
-bash ~/.claude/skills/Interceptor/Tools/Capture.sh --current
+bash $LIFEOS_ROOT/skills/Interceptor/Tools/Capture.sh --current
 ```
 
 `Capture.sh` runs `interceptor screenshot` under the hood with the DOM-render path, the pinned `--context`, `--save`, and a `~/Downloads/` destination, then prints the absolute saved-image path on its only stdout line. No inline base64; the path re-reads on demand and never bloats your context. The defaults it applies are load-bearing:

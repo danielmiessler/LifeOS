@@ -8,7 +8,7 @@ effort: low
 ## Customization
 
 **Before executing, check for user customizations at:**
-`~/.claude/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Aphorisms/`
+`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Aphorisms/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
@@ -53,7 +53,7 @@ Running the **WorkflowName** workflow in the **Aphorisms** skill to ACTION...
 
 ## Database
 
-**Location:** `~/.claude/skills/Aphorisms/Database/aphorisms.md`
+**Location:** `$LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md`
 
 Organized by author, theme, context, and usage history. Per-aphorism metadata: full quote text, author attribution, theme tags, context/background, source reference. Sections: Initial Collection, per-thinker sections, Theme Index, Newsletter Usage History.
 
@@ -79,7 +79,7 @@ Organized by author, theme, context, and usage history. Per-aphorism metadata: f
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Aphorisms","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> ~/.claude/LIFEOS/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Aphorisms","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

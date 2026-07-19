@@ -26,9 +26,9 @@ If the session contains no substantive output to render (nothing analyzed, resea
 ## Tool Contract
 
 ```bash
-bun ~/.claude/skills/HTML/Tools/Render.ts --schema      # content JSON shape + example
-bun ~/.claude/skills/HTML/Tools/Render.ts --registers   # available registers
-bun ~/.claude/skills/HTML/Tools/Render.ts \
+bun $LIFEOS_ROOT/skills/HTML/Tools/Render.ts --schema      # content JSON shape + example
+bun $LIFEOS_ROOT/skills/HTML/Tools/Render.ts --registers   # available registers
+bun $LIFEOS_ROOT/skills/HTML/Tools/Render.ts \
   --json <content.json> \
   --register <dossier|ledger> \
   --out <artifact.html>

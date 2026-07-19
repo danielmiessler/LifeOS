@@ -102,7 +102,7 @@ This is the piece that makes "a lot more inputs" cheap instead of costly, and it
 - **Write-ahead.** The record hits the append-only ledger *first*, unconditionally, before grading. Nothing is lost if grading or routing fails.
 - **Idempotent.** Dedup identity = normalized `url` + content hash (falling back to `source`+`external_id`). The same item arriving via three inputs is one ledger row; a retry never duplicates.
 - **Async downstream.** Grade and route run after the write, off the capture path, so capture is always fast and never blocks on a model call.
-- **Privacy-gated.** A `personal` record never crosses to cloud storage without an explicit rule — the local→cloud analog of the `~/.claude`→public boundary.
+- **Privacy-gated.** A `personal` record never crosses to cloud storage without an explicit rule — the local→cloud analog of the `$LIFEOS_ROOT`→public boundary.
 
 **Adding an input = implement this contract.** A new source — a Slack star, an email forward, a Kindle highlight — writes one adapter that emits this record shape and hands it to Amber. It inherits preservation, dedup, grading, routing, and resurfacing for free. That is the entire payoff of naming the system: the contract is the thing "more inputs" plug into.
 
@@ -220,7 +220,7 @@ Phased so each phase is independently valuable and shippable. Nothing here is bu
 - **System of record (no ambiguity).** The D1 ledger is the append-only source of truth — *every* capture, including grade-rejects. KNOWLEDGE `idea` notes are a **curated promotion layer built FROM the ledger**, never a parallel history. Two co-equal "histories" diverge and rot; don't build that.
 - **Dedup key.** The same URL arrives via hotkey, bookmark cron, and Feed. Canonical idea identity = normalized URL + content hash, so the ledger doesn't fill with dupes and grading doesn't needlessly re-run.
 - **Grade versioning.** Store the grader/TELOS version next to each score, or historical scores become uninterpretable once TELOS evolves.
-- **Privacy boundary.** Voice markers and personal captures flowing to cloud D1 cross a local→cloud line — the adjacent case to the `~/.claude`→public constitutional rule. Specify which content classes are ledger-eligible before wiring the personal inputs.
+- **Privacy boundary.** Voice markers and personal captures flowing to cloud D1 cross a local→cloud line — the adjacent case to the `$LIFEOS_ROOT`→public constitutional rule. Specify which content classes are ledger-eligible before wiring the personal inputs.
 - **Backfill-ready.** Design the schema to accept the existing sheet's rows (timestamp, source attribution) so the Phase-5 migration is lossless.
 
 **Phase 2 — Auto-routing (✅ SHIPPED 2026-07-08).** `amber route` grades every unrouted ledger capture against TELOS (the 10-way taxonomy via `Inference.ts`) and fans it: `knowledge`/`blog_seed`/`help_understand` → a KNOWLEDGE `idea`-note, `work_item` → `Type:queue`, `project_integration` → `Type:project` — then marks the row `routed` via the worker's enrichment endpoint (raw capture stays immutable). Dry-run-first (`--dry-run` writes nothing); GH issues gated behind `--commit-issues`. Live-verified end to end, idempotent (routed rows skip). The manual "where does this go?" step is gone. Refinements pending: typed-`related`-link backfill on the notes; a launchd schedule so routing runs unattended.
