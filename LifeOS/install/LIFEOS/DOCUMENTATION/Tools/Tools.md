@@ -16,7 +16,7 @@ This file documents single-purpose CLI utilities that have been consolidated fro
 
 ## Inference.ts - Unified AI Inference Tool
 
-**Location:** `$LIFEOS_DIR/TOOLS/Inference.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/Inference.ts`
 
 **Use this — never import `@anthropic-ai/sdk` directly.** Inference.ts handles auth, retries, timeouts, and LifeOS-specific defaults. Hooks, skills, agents, and ad-hoc Bash all route through it.
 
@@ -27,22 +27,22 @@ Single inference tool with four run levels for different speed/capability trade-
 **Usage:**
 ```bash
 # Low (Haiku) - quick tasks, simple generation
-bun $LIFEOS_DIR/TOOLS/Inference.ts --level low "System prompt" "User prompt"
+bun "${LIFEOS_DIR}/TOOLS/Inference.ts" --level low "System prompt" "User prompt"
 
 # Medium (Sonnet) - balanced reasoning, typical analysis
-bun $LIFEOS_DIR/TOOLS/Inference.ts --level medium "System prompt" "User prompt"
+bun "${LIFEOS_DIR}/TOOLS/Inference.ts" --level medium "System prompt" "User prompt"
 
 # High (Opus) - deep reasoning, strategic decisions
-bun $LIFEOS_DIR/TOOLS/Inference.ts --level high "System prompt" "User prompt"
+bun "${LIFEOS_DIR}/TOOLS/Inference.ts" --level high "System prompt" "User prompt"
 
 # Max (Fable) - hardest reasoning, top tier
-bun $LIFEOS_DIR/TOOLS/Inference.ts --level max "System prompt" "User prompt"
+bun "${LIFEOS_DIR}/TOOLS/Inference.ts" --level max "System prompt" "User prompt"
 
 # With JSON output
-bun $LIFEOS_DIR/TOOLS/Inference.ts --json --level low "Return JSON" "Input"
+bun "${LIFEOS_DIR}/TOOLS/Inference.ts" --json --level low "Return JSON" "Input"
 
 # Custom timeout
-bun $LIFEOS_DIR/TOOLS/Inference.ts --level medium --timeout 60000 "Prompt" "Input"
+bun "${LIFEOS_DIR}/TOOLS/Inference.ts" --level medium --timeout 60000 "Prompt" "Input"
 ```
 
 **Run Levels:**
@@ -55,7 +55,7 @@ bun $LIFEOS_DIR/TOOLS/Inference.ts --level medium --timeout 60000 "Prompt" "Inpu
 
 **Programmatic Usage:**
 ```typescript
-// From hooks (at $LIFEOS_ROOT/hooks/):
+// From hooks (at {{LIFEOS_ROOT}}/hooks/):
 import { inference } from '../../.claude/LIFEOS/TOOLS/Inference';
 
 const result = await inference({
@@ -88,20 +88,20 @@ if (result.success) {
 
 ## RemoveBg.ts - Remove Image Backgrounds
 
-**Location:** `$LIFEOS_DIR/TOOLS/RemoveBg.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/RemoveBg.ts`
 
 Remove backgrounds from images using local `rembg` (no external API).
 
 **Usage:**
 ```bash
 # Remove background from single image (overwrites; renames .jpg→.png)
-bun $LIFEOS_DIR/TOOLS/RemoveBg.ts /path/to/image.png
+bun "${LIFEOS_DIR}/TOOLS/RemoveBg.ts" /path/to/image.png
 
 # Remove background and save to different path
-bun $LIFEOS_DIR/TOOLS/RemoveBg.ts /path/to/input.png /path/to/output.png
+bun "${LIFEOS_DIR}/TOOLS/RemoveBg.ts" /path/to/input.png /path/to/output.png
 
 # Process multiple images
-bun $LIFEOS_DIR/TOOLS/RemoveBg.ts image1.png image2.png image3.png
+bun "${LIFEOS_DIR}/TOOLS/RemoveBg.ts" image1.png image2.png image3.png
 ```
 
 **Requirements:**
@@ -117,17 +117,17 @@ bun $LIFEOS_DIR/TOOLS/RemoveBg.ts image1.png image2.png image3.png
 
 ## AddBg.ts - Add Background Color
 
-**Location:** `$LIFEOS_DIR/TOOLS/AddBg.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/AddBg.ts`
 
 Add solid background color to transparent images.
 
 **Usage:**
 ```bash
 # Add specific background color
-bun $LIFEOS_DIR/TOOLS/AddBg.ts /path/to/transparent.png "#EAE9DF" /path/to/output.png
+bun "${LIFEOS_DIR}/TOOLS/AddBg.ts" /path/to/transparent.png "#EAE9DF" /path/to/output.png
 
 # Add your brand background color (uses the color from LifeOS config)
-bun $LIFEOS_DIR/TOOLS/AddBg.ts /path/to/transparent.png --brand /path/to/output.png
+bun "${LIFEOS_DIR}/TOOLS/AddBg.ts" /path/to/transparent.png --brand /path/to/output.png
 ```
 
 **When to Use:**
@@ -141,17 +141,17 @@ bun $LIFEOS_DIR/TOOLS/AddBg.ts /path/to/transparent.png --brand /path/to/output.
 
 ## GetTranscript.ts - Extract YouTube Transcripts
 
-**Location:** `$LIFEOS_DIR/TOOLS/GetTranscript.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/GetTranscript.ts`
 
 Extract transcripts from YouTube videos using yt-dlp (via fabric).
 
 **Usage:**
 ```bash
 # Extract transcript to stdout
-bun $LIFEOS_DIR/TOOLS/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID"
+bun "${LIFEOS_DIR}/TOOLS/GetTranscript.ts" "https://www.youtube.com/watch?v=VIDEO_ID"
 
 # Save transcript to file
-bun $LIFEOS_DIR/TOOLS/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID" --save /path/to/transcript.txt
+bun "${LIFEOS_DIR}/TOOLS/GetTranscript.ts" "https://www.youtube.com/watch?v=VIDEO_ID" --save /path/to/transcript.txt
 ```
 
 **Supported URL Formats:**
@@ -175,23 +175,23 @@ bun $LIFEOS_DIR/TOOLS/GetTranscript.ts "https://www.youtube.com/watch?v=VIDEO_ID
 
 ## MemoryRetriever.ts - Compressed Knowledge Retrieval
 
-**Location:** `$LIFEOS_DIR/TOOLS/MemoryRetriever.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/MemoryRetriever.ts`
 
 BM25-lite search across the Knowledge Archive with optional LLM compression. Finds relevant notes by keyword matching, tag co-occurrence, and content frequency, then compresses results into a dense context-efficient summary.
 
 **Usage:**
 ```bash
 # Search and return compressed results (default: top 3)
-bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "memory architecture"
+bun "${LIFEOS_DIR}/TOOLS/MemoryRetriever.ts" "memory architecture"
 
 # Return top 5 results
-bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "security policy" --top 5
+bun "${LIFEOS_DIR}/TOOLS/MemoryRetriever.ts" "security policy" --top 5
 
 # Skip LLM compression, return raw excerpts
-bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "karpathy" --raw
+bun "${LIFEOS_DIR}/TOOLS/MemoryRetriever.ts" "karpathy" --raw
 
 # Custom token budget for output
-bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "threat model" --budget 800
+bun "${LIFEOS_DIR}/TOOLS/MemoryRetriever.ts" "threat model" --budget 800
 ```
 
 **Scoring:**
@@ -212,29 +212,29 @@ bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "threat model" --budget 800
 
 ## KnowledgeGraph.ts - Associative Knowledge Navigation
 
-**Location:** `$LIFEOS_DIR/TOOLS/KnowledgeGraph.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/KnowledgeGraph.ts`
 
 Builds an in-memory graph from Knowledge Archive frontmatter (tags, wikilinks, related fields) and enables BFS traversal for associative recall. No persistent storage — computed from existing markdown files at query time.
 
 **Usage:**
 ```bash
 # BFS traversal from a note (default: 2 hops)
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts traverse karpathy
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" traverse karpathy
 
 # Traverse with custom depth
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts traverse mempalace --hops 3
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" traverse mempalace --hops 3
 
 # Show directly connected notes
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts related mempalace
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" related mempalace
 
 # Graph summary: nodes, edges, clusters
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts stats
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" stats
 
 # Top 10 most-connected notes
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts hubs
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" hubs
 
 # Find all notes with a specific tag
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts find architecture
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" find architecture
 ```
 
 **Edge Types:**
@@ -289,7 +289,7 @@ sleep 2
 - "perform this"
 
 **Technical Details:**
-- Pulse must be running (voice handler lives at `$LIFEOS_DIR/PULSE/VoiceServer/voice.ts`, port 31337)
+- Pulse must be running (voice handler lives at `{{LIFEOS_DIR}}/PULSE/VoiceServer/voice.ts`, port 31337)
 - Segments longer than 450 chars should be split
 - Natural 2-second pauses between segments for storytelling flow
 - Uses ElevenLabs API under the hood
@@ -298,14 +298,14 @@ sleep 2
 
 ## extract-transcript.py - Transcribe Audio/Video Files
 
-**Location:** `$LIFEOS_DIR/TOOLS/extract-transcript.py`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/extract-transcript.py`
 
 Local transcription using faster-whisper (4x faster than OpenAI Whisper, 50% less memory). Self-contained UV script for offline transcription.
 
 **Usage:**
 ```bash
 # Transcribe single file (base.en model - recommended)
-cd $LIFEOS_DIR/TOOLS/
+cd "${LIFEOS_DIR}/TOOLS/"
 uv run extract-transcript.py /path/to/audio.m4a
 
 # Use different model
@@ -359,24 +359,24 @@ uv run extract-transcript.py /path/to/folder/ --batch --model base.en
 
 ## YouTubeApi.ts - YouTube Channel & Video Stats
 
-**Location:** `$LIFEOS_DIR/TOOLS/YouTubeApi.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/YouTubeApi.ts`
 
 Wrapper around YouTube Data API v3 for channel statistics and video metrics.
 
 **Usage:**
 ```bash
 # Get channel statistics
-bun $LIFEOS_DIR/TOOLS/YouTubeApi.ts --channel-stats
+bun "${LIFEOS_DIR}/TOOLS/YouTubeApi.ts" --channel-stats
 
 # Get video statistics
-bun $LIFEOS_DIR/TOOLS/YouTubeApi.ts --video-stats VIDEO_ID
+bun "${LIFEOS_DIR}/TOOLS/YouTubeApi.ts" --video-stats VIDEO_ID
 
 # Get latest uploads
-bun $LIFEOS_DIR/TOOLS/YouTubeApi.ts --latest-videos
+bun "${LIFEOS_DIR}/TOOLS/YouTubeApi.ts" --latest-videos
 ```
 
 **Environment Variables:**
-- `YOUTUBE_API_KEY` - Required for API access (from `$LIFEOS_ROOT/.env`)
+- `YOUTUBE_API_KEY` - Required for API access (from `{{LIFEOS_ROOT}}/.env`)
 - `YOUTUBE_CHANNEL_ID` - Default channel ID
 
 **When to Use:**
@@ -508,12 +508,12 @@ The Monitor tool starts a background script whose stdout lines become chat notif
 
 The Pulse agent-guard hook automatically injects a watchdog reminder when background agents are spawned. The watchdog monitors tool-activity.jsonl for silence while agents are active:
 
-```bash
+```text
 Monitor({
   description: "Agent watchdog",
   persistent: true,
   timeout_ms: 3600000,
-  command: "bun $LIFEOS_DIR/TOOLS/AgentWatchdog.ts"
+  command: "bun {{LIFEOS_DIR}}/TOOLS/AgentWatchdog.ts"
 })
 ```
 
@@ -537,12 +537,12 @@ Monitor({
 
 Watch Pulse daemon logs for errors during a debugging session:
 
-```bash
+```text
 Monitor({
   description: "Pulse error watcher",
   persistent: true,
   timeout_ms: 300000,
-  command: "tail -f $LIFEOS_ROOT/Pulse/logs/pulse-stdout.log | grep --line-buffered -i -E '(error|fatal|crash|unhandled)'"
+  command: "tail -f {{LIFEOS_ROOT}}/Pulse/logs/pulse-stdout.log | grep --line-buffered -i -E '(error|fatal|crash|unhandled)'"
 })
 ```
 
@@ -550,7 +550,7 @@ Monitor({
 
 Monitor a long test suite and get notified on failures:
 
-```bash
+```text
 Monitor({
   description: "Test failure watcher",
   persistent: false,
@@ -563,7 +563,7 @@ Monitor({
 
 Poll GitHub for CI status changes on a PR:
 
-```bash
+```text
 Monitor({
   description: "CI status for PR #42",
   persistent: true,
@@ -576,7 +576,7 @@ Monitor({
 
 Tail security scan results for critical findings:
 
-```bash
+```text
 Monitor({
   description: "Security scan critical findings",
   persistent: false,
@@ -614,7 +614,7 @@ Monitor({
 
 When adding a new utility tool to this system:
 
-1. **Add tool file:** Place `.ts` or `.py` file directly in `$LIFEOS_DIR/TOOLS/`
+1. **Add tool file:** Place `.ts` or `.py` file directly in `{{LIFEOS_DIR}}/TOOLS/`
    - Use **Title Case** for filenames (e.g., `GetTranscript.ts`, not `get-transcript.ts`)
    - Keep the directory flat - NO subdirectories
 
@@ -649,7 +649,7 @@ Archived skill files have been removed.
 
 ## algorithm.ts - The Algorithm CLI
 
-**Location:** `$LIFEOS_DIR/TOOLS/algorithm.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/algorithm.ts`
 
 Run the LifeOS Algorithm in Loop, Interactive, Ideate, or Optimize mode against a ISA.
 
@@ -688,13 +688,13 @@ algorithm resume -p <ISA>                      # Resume a paused loop
 algorithm stop -p <ISA>                        # Stop a loop
 ```
 
-**Parameter schema:** `$LIFEOS_DIR/ALGORITHM/parameter-schema.md`
+**Parameter schema:** `{{LIFEOS_DIR}}/ALGORITHM/parameter-schema.md`
 
 ---
 
 ## AlgorithmPhaseReport.ts - Algorithm State Reporter
 
-**Location:** `$LIFEOS_DIR/TOOLS/AlgorithmPhaseReport.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/AlgorithmPhaseReport.ts`
 
 Writes algorithm execution state to `algorithm-phase.json` for dashboard consumption.
 
@@ -724,26 +724,26 @@ bun AlgorithmPhaseReport.ts meta-adjust --param selectionPressure --from 0.3 --t
 
 ## KnowledgeHarvester.ts - Knowledge Archive Harvester
 
-**Location:** `$LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/KnowledgeHarvester.ts`
 
 Validate and maintain the KNOWLEDGE/ archive (4 entity types: People, Companies, Ideas, Research). Validates against schemas in `_schema.md`, handles MOC regeneration and maintenance. Note: Algorithm LEARN phase writes knowledge directly; harvester reflections are disabled. The harvester's primary role is now validation, maintenance, and index regeneration.
 
 **Usage:**
 ```bash
 # Harvest from all sources
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts harvest
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" harvest
 
 # Harvest from specific source
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts harvest --source work
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" harvest --source work
 
 # Preview without writing
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts harvest --dry-run
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" harvest --dry-run
 
 # Archive health dashboard
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts status
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" status
 
 # Regenerate all MOC dashboards
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts index
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" index
 ```
 
 **Sources:**
@@ -764,7 +764,7 @@ bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts index
 
 ## models.ts + UpdateModels.ts — Model ID Registry & Release Auto-Track
 
-**Location:** `$LIFEOS_DIR/TOOLS/models.ts` (registry) + `$LIFEOS_DIR/TOOLS/UpdateModels.ts` (updater).
+**Location:** `{{LIFEOS_DIR}}/TOOLS/models.ts` (registry) + `{{LIFEOS_DIR}}/TOOLS/UpdateModels.ts` (updater).
 
 `models.ts` is the **single source of truth** for current Claude model IDs (`CURRENT.opus/sonnet/haiku`) plus cross-vendor pins (inventory only). The rule of the road:
 
@@ -774,24 +774,24 @@ bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts index
 
 **On a new model release (propose-not-auto):**
 1. The `_NEWS` Anthropic monitor (`CheckAnthropicChanges.ts`) scans fetched source bodies for a new Claude ID and, on a hit, records it to `LIFEOS/MEMORY/OBSERVABILITY/model-releases.jsonl` and best-effort fires `/notify` (voice/Telegram). It never edits the registry. (A model bump is a command, not a markdown-section text edit, so it deliberately does NOT use the `pending-proposals.jsonl` Telegram queue — that queue's apply path only appends text under a header.)
-2. A human reviews, then bumps the one edit point: `bun $LIFEOS_DIR/TOOLS/UpdateModels.ts --apply <tier> <new-id>`.
-3. Confirm nothing else drifted: `bun $LIFEOS_DIR/TOOLS/UpdateModels.ts --check` (also runnable any time as a drift alarm; exit 1 on drift).
+2. A human reviews, then bumps the one edit point: `bun "${LIFEOS_DIR}/TOOLS/UpdateModels.ts" --apply <tier> <new-id>`.
+3. Confirm nothing else drifted: `bun "${LIFEOS_DIR}/TOOLS/UpdateModels.ts" --check` (also runnable any time as a drift alarm; exit 1 on drift).
 
 Historical Algorithm doctrine snapshots (`LIFEOS/ALGORITHM/v*.md`) keep their period IDs and are excluded from the drift scan.
 
 ## ArchitectureSummaryGenerator.ts - Architecture Summary Generator
 
-**Location:** `$LIFEOS_DIR/TOOLS/ArchitectureSummaryGenerator.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/ArchitectureSummaryGenerator.ts`
 
 Generate `LIFEOS_ARCHITECTURE_SUMMARY.md` from LifeosSystemArchitecture.md and subsystem docs. Provides a compact architecture overview derived from the master architecture document.
 
 **Usage:**
 ```bash
 # Generate/regenerate the architecture summary
-bun $LIFEOS_DIR/TOOLS/ArchitectureSummaryGenerator.ts generate
+bun "${LIFEOS_DIR}/TOOLS/ArchitectureSummaryGenerator.ts" generate
 
 # Check if summary is stale (exit 1 if stale, 0 if fresh)
-bun $LIFEOS_DIR/TOOLS/ArchitectureSummaryGenerator.ts check
+bun "${LIFEOS_DIR}/TOOLS/ArchitectureSummaryGenerator.ts" check
 ```
 
 **When to Use:**
@@ -803,7 +803,7 @@ bun $LIFEOS_DIR/TOOLS/ArchitectureSummaryGenerator.ts check
 
 ## Doctor.ts - Capability Prober & Health Manifest
 
-**Location:** `$LIFEOS_DIR/TOOLS/Doctor.ts`
+**Location:** `{{LIFEOS_DIR}}/TOOLS/Doctor.ts`
 
 Probes the external tools LifeOS doctrine assumes but the core install does not ship — `codex` (cross-vendor audit), Interceptor (browser verification), Cloudflare/wrangler (scheduled flows), ElevenLabs (voice) — plus core wiring, and writes an **advisory** capability manifest at `MEMORY/STATE/capabilities.json`. Born from onboarding-friction feedback (discussion #1461): capabilities assumed but never verified degrade silently, and change-scoped checks can't see what's dormant at rest.
 
@@ -812,18 +812,18 @@ Four states per capability: `live` / `broken` / `declined` / `stale`. The manife
 **Usage:**
 ```bash
 # Probe (offline checks), human table
-bun $LIFEOS_DIR/TOOLS/Doctor.ts
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts"
 
 # Include network probes (only for configured capabilities — no pre-consent egress)
-bun $LIFEOS_DIR/TOOLS/Doctor.ts --network
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" --network
 
-bun $LIFEOS_DIR/TOOLS/Doctor.ts --json          # machine-readable
-bun $LIFEOS_DIR/TOOLS/Doctor.ts --verify        # integrity-check the manifest (exit 2 on tamper)
-bun $LIFEOS_DIR/TOOLS/Doctor.ts --reconcile     # hooks declared-on-disk vs registered-in-settings
-bun $LIFEOS_DIR/TOOLS/Doctor.ts --statusline    # one glyph if a NEW regression since ack, else empty
-bun $LIFEOS_DIR/TOOLS/Doctor.ts decline <cap>   # permanent silent opt-out
-bun $LIFEOS_DIR/TOOLS/Doctor.ts enable <cap>    # undo a decline
-bun $LIFEOS_DIR/TOOLS/Doctor.ts ack             # acknowledge the current broken set (statusline delta base)
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" --json          # machine-readable
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" --verify        # integrity-check the manifest (exit 2 on tamper)
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" --reconcile     # hooks declared-on-disk vs registered-in-settings
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" --statusline    # one glyph if a NEW regression since ack, else empty
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" decline <cap>   # permanent silent opt-out
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" enable <cap>    # undo a decline
+bun "${LIFEOS_DIR}/TOOLS/Doctor.ts" ack             # acknowledge the current broken set (statusline delta base)
 ```
 
 **Consumers (read the manifest, never write it):** the statusline delta line (precomputed sidecar), the `AlgorithmNudge` capability row (fires at the moment a broken capability's command fails — reads only `state`, fix command is a static in-hook constant), and the Pulse System Health panel (`/api/doctor`). Never install-fatal: the default run always exits 0; every probe is timeout-bounded.
@@ -836,7 +836,7 @@ bun $LIFEOS_DIR/TOOLS/Doctor.ts ack             # acknowledge the current broken
 
 ## MCP Servers
 
-**Config:** `$LIFEOS_ROOT/.mcp.json`
+**Config:** `{{LIFEOS_ROOT}}/.mcp.json`
 
 LifeOS connects to external MCP servers for domain-specific tool access.
 
@@ -869,8 +869,8 @@ MCP tool results are truncated by default. Servers can override this by adding `
 
 ## Related Documentation
 
-- **Architecture**: `$LIFEOS_DIR/DOCUMENTATION/LifeosSystemArchitecture.md` (master architecture reference)
-- **CLI Tools**: `$LIFEOS_DIR/DOCUMENTATION/Tools/Cli.md` (Algorithm CLI, Arbol CLI)
+- **Architecture**: `{{LIFEOS_DIR}}/DOCUMENTATION/LifeosSystemArchitecture.md` (master architecture reference)
+- **CLI Tools**: `{{LIFEOS_DIR}}/DOCUMENTATION/Tools/Cli.md` (Algorithm CLI, Arbol CLI)
 
 ---
 

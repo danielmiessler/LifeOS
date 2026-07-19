@@ -65,7 +65,7 @@ The workflow template below includes a title + subtitle block. **Override this w
 
 # Example image
 # Ignore for now
-# $LIFEOS_ROOT/skills/Art/WorkflowExamples/TechnicalDiagrams/example.png
+# {{LIFEOS_ROOT}}/skills/Art/WorkflowExamples/TechnicalDiagrams/example.png
 
 ---
 
@@ -231,7 +231,7 @@ All the art components, labels, and such should mostly look hand-drawn, similar 
 ### Generate Command
 
 ```bash
-bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
+bun run "${LIFEOS_ROOT}/skills/Art/Tools/Generate.ts" \
   --workflow=TechnicalDiagrams \
   --model [SELECTED_MODEL] \
   --prompt "[PROMPT]" \

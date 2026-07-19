@@ -26,7 +26,7 @@ Optional:
 OUT=~/Downloads/webdesign/export/$(date +%Y%m%d-%H%M%S)
 mkdir -p "$OUT"
 
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts export bundle "$OUT/bundle"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/DriveClaudeDesign.ts" export bundle "$OUT/bundle"
 ```
 
 The `bundle` format produces a directory containing:
@@ -39,8 +39,8 @@ The `bundle` format produces a directory containing:
 ### 2. Parse the Bundle
 
 ```bash
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/ProcessHandoffBundle.ts "$OUT/bundle" > "$OUT/bundle.json"
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/ProcessHandoffBundle.ts "$OUT/bundle" --brief > "$OUT/integration-brief.md"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/ProcessHandoffBundle.ts" "$OUT/bundle" > "$OUT/bundle.json"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/ProcessHandoffBundle.ts" "$OUT/bundle" --brief > "$OUT/integration-brief.md"
 ```
 
 The `--brief` flag emits a markdown summary ready to feed into the next agent (the `frontend-design` plugin).
@@ -64,7 +64,7 @@ DEV_PID=$!
 sleep 3
 
 # Screenshot the running app
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts http://localhost:5173 "$OUT/verify"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/VerifyDesign.ts" http://localhost:5173 "$OUT/verify"
 
 kill $DEV_PID
 ```
@@ -74,7 +74,7 @@ Compare `$OUT/verify/screenshot.png` against `$OUT/bundle/preview.html` — fide
 ### 5. Accessibility Check
 
 ```bash
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts --a11y http://localhost:5173 "$OUT/a11y"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/VerifyDesign.ts" --a11y http://localhost:5173 "$OUT/a11y"
 ```
 
 Any critical or serious a11y violations block shipping. Fix in code before proceeding.

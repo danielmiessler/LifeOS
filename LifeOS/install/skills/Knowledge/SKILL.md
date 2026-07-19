@@ -19,9 +19,9 @@ Notes you save in isolation are notes you never find again. A flat folder of fac
 
 ## How It Works
 
-Manage the LifeOS Knowledge Archive at `$LIFEOS_DIR/MEMORY/KNOWLEDGE/`. Each operation routes through a subcommand below; notes follow the archive schema and ship with typed cross-links.
+Manage the LifeOS Knowledge Archive at `{{LIFEOS_DIR}}/MEMORY/KNOWLEDGE/`. Each operation routes through a subcommand below; notes follow the archive schema and ship with typed cross-links.
 
-**Archive schema:** `$LIFEOS_DIR/MEMORY/KNOWLEDGE/_schema.md`
+**Archive schema:** `{{LIFEOS_DIR}}/MEMORY/KNOWLEDGE/_schema.md`
 
 ## Workflow Routing
 
@@ -51,7 +51,7 @@ If `$ARGUMENTS` doesn't match a subcommand, treat it as a search query.
 Run the harvester status command and display results:
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts status
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" status
 ```
 
 Also show:
@@ -70,17 +70,17 @@ Search the Knowledge Archive for notes matching `$ARGUMENTS`.
 
 **Step 1 — Lexical search:**
 ```bash
-rg -i "$ARGUMENTS" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l
+rg -i "$ARGUMENTS" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l
 ```
 
 **Step 2 — Frontmatter search (tags and titles):**
 ```bash
-rg -i "title:.*$ARGUMENTS|tags:.*$ARGUMENTS" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l
+rg -i "title:.*$ARGUMENTS|tags:.*$ARGUMENTS" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l
 ```
 
 **Step 3 — Wikilink search:**
 ```bash
-rg "\[\[.*$ARGUMENTS.*\]\]" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l
+rg "\[\[.*$ARGUMENTS.*\]\]" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l
 ```
 
 Deduplicate results across all three. For each match, read the first 5 lines of frontmatter to show title, domain, status, tags.
@@ -107,7 +107,7 @@ Create a new note manually in the specified entity type.
 7. Verify every slug in `related:` exists in the archive before saving
 8. Regenerate the type's MOC:
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts index
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" index
 ```
 
 **Topic is a tag, not a type.** A security insight is an Idea with a `security` tag. A security company is a Company with a `security` tag. The entity type determines the schema; the tag determines the topic.
@@ -146,13 +146,13 @@ related:
 **How to find related notes before writing:**
 ```bash
 # By topic/keyword
-rg -l "TOPIC" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md
+rg -l "TOPIC" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md
 
 # By tag overlap
-rg "^tags:.*TAG" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l
+rg "^tags:.*TAG" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l
 
 # For People/Companies — grep by name
-rg -l "Person Name" $LIFEOS_DIR/MEMORY/KNOWLEDGE/
+rg -l "Person Name" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/"
 ```
 
 **Enforcement:**
@@ -168,7 +168,7 @@ rg -l "Person Name" $LIFEOS_DIR/MEMORY/KNOWLEDGE/
 Run the KnowledgeHarvester to pull new knowledge from all LifeOS sources:
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts harvest
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" harvest
 ```
 
 Display results. If nothing was harvested, explain that sources are already up to date.
@@ -183,7 +183,7 @@ The weekly gardening workflow. Surface seedling notes that are ready for enrichm
 
 **Step 1 — Find seedlings:**
 ```bash
-rg "^status: seedling" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l
+rg "^status: seedling" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l
 ```
 
 **Step 2 — For each seedling:**
@@ -233,10 +233,10 @@ Search for existing notes that relate to this new content:
 
 ```bash
 # Search by extracted tags
-rg -i "TAG1|TAG2|TAG3" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l --glob '!_*'
+rg -i "TAG1|TAG2|TAG3" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l --glob '!_*'
 
 # Search by key entities/concepts mentioned
-rg -i "ENTITY1|ENTITY2" $LIFEOS_DIR/MEMORY/KNOWLEDGE/ --type md -l --glob '!_*'
+rg -i "ENTITY1|ENTITY2" "${LIFEOS_DIR}/MEMORY/KNOWLEDGE/" --type md -l --glob '!_*'
 ```
 
 For each related note found (up to 10):
@@ -280,7 +280,7 @@ Append to `KNOWLEDGE/_log.md`:
 
 Regenerate MOCs:
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts index
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" index
 ```
 
 Present in NATIVE mode.
@@ -295,7 +295,7 @@ Find and review conflicting claims across Knowledge notes.
 
 Run the KnowledgeHarvester contradiction finder:
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeHarvester.ts contradictions
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeHarvester.ts" contradictions
 ```
 
 This outputs pairs of notes with high tag overlap (2+ shared tags), ranked by overlap count.
@@ -348,21 +348,21 @@ Navigate the Knowledge Archive as a graph.
 
 **No argument — stats overview:**
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts stats
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" stats
 ```
 
 Show node count, edge count, top clusters, most connected hubs, and isolated nodes.
 
 **With slug — traverse from a note:**
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts traverse <slug> --hops 2
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" traverse <slug> --hops 2
 ```
 
 Show all notes connected within 2 hops via tags, wikilinks, and typed relationships. Useful for exploring how knowledge connects across domains.
 
 **Related notes only:**
 ```bash
-bun $LIFEOS_DIR/TOOLS/KnowledgeGraph.ts related <slug>
+bun "${LIFEOS_DIR}/TOOLS/KnowledgeGraph.ts" related <slug>
 ```
 
 Present in NATIVE mode.
@@ -374,14 +374,14 @@ Present in NATIVE mode.
 Compressed context retrieval over the Knowledge Archive using BM25-lite scoring.
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "<query>" --top 5
+bun "${LIFEOS_DIR}/TOOLS/MemoryRetriever.ts" "<query>" --top 5
 ```
 
 Returns the top matching notes with compressed summaries, ranked by title match, tag overlap, and content frequency. Useful for loading relevant knowledge context without reading full files.
 
 For raw excerpts without LLM compression:
 ```bash
-bun $LIFEOS_DIR/TOOLS/MemoryRetriever.ts "<query>" --raw
+bun "${LIFEOS_DIR}/TOOLS/MemoryRetriever.ts" "<query>" --raw
 ```
 
 Present in NATIVE mode.
@@ -393,14 +393,14 @@ Present in NATIVE mode.
 Mine recent conversations for memory candidates (decisions, preferences, milestones, problems).
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/SessionHarvester.ts --mine --recent 10
+bun "${LIFEOS_DIR}/TOOLS/SessionHarvester.ts" --mine --recent 10
 ```
 
 Candidates are written to `KNOWLEDGE/_harvest-queue/` for review — never directly to KNOWLEDGE/. Use `/knowledge harvest` to process the queue.
 
 For dry run (preview only):
 ```bash
-bun $LIFEOS_DIR/TOOLS/SessionHarvester.ts --mine --recent 10 --dry-run
+bun "${LIFEOS_DIR}/TOOLS/SessionHarvester.ts" --mine --recent 10 --dry-run
 ```
 
 Present in NATIVE mode.

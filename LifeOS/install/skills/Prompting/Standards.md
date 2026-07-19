@@ -761,7 +761,7 @@ An **open-source framework** for augmenting humans using AI.
 
 ## Native Fabric Patterns in LifeOS
 
-**Location:** `$LIFEOS_ROOT/skills/Fabric/Patterns/`
+**Location:** `{{LIFEOS_ROOT}}/skills/Fabric/Patterns/`
 
 LifeOS maintains a local copy of all Fabric patterns for native execution. Instead of spawning the `fabric` CLI for every pattern-based task, the system reads and applies patterns directly as prompts.
 
@@ -790,7 +790,7 @@ These operations require the CLI because they access external services or config
 
 Run the update script to sync latest patterns:
 ```bash
-$LIFEOS_ROOT/skills/Fabric/Tools/update-patterns.sh
+"${LIFEOS_ROOT}/skills/Fabric/Tools/update-patterns.sh"
 ```
 
 This pulls upstream updates via `fabric -U` and syncs to LifeOS's local copy.
@@ -1225,7 +1225,7 @@ Reusable quality and completion checks.
 
 ## Template Location
 
-All templates live in `$LIFEOS_ROOT/skills/Prompting/Templates/`:
+All templates live in `{{LIFEOS_ROOT}}/skills/Prompting/Templates/`:
 
 ```
 skills/Prompting/
@@ -1252,7 +1252,7 @@ skills/Prompting/
 
 **CLI Usage:**
 ```bash
-bun $LIFEOS_ROOT/skills/Prompting/Tools/RenderTemplate.ts \
+bun "${LIFEOS_ROOT}/skills/Prompting/Tools/RenderTemplate.ts" \
   --template Primitives/Roster.hbs \
   --data Data/Agents.yaml \
   --output Compiled/AgentRoster.md
@@ -1260,7 +1260,8 @@ bun $LIFEOS_ROOT/skills/Prompting/Tools/RenderTemplate.ts \
 
 **Programmatic Usage:**
 ```typescript
-import { renderTemplate } from '$LIFEOS_ROOT/skills/Prompting/Tools/RenderTemplate.ts';
+// From a script at the Prompting skill root:
+import { renderTemplate } from './Tools/RenderTemplate.ts';
 
 const output = renderTemplate('Primitives/Briefing.hbs', {
   agent: { id: 'EN-1', name: 'Skeptical Thinker', personality: '...' },

@@ -10,7 +10,7 @@ effort: medium
 ## Customization
 
 **Before executing, check for user customizations at:**
-`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/LocalIntelligence/`
+`{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/LocalIntelligence/`
 
 If this directory exists, load and apply any `PREFERENCES.md`, optional source-list overrides, or per-source API keys (e.g., OpenStates, Google News topic ID). These override defaults. If the directory does not exist, proceed with skill defaults — universal sources only.
 
@@ -52,7 +52,7 @@ import { readHometown } from "./Tools/Hometown.ts"
 const { city, state, zip, county } = await readHometown()
 ```
 
-`Tools/Hometown.ts` parses the `**Hometown:**` line from `$LIFEOS_DIR/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md`. If absent, every workflow surfaces a clear "no hometown set" message and refuses to fetch. There is no fallback city.
+`Tools/Hometown.ts` parses the `**Hometown:**` line from `{{LIFEOS_DIR}}/USER/PRINCIPAL/PRINCIPAL_IDENTITY.md`. If absent, every workflow surfaces a clear "no hometown set" message and refuses to fetch. There is no fallback city.
 
 ## Workflow Routing
 
@@ -98,7 +98,7 @@ LocalIntelligence/
     └── DataSources.md        catalog of universal civic sources keyed off {city,state}
 ```
 
-Output: `$LIFEOS_DIR/MEMORY/DATA/LocalIntelligence/<YYYY-MM-DD>_<city>_<state>_digest.json` plus a copy at `latest.json` for Pulse to read.
+Output: `{{LIFEOS_DIR}}/MEMORY/DATA/LocalIntelligence/<YYYY-MM-DD>_<city>_<state>_digest.json` plus a copy at `latest.json` for Pulse to read.
 
 ## Fetcher Contract
 
@@ -116,8 +116,8 @@ Fetchers return the empty/unavailable case rather than throwing. `Refresh.ts` ru
 
 The skill writes JSON; Pulse reads it. Coupling lives in two places:
 
-1. **Pulse module** at `$LIFEOS_DIR/PULSE/modules/local-intelligence.ts` — read-only over `MEMORY/DATA/LocalIntelligence/latest.json`. Endpoints: `GET /api/local-intelligence`, `POST /api/local-intelligence/refresh`.
-2. **Pulse dashboard tab** at `$LIFEOS_DIR/PULSE/Observability/src/app/local/page.tsx` — fetches the JSON and renders nine section cards. Nav entry in `AppHeader.tsx` `lifeNav` between `LIFE` and `WORK`.
+1. **Pulse module** at `{{LIFEOS_DIR}}/PULSE/modules/local-intelligence.ts` — read-only over `MEMORY/DATA/LocalIntelligence/latest.json`. Endpoints: `GET /api/local-intelligence`, `POST /api/local-intelligence/refresh`.
+2. **Pulse dashboard tab** at `{{LIFEOS_DIR}}/PULSE/Observability/src/app/local/page.tsx` — fetches the JSON and renders nine section cards. Nav entry in `AppHeader.tsx` `lifeNav` between `LIFE` and `WORK`.
 
 Daily refresh: `[[job]]` in `PULSE.toml` at `0 6 * * *` running `bun run skills/LocalIntelligence/Tools/Refresh.ts`.
 
@@ -167,7 +167,7 @@ User clicks "Refresh now" on the LOCAL tab
 This skill body is generic by design. Pre-flight grep:
 
 ```bash
-rg -i "<your-city>|<your-zip>|<your-county>|/Users/[a-z]+/" $LIFEOS_ROOT/skills/LocalIntelligence/
+rg -i "<your-city>|<your-zip>|<your-county>|/Users/[a-z]+/" "${CLAUDE_SKILL_DIR}/"
 ```
 
 Zero matches required before treating the skill as releasable. The principal's actual hometown lives in `PRINCIPAL_IDENTITY.md`, never here.
@@ -177,5 +177,5 @@ Zero matches required before treating the skill as releasable. The principal's a
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"LocalIntelligence","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"LocalIntelligence","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> "${LIFEOS_DIR}/MEMORY/SKILLS/execution.jsonl"
 ```

@@ -3,7 +3,7 @@ You are executing the analyze-ai-trends command to perform deep trend analysis a
 **Your task:**
 
 1. **Load all historical AI news research**
-   - Read all files from: `$LIFEOS_ROOT/History/research/` (filter for AI news files)
+   - Read all files from: `{{LIFEOS_ROOT}}/History/research/` (filter for AI news files)
    - Files may be in various formats: analysis.md, comprehensive-analysis.md, etc.
    - Sort chronologically to understand evolution over time
 

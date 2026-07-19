@@ -26,42 +26,42 @@ Public-by-construction code, documentation, and templates that ship in every Lif
 
 | Path | Status |
 |------|--------|
-| `$LIFEOS_ROOT/CLAUDE.md` | SYSTEM (after Phase C — split into system router + user @-imports) |
-| `$LIFEOS_ROOT/settings.json` | SYSTEM (after Phase B — split into system defaults + user overlay merged at startup) |
-| `$LIFEOS_ROOT/skills/LifeOS/install/install.sh` | SYSTEM (installer bootstrap — ships inside the `LifeOS/` skill; there is no root-level `install.sh` in a release) |
-| `$LIFEOS_ROOT/LICENSE` | SYSTEM |
-| `$LIFEOS_ROOT/.gitignore`, `.gitattributes`, `.gitmodules`, `.mcp.json`, `.lsp.json`, `bunfig.toml` | SYSTEM (config) |
-| `$LIFEOS_DIR/LIFEOS_SYSTEM_PROMPT.md` | SYSTEM (after Phase C — operational rules with user-specific content move out) |
-| `$LIFEOS_DIR/VERSION` | SYSTEM |
-| `$LIFEOS_DIR/LIFEOS_StatusLine.sh` | SYSTEM |
-| `$LIFEOS_DIR/ALGORITHM/**` | SYSTEM |
-| `$LIFEOS_DIR/DOCUMENTATION/**` | SYSTEM (after Phase D — categorical placeholders only) |
-| `$LIFEOS_DIR/PULSE/` (source code only — excludes `Assistant/state/`, `state/`, `logs/`, `Plans/`, `Observability/out/`) | SYSTEM (after Phase F — parameterized via LifeosConfig) |
-| `$LIFEOS_DIR/TOOLS/**` (after the few user-path leaks are scrubbed) | SYSTEM |
-| `$LIFEOS_DIR/ScheduledTasks/**` (system-shipped scheduled task templates, NOT user instances) | SYSTEM |
-| `$LIFEOS_ROOT/hooks/**` | SYSTEM |
-| `$LIFEOS_ROOT/skills/<name>/**` where `<name>` does NOT start with `_` | SYSTEM |
-| `$LIFEOS_ROOT/commands/**` | SYSTEM |
-| `$LIFEOS_ROOT/agents/**` (shipped agent definitions) | SYSTEM |
+| `{{LIFEOS_ROOT}}/CLAUDE.md` | SYSTEM (after Phase C — split into system router + user @-imports) |
+| `{{LIFEOS_ROOT}}/settings.json` | SYSTEM (after Phase B — split into system defaults + user overlay merged at startup) |
+| `{{LIFEOS_ROOT}}/skills/LifeOS/install/install.sh` | SYSTEM (installer bootstrap — ships inside the `LifeOS/` skill; there is no root-level `install.sh` in a release) |
+| `{{LIFEOS_ROOT}}/LICENSE` | SYSTEM |
+| `{{LIFEOS_ROOT}}/.gitignore`, `.gitattributes`, `.gitmodules`, `.mcp.json`, `.lsp.json`, `bunfig.toml` | SYSTEM (config) |
+| `{{LIFEOS_DIR}}/LIFEOS_SYSTEM_PROMPT.md` | SYSTEM (after Phase C — operational rules with user-specific content move out) |
+| `{{LIFEOS_DIR}}/VERSION` | SYSTEM |
+| `{{LIFEOS_DIR}}/LIFEOS_StatusLine.sh` | SYSTEM |
+| `{{LIFEOS_DIR}}/ALGORITHM/**` | SYSTEM |
+| `{{LIFEOS_DIR}}/DOCUMENTATION/**` | SYSTEM (after Phase D — categorical placeholders only) |
+| `{{LIFEOS_DIR}}/PULSE/` (source code only — excludes `Assistant/state/`, `state/`, `logs/`, `Plans/`, `Observability/out/`) | SYSTEM (after Phase F — parameterized via LifeosConfig) |
+| `{{LIFEOS_DIR}}/TOOLS/**` (after the few user-path leaks are scrubbed) | SYSTEM |
+| `{{LIFEOS_DIR}}/ScheduledTasks/**` (system-shipped scheduled task templates, NOT user instances) | SYSTEM |
+| `{{LIFEOS_ROOT}}/hooks/**` | SYSTEM |
+| `{{LIFEOS_ROOT}}/skills/<name>/**` where `<name>` does NOT start with `_` | SYSTEM |
+| `{{LIFEOS_ROOT}}/commands/**` | SYSTEM |
+| `{{LIFEOS_ROOT}}/agents/**` (shipped agent definitions) | SYSTEM |
 
 ### USER
 
 Private, user-owned data that ships in the user's own private repo and is mounted into the LifeOS tree via symlink or git submodule. USER files may contain anything — they are never inspected by the public release pipeline because they live outside the system tree.
 
-**Physical mount (post-Phase-G, 2026-05-22):** `$LIFEOS_DIR/USER/` is a symlink to `~/.config/LIFEOS/USER/` (XDG-style data location). The actual git working tree for the user's private USER-data repo lives at `~/.config/LIFEOS/USER/` — the symlink at `$LIFEOS_DIR/USER/` exists only so Claude Code's `@`-import resolver (which evaluates paths relative to `~/.claude/`) can reach identity / TELOS / config files at session start. Boundary semantics are unchanged: the "USER zone" still refers to anything under `$LIFEOS_DIR/USER/**` logically; the only difference is that the bytes live at the XDG path on disk.
+**Physical mount (post-Phase-G, 2026-05-22):** `{{LIFEOS_DIR}}/USER/` is a symlink to `~/.config/LIFEOS/USER/` (XDG-style data location). The actual git working tree for the user's private USER-data repo lives at `~/.config/LIFEOS/USER/` — the symlink at `{{LIFEOS_DIR}}/USER/` exists only so Claude Code's `@`-import resolver (which evaluates paths relative to `~/.claude/`) can reach identity / TELOS / config files at session start. Boundary semantics are unchanged: the "USER zone" still refers to anything under `{{LIFEOS_DIR}}/USER/**` logically; the only difference is that the bytes live at the XDG path on disk.
 
 | Path | Status |
 |------|--------|
-| `$LIFEOS_ROOT/.env`, `.env.*` | USER (secrets) |
-| `$LIFEOS_DIR/USER/**` (symlink → `~/.config/LIFEOS/USER/**`) | USER (identity, TELOS, projects, integrations, contacts, finances, health, business, customizations) |
-| `$LIFEOS_DIR/MEMORY/**` (symlink → `~/.config/LIFEOS/USER/MEMORY/**`, post-Phase-G.2, 2026-05-23) | USER (work history, knowledge graph, learning signals, observability logs, research, reflections, relationships). Durable subset (KNOWLEDGE, WORK/<slug>/ISA.md, RELATIONSHIP, WISDOM, PLANS, RESEARCH, STATE/work.json, BOOKMARKS, REFERENCE, SKILLS, PROJECT, TEAMS, SYSTEMUPDATES, VERIFICATION) is git-tracked in the user's private USER-data repo; ephemeral subset (OBSERVABILITY JSONLs, _BROWSER_STATE, LEARNING signals, SECURITY artifacts, VOICE event log, STATE caches, _AIRGRADIENT, _NETWORK, _HELIOS, PULSE_DATA, SCRATCHPAD, RAW, AUTO, CALLS, INBOX, ARCHIVE, DATA, WORK/<slug>/* intermediates) gitignored from the private repo, local-only. |
-| `$LIFEOS_DIR/ARBOL/**` | USER (private cloud worker code) |
-| `$LIFEOS_DIR/Backups/**` | USER (backup state) |
-| `$LIFEOS_ROOT/skills/_<name>/**` (underscore-prefixed) | USER (private/proprietary skills) |
-| `$LIFEOS_ROOT/daemon/`, `daemon.log` | USER (private daemon profile state) |
-| `$LIFEOS_ROOT/jobs/**` (user-instance scheduled tasks) | USER |
-| `$LIFEOS_ROOT/downloads/**` | USER (working files) |
-| `$LIFEOS_ROOT/MEMORY/**` (root-level orphan; should migrate to `LIFEOS/MEMORY/`) | USER (orphan — Phase A cleanup) |
+| `{{LIFEOS_ROOT}}/.env`, `.env.*` | USER (secrets) |
+| `{{LIFEOS_DIR}}/USER/**` (symlink → `~/.config/LIFEOS/USER/**`) | USER (identity, TELOS, projects, integrations, contacts, finances, health, business, customizations) |
+| `{{LIFEOS_DIR}}/MEMORY/**` (symlink → `~/.config/LIFEOS/USER/MEMORY/**`, post-Phase-G.2, 2026-05-23) | USER (work history, knowledge graph, learning signals, observability logs, research, reflections, relationships). Durable subset (KNOWLEDGE, WORK/<slug>/ISA.md, RELATIONSHIP, WISDOM, PLANS, RESEARCH, STATE/work.json, BOOKMARKS, REFERENCE, SKILLS, PROJECT, TEAMS, SYSTEMUPDATES, VERIFICATION) is git-tracked in the user's private USER-data repo; ephemeral subset (OBSERVABILITY JSONLs, _BROWSER_STATE, LEARNING signals, SECURITY artifacts, VOICE event log, STATE caches, _AIRGRADIENT, _NETWORK, _HELIOS, PULSE_DATA, SCRATCHPAD, RAW, AUTO, CALLS, INBOX, ARCHIVE, DATA, WORK/<slug>/* intermediates) gitignored from the private repo, local-only. |
+| `{{LIFEOS_DIR}}/ARBOL/**` | USER (private cloud worker code) |
+| `{{LIFEOS_DIR}}/Backups/**` | USER (backup state) |
+| `{{LIFEOS_ROOT}}/skills/_<name>/**` (underscore-prefixed) | USER (private/proprietary skills) |
+| `{{LIFEOS_ROOT}}/daemon/`, `daemon.log` | USER (private daemon profile state) |
+| `{{LIFEOS_ROOT}}/jobs/**` (user-instance scheduled tasks) | USER |
+| `{{LIFEOS_ROOT}}/downloads/**` | USER (working files) |
+| `{{LIFEOS_ROOT}}/MEMORY/**` (root-level orphan; should migrate to `LIFEOS/MEMORY/`) | USER (orphan — Phase A cleanup) |
 
 ### INTERFACE
 
@@ -69,11 +69,11 @@ The boundary itself — the documented contract by which SYSTEM code reads USER 
 
 | Path | Status |
 |------|--------|
-| `$LIFEOS_DIR/TOOLS/LifeosConfig.ts` | INTERFACE — typed loader, ships in SYSTEM (after Phase F) |
-| `$LIFEOS_DIR/USER/CONFIG/LIFEOS_CONFIG.{json\|yaml\|toml}` | INTERFACE — user-supplied implementation (after Phase F; format pending ISC-56.1) |
-| `$LIFEOS_DIR/USER/CONFIG/settings.user.json` | INTERFACE — user settings overlay (after Phase B) |
-| `$LIFEOS_DIR/USER/CONFIG/OPERATIONAL_RULES.md` | INTERFACE — user-specific operational rules (after Phase C); @-imported directly from `$LIFEOS_ROOT/CLAUDE.md` since CC does not follow transitive @-imports |
-| `$LIFEOS_DIR/USER/INTEGRATIONS/*.yaml` | INTERFACE — typed config for integrations (homebridge, unifi, airgradient, work-system, etc.) |
+| `{{LIFEOS_DIR}}/TOOLS/LifeosConfig.ts` | INTERFACE — typed loader, ships in SYSTEM (after Phase F) |
+| `{{LIFEOS_DIR}}/USER/CONFIG/LIFEOS_CONFIG.{json\|yaml\|toml}` | INTERFACE — user-supplied implementation (after Phase F; format pending ISC-56.1) |
+| `{{LIFEOS_DIR}}/USER/CONFIG/settings.user.json` | INTERFACE — user settings overlay (after Phase B) |
+| `{{LIFEOS_DIR}}/USER/CONFIG/OPERATIONAL_RULES.md` | INTERFACE — user-specific operational rules (after Phase C); @-imported directly from `{{LIFEOS_ROOT}}/CLAUDE.md` since CC does not follow transitive @-imports |
+| `{{LIFEOS_DIR}}/USER/INTEGRATIONS/*.yaml` | INTERFACE — typed config for integrations (homebridge, unifi, airgradient, work-system, etc.) |
 
 ### RUNTIME-STATE
 
@@ -81,15 +81,15 @@ Harness-owned or LifeOS-runtime-owned ephemeral files. Never shipped, never user
 
 | Path | Status | Gitignored |
 |------|--------|------------|
-| `$LIFEOS_ROOT/sessions/`, `todos/`, `tasks/`, `teams/` | RUNTIME (Claude Code harness) | yes |
-| `$LIFEOS_ROOT/history.jsonl` | RUNTIME (Claude Code) | yes (under root anchors) |
-| `$LIFEOS_ROOT/cache/`, `shell-snapshots/`, `session-env/`, `paste-cache/`, `file-history/` | RUNTIME (harness/LifeOS) | yes |
-| `$LIFEOS_ROOT/.next/`, `.wrangler/`, `.venv/`, `coverage/`, `test-results/`, `telemetry/` | RUNTIME (build/test) | partial — telemetry/ is NOT gitignored and contains identity-bearing data; add to .gitignore in Phase A |
-| `$LIFEOS_ROOT/plugins/`, `Plugins/` | RUNTIME (Claude Code plugin install state) | partial |
-| `$LIFEOS_ROOT/ide/` | RUNTIME (Claude Code IDE state) | implied |
-| `$LIFEOS_ROOT/.DS_Store`, `.last-cleanup`, `.quote-cache` | RUNTIME (OS / harness) | yes |
-| `$LIFEOS_ROOT/interceptor-screenshot-*.{png,jpg}` (root) | RUNTIME (debug captures) | yes |
-| `$LIFEOS_DIR/PULSE/{state,logs,Assistant/state,.playwright-cli,Observability/out}/**` | RUNTIME (Pulse runtime) | implied |
+| `{{LIFEOS_ROOT}}/sessions/`, `todos/`, `tasks/`, `teams/` | RUNTIME (Claude Code harness) | yes |
+| `{{LIFEOS_ROOT}}/history.jsonl` | RUNTIME (Claude Code) | yes (under root anchors) |
+| `{{LIFEOS_ROOT}}/cache/`, `shell-snapshots/`, `session-env/`, `paste-cache/`, `file-history/` | RUNTIME (harness/LifeOS) | yes |
+| `{{LIFEOS_ROOT}}/.next/`, `.wrangler/`, `.venv/`, `coverage/`, `test-results/`, `telemetry/` | RUNTIME (build/test) | partial — telemetry/ is NOT gitignored and contains identity-bearing data; add to .gitignore in Phase A |
+| `{{LIFEOS_ROOT}}/plugins/`, `Plugins/` | RUNTIME (Claude Code plugin install state) | partial |
+| `{{LIFEOS_ROOT}}/ide/` | RUNTIME (Claude Code IDE state) | implied |
+| `{{LIFEOS_ROOT}}/.DS_Store`, `.last-cleanup`, `.quote-cache` | RUNTIME (OS / harness) | yes |
+| `{{LIFEOS_ROOT}}/interceptor-screenshot-*.{png,jpg}` (root) | RUNTIME (debug captures) | yes |
+| `{{LIFEOS_DIR}}/PULSE/{state,logs,Assistant/state,.playwright-cli,Observability/out}/**` | RUNTIME (Pulse runtime) | implied |
 
 ## The four allowed access patterns
 
@@ -104,7 +104,7 @@ Anything else — direct `Read('LIFEOS/USER/...')`, hardcoded voice IDs in modul
 
 ## Two-repo sync (post-Phase-G.1, 2026-05-22)
 
-The USER tree is its own private git repo: `~/.config/LIFEOS/USER/` → the user's `<your-username>/<your-user-data-repo>` (PRIVATE GitHub). The SYSTEM tree is `~/.claude/` → the user's `<your-username>/.claude` (PRIVATE GitHub). A pre-push hook at `$LIFEOS_ROOT/.git/hooks/pre-push` (1836 bytes) auto-commits and pushes the USER repo before every `git push` from `~/.claude/`, so the two repos stay in sync structurally. A workflow ("update the kai repo" / "push both repos") wraps this with four boundary gates: (G1) USER-zone leak check on pending `~/.claude` changes, (G2) `DenyListCheck.ts` must return 0 real-leaks, (G3) both remotes confirmed private via `gh api`, (G4) post-push HEAD verification on both repos. **Pre-flight refuses to proceed if the public LifeOS repo appears in either remote** — this workflow is explicit private-only. Public LifeOS release goes through the shadow-release pipeline (`skills/_LIFEOS/Tools/ShadowRelease.ts`) with the separate 14-gate sanitization; the shipped distribution unit is the single `LifeOS/` skill emitted from that staging tree, not the `.claude/` clone.
+The USER tree is its own private git repo: `~/.config/LIFEOS/USER/` → the user's `<your-username>/<your-user-data-repo>` (PRIVATE GitHub). The SYSTEM tree is `~/.claude/` → the user's `<your-username>/.claude` (PRIVATE GitHub). A pre-push hook at `{{LIFEOS_ROOT}}/.git/hooks/pre-push` (1836 bytes) auto-commits and pushes the USER repo before every `git push` from `~/.claude/`, so the two repos stay in sync structurally. A workflow ("update the kai repo" / "push both repos") wraps this with four boundary gates: (G1) USER-zone leak check on pending `~/.claude` changes, (G2) `DenyListCheck.ts` must return 0 real-leaks, (G3) both remotes confirmed private via `gh api`, (G4) post-push HEAD verification on both repos. **Pre-flight refuses to proceed if the public LifeOS repo appears in either remote** — this workflow is explicit private-only. Public LifeOS release goes through the shadow-release pipeline (`skills/_LIFEOS/Tools/ShadowRelease.ts`) with the separate 14-gate sanitization; the shipped distribution unit is the single `LifeOS/` skill emitted from that staging tree, not the `.claude/` clone.
 
 ## Enforcement layers
 
@@ -131,7 +131,7 @@ This document is the Phase A deliverable. Phases B–H land progressively. Each 
 
 ## The boundary's success criterion
 
-The deny-list precheck `bun $LIFEOS_ROOT/skills/_LIFEOS/Tools/DenyListCheck.ts $LIFEOS_ROOT` returns:
+The deny-list precheck `bun "${LIFEOS_ROOT}/skills/_LIFEOS/Tools/DenyListCheck.ts" "${LIFEOS_ROOT}"` returns:
 
 ```
 Real-leak: 0

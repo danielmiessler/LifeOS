@@ -31,7 +31,7 @@ Otherwise → use `CreatePrototype` (the ClaudeDesign path).
 **Before writing anything, read the philosophy reference:**
 
 ```
-Read("$LIFEOS_ROOT/skills/Webdesign/References/FrontendDesignPhilosophy.md")
+Read("{{LIFEOS_ROOT}}/skills/Webdesign/References/FrontendDesignPhilosophy.md")
 ```
 
 That file is the load-bearing source. It contains:
@@ -123,7 +123,7 @@ That's it. Don't add narrative, don't add a "what I did" section, don't apologiz
 
 ## Customization (Optional)
 
-If `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Webdesign/PREFERENCES.md` exists, read it after Step 0. Use it to bias (not bind) the register choice in Step 1. Without preferences, choose freshly each session and rotate registers across runs to avoid convergence on a single house style.
+If `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/Webdesign/PREFERENCES.md` exists, read it after Step 0. Use it to bias (not bind) the register choice in Step 1. Without preferences, choose freshly each session and rotate registers across runs to avoid convergence on a single house style.
 
 ## Failure Modes
 

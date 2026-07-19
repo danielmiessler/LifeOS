@@ -24,7 +24,7 @@ context: fork
 ## Customization
 
 **Before executing, check for user customizations at:**
-`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Research/`
+`{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/Research/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
@@ -184,7 +184,7 @@ See `Workflows/Verify.md` for full verification protocol.
 → Exit: When all CRITICAL/HIGH entities researched + all categories covered
 ```
 
-**Artifacts persist** at `$LIFEOS_DIR/MEMORY/RESEARCH/{date}_{topic}/` — the vault survives across sessions.
+**Artifacts persist** at `{{LIFEOS_DIR}}/MEMORY/RESEARCH/{date}_{topic}/` — the vault survives across sessions.
 
 See `Workflows/DeepInvestigation.md` for full workflow details.
 
@@ -192,12 +192,12 @@ See `Workflows/DeepInvestigation.md` for full workflow details.
 
 ## File Organization
 
-**Working files (temporary work artifacts):** `$LIFEOS_DIR/MEMORY/WORK/{current_work}/`
+**Working files (temporary work artifacts):** `{{LIFEOS_DIR}}/MEMORY/WORK/{current_work}/`
 - Read `~/.claude/` to get the `work_dir` value
 - All iterative work artifacts go in the current work item directory
 - This ties research artifacts to the work item for learning and context
 
-**History (permanent):** `$LIFEOS_ROOT/History/research/YYYY-MM/YYYY-MM-DD_[topic]/`
+**History (permanent):** `{{LIFEOS_ROOT}}/History/research/YYYY-MM/YYYY-MM-DD_[topic]/`
 
 ## Gotchas
 
@@ -248,7 +248,7 @@ User: "do a deep investigation of the AI agent market"
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Research","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Research","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> "${LIFEOS_DIR}/MEMORY/SKILLS/execution.jsonl"
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

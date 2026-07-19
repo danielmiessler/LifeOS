@@ -167,7 +167,7 @@ Task({
 
 ## Knowledge Archive Access
 
-Agents can query the **Knowledge Archive** (`$LIFEOS_DIR/MEMORY/KNOWLEDGE/`) for accumulated knowledge organized by 4 entity types: People (human beings), Companies (organizations), Ideas (insights/theses/analyses), Research (longer-form research notes). Topic is a tag, not a domain. Managed by Algorithm LEARN phase (direct writes), `LIFEOS/TOOLS/KnowledgeHarvester.ts` (validation/maintenance), and the `/knowledge` skill. Particularly useful for research agents and custom agents composed with specialized traits.
+Agents can query the **Knowledge Archive** (`{{LIFEOS_DIR}}/MEMORY/KNOWLEDGE/`) for accumulated knowledge organized by 4 entity types: People (human beings), Companies (organizations), Ideas (insights/theses/analyses), Research (longer-form research notes). Topic is a tag, not a domain. Managed by Algorithm LEARN phase (direct writes), `LIFEOS/TOOLS/KnowledgeHarvester.ts` (validation/maintenance), and the `/knowledge` skill. Particularly useful for research agents and custom agents composed with specialized traits.
 
 ---
 
@@ -262,7 +262,7 @@ Background agents can hang or go silent with no visibility. The Pulse agent-guar
 
 ## References
 
-- **Master Architecture:** `$LIFEOS_DIR/DOCUMENTATION/LifeosSystemArchitecture.md` — authoritative system-of-systems reference
+- **Master Architecture:** `{{LIFEOS_DIR}}/DOCUMENTATION/LifeosSystemArchitecture.md` — authoritative system-of-systems reference
 - **Agent Personalities:** Individual `agents/*.md` files — Named agent backstories and voice settings
 - **Managed Agents:** https://www.anthropic.com/engineering/managed-agents — Anthropic cloud agent API
 

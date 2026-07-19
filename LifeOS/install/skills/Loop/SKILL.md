@@ -24,7 +24,7 @@ Each iteration is a full Algorithm cycle (OBSERVE → LEARN). The LEARN phase of
 
 ```
 /loop --target "path/to/target" --iterations 5
-/loop --target "$LIFEOS_ROOT/skills/Art/Workflows/TechnicalDiagrams.md" --goal "make diagrams more consistent"
+/loop --target "{{LIFEOS_ROOT}}/skills/Art/Workflows/TechnicalDiagrams.md" --goal "make diagrams more consistent"
 /loop --resume       # Resume a previous loop
 /loop --status       # Show iteration history
 ```
@@ -70,7 +70,7 @@ Default /loop behavior is unchanged — autoresearch is opt-in only. Intended fo
 ## Examples
 
 ```
-/loop --target "$LIFEOS_ROOT/skills/Research" --goal "improve output quality" --iterations 5
+/loop --target "{{LIFEOS_ROOT}}/skills/Research" --goal "improve output quality" --iterations 5
 /loop --target "prompts/summarize.md" --goal "more concise, less filler"
 ```
 

@@ -67,7 +67,7 @@ aws s3 sync dist "s3://$BUCKET" --delete
 Post-deploy, hit the URL and screenshot:
 
 ```bash
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts "https://$DEPLOYED_URL" "$OUT/live-verify"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/VerifyDesign.ts" "https://$DEPLOYED_URL" "$OUT/live-verify"
 ```
 
 Compare against `$OUT/preview.png` — the live site should match within visual tolerance.
@@ -75,7 +75,7 @@ Compare against `$OUT/preview.png` — the live site should match within visual 
 ### 5. Accessibility + Performance Probe
 
 ```bash
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/VerifyDesign.ts --a11y --lighthouse "https://$DEPLOYED_URL" "$OUT/live-quality"
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/VerifyDesign.ts" --a11y --lighthouse "https://$DEPLOYED_URL" "$OUT/live-quality"
 ```
 
 Output includes:

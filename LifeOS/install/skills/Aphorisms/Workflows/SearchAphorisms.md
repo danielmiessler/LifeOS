@@ -23,7 +23,7 @@ Running **SearchAphorisms** in **Aphorisms**...
 - Discovering what's available in database
 
 **Prerequisites:**
-- Aphorism database exists at `$LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md`
+- Aphorism database exists at `{{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md`
 - Search query or theme provided
 - Database Read for comprehensive search
 
@@ -79,8 +79,8 @@ User: "Short quotes about action"
 
 ### Step 2: Read Database
 
-```bash
-Read $LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md
+```text
+Read {{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md
 ```
 
 **Load full context:**

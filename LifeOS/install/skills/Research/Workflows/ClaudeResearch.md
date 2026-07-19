@@ -6,7 +6,7 @@
  *
  * ## Usage
  * ```bash
- * bun ${LIFEOS_DIR}/commands/perform-claude-research.md "your complex research question here"
+ * bun {{LIFEOS_DIR}}/commands/perform-claude-research.md "your complex research question here"
  * ```
  *
  * ## Features
@@ -31,7 +31,7 @@ const originalQuestion = process.argv.slice(2).join(' ');
 
 if (!originalQuestion) {
   console.error('❌ Please provide a research question');
-  console.error('Usage: bun ${LIFEOS_DIR}/commands/perform-claude-research.md "your question here"');
+  console.error('Usage: bun {{LIFEOS_DIR}}/commands/perform-claude-research.md "your question here"');
   process.exit(1);
 }
 

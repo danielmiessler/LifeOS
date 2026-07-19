@@ -18,8 +18,8 @@ Record a user workflow by capturing browser actions into a replayable script. Us
 ## Preflight Isolation Gate (MANDATORY first step)
 
 ```bash
-source $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
-bash $LIFEOS_ROOT/skills/Interceptor/Tools/PreflightIsolation.sh
+source "${LIFEOS_DIR}/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
+bash "${LIFEOS_ROOT}/skills/Interceptor/Tools/PreflightIsolation.sh"
 ```
 
 Non-zero exit → STOP and surface the message verbatim. Do not fall back to the Default profile. Recording in the operator's main profile would capture their real session events and credentials — record only in the pinned isolated context. Every `interceptor` verb below passes `--context "$INTERCEPTOR_TEST_CONTEXT_ID"` (from `preferences.env`).

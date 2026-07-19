@@ -11,7 +11,7 @@ LifeOS configuration follows the **system/user separation** contract (`LIFEOS/DO
 ## The split, end-to-end
 
 ```
-$LIFEOS_ROOT/                                       # SYSTEM tree (public LifeOS)
+{{LIFEOS_ROOT}}/                                       # SYSTEM tree (public LifeOS)
 ├── settings.json                                # Generated at SessionStart by MergeSettings.ts
 ├── settings.system.json                         # SYSTEM defaults (public-safe, ships in LifeOS)
 ├── CLAUDE.md                                    # SYSTEM routing table (public-safe)
@@ -70,11 +70,11 @@ $LIFEOS_ROOT/                                       # SYSTEM tree (public LifeOS
 ## Two-repo sync
 
 The two trees are physically separate git repos:
-- `$LIFEOS_ROOT/` → `<your-username>/.claude` (PRIVATE GitHub)
+- `{{LIFEOS_ROOT}}/` → `<your-username>/.claude` (PRIVATE GitHub)
 - `~/.config/LIFEOS/USER/` → `<your-username>/<your-user-data-repo>` (PRIVATE GitHub)
 
-`$LIFEOS_ROOT/.git/hooks/pre-push` auto-commits and pushes `~/.config/LIFEOS/USER/` before each push from `$LIFEOS_ROOT/`, so the two repos stay in sync structurally. A "kai update" / "push both repos" workflow wraps this with four boundary gates:
-1. USER-zone leak check on pending `$LIFEOS_ROOT` changes
+`{{LIFEOS_ROOT}}/.git/hooks/pre-push` auto-commits and pushes `~/.config/LIFEOS/USER/` before each push from `{{LIFEOS_ROOT}}/`, so the two repos stay in sync structurally. A "kai update" / "push both repos" workflow wraps this with four boundary gates:
+1. USER-zone leak check on pending `{{LIFEOS_ROOT}}` changes
 2. `DenyListCheck.ts` must return 0 real-leaks
 3. Both remotes confirmed private via `gh api`
 4. Post-push HEAD verification on both repos
@@ -83,7 +83,7 @@ The two trees are physically separate git repos:
 
 ## Public releases
 
-The Shadow Release system (`skills/_LIFEOS/Tools/ShadowRelease.ts`) produces public staging at `$LIFEOS_DIR/LIFEOS_RELEASES/{VERSION}/.claude/` via **containment** — clone the live tree, delete sensitive zones (USER, MEMORY, private underscore-prefixed skills), overlay fixed public templates from `skills/_LIFEOS/RELEASE_TEMPLATES/` (including `CLAUDE.public.md` + `settings.public.json`), run 14 gates (G1–G14: zone deletion, identity grep, CF ID grep, trufflehog, .env strays, private tokens, ref integrity, private-skill refs, username-path leak, staging boot, dashboard leak, template-only USER/MEMORY, hidden-file leakage, critical-artifact presence). Write `.shadow-state.json` report. `EmitSkill.ts` then reshapes this `.claude/` staging into the shippable `{VERSION}/LifeOS/` skill (and drops the staging clone) — the published distribution unit is that one self-contained skill, not the `.claude/` tree. Staging is isolated from `~/Projects/LIFEOS/`; public publish is a separate explicit step.
+The Shadow Release system (`skills/_LIFEOS/Tools/ShadowRelease.ts`) produces public staging at `{{LIFEOS_DIR}}/LIFEOS_RELEASES/{VERSION}/.claude/` via **containment** — clone the live tree, delete sensitive zones (USER, MEMORY, private underscore-prefixed skills), overlay fixed public templates from `skills/_LIFEOS/RELEASE_TEMPLATES/` (including `CLAUDE.public.md` + `settings.public.json`), run 14 gates (G1–G14: zone deletion, identity grep, CF ID grep, trufflehog, .env strays, private tokens, ref integrity, private-skill refs, username-path leak, staging boot, dashboard leak, template-only USER/MEMORY, hidden-file leakage, critical-artifact presence). Write `.shadow-state.json` report. `EmitSkill.ts` then reshapes this `.claude/` staging into the shippable `{VERSION}/LifeOS/` skill (and drops the staging clone) — the published distribution unit is that one self-contained skill, not the `.claude/` tree. Staging is isolated from `~/Projects/LIFEOS/`; public publish is a separate explicit step.
 
 The `<your-release-skill>` skill workflows:
 - **ReviewContainmentZones** — reconcile zone module against live tree (mandatory before any release build).
@@ -98,7 +98,7 @@ The `<your-release-skill>` skill workflows:
 - **Phase C (2026-05-22)** — `CLAUDE.md` becomes thin router with direct `@`-imports of USER identity files. `OPERATIONAL_RULES.md` created in `LIFEOS/USER/CONFIG/`. `CLAUDE.user.md` sidecar created and then deleted 2026-05-23 (merged back into `CLAUDE.md`) because CC doesn't follow transitive `@`-imports.
 - **Phase E (2026-05-22)** — `SystemFileGuard.hook.ts` runtime write-time enforcement begins.
 - **Phase F (2026-05-22)** — `LifeosConfig.ts` typed loader + `LIFEOS_CONFIG.toml` populated. Private skills migrated from hardcoded credentials to `LifeosConfig.load()`.
-- **Phase G (2026-05-22→23)** — separate private GitHub repo created for USER data. `$LIFEOS_DIR/USER` becomes symlink to `~/.config/LIFEOS/USER`. Pre-push hook installed for two-repo sync. A two-repo-push workflow ("update the kai repo" / "push both repos") ships in the private `<your-release-skill>` skill with four boundary gates.
+- **Phase G (2026-05-22→23)** — separate private GitHub repo created for USER data. `{{LIFEOS_DIR}}/USER` becomes symlink to `~/.config/LIFEOS/USER`. Pre-push hook installed for two-repo sync. A two-repo-push workflow ("update the kai repo" / "push both repos") ships in the private `<your-release-skill>` skill with four boundary gates.
 - **Phase H (deferred)** — PR-time `DenyListCheck` via GitHub Actions; community v5→v6 migration tool.
 
 ## Pre-v6.0 history

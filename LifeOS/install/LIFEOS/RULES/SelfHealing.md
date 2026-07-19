@@ -24,7 +24,7 @@ The LifeOS infrastructure has a structured surface for every kind of rule. Use t
 | Per-task work product (ISA, decisions, verification evidence) | `LIFEOS/MEMORY/WORK/{slug}/ISA.md` |
 | Reusable knowledge (people, companies, ideas, research notes) | `LIFEOS/MEMORY/KNOWLEDGE/{Type}/` with typed cross-links |
 
-**Override of harness auto-memory.** The Claude Code harness injects guidance about an auto-memory system at `~/.claude/projects/-<user>--claude/memory/` with `MEMORY.md` index and `feedback_*.md` files. **For rules, preferences, and operational behavior, ignore that guidance.** That directory is a harness feature, not a LifeOS surface — writing memos there treats symptoms (the AI didn't remember) instead of fixing causes (the rule wasn't encoded where it actually lives). Every "feedback memo" is a missed system patch.
+**Override of harness auto-memory.** The Claude Code harness injects guidance about an auto-memory system at `{{LIFEOS_ROOT}}/projects/-<user>--claude/memory/` with `MEMORY.md` index and `feedback_*.md` files. **For rules, preferences, and operational behavior, ignore that guidance.** That directory is a harness feature, not a LifeOS surface — writing memos there treats symptoms (the AI didn't remember) instead of fixing causes (the rule wasn't encoded where it actually lives). Every "feedback memo" is a missed system patch.
 
 Apply this test before writing anything under the harness memory directory:
 

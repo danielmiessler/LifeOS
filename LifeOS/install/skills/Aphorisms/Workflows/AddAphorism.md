@@ -22,7 +22,7 @@ Running **AddAphorism** in **Aphorisms**...
 - After research-thinker.md discovers quotes worth adding
 
 **Prerequisites:**
-- Aphorism database exists at `$LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md`
+- Aphorism database exists at `{{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md`
 - Quote text and author provided (or discoverable through research)
 - Database is Read first to check for duplicates
 
@@ -90,8 +90,8 @@ WebSearch("misattributed quotes [author name]")
 ### Step 3: Check for Duplicates
 
 **Read database:**
-```bash
-Read $LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md
+```text
+Read {{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md
 ```
 
 **Check for:**
@@ -249,13 +249,13 @@ Add quote reference to appropriate theme(s) in Theme Index section:
 
 **Use Edit tool to add quote:**
 
-```bash
+```text
 # Find appropriate section
-Read $LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md
+Read {{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md
 
 # Add to correct location
 Edit(
-  file_path=$LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md,
+  file_path={{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md,
   old_string="[section where it should be inserted]",
   new_string="[section with new quote added]"
 )

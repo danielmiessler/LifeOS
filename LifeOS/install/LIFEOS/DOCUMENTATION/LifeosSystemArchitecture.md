@@ -107,7 +107,7 @@ The infrastructure serves the philosophy. If the philosophy is clear, the infras
 ## Directory Structure
 
 ```
-$LIFEOS_ROOT/                           # Claude Code native directory
+{{LIFEOS_ROOT}}/                           # Claude Code native directory
   CLAUDE.md                          # Operational instructions (directly edited)
   settings.json                      # Runtime settings (directly edited)
   LIFEOS_CONFIG.yaml                    # Credentials store for private skills (gitignored)
@@ -204,14 +204,14 @@ Explicit permission to say "I don't know" prevents hallucinations. Fabricating a
 The LifeOS live tree and the public release are structurally identical modulo a symlink — system data and user data live in two physically separate trees, joined at runtime. The separation is enforced at three independent layers; each catches drift the others would miss.
 
 **Physical layout (post-Phase-A→G migration, 2026-05-20→23):**
-- `$LIFEOS_ROOT/` — public LifeOS SYSTEM tree (what ships on GitHub). Contains the symlink `LIFEOS/USER → ~/.config/LIFEOS/USER`.
+- `{{LIFEOS_ROOT}}/` — public LifeOS SYSTEM tree (what ships on GitHub). Contains the symlink `LIFEOS/USER → ~/.config/LIFEOS/USER`.
 - `~/.config/LIFEOS/USER/` — private user-data git working tree (the user's own private USER-data repo). Mounted via symlink so Claude Code's `@`-import resolver reaches identity/TELOS/config files at session start.
 - `~/.config/LIFEOS/USER/MEMORY/` — durable subset of memory (KNOWLEDGE, WORK/<slug>/ISA.md, RELATIONSHIP, WISDOM, PLANS, RESEARCH, STATE/work.json, BOOKMARKS, REFERENCE, SKILLS, PROJECT, TEAMS, SYSTEMUPDATES, VERIFICATION) git-tracked in the user's private USER-data repo; ephemeral subset (OBSERVABILITY, STATE caches, LEARNING signals, SECURITY artifacts, VOICE event log, _BROWSER_STATE) gitignored locally.
 
 **Four allowed access patterns** (any fifth pattern is a boundary violation):
 1. `LifeosConfig.load()` typed loader (`LIFEOS/TOOLS/LifeosConfig.ts`) — primary channel for identity, voice, integrations, paths
 2. Paths computed from `LifeosConfig.paths.userDir + relative` — never from literal `LIFEOS/USER/` strings in system code
-3. At-startup `@`-imports declared at the top of `$LIFEOS_ROOT/CLAUDE.md` (CC does NOT follow transitive `@`-imports)
+3. At-startup `@`-imports declared at the top of `{{LIFEOS_ROOT}}/CLAUDE.md` (CC does NOT follow transitive `@`-imports)
 4. HTTP/IPC via the Pulse server at `localhost:31337`
 
 **Three enforcement layers:**
@@ -219,7 +219,7 @@ The LifeOS live tree and the public release are structurally identical modulo a 
 2. **PR-time** (Phase H, deferred) — GitHub Actions runs `DenyListCheck.ts` on every PR against the public repo.
 3. **Release-time** — `skills/_LIFEOS/Tools/ShadowRelease.ts` runs 14 gates (G1–G14: zone deletion, identity grep, CF ID grep, trufflehog, .env strays, private tokens, ref integrity, private-skill refs, username-path leak, staging boot, dashboard leak, template-only USER/MEMORY, hidden-file leakage, critical-artifact presence). Backstop. Should consistently return zero findings if layers 1 and 2 are healthy.
 
-**Two-repo sync** — `$LIFEOS_ROOT/.git/hooks/pre-push` auto-commits and pushes `~/.config/LIFEOS/USER/` to the user's private USER-data repo before each push from `$LIFEOS_ROOT/`. The two repos stay in sync structurally. A private "kai update" / "push both repos" workflow wraps this with 4 boundary gates (USER-zone leak check, DenyListCheck, both-remotes-private confirmation, post-push HEAD verification).
+**Two-repo sync** — `{{LIFEOS_ROOT}}/.git/hooks/pre-push` auto-commits and pushes `~/.config/LIFEOS/USER/` to the user's private USER-data repo before each push from `{{LIFEOS_ROOT}}/`. The two repos stay in sync structurally. A private "kai update" / "push both repos" workflow wraps this with 4 boundary gates (USER-zone leak check, DenyListCheck, both-remotes-private confirmation, post-push HEAD verification).
 
 Configuration files (`settings.json`, `CLAUDE.md`, `LIFEOS_SYSTEM_PROMPT.md`) are directly edited; `settings.json` is split into `settings.system.json` (public) + `settings.user.json` (USER) merged at SessionStart by `LIFEOS/TOOLS/MergeSettings.ts`. Identity values live in `settings.json` under `daidentity` and `principal` keys; private skills read credentials via `LifeosConfig.ts` from `LIFEOS/USER/CONFIG/LIFEOS_CONFIG.toml`. Full contract: `LIFEOS/DOCUMENTATION/SystemUserBoundary.md`.
 
@@ -237,7 +237,7 @@ Layer 1: SYSTEM PROMPT (highest authority, survives compaction)
   verification requirement, hard prohibitions, operational rules, security protocol.
 
 Layer 2: CLAUDE.MD (user context, loaded natively, survives compaction)
-  File: $LIFEOS_ROOT/CLAUDE.md (directly edited)
+  File: {{LIFEOS_ROOT}}/CLAUDE.md (directly edited)
   Contains: Routing table only -- @-imports, where each subsystem doc lives,
   pointers into {{PRINCIPAL_NAME}}'s identity/voice/TELOS/work content. ~75 lines.
 
@@ -265,8 +265,8 @@ Layer 4: DYNAMIC CONTEXT (session-specific, ephemeral, does NOT survive compacti
 | File | Purpose |
 |------|---------|
 | `LIFEOS/LIFEOS_SYSTEM_PROMPT.md` | Constitutional rules (system prompt layer) |
-| `$LIFEOS_ROOT/CLAUDE.md` | Routing table — @-imports + subsystem pointers (directly edited) |
-| `$LIFEOS_ROOT/settings.json` | Runtime settings (directly edited) |
+| `{{LIFEOS_ROOT}}/CLAUDE.md` | Routing table — @-imports + subsystem pointers (directly edited) |
+| `{{LIFEOS_ROOT}}/settings.json` | Runtime settings (directly edited) |
 | `LIFEOS/TOOLS/lifeos.ts` | Launcher -- wires `--append-system-prompt-file` |
 | `hooks/LoadContext.hook.ts` | Injects startup files + dynamic context |
 
@@ -319,10 +319,10 @@ Operation vocabulary, never conflated: **UpdateKaiRepo** = private sync + tag (v
 
 **Composite skills are the organizational unit for all domain expertise.**
 
-Each skill lives in `$LIFEOS_ROOT/skills/<Skillname>/` with a mandatory `SKILL.md` defining triggers, workflows, and tools. Skills self-activate based on user intent via `USE WHEN` descriptions parsed by Claude Code. **Naming encodes the public/private boundary** — public skills use `TitleCase` (templated, safe, ships in LifeOS public release); private skills use `_ALLCAPS` with a leading underscore (anything personal, identity-bound, customer-bound, or environment-specific; excluded from release tooling via `skills/_*/**` in `hooks/lib/containment-zones.ts`). Within a skill, sub-files (workflows, references, tools) always use `TitleCase` regardless of the parent skill's form.
+Each skill lives in `{{LIFEOS_ROOT}}/skills/<Skillname>/` with a mandatory `SKILL.md` defining triggers, workflows, and tools. Skills self-activate based on user intent via `USE WHEN` descriptions parsed by Claude Code. **Naming encodes the public/private boundary** — public skills use `TitleCase` (templated, safe, ships in LifeOS public release); private skills use `_ALLCAPS` with a leading underscore (anything personal, identity-bound, customer-bound, or environment-specific; excluded from release tooling via `skills/_*/**` in `hooks/lib/containment-zones.ts`). Within a skill, sub-files (workflows, references, tools) always use `TitleCase` regardless of the parent skill's form.
 
 - **Status:** Active
-- **Location:** `$LIFEOS_ROOT/skills/`
+- **Location:** `{{LIFEOS_ROOT}}/skills/`
 - **Full doc:** `LIFEOS/DOCUMENTATION/Skills/SkillSystem.md`
 
 ### Hook System
@@ -332,7 +332,7 @@ Each skill lives in `$LIFEOS_ROOT/skills/<Skillname>/` with a mandatory `SKILL.m
 Hooks are executable scripts (TypeScript) that run automatically in response to Claude Code events: SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop, SessionEnd, PreCompact, PostCompact, PermissionRequest, and more. Most hooks run asynchronously and fail gracefully. Security is one consolidated hook: `Safety.hook.ts` dispatches by `hook_event_name` — PermissionRequest path auto-approves safe shapes via the shape classifier in `lib/safety-classifier.ts` (DANGEROUS_PATTERNS / CREDENTIAL_PATHS / INJECTION_SHAPES / READ_ONLY_COMMAND_PATTERNS / SEARCH_TOOLS / DEV_BINARIES / TRUSTED_PREFIXES + a shell-aware single-quote pre-pass that distinguishes data from execution); PostToolUse path on WebFetch/WebSearch annotates external content with the "treat as data" header plus an `[INJECTION SHAPE DETECTED: ...]` marker when the shared INJECTION_SHAPES catalog matches. All hooks emit structured events to `events.jsonl` for observability. Includes RTK (Rust Token Killer) integration via ContextReduction hook -- transparently rewrites Bash commands through `rtk` for 60-90% token savings on dev operations.
 
 - **Status:** Active (LifeOS 5.0.0)
-- **Location:** `$LIFEOS_ROOT/hooks/`
+- **Location:** `{{LIFEOS_ROOT}}/hooks/`
 - **Configuration:** `settings.json` under `hooks` key
 - **Full doc:** `LIFEOS/DOCUMENTATION/Hooks/HookSystem.md`
 
@@ -361,7 +361,7 @@ Two storage layers: LifeOS MEMORY (`LIFEOS/MEMORY/`) for structured, hook-driven
 Task Tool Subagent Types are pre-built agents in Claude Code (Architect, Engineer, Explore, etc.) for internal workflow use. `BrowserAgent`, `UIReviewer`, `QATester`, `Artist`, `Algorithm`, and `Anvil` (Kimi K2.6) were removed 2026-06-10 by principal directive — browser validation runs through the **Interceptor** skill (real Chrome, no CDP fingerprint). Cross-vendor agents extend coverage: **Forge** (OpenAI-family GPT-5.6 Sol via `codex exec`) writes production-grade code at E3+ in **build mode** and runs the optional cross-vendor **audit mode** at E4/E5 in VERIFY when the Algorithm elects it (Algorithm Rule 2a — discretionary, not a mandatory gate; the former standalone Cato agent folded into Forge audit mode 2026-06-17). Named Agents are persistent identities with backstories and ElevenLabs voices for recurring work. Custom Agents are dynamic compositions via ComposeAgent from base traits. The word "custom" is the routing trigger -- when the user says "custom agents," invoke the Agents skill, never Task tool subagent types. Background agents are supervised by the Agent Watchdog (`Tools/AgentWatchdog.ts`) — a Monitor-tool script that detects hung agents via tool-activity.jsonl silence, auto-triggered by the Pulse agent-guard hook.
 
 - **Status:** Active
-- **Location:** `$LIFEOS_ROOT/agents/`
+- **Location:** `{{LIFEOS_ROOT}}/agents/`
 - **Full doc:** `LIFEOS/DOCUMENTATION/Agents/AgentSystem.md`
 
 ### Delegation System
@@ -429,7 +429,7 @@ LifeOS is the OS. Pulse is the Dashboard. Everything a human (or the DA) can *se
 **Implementation:** A single Bun process managed by launchd (`com.lifeos.pulse`), listening on port 31337. Pulse absorbed all previously separate daemon services into a module architecture: voice notifications (`modules/voice.ts`), observability server (`Observability/observability.ts`), Telegram bot (`modules/telegram.ts`), iMessage bot (`modules/imessage.ts`), and session hooks (`modules/hooks.ts`). Reads job definitions from PULSE.toml, evaluates cron schedules, executes due jobs (shell scripts or Claude CLI invocations), and routes output through existing notification channels. Circuit breaker pattern: 3 consecutive failures skip the job.
 
 - **Version:** 2.0.0
-- **Location:** `$LIFEOS_DIR/PULSE/`
+- **Location:** `{{LIFEOS_DIR}}/PULSE/`
 - **Launchd:** `com.lifeos.pulse`
 - **Port:** 31337
 - **API:** ~40 endpoints across 8 categories (observability, algorithm, life, user-index, security, knowledge, wiki, DA, voice, hooks). Full reference: `LIFEOS/DOCUMENTATION/Observability/ObservabilitySystem.md` → "API Reference"
@@ -463,7 +463,7 @@ Walks `USER/` (root + one level), parses frontmatter + body of each `.md`, compu
 Formalizes how Pulse instantiates, manages, and evolves a Digital Assistant. Replaces manual DA_IDENTITY.md editing with a structured YAML schema, adds proactive heartbeat evaluation (2-layer: free context gathering + cheap Haiku eval), natural-language scheduled tasks, and bounded identity growth over time. Supports multiple DAs via a registry with primary/worker roles.
 
 - **Status:** Active
-- **Location:** `$LIFEOS_DIR/USER/DA/` (identity data), `$LIFEOS_ROOT/` (runtime)
+- **Location:** `{{LIFEOS_DIR}}/USER/DA/` (identity data), `{{LIFEOS_ROOT}}/` (runtime)
 - **Full doc:** `LIFEOS/DOCUMENTATION/Pulse/DaSubsystem.md`, `LIFEOS/DOCUMENTATION/Pulse/PulseSystem.md` (DA Module section)
 
 ### Browser Automation
@@ -473,7 +473,7 @@ Formalizes how Pulse instantiates, manages, and evolves a Digital Assistant. Rep
 Handles screenshots, multi-step sessions, authenticated browsing, and DOM/console/network inspection through the actual browser UI, so it stays logged in and passes bot detection. Legacy built-in agents (BrowserAgent, UIReviewer, QATester) were removed 2026-06-10, and the headless agent-browser wrapper (the Browser skill) was retired 2026-07-04 in favor of Interceptor. All web-based output MUST be verified through the **Interceptor skill** before showing to the user. Playwright is banned across LifeOS.
 
 - **Status:** Active
-- **Location:** `$LIFEOS_ROOT/skills/Interceptor/` (real-Chrome automation + computer use, mandatory for verification)
+- **Location:** `{{LIFEOS_ROOT}}/skills/Interceptor/` (real-Chrome automation + computer use, mandatory for verification)
 
 ### Cloud Execution (Arbol)
 
@@ -503,7 +503,7 @@ Monitors content sources, processes everything through an AI pipeline (ingest, s
 LifeOS executes Fabric patterns natively by reading `Patterns/{name}/system.md` and applying instructions directly. Use `fabric` CLI only for YouTube transcript extraction (`-y URL`). Patterns cover summarization, wisdom extraction, threat modeling, and dozens of other content operations.
 
 - **Status:** Active (240+ patterns)
-- **Location:** `$LIFEOS_ROOT/skills/Fabric/`
+- **Location:** `{{LIFEOS_ROOT}}/skills/Fabric/`
 - **Full doc:** `LIFEOS/DOCUMENTATION/Fabric/FabricSystem.md`
 
 ### Terminal Tab System
@@ -553,8 +553,8 @@ Five states with distinct colors: Inference (purple), Working (orange), Complete
 
 ```
 PRIVATE (never make public):
-  $LIFEOS_ROOT/           -- hooks, skills, settings, agents, CLAUDE.md
-  $LIFEOS_DIR/       -- Algorithm, Components, Tools, MEMORY, Pulse (unified daemon)
+  {{LIFEOS_ROOT}}/           -- hooks, skills, settings, agents, CLAUDE.md
+  {{LIFEOS_DIR}}/       -- Algorithm, Components, Tools, MEMORY, Pulse (unified daemon)
 
 PUBLIC (sanitized):
   ~/Projects/LIFEOS/      -- Sanitized examples, generic templates, community sharing
@@ -605,7 +605,7 @@ LifeOS manages its own integrity, security, and documentation through the System
 
 | Function | Description |
 |----------|-------------|
-| **Integrity Audits** | 16 parallel agents verify broken references across $LIFEOS_ROOT |
+| **Integrity Audits** | 16 parallel agents verify broken references across {{LIFEOS_ROOT}} |
 | **Secret Scanning** | TruffleHog credential detection in any directory |
 | **Privacy Validation** | Ensures USER/WORK content isolation from regular skills |
 | **Cross-Repo Validation** | Verifies private/public repository separation |

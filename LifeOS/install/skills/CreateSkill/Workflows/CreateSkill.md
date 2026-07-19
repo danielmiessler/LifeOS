@@ -17,8 +17,8 @@ Running the **CreateSkill** workflow in the **CreateSkill** skill to create new 
 
 **REQUIRED FIRST:**
 
-1. Read the skill system documentation: `$LIFEOS_DIR/DOCUMENTATION/Skills/SkillSystem.md`
-2. Read a canonical example skill — pick any existing public skill in `$LIFEOS_ROOT/skills/` (e.g. `Research/SKILL.md`, `Daemon/SKILL.md`) and study its frontmatter, voice notification, workflow routing, and examples sections.
+1. Read the skill system documentation: `{{LIFEOS_DIR}}/DOCUMENTATION/Skills/SkillSystem.md`
+2. Read a canonical example skill — pick any existing public skill in `{{LIFEOS_ROOT}}/skills/` (e.g. `Research/SKILL.md`, `Daemon/SKILL.md`) and study its frontmatter, voice notification, workflow routing, and examples sections.
 
 ## Step 2: Understand the Request
 
@@ -72,14 +72,14 @@ Before building, apply the bitter lesson test: **"Would a smarter model make thi
 ## Step 4: Create the Skill Directory
 
 ```bash
-mkdir -p $LIFEOS_ROOT/skills/[SkillName]/Workflows
-mkdir -p $LIFEOS_ROOT/skills/[SkillName]/Tools
+mkdir -p "${LIFEOS_ROOT}/skills/[SkillName]/Workflows"
+mkdir -p "${LIFEOS_ROOT}/skills/[SkillName]/Tools"
 ```
 
 **Example:**
 ```bash
-mkdir -p $LIFEOS_ROOT/skills/_DAEMON/Workflows
-mkdir -p $LIFEOS_ROOT/skills/_DAEMON/Tools
+mkdir -p "${LIFEOS_ROOT}/skills/_DAEMON/Workflows"
+mkdir -p "${LIFEOS_ROOT}/skills/_DAEMON/Tools"
 ```
 
 ## Step 5: Create SKILL.md
@@ -114,7 +114,7 @@ description: [What it does]. USE WHEN [intent triggers using OR]. NOT FOR [confu
    Running **WorkflowName** in **SkillName**...
    ```
 
-**Full documentation:** `$LIFEOS_DIR/DOCUMENTATION/Notifications/NotificationSystem.md`
+**Full documentation:** `{{LIFEOS_DIR}}/DOCUMENTATION/Notifications/NotificationSystem.md`
 
 ## Workflow Routing
 
@@ -172,7 +172,7 @@ This is template-level — new skills include it by default. Retrofit of existin
 
 ## Step 5b: Public Release Readiness (MANDATORY)
 
-**Every skill in `$LIFEOS_ROOT/skills/` ships with the LifeOS public release.** Write generic from the start — do not rely on a scrub at release-time.
+**Every skill in `{{LIFEOS_ROOT}}/skills/` ships with the LifeOS public release.** Write generic from the start — do not rely on a scrub at release-time.
 
 ### Required
 
@@ -182,13 +182,13 @@ This is template-level — new skills include it by default. Retrofit of existin
 
 ### Where Personal Context Belongs
 
-User-specific preferences, project names, domain lists, and war stories go in `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/` — the skill body loads these at runtime via the Customization block. This keeps the public skill generic while each LifeOS user layers their own context.
+User-specific preferences, project names, domain lists, and war stories go in `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/<SkillName>/` — the skill body loads these at runtime via the Customization block. This keeps the public skill generic while each LifeOS user layers their own context.
 
 ### Pre-Flight Check
 
 Before finalizing, grep the skill for personal refs:
 ```bash
-rg -i "danielmiessler|unsupervised|ULAdmin|thesurface|human3|ul\.live|/Users/[a-z]+/" $LIFEOS_ROOT/skills/[SkillName]/
+rg -i "danielmiessler|unsupervised|ULAdmin|thesurface|human3|ul\.live|/Users/[a-z]+/" "${LIFEOS_ROOT}/skills/[SkillName]/"
 ```
 
 Zero matches = ready. Any match = replace with generic language or move to `SKILLCUSTOMIZATIONS/`.
@@ -198,7 +198,7 @@ Zero matches = ready. Any match = replace with generic language or move to `SKIL
 For each workflow in the routing section:
 
 ```bash
-touch $LIFEOS_ROOT/skills/[SkillName]/Workflows/[WorkflowName].md
+touch "${LIFEOS_ROOT}/skills/[SkillName]/Workflows/[WorkflowName].md"
 ```
 
 ### Workflow-to-Tool Integration (REQUIRED for workflows with CLI tools)
@@ -240,23 +240,23 @@ bun ToolName.ts \
 - Workflows should expose this flexibility, not hardcode single patterns
 - Users speak naturally; workflows translate to precise CLI
 
-**Reference:** `$LIFEOS_DIR/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Workflow-to-Tool Integration section)
+**Reference:** `{{LIFEOS_DIR}}/DOCUMENTATION/Tools/CliFirstArchitecture.md` (Workflow-to-Tool Integration section)
 
 **Examples (TitleCase):**
 ```bash
-touch $LIFEOS_ROOT/skills/MyDaemon/Workflows/UpdateDaemonInfo.md
-touch $LIFEOS_ROOT/skills/MyDaemon/Workflows/UpdatePublicRepo.md
-touch $LIFEOS_ROOT/skills/MyBlog/Workflows/Create.md
-touch $LIFEOS_ROOT/skills/MyBlog/Workflows/Publish.md
+touch "${LIFEOS_ROOT}/skills/MyDaemon/Workflows/UpdateDaemonInfo.md"
+touch "${LIFEOS_ROOT}/skills/MyDaemon/Workflows/UpdatePublicRepo.md"
+touch "${LIFEOS_ROOT}/skills/MyBlog/Workflows/Create.md"
+touch "${LIFEOS_ROOT}/skills/MyBlog/Workflows/Publish.md"
 ```
 
 ## Step 7: Verify TitleCase
 
 Run this check:
 ```bash
-ls $LIFEOS_ROOT/skills/[SkillName]/
-ls $LIFEOS_ROOT/skills/[SkillName]/Workflows/
-ls $LIFEOS_ROOT/skills/[SkillName]/Tools/
+ls "${LIFEOS_ROOT}/skills/[SkillName]/"
+ls "${LIFEOS_ROOT}/skills/[SkillName]/Workflows/"
+ls "${LIFEOS_ROOT}/skills/[SkillName]/Tools/"
 ```
 
 Verify ALL files use TitleCase:

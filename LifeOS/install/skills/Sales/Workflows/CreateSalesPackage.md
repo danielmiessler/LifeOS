@@ -157,7 +157,7 @@ NO other text.
 ### Generate with CLI
 
 ```bash
-bun run $LIFEOS_ROOT/skills/art/Tools/Generate.ts \
+bun run "${LIFEOS_ROOT}/skills/art/Tools/Generate.ts" \
   --model nano-banana-pro \
   --prompt "[YOUR PROMPT]" \
   --size 2K \

@@ -8,8 +8,8 @@ You are mutating an HTTP request before it hits the server, or rewriting a respo
 ## Preflight Isolation Gate (MANDATORY first step)
 
 ```bash
-source $LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env
-bash $LIFEOS_ROOT/skills/Interceptor/Tools/PreflightIsolation.sh
+source "${LIFEOS_DIR}/USER/CUSTOMIZATIONS/SKILLS/Interceptor/preferences.env"
+bash "${LIFEOS_ROOT}/skills/Interceptor/Tools/PreflightIsolation.sh"
 ```
 
 Non-zero exit → STOP and surface the message verbatim. Do not fall back to the Default profile. This workflow mutates live network traffic; a wrong-profile run would rewrite requests in the operator's real session. Every `interceptor` verb below passes `--context "$INTERCEPTOR_TEST_CONTEXT_ID"` (the pinned isolated context from `preferences.env`). **Mandatory cleanup:** install a cleanup so overrides are always cleared, even if a step fails:

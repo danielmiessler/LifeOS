@@ -8,7 +8,7 @@ effort: medium
 ## Customization
 
 **Before executing, check for user customizations at:**
-`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/CreateCLI/`
+`{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/CreateCLI/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
@@ -174,7 +174,7 @@ Generated CLIs follow LifeOS standards:
 ### Repository Placement
 
 Generated CLIs go to:
-- `$LIFEOS_DIR/TOOLS/[cli-name]/` - Personal CLIs (like llcli)
+- `{{LIFEOS_DIR}}/TOOLS/[cli-name]/` - Personal CLIs (like llcli)
 - `~/Projects/[project-name]/` - Project-specific CLIs
 - `${PROJECTS_DIR}/LIFEOS/Examples/clis/` - Example CLIs (PUBLIC repo)
 
@@ -216,7 +216,7 @@ Every generated CLI follows:
 
 **Generated Structure:**
 ```
-$LIFEOS_DIR/TOOLS/ghcli/
+{{LIFEOS_DIR}}/TOOLS/ghcli/
 ├── ghcli.ts              # 350 lines, complete implementation
 ├── package.json          # Bun + TypeScript
 ├── tsconfig.json         # Strict mode
@@ -242,7 +242,7 @@ ghcli --help
 
 **Generated Structure:**
 ```
-$LIFEOS_DIR/TOOLS/md2html/
+{{LIFEOS_DIR}}/TOOLS/md2html/
 ├── md2html.ts
 ├── package.json
 ├── README.md
@@ -265,7 +265,7 @@ md2html extract-frontmatter post.md
 
 **Generated Structure:**
 ```
-$LIFEOS_DIR/TOOLS/data-cli/
+{{LIFEOS_DIR}}/TOOLS/data-cli/
 ├── data-cli.ts           # Commander.js with subcommands
 ├── package.json
 ├── README.md
@@ -373,7 +373,7 @@ The `llcli` CLI (Limitless.ai API) proves this pattern works:
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"CreateCLI","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"CreateCLI","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> "${LIFEOS_DIR}/MEMORY/SKILLS/execution.jsonl"
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

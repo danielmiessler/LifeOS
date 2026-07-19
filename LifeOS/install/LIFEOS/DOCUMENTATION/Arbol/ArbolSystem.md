@@ -198,7 +198,7 @@ Actions declare dependencies in `action.json` under `requires`. The runner injec
 **Local:**
 
 ```bash
-cd $LIFEOS_DIR/ARBOL/Actions
+cd "${LIFEOS_DIR}/ARBOL/Actions"
 bun lib/runner.v2.ts run A_LABEL_AND_RATE --input '{"content": "Your text here"}'
 bun lib/runner.v2.ts list
 ```
@@ -228,11 +228,11 @@ curl -X POST https://arbol-a-your-action.YOUR-SUBDOMAIN.workers.dev/ \
 
 ### Creating a New Action
 
-1. Create directory: `mkdir $LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL/ACTIONS/A_YOUR_ACTION`
+1. Create directory: `mkdir "${LIFEOS_DIR}/USER/CUSTOMIZATIONS/ARBOL/ACTIONS/A_YOUR_ACTION"`
 2. Define manifest (`action.json`) with name, description, input/output schema, requires
 3. Implement logic (`action.ts`) using `execute(input, ctx)` pattern
 4. Test locally: `bun lib/runner.v2.ts run A_YOUR_ACTION --input '{"content": "test"}'`
-5. Deploy to cloud (optional): add Worker under `$LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL/Workers/a-your-action/`, then `bash deploy.sh a-your-action`
+5. Deploy to cloud (optional): add Worker under `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/ARBOL/Workers/a-your-action/`, then `bash deploy.sh a-your-action`
 
 ### Action Best Practices
 
@@ -279,7 +279,7 @@ actions:
 
 **PIPELINE.md Format (local):**
 
-Local pipeline definitions live in `$LIFEOS_DIR/ARBOL/Pipelines/[Domain]_[Pipeline-Name]/PIPELINE.md`:
+Local pipeline definitions live in `{{LIFEOS_DIR}}/ARBOL/Pipelines/[Domain]_[Pipeline-Name]/PIPELINE.md`:
 
 ```markdown
 # [Pipeline_Name] Pipeline
@@ -300,12 +300,12 @@ Local pipeline definitions live in `$LIFEOS_DIR/ARBOL/Pipelines/[Domain]_[Pipeli
 
 - **Prefix:** `P_` for pipelines
 - **Worker name:** `arbol-p-{kebab-case-name}`
-- **Local directory:** `$LIFEOS_DIR/ARBOL/Pipelines/[Domain]_[Pipeline-Name]/PIPELINE.md`
+- **Local directory:** `{{LIFEOS_DIR}}/ARBOL/Pipelines/[Domain]_[Pipeline-Name]/PIPELINE.md`
 
 ### Running Pipelines
 
 ```bash
-cd $LIFEOS_DIR/ARBOL/Actions
+cd "${LIFEOS_DIR}/ARBOL/Actions"
 bun lib/pipeline-runner.ts run P_LABEL_AND_RATE --url "https://youtube.com/watch?v=..."
 bun lib/pipeline-runner.ts list
 ```
@@ -313,7 +313,7 @@ bun lib/pipeline-runner.ts list
 ### Creating a New Pipeline
 
 1. Identify the workflow: what Actions exist, what needs creating, what data passes between steps
-2. Create directory: `mkdir -p $LIFEOS_DIR/ARBOL/Pipelines/[Domain]_[Pipeline-Name]`
+2. Create directory: `mkdir -p "${LIFEOS_DIR}/ARBOL/Pipelines/[Domain]_[Pipeline-Name]"`
 3. Define overview table in PIPELINE.md
 4. For each step, specify action, input (from upstream), and output fields
 5. For cloud deployment, create a Worker with service bindings to each action
@@ -615,7 +615,7 @@ Each layer depends on the one below:
 ### Deploy Script
 
 ```bash
-cd $LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL
+cd "${LIFEOS_DIR}/USER/CUSTOMIZATIONS/ARBOL"
 bash deploy.sh a-your-action          # Deploy single worker
 echo "token" | bunx wrangler secret put AUTH_TOKEN --name arbol-a-your-action
 ```
@@ -711,15 +711,15 @@ Check `flow-state.json` for errors. Common: malformed pipeline output, AUTH_TOKE
 
 | Document | Path | Description |
 |----------|------|-------------|
-| Source Code | `$LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL/` | Cloudflare Workers source repository |
+| Source Code | `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/ARBOL/` | Cloudflare Workers source repository |
 | Cloudflare Skill | `Cloudflare` skill (LifeOS Skill registry) | MCP + wrangler dual-mode operations |
 | Architecture | `LifeosSystemArchitecture.md` | LifeOS system architecture |
-| System Actions | `$LIFEOS_DIR/ARBOL/Actions/` | Framework actions (examples) |
-| System Pipelines | `$LIFEOS_DIR/ARBOL/Pipelines/` | Framework pipelines (examples) |
-| System Flows | `$LIFEOS_DIR/ARBOL/Flows/` | Framework flows (examples) |
-| Personal Actions | `$LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL/ACTIONS/` | User-defined actions (override system) |
-| Personal Pipelines | `$LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL/PIPELINES/` | User-defined pipelines (override system) |
-| Personal Flows | `$LIFEOS_DIR/USER/CUSTOMIZATIONS/ARBOL/FLOWS/` | User-defined flows (override system) |
+| System Actions | `{{LIFEOS_DIR}}/ARBOL/Actions/` | Framework actions (examples) |
+| System Pipelines | `{{LIFEOS_DIR}}/ARBOL/Pipelines/` | Framework pipelines (examples) |
+| System Flows | `{{LIFEOS_DIR}}/ARBOL/Flows/` | Framework flows (examples) |
+| Personal Actions | `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/ARBOL/ACTIONS/` | User-defined actions (override system) |
+| Personal Pipelines | `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/ARBOL/PIPELINES/` | User-defined pipelines (override system) |
+| Personal Flows | `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/ARBOL/FLOWS/` | User-defined flows (override system) |
 
 ---
 

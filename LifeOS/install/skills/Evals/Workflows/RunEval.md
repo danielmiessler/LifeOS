@@ -27,7 +27,7 @@ Running the **RunEval** workflow in the **Evals** skill to execute evaluation...
 
 ```bash
 # Check use case exists
-ls $LIFEOS_ROOT/skills/Evals/UseCases/<use-case>/config.yaml
+ls "${LIFEOS_ROOT}/skills/Evals/UseCases/"<use-case>/config.yaml
 ```
 
 If missing, redirect to `CreateUseCase.md` workflow.
@@ -36,13 +36,13 @@ If missing, redirect to `CreateUseCase.md` workflow.
 
 ```bash
 # Run an eval suite via AlgorithmBridge (the canonical entry point)
-bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case>
+bun run "${LIFEOS_ROOT}/skills/Evals/Tools/AlgorithmBridge.ts" -s <use-case>
 
 # With ISC row binding (auto-updates the Algorithm ISC row with result):
-bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case> -r <isc-row> -u
+bun run "${LIFEOS_ROOT}/skills/Evals/Tools/AlgorithmBridge.ts" -s <use-case> -r <isc-row> -u
 
 # To see saturation status alongside the run:
-bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <use-case> --show-saturation
+bun run "${LIFEOS_ROOT}/skills/Evals/Tools/AlgorithmBridge.ts" -s <use-case> --show-saturation
 ```
 
 ### Step 3: Collect Results

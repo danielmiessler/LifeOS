@@ -127,7 +127,7 @@ import { Audio, Video, staticFile } from 'remotion'
 
 For detailed patterns on specific topics, see:
 ```
-$LIFEOS_ROOT/skills/Remotion/Tools/Reference/
+{{LIFEOS_ROOT}}/skills/Remotion/Tools/Reference/
 ```
 
 Topics include: animations, audio, 3d, charts, captions, fonts, transitions, and more.

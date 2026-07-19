@@ -261,7 +261,7 @@ If generating combined image is difficult:
 
 **Option A: Generate combined (if model supports):**
 ```bash
-bun run $LIFEOS_ROOT/skills/art/Tools/Generate.ts \
+bun run "${LIFEOS_ROOT}/skills/Art/Tools/Generate.ts" \
   --workflow=AnnotatedScreenshots \
   --model nano-banana-pro \
   --reference-image /path/to/screenshot.png \

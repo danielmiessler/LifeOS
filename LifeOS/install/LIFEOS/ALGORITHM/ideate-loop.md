@@ -16,7 +16,7 @@ status: redirect
 - **Ideate mode doctrine:** [`modes/ideate.md`](modes/ideate.md) — 9 phases, parameters, presets, Meta-Learner, effort tier mapping
 - **Mode taxonomy:** [`modes/README.md`](modes/README.md)
 - **Parameter schema:** [`parameter-schema.md`](parameter-schema.md)
-- **Ideate skill (router):** `$LIFEOS_ROOT/skills/Ideate/SKILL.md`
+- **Ideate skill (router):** `{{LIFEOS_ROOT}}/skills/Ideate/SKILL.md`
 
 ## Backwards-compat note
 

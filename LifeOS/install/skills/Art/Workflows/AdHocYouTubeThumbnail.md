@@ -128,7 +128,7 @@ Topic context: [EXTRACTED TOPIC]
 ### Generate Command
 
 ```bash
-bun run $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
+bun run "${LIFEOS_ROOT}/skills/Art/Tools/Generate.ts" \
   --workflow=AdHocYouTubeThumbnail \
   --model nano-banana-pro \
   --prompt "[BACKGROUND PROMPT]" \
@@ -212,11 +212,11 @@ Rembrandt lighting pattern. Looking at camera. Ultra-tight crop on face only.
 ```bash
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-bun $LIFEOS_ROOT/skills/<your-headshot-skill>/Tools/Headshot.ts \
+bun "${LIFEOS_ROOT}/skills/"<your-headshot-skill>/Tools/Headshot.ts \
   --prompt "[FACE-ONLY HEADSHOT PROMPT]" \
-  --reference $LIFEOS_ROOT/skills/<your-headshot-skill>/Examples/reference.png \
-  --reference $LIFEOS_ROOT/skills/<your-headshot-skill>/Examples/studio-style.png \
-  --reference $LIFEOS_ROOT/skills/<your-headshot-skill>/Examples/clean-smile.png \
+  --reference "${LIFEOS_ROOT}/skills/"<your-headshot-skill>/Examples/reference.png \
+  --reference "${LIFEOS_ROOT}/skills/"<your-headshot-skill>/Examples/studio-style.png \
+  --reference "${LIFEOS_ROOT}/skills/"<your-headshot-skill>/Examples/clean-smile.png \
   --size 2K \
   --aspect-ratio 1:1 \
   --output ~/Downloads/yt-headshot-${TIMESTAMP}.png
@@ -227,7 +227,7 @@ bun $LIFEOS_ROOT/skills/<your-headshot-skill>/Tools/Headshot.ts \
 ### Remove Background
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/RemoveBg.ts ~/Downloads/yt-headshot-${TIMESTAMP}.png
+bun "${LIFEOS_DIR}/TOOLS/RemoveBg.ts" ~/Downloads/yt-headshot-${TIMESTAMP}.png
 ```
 
 ---
@@ -239,7 +239,7 @@ bun $LIFEOS_DIR/TOOLS/RemoveBg.ts ~/Downloads/yt-headshot-${TIMESTAMP}.png
 ### Compose Command
 
 ```bash
-bun $LIFEOS_ROOT/skills/Art/Tools/ComposeThumbnail.ts \
+bun "${LIFEOS_ROOT}/skills/Art/Tools/ComposeThumbnail.ts" \
   --background ~/Downloads/yt-bg-${TIMESTAMP}.png \
   --headshot ~/Downloads/yt-headshot-${TIMESTAMP}.png \
   --title "[TITLE]" \

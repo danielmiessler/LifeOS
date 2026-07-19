@@ -22,7 +22,7 @@ Running **ResearchThinker** in **Aphorisms**...
 - Building out thinker sections in database
 
 **Prerequisites:**
-- Aphorism database exists at `$LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md`
+- Aphorism database exists at `{{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md`
 - Clear understanding of which thinker to research
 - Optional: specific theme/topic to focus research on
 
@@ -259,8 +259,8 @@ research_skill.parallel_research(
 ### Step 7: Add to Database
 
 **Read current database:**
-```bash
-Read $LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md
+```text
+Read {{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md
 ```
 
 **Locate thinker's section:**
@@ -268,9 +268,9 @@ Read $LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md
 - Section should exist with placeholder: `*Quotes to be added from research*`
 
 **Use Edit to replace placeholder:**
-```bash
+```text
 Edit(
-  file_path=$LIFEOS_ROOT/skills/Aphorisms/Database/aphorisms.md,
+  file_path={{LIFEOS_ROOT}}/skills/Aphorisms/Database/aphorisms.md,
   old_string="### [Thinker Name]\n*Quotes to be added from research*",
   new_string="### [Thinker Name]\n\n[Organized quotes with themes and context]"
 )

@@ -33,7 +33,7 @@ Turns whatever the session just produced into one self-contained, designed HTML 
 
 ## Quick Reference
 
-- Renderer: `bun $LIFEOS_ROOT/skills/HTML/Tools/Render.ts --json content.json --register dossier --out artifact.html`
+- Renderer: `bun "${CLAUDE_SKILL_DIR}/Tools/Render.ts" --json content.json --register dossier --out artifact.html`
 - `--schema` prints the content JSON shape with an example; `--registers` lists registers.
 - Registers: `dossier` (dark ink-green / orange, condensed display + typewriter — evidence files, red teams, investigations) and `ledger` (dark navy / gold, old-style serif — reports, finance, plans, comparisons). Alternate between them so consecutive outputs don't converge; add new registers to Render.ts rather than hand-styling one-offs.
 - Output is Artifact-CSP safe: inline CSS, fonts embedded as data URIs from local font files, zero external requests.

@@ -33,7 +33,7 @@ Ask the user:
 
 ### Step 2: Create Judge Config
 
-Create `$LIFEOS_ROOT/skills/Evals/UseCases/<name>/judge-config.yaml`:
+Create `{{LIFEOS_ROOT}}/skills/Evals/UseCases/<name>/judge-config.yaml`:
 
 ```yaml
 judge:
@@ -65,10 +65,10 @@ output:
 ### Step 3: Render Judge Prompt
 
 ```bash
-bun run $LIFEOS_ROOT/Templates/Tools/RenderTemplate.ts \
+bun run "${LIFEOS_ROOT}/Templates/Tools/RenderTemplate.ts" \
   -t Evals/Judge.hbs \
-  -d $LIFEOS_ROOT/skills/Evals/UseCases/<name>/judge-config.yaml \
-  -o $LIFEOS_ROOT/skills/Evals/UseCases/<name>/judge-prompt.md \
+  -d "${LIFEOS_ROOT}/skills/Evals/UseCases/"<name>/judge-config.yaml \
+  -o "${LIFEOS_ROOT}/skills/Evals/UseCases/"<name>/judge-prompt.md \
   --preview
 ```
 
@@ -99,8 +99,8 @@ criteria:
 Run the suite (which contains the use case + judge) via `AlgorithmBridge.ts` and inspect the output:
 
 ```bash
-bun run $LIFEOS_ROOT/skills/Evals/Tools/AlgorithmBridge.ts -s <suite>
-cat $LIFEOS_DIR/MEMORY/STATE/Evals-Results/<use-case>/<run-id>/results.json | jq '.trials[0].graders'
+bun run "${LIFEOS_ROOT}/skills/Evals/Tools/AlgorithmBridge.ts" -s <suite>
+cat "${LIFEOS_DIR}/MEMORY/STATE/Evals-Results/"<use-case>/<run-id>/results.json | jq '.trials[0].graders'
 ```
 
 To exercise only a single test case while iterating on the judge, scope the suite config to one task in `UseCases/<name>/test-cases/` and re-run.

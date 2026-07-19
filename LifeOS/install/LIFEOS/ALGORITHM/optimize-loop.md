@@ -18,7 +18,7 @@ status: redirect
 - **Parameter schema:** [`parameter-schema.md`](parameter-schema.md)
 - **Eval mode guide:** [`eval-guide.md`](eval-guide.md)
 - **Target types:** [`target-types.md`](target-types.md)
-- **Optimize skill (router):** `$LIFEOS_ROOT/skills/Optimize/SKILL.md`
+- **Optimize skill (router):** `{{LIFEOS_ROOT}}/skills/Optimize/SKILL.md`
 
 ## Backwards-compat note
 

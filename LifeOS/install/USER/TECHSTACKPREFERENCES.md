@@ -24,7 +24,7 @@ Three layers — pick the right one for the context:
 
 ## Conventions
 
-- **Paths:** Use `$HOME`, `${LIFEOS_DIR}`, relative paths — never hardcode user paths
+- **Paths:** Use `$HOME`, `{{LIFEOS_DIR}}`, relative paths — never hardcode user paths
 - **Comments:** Minimal — code should explain itself via naming
 - **Error handling:** Explicit. Never silently swallow errors.
 - **Config:** (interview — env var / config file / CLI flag preference)

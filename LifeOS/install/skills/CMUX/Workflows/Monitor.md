@@ -15,7 +15,7 @@ cmux has no push or event-subscribe command. There is no "notify me when done" c
 1. **Start the loop over a workspace:**
 
    ```bash
-   bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts monitor --workspace beta --interval 3
+   bun "${LIFEOS_ROOT}/skills/CMUX/Tools/cmux.ts" monitor --workspace beta --interval 3
    ```
 
    Each pass, per surface it runs `surface-health` + `read-screen` (tail) and classifies:
@@ -35,7 +35,7 @@ cmux has no push or event-subscribe command. There is no "notify me when done" c
 3. **One pass, no loop.** For a scripted spot-check (e.g. inside another workflow), `--once` does a single classification pass and exits:
 
    ```bash
-   bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts monitor --workspace beta --once
+   bun "${LIFEOS_ROOT}/skills/CMUX/Tools/cmux.ts" monitor --workspace beta --once
    ```
 
 ## How it feeds Pulse and voice
@@ -46,7 +46,7 @@ cmux has no push or event-subscribe command. There is no "notify me when done" c
 
 ```bash
 # a 5-agent race is running in workspace:7 (see AgentRace.md)
-bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts monitor --workspace workspace:7 --interval 2
+bun "${LIFEOS_ROOT}/skills/CMUX/Tools/cmux.ts" monitor --workspace workspace:7 --interval 2
 # ... you go do something else ...
 # {{DA_NAME}}: "workspace:7 race-3 finished"   <- first done, voice fires
 ```
@@ -54,8 +54,8 @@ bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts monitor --workspace workspace:7 --int
 Then pull the winner:
 
 ```bash
-bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts read --surface surface:32 --lines 80
-bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts flash --workspace workspace:7   # mark it visually
+bun "${LIFEOS_ROOT}/skills/CMUX/Tools/cmux.ts" read --surface surface:32 --lines 80
+bun "${LIFEOS_ROOT}/skills/CMUX/Tools/cmux.ts" flash --workspace workspace:7   # mark it visually
 ```
 
 Teams to monitor come from BootTeam.md (tiered) and Fleet.md (grids); the race pattern that pairs with hands-free monitoring is in AgentRace.md.

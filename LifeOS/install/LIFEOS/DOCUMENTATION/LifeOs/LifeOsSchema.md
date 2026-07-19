@@ -241,7 +241,7 @@ USER/BoardGames.md        # new taste file
 - **`ShadowRelease.ts` never reads USER/.** It reads `skills/_LIFEOS/RELEASE_TEMPLATES/USER/` + this spec.
 
 New LifeOS user experience:
-1. Install LifeOS the platform-agnostic, AI-native way: hand the installer (`skills/LifeOS/install/install.sh`, or the install doc) to your own AI/harness, which installs the `LifeOS/` skill and scaffolds `USER/` from the release templates (`skills/_LIFEOS/RELEASE_TEMPLATES/USER/`). No `git clone` into `$LIFEOS_ROOT`.
+1. Install LifeOS the platform-agnostic, AI-native way: hand the installer (`skills/LifeOS/install/install.sh`, or the install doc) to your own AI/harness, which installs the `LifeOS/` skill and scaffolds `USER/` from the release templates (`skills/_LIFEOS/RELEASE_TEMPLATES/USER/`). No `git clone` into `{{LIFEOS_ROOT}}`.
 2. Run `Interview` skill → conversation walks them through filling in files, phase by phase
 3. Pulse dashboard lights up as files gain content
 4. Daemon publishes nothing until the user sets `publish:` flags

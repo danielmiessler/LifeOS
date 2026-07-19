@@ -8,7 +8,7 @@ effort: medium
 ## Customization
 
 **Before executing, check for user customizations at:**
-`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/USMetrics/`
+`{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/USMetrics/`
 
 If this directory exists, load and apply any PREFERENCES.md, configurations, or resources found there. These override default behavior. If the directory does not exist, proceed with skill defaults.
 
@@ -49,7 +49,7 @@ It analyzes U.S. economic and social metrics using the Substrate US-Common-Metri
 ## Data Source
 
 All metrics sourced from:
-- **Location:** Configure your data directory path (e.g., `${LIFEOS_DIR}/data/US-Common-Metrics/`)
+- **Location:** Configure your data directory path (e.g., `{{LIFEOS_DIR}}/data/US-Common-Metrics/`)
 - **Master Document:** `US-Common-Metrics.md` (68 metrics across 10 categories)
 - **Source Documentation:** `source.md` (full methodology)
 - **Underlying APIs:** FRED, EIA, Treasury FiscalData, BLS, Census, CDC, EPA
@@ -192,7 +192,7 @@ The GetCurrentState workflow produces a structured markdown document:
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"USMetrics","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"USMetrics","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> "${LIFEOS_DIR}/MEMORY/SKILLS/execution.jsonl"
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

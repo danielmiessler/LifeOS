@@ -1,7 +1,7 @@
 # TokenXray
 
 TypeScript port of [`claude-code-token-xray`](https://github.com/Coral-Bricks-AI/coral-ai/tree/main/claude-code-token-xray)
-(Apache 2.0, Coral Bricks AI). Reads only `~/.claude/projects/*/*.jsonl` —
+(Apache 2.0, Coral Bricks AI). Reads only `{{LIFEOS_ROOT}}/projects/*/*.jsonl` —
 nothing leaves the machine.
 
 ## Quickstart
@@ -29,7 +29,7 @@ Add `--json` to any subcommand for structured output.
 
 ### `actual` — subscription vs API
 
-The other subcommands price every call at Opus 4.7 list rates. That's what your bill *would* be on the API. If you're on Claude Max, most of `~/.claude/projects/` is OAuth-billed (subscription), so the marginal cost is zero — the Max fee is fixed. Real API spend comes from LifeOS's separate channels (Inference.ts, bridge bots, admin tools), tracked in `LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl`. `actual` shows both side-by-side.
+The other subcommands price every call at Opus 4.7 list rates. That's what your bill *would* be on the API. If you're on Claude Max, most of `{{LIFEOS_ROOT}}/projects/` is OAuth-billed (subscription), so the marginal cost is zero — the Max fee is fixed. Real API spend comes from LifeOS's separate channels (Inference.ts, bridge bots, admin tools), tracked in `LIFEOS/MEMORY/OBSERVABILITY/anthropic-cost.jsonl`. `actual` shows both side-by-side.
 
 ## Caveats
 

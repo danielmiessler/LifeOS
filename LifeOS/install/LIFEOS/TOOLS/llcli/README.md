@@ -35,26 +35,26 @@ This tool replaces ad-hoc bash scripts with a maintainable, version-controlled i
 
 1. **Install the CLI:**
    ```bash
-   cd $LIFEOS_DIR/TOOLS/llcli
+   cd "${LIFEOS_DIR}/TOOLS/llcli"
    chmod +x llcli.ts
    ```
 
 2. **Add to PATH (optional):**
    ```bash
    # Add to ~/.zshrc or ~/.bashrc
-   export PATH="$LIFEOS_DIR/TOOLS/llcli:$PATH"
+   export PATH="${LIFEOS_DIR}/TOOLS/llcli:$PATH"
    ```
 
 3. **Configure API Key:**
 
-   Add to `$LIFEOS_ROOT/.env`:
+   Add to `{{LIFEOS_ROOT}}/.env`:
    ```bash
    LIMITLESS_API_KEY=your_api_key_here
    ```
 
 4. **Verify Installation:**
    ```bash
-   $LIFEOS_DIR/TOOLS/llcli/llcli.ts --help
+   "${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" --help
    ```
 
 ---
@@ -267,7 +267,7 @@ diff \
 
 ### Environment Variables
 
-**Location:** `$LIFEOS_ROOT/.env`
+**Location:** `{{LIFEOS_ROOT}}/.env`
 
 **Required:**
 ```bash
@@ -360,17 +360,17 @@ llcli.ts
 
 ### "LIMITLESS_API_KEY not found"
 
-**Solution:** Add API key to `$LIFEOS_ROOT/.env`:
+**Solution:** Add API key to `{{LIFEOS_ROOT}}/.env`:
 ```bash
-echo "LIMITLESS_API_KEY=your_key" >> $LIFEOS_ROOT/.env
+echo "LIMITLESS_API_KEY=your_key" >> "${LIFEOS_ROOT}/.env"
 ```
 
-### "Cannot read $LIFEOS_ROOT/.env file"
+### "Cannot read {{LIFEOS_ROOT}}/.env file"
 
 **Solution:** Create the file:
 ```bash
-touch $LIFEOS_ROOT/.env
-chmod 600 $LIFEOS_ROOT/.env
+touch "${LIFEOS_ROOT}/.env"
+chmod 600 "${LIFEOS_ROOT}/.env"
 ```
 
 ### "bun: command not found"
@@ -384,7 +384,7 @@ curl -fsSL https://bun.sh/install | bash
 
 **Solution:** Make executable:
 ```bash
-chmod +x $LIFEOS_DIR/TOOLS/llcli/llcli.ts
+chmod +x "${LIFEOS_DIR}/TOOLS/llcli/llcli.ts"
 ```
 
 ### API Errors
@@ -449,12 +449,12 @@ Replace script calls:
 
 **Old:**
 ```bash
-$LIFEOS_ROOT/skills/lifelog/Scripts/fetch-lifelogs.sh today "" 20
+"${LIFEOS_ROOT}/skills/lifelog/Scripts/fetch-lifelogs.sh" today "" 20
 ```
 
 **New:**
 ```bash
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts today --limit 20
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" today --limit 20
 ```
 
 ### With Workflows
@@ -537,8 +537,8 @@ MIT
 ## Support
 
 For issues, questions, or contributions:
-- File: `$LIFEOS_DIR/TOOLS/llcli/`
-- Skill: `$LIFEOS_ROOT/skills/lifelog/`
+- File: `{{LIFEOS_DIR}}/TOOLS/llcli/`
+- Skill: `{{LIFEOS_ROOT}}/skills/lifelog/`
 - Constitution: `~/.claude/`
 
 ---

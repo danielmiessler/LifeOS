@@ -5,7 +5,7 @@ Cleanvoice API cloud polish for final audio cleanup.
 ## Usage
 
 ```bash
-bun $LIFEOS_ROOT/skills/AudioEditor/Tools/Polish.ts <audio-file> [--output <path>]
+bun "${LIFEOS_ROOT}/skills/AudioEditor/Tools/Polish.ts" <audio-file> [--output <path>]
 ```
 
 ## Options

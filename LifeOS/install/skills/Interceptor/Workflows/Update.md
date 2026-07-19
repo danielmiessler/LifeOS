@@ -90,12 +90,12 @@ cp ~/Projects/interceptor/daemon/interceptor-daemon /opt/homebrew/bin/
 
 ### 4a. Pin the Extension into the skill
 
-`$LIFEOS_ROOT/skills/Interceptor/Extension/` is a **pinned copy** of the built `extension/dist/`, not a symlink. Two reasons: Chrome disables unpacked extensions on every manifest version bump (a stable copy survives that), and the public LifeOS release ships this skill — a symlink to a local build dir is useless to other users.
+`{{LIFEOS_ROOT}}/skills/Interceptor/Extension/` is a **pinned copy** of the built `extension/dist/`, not a symlink. Two reasons: Chrome disables unpacked extensions on every manifest version bump (a stable copy survives that), and the public LifeOS release ships this skill — a symlink to a local build dir is useless to other users.
 
 Re-pin after every build:
 
 ```bash
-bash $LIFEOS_ROOT/skills/Interceptor/Tools/Pin.sh
+bash "${LIFEOS_ROOT}/skills/Interceptor/Tools/Pin.sh"
 ```
 
 `Pin.sh` rsyncs `dist/` → `Extension/`, **scrubs absolute home paths** that esbuild bakes into bundled JS (the `__dirname` literal in CommonJS wrappers → `"."`), regenerates `PINNED_FROM.txt` with a relative source path, and exits non-zero if any absolute home path survives. Set `INTERCEPTOR_SRC` to override the source repo location.
@@ -223,7 +223,7 @@ If `Extension/manifest.json` changed (especially `version` or `key`):
 
 1. Open `chrome://extensions`, enable Developer Mode.
 2. **Delete** the existing Interceptor card (don't just hit reload — if the manifest `key` changed, the extension ID changed and the old card is dead).
-3. **Load unpacked** → `$LIFEOS_ROOT/skills/Interceptor/Extension` (a pinned copy of the built `extension/dist`, captured by `Tools/Pin.sh` — NOT a symlink; it does not auto-follow upstream, so it must be re-pinned after every build).
+3. **Load unpacked** → `{{LIFEOS_ROOT}}/skills/Interceptor/Extension` (a pinned copy of the built `extension/dist`, captured by `Tools/Pin.sh` — NOT a symlink; it does not auto-follow upstream, so it must be re-pinned after every build).
 4. Quit Chrome fully (⌘Q, not just close window) and relaunch — service worker needs a clean restart, especially with `userScripts` permission added.
 5. Accept any new permission prompts (`userScripts`, etc.).
 

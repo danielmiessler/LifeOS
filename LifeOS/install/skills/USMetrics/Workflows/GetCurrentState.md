@@ -287,7 +287,7 @@ Generate structured markdown report:
 
 Save generated report to:
 ```
-$LIFEOS_ROOT/History/research/[YYYY-MM]/[YYYY-MM-DD]_US-Economic-State-Analysis.md
+{{LIFEOS_ROOT}}/History/research/[YYYY-MM]/[YYYY-MM-DD]_US-Economic-State-Analysis.md
 ```
 
 ## Error Handling

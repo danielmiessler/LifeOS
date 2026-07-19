@@ -11,7 +11,7 @@ When {PRINCIPAL.NAME} wants to update TELOS, you guide him through the process c
 
 # CONTEXT
 
-TELOS is {PRINCIPAL.NAME}'s life framework stored in `$LIFEOS_DIR/USER/TELOS/`. It contains:
+TELOS is {PRINCIPAL.NAME}'s life framework stored in `{{LIFEOS_DIR}}/USER/TELOS/`. It contains:
 
 **Core Philosophy:**
 - TELOS.md - Main framework document
@@ -78,7 +78,7 @@ This is the main command you'll use. It takes three parameters:
 - Content to add (the actual text)
 - Description of the change (for the changelog)
 
-!`FILE="$1"; CONTENT="$2"; DESCRIPTION="$3"; bun $LIFEOS_ROOT/skills/Telos/Tools/UpdateTelos.ts "$FILE" "$CONTENT" "$DESCRIPTION"`
+!`FILE="$1"; CONTENT="$2"; DESCRIPTION="$3"; bun "${LIFEOS_ROOT}/skills/Telos/Tools/UpdateTelos.ts" "$FILE" "$CONTENT" "$DESCRIPTION"`
 
 ## List Valid TELOS Files
 !`echo "Valid TELOS files:
@@ -102,10 +102,10 @@ This is the main command you'll use. It takes three parameters:
 - WRONG.md - Things I was wrong about"`
 
 ## View Recent TELOS Updates
-!`head -50 $LIFEOS_DIR/USER/TELOS/updates.md`
+!`head -50 "${LIFEOS_DIR}/USER/TELOS/updates.md`"
 
 ## View Specific TELOS File
-!`FILE="$1"; cat $LIFEOS_DIR/USER/TELOS/"$FILE"`
+!`FILE="$1"; cat "${LIFEOS_DIR}/USER/TELOS/"$FILE"`"
 
 # PROCESSING INSTRUCTIONS
 
@@ -140,7 +140,7 @@ Use the update-telos command with:
 
 Example:
 ```bash
-bun $LIFEOS_ROOT/skills/Telos/Tools/UpdateTelos.ts "BOOKS.md" "- *Project Hail Mary* by Andy Weir" "Added favorite book: Project Hail Mary"
+bun "${LIFEOS_ROOT}/skills/Telos/Tools/UpdateTelos.ts" "BOOKS.md" "- *Project Hail Mary* by Andy Weir" "Added favorite book: Project Hail Mary"
 ```
 
 ## Step 4: Confirm and Engage
@@ -286,8 +286,8 @@ The TypeScript implementation handles:
 - Content appending (preserves existing content)
 - Pacific Time timezone for consistency
 
-The script is at: `$LIFEOS_ROOT/skills/Telos/Tools/UpdateTelos.ts`
+The script is at: `{{LIFEOS_ROOT}}/skills/Telos/Tools/UpdateTelos.ts`
 
-All backups are stored in: `$LIFEOS_DIR/USER/TELOS/Backups/`
+All backups are stored in: `{{LIFEOS_DIR}}/USER/TELOS/Backups/`
 
-All changes are logged in the `## Changelog` section at the bottom of `$LIFEOS_DIR/USER/TELOS/TELOS.md`.
+All changes are logged in the `## Changelog` section at the bottom of `{{LIFEOS_DIR}}/USER/TELOS/TELOS.md`.

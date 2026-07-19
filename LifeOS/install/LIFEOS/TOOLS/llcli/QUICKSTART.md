@@ -4,49 +4,49 @@
 
 ## Installation
 
-Already done! Located at: `$LIFEOS_DIR/TOOLS/llcli/`
+Already done! Located at: `{{LIFEOS_DIR}}/TOOLS/llcli/`
 
 ## Usage
 
 ```bash
 # Get help
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts --help
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" --help
 
 # Today's recordings
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts today
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" today
 
 # Specific date
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts date 2025-11-17
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" date 2025-11-17
 
 # Search
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts search "consulting"
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" search "consulting"
 
 # With custom limit
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts today --limit 50
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" today --limit 50
 ```
 
 ## Piping to jq
 
 ```bash
 # Just titles
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts today | jq -r '.data.lifelogs[].title'
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" today | jq -r '.data.lifelogs[].title'
 
 # Count recordings
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts date 2025-11-17 | jq '.data.lifelogs | length'
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" date 2025-11-17 | jq '.data.lifelogs | length'
 
 # Long recordings (>30 min)
-$LIFEOS_DIR/TOOLS/llcli/llcli.ts today | jq '.data.lifelogs[] | select(
+"${LIFEOS_DIR}/TOOLS/llcli/llcli.ts" today | jq '.data.lifelogs[] | select(
   ((.endTime | fromdateiso8601) - (.startTime | fromdateiso8601)) > 1800
 )'
 ```
 
 ## Configuration
 
-API key already configured in `$LIFEOS_ROOT/.env`:
+API key already configured in `{{LIFEOS_ROOT}}/.env`:
 ```bash
 LIMITLESS_API_KEY=your_key
 ```
 
 ## Full Documentation
 
-See: `$LIFEOS_DIR/TOOLS/llcli/README.md`
+See: `{{LIFEOS_DIR}}/TOOLS/llcli/README.md`

@@ -90,7 +90,7 @@ Statusline FRESH line and `/api/freshness/summary` both surface these grades.
 
 ## Library
 
-Single source: `$LIFEOS_DIR/TOOLS/TelosFreshness.ts` (named for historical reasons; covers all constitutional files).
+Single source: `{{LIFEOS_DIR}}/TOOLS/TelosFreshness.ts` (named for historical reasons; covers all constitutional files).
 
 ```ts
 // TELOS-specific (per-section)
@@ -156,22 +156,22 @@ Override per-installation by editing the `STALENESS_THRESHOLDS` map.
 
 ```bash
 # Per-section TELOS freshness (the original surface)
-bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts
-bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts --json
-bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts --bump goals
+bun "${LIFEOS_DIR}/TOOLS/TelosFreshness.ts"
+bun "${LIFEOS_DIR}/TOOLS/TelosFreshness.ts" --json
+bun "${LIFEOS_DIR}/TOOLS/TelosFreshness.ts" --bump goals
 
 # Multi-file constitutional freshness
-bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts context
-bun $LIFEOS_DIR/TOOLS/TelosFreshness.ts context --json
+bun "${LIFEOS_DIR}/TOOLS/TelosFreshness.ts" context
+bun "${LIFEOS_DIR}/TOOLS/TelosFreshness.ts" context --json
 
 # Content quality audit (read-only)
-bun $LIFEOS_DIR/TOOLS/ContextAudit.ts
-bun $LIFEOS_DIR/TOOLS/ContextAudit.ts --json
+bun "${LIFEOS_DIR}/TOOLS/ContextAudit.ts"
+bun "${LIFEOS_DIR}/TOOLS/ContextAudit.ts" --json
 ```
 
 ## Pulse routes
 
-Pulse module at `$LIFEOS_DIR/PULSE/modules/telos.ts` exposes the same data over HTTP:
+Pulse module at `{{LIFEOS_DIR}}/PULSE/modules/telos.ts` exposes the same data over HTTP:
 
 - `GET /api/telos/freshness` — full TELOS per-section freshness
 - `GET /api/telos/freshness/stale` — TELOS stale sections only
@@ -186,7 +186,7 @@ Response is cached for 60s. Reload via Pulse `/reload` invalidates the cache and
 The statusline FRESH line cannot afford a network call on every refresh (1s interval, blocking on Pulse-down would freeze rendering). `LIFEOS/TOOLS/FreshnessCache.ts` writes a tiny mirror of `/api/freshness/summary` to a private file the statusline reads directly with `jq`.
 
 ```
-$LIFEOS_DIR/USER/CACHE/freshness.json
+{{LIFEOS_DIR}}/USER/CACHE/freshness.json
 ```
 
 The file is private (under `USER/`, never released), atomically written (temp file + rename), shape-identical to `/api/freshness/summary` plus a `generated_at` timestamp, and capped under 4KB.
@@ -212,7 +212,7 @@ Pulse remains the canonical reader for the dashboard; the cache file is the cano
 
 ## Interview integration
 
-`/interview` runs the **ContextCheckin** workflow at `$LIFEOS_ROOT/skills/Interview/Workflows/ContextCheckin.md`. The workflow:
+`/interview` runs the **ContextCheckin** workflow at `{{LIFEOS_ROOT}}/skills/Interview/Workflows/ContextCheckin.md`. The workflow:
 
 1. Reads `readContextFreshness()` plus `readTelosFreshness()` for the per-section detail.
 2. Identifies stale files and stale TELOS sections, sorted most-stale-first.

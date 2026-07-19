@@ -18,11 +18,11 @@
  * TRIGGER: SessionStart
  *
  * INPUT:
- * - Environment: LIFEOS_DIR
+ * - Environment: LIFEOS_ROOT, LIFEOS_DIR, LIFEOS_CONFIG_DIR
  *          MEMORY/WORK/*, MEMORY/STATE/progress/*.json
  *
  * OUTPUT:
- * - stdout: <system-reminder> containing dynamic context (relationship + learning)
+ * - stdout: <system-reminder> containing runtime paths and dynamic context
  * - stdout: Active work summary if previous sessions have pending work
  * - stderr: Status messages and errors
  * - exit(0): Normal completion
@@ -35,12 +35,13 @@
  * PERFORMANCE:
  * - Blocking: Yes (context is essential)
  * - Typical execution: <50ms (no SKILL.md rebuild needed)
- * - Skipped for subagents: Yes
+ * - Subagents: runtime path contract only; personal dynamic context is skipped
  */
 
 import { readFileSync, existsSync, readdirSync } from 'fs';
-import { join } from 'path';
-import { getLifeosDir, getSettingsPath } from './lib/paths';
+import { homedir } from 'os';
+import { dirname, join, resolve } from 'path';
+import { expandPath, getLifeosDir, getSettingsPath } from './lib/paths';
 import { recordSessionStart } from './lib/notifications';
 import { loadWisdomFrames } from './lib/learning-readback';
 import { findArtifactPath } from './lib/isa-utils';
@@ -53,6 +54,7 @@ interface DynamicContextConfig {
 
 interface Settings {
   dynamicContext?: DynamicContextConfig;
+  env?: Record<string, unknown>;
   [key: string]: unknown;
 }
 
@@ -79,6 +81,42 @@ function loadSettings(): Settings {
     }
   }
   return {};
+}
+
+function configuredPath(settings: Settings, name: string): string | null {
+  const value = process.env[name] ?? settings.env?.[name];
+  return typeof value === 'string' && value.trim() !== '' ? expandPath(value) : null;
+}
+
+/**
+ * Ground LifeOS' model-facing path placeholders in every session. These are
+ * semantic prompt variables, not a Claude Code templating feature: the model
+ * must replace them with the values below before it invokes a tool.
+ */
+function getRuntimePathContext(settings: Settings): string {
+  const lifeosDir = configuredPath(settings, 'LIFEOS_DIR') ?? getLifeosDir();
+  const derivedRoot = dirname(lifeosDir);
+  const configuredRoot = configuredPath(settings, 'LIFEOS_ROOT');
+  // LIFEOS_DIR/self-location is the recovery source of truth. Ignore a stale
+  // LIFEOS_ROOT from an older settings merge instead of mixing two installs.
+  const lifeosRoot = configuredRoot && resolve(configuredRoot) === resolve(derivedRoot)
+    ? configuredRoot
+    : derivedRoot;
+  const configuredConfigDir = configuredPath(settings, 'LIFEOS_CONFIG_DIR');
+  // Ignore the historical poisoned value LIFEOS_CONFIG_DIR=<root>/LIFEOS.
+  const lifeosConfigDir = configuredConfigDir && resolve(configuredConfigDir) !== resolve(lifeosDir)
+    ? configuredConfigDir
+    : (resolve(lifeosRoot) === resolve(join(homedir(), '.claude'))
+      ? join(homedir(), '.config', 'LIFEOS')
+      : join(lifeosRoot, 'USER-data'));
+
+  return `## LifeOS Runtime Paths (authoritative)
+
+- {{LIFEOS_ROOT}} = ${JSON.stringify(lifeosRoot)}
+- {{LIFEOS_DIR}} = ${JSON.stringify(lifeosDir)}
+- {{LIFEOS_CONFIG_DIR}} = ${JSON.stringify(lifeosConfigDir)}
+
+Resolve every \`{{LIFEOS_*}}\` placeholder to the value above before invoking Read, Edit, Write, Glob, Grep, or Bash. Never pass an unresolved LifeOS placeholder to a tool. In executable shell snippets, quoted shell variables such as \`"\${LIFEOS_ROOT}/skills"\` are intentional and are expanded by the shell instead.`;
 }
 
 // v5.0: loadStartupFiles removed — static files now loaded via @imports in CLAUDE.md.template
@@ -385,12 +423,18 @@ async function checkActiveProgress(paiDir: string): Promise<string | null> {
 
 async function main() {
   try {
+    // Load settings before the subagent check: subagents skip personal dynamic
+    // context, but still need the authoritative path mapping used by skills.
+    const settings = loadSettings();
+    const runtimePathContext = getRuntimePathContext(settings);
+
     // Subagents don't need dynamic context injection
     const claudeProjectDir = process.env.CLAUDE_PROJECT_DIR || '';
     const isSubagent = claudeProjectDir.includes('/.claude/Agents/') ||
                       process.env.CLAUDE_AGENT_TYPE !== undefined;
 
     if (isSubagent) {
+      console.log(`<system-reminder>\n${runtimePathContext}\n</system-reminder>`);
       console.error('🤖 Subagent session - skipping context loading');
       process.exit(0);
     }
@@ -403,8 +447,7 @@ async function main() {
     recordSessionStart();
     console.error('⏱️ Session start time recorded');
 
-    // Load settings for dynamic context controls
-    const settings = loadSettings();
+    // Settings were loaded before the subagent check so paths are always grounded.
     console.error('✅ Loaded settings.json');
 
     // v5.0: Static startup files now loaded via @imports in CLAUDE.md (native Claude Code mechanism)
@@ -440,19 +483,20 @@ async function main() {
       console.error('⏭️ Skipped learning readback (disabled)');
     }
 
-    // Inject dynamic context if we have any
-    if (relationshipContext || learningContext) {
+    // Always inject the runtime path contract; append optional dynamic context.
+    {
+      const dynamicContext = relationshipContext || learningContext
+        ? `\n---\n${relationshipContext ?? ''}${learningContext ? '\n---\n' + learningContext : ''}\n---\nDynamic context loaded. Constitutional rules are in the system prompt (LIFEOS/LIFEOS_SYSTEM_PROMPT.md). Operational procedures are in CLAUDE.md.`
+        : '';
       const message = `<system-reminder>
 LifeOS Dynamic Context (Auto-loaded at Session Start)
-${relationshipContext ?? ''}${learningContext ? '\n---\n' + learningContext : ''}
----
-Dynamic context loaded. Constitutional rules are in the system prompt (LIFEOS/LIFEOS_SYSTEM_PROMPT.md). Operational procedures are in CLAUDE.md.
+${runtimePathContext}${dynamicContext}
 </system-reminder>`;
 
       console.log(message);
-      console.log('\n✅ LifeOS dynamic context loaded...');
-    } else {
-      console.log('\n✅ LifeOS session ready...');
+      console.log(relationshipContext || learningContext
+        ? '\n✅ LifeOS dynamic context loaded...'
+        : '\n✅ LifeOS session ready...');
     }
 
     // Active work summary

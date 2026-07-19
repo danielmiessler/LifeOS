@@ -136,7 +136,7 @@ Canva is NOT the right export when code is the destination — the round-trip fr
 For tight hand-offs where the user will write the code themselves, export just `tokens.json`:
 
 ```bash
-bun $LIFEOS_ROOT/skills/Webdesign/Tools/DriveClaudeDesign.ts export tokens path/to/out.json
+bun "${LIFEOS_ROOT}/skills/Webdesign/Tools/DriveClaudeDesign.ts" export tokens path/to/out.json
 ```
 
 This is useful when:

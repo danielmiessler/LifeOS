@@ -101,14 +101,14 @@ The learning system captures signals across multiple sources. Read ALL of them �
 #### 2a: Algorithm Reflections (primary)
 
 ```
-Read $LIFEOS_DIR/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+Read {{LIFEOS_DIR}}/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 Parse each line as JSON. This is the richest source — Q1/Q2/Q3 self-reflection after each Algorithm run.
 ```
 
 #### 2b: Rating Signals
 
 ```
-Read $LIFEOS_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl
+Read {{LIFEOS_DIR}}/MEMORY/LEARNING/SIGNALS/ratings.jsonl
 Focus on entries with rating <= 5. Extract the response_preview and sentiment_summary
 to understand WHAT went wrong from the user's perspective (not just the algorithm's self-assessment).
 ```
@@ -116,7 +116,7 @@ to understand WHAT went wrong from the user's perspective (not just the algorith
 #### 2c: Algorithm-Specific Learnings
 
 ```
-Read all files in $LIFEOS_DIR/MEMORY/LEARNING/ALGORITHM/ (latest month first, then previous month)
+Read all files in {{LIFEOS_DIR}}/MEMORY/LEARNING/ALGORITHM/ (latest month first, then previous month)
 These are detailed learning captures from low-sentiment sessions — they contain root cause analysis
 that reflections alone may miss.
 ```
@@ -124,7 +124,7 @@ that reflections alone may miss.
 #### 2d: Failure Patterns
 
 ```
-Read $LIFEOS_DIR/MEMORY/LEARNING/FAILURES/ (latest month, plus ROOT_CAUSE_ANALYSIS.md)
+Read {{LIFEOS_DIR}}/MEMORY/LEARNING/FAILURES/ (latest month, plus ROOT_CAUSE_ANALYSIS.md)
 These capture recurring failure patterns. Cross-reference against the Algorithm digest from Step 1
 to identify which Algorithm rules SHOULD have prevented these failures but didn't.
 ```
@@ -141,19 +141,19 @@ Use Agent tool with subagent_type=general-purpose:
 You have four data sources to analyze:
 
 SOURCE 1: algorithm-reflections.jsonl (Step 2a)
-Read $LIFEOS_DIR/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
+Read {{LIFEOS_DIR}}/MEMORY/LEARNING/REFLECTIONS/algorithm-reflections.jsonl
 Parse each line as JSON.
 For EACH entry, analyze Q2 (algorithm improvements).
 
 SOURCE 2: Low-rated sessions from ratings.jsonl (Step 2b)
-Read $LIFEOS_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl
+Read {{LIFEOS_DIR}}/MEMORY/LEARNING/SIGNALS/ratings.jsonl
 Filter to rating <= 5. For each, extract what went wrong.
 
 SOURCE 3: Algorithm learning files (Step 2c)
-Read files in $LIFEOS_DIR/MEMORY/LEARNING/ALGORITHM/ (2026-03/ then 2026-02/)
+Read files in {{LIFEOS_DIR}}/MEMORY/LEARNING/ALGORITHM/ (2026-03/ then 2026-02/)
 
 SOURCE 4: Failure patterns (Step 2d)
-Read $LIFEOS_DIR/MEMORY/LEARNING/FAILURES/ latest month + ROOT_CAUSE_ANALYSIS.md
+Read {{LIFEOS_DIR}}/MEMORY/LEARNING/FAILURES/ latest month + ROOT_CAUSE_ANALYSIS.md
 
 For EACH signal across ALL sources, classify the theme using this routing table:
 
@@ -212,7 +212,7 @@ Before proposing Algorithm changes, verify that the Algorithm's Claude Code refe
 Use Agent tool with subagent_type=claude-code-guide:
 
 "The LifeOS Algorithm has a Platform Capabilities table referencing Claude Code features.
-Read the current Algorithm spec at $LIFEOS_DIR/ALGORITHM/v{VERSION}.md (get version from $LIFEOS_DIR/ALGORITHM/LATEST).
+Read the current Algorithm spec at {{LIFEOS_DIR}}/ALGORITHM/v{VERSION}.md (get version from {{LIFEOS_DIR}}/ALGORITHM/LATEST).
 
 Verify that:
 1. All subagent_type values in the table are valid current types

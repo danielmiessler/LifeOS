@@ -1,11 +1,12 @@
 #!/usr/bin/env bun
 /**
- * @version 1.0.0
+ * @version 1.1.0
  * PreToolGuard.hook.ts — the ONE PreToolUse blocking-guard dispatcher.
  *
  * Consolidation (2026-07-11, security-hook unification): merges the three
  * PreToolUse BLOCKERS into one process, reading stdin ONCE:
  *
+ *   All tools                 → unresolved LifeOS model-path guard
  *   Write | Edit | MultiEdit → SystemFileGuard.check   (deny-list → SYSTEM file)
  *   Bash                     → CommunicationSkillGuard.check (raw email send)
  *                              then EgressClassGuard.check     (over-ceiling Tier-2 egress)
@@ -48,6 +49,40 @@ import { check as egressClassGuard } from "./EgressClassGuard.hook";
 type BlockResult = { block: true; message: string } | null;
 type GuardCheck = (input: any) => BlockResult;
 
+const UNRESOLVED_LIFEOS_PATH = /\{\{LIFEOS_(?:ROOT|DIR|CONFIG_DIR)\}\}(?:\/|$)/;
+
+/**
+ * Inspect only executable/path-bearing fields. Placeholder text is legitimate
+ * Markdown content, so Write/Edit bodies must not be rejected merely because
+ * they document the LifeOS path convention.
+ */
+function unresolvedLifeosPathGuard(input: any): BlockResult {
+  const tool = typeof input?.tool_name === "string" ? input.tool_name : "";
+  const toolInput = input?.tool_input && typeof input.tool_input === "object" ? input.tool_input : {};
+  const candidates: unknown[] = [];
+
+  if (tool === "Bash") candidates.push(toolInput.command);
+  if (tool === "Read" || tool === "Write" || tool === "Edit" || tool === "MultiEdit") {
+    candidates.push(toolInput.file_path, toolInput.path);
+    if (Array.isArray(toolInput.edits)) {
+      for (const edit of toolInput.edits) candidates.push(edit?.file_path, edit?.path);
+    }
+  }
+  if (tool === "Glob") candidates.push(toolInput.path, toolInput.pattern);
+  if (tool === "Grep") candidates.push(toolInput.path);
+
+  const unresolved = candidates.find((value) =>
+    typeof value === "string" && UNRESOLVED_LIFEOS_PATH.test(value)
+  );
+  if (typeof unresolved !== "string") return null;
+
+  const placeholder = unresolved.match(UNRESOLVED_LIFEOS_PATH)?.[0]?.replace(/\/$/, "") ?? "{{LIFEOS_*}}";
+  return {
+    block: true,
+    message: `[LifeOSPathGuard] Unresolved ${placeholder} path reached ${tool}. Resolve it from the authoritative LifeOS Runtime Paths injected at SessionStart, then retry.`,
+  };
+}
+
 function isolate(name: string, fn: GuardCheck, input: any): BlockResult {
   try {
     return fn(input);
@@ -70,6 +105,12 @@ function main(): never {
   }
 
   const tool = typeof input.tool_name === "string" ? input.tool_name : "";
+
+  const unresolvedPath = unresolvedLifeosPathGuard(input);
+  if (unresolvedPath?.block) {
+    process.stderr.write(unresolvedPath.message);
+    process.exit(2);
+  }
 
   // Route to the guard(s) for this tool, in the pre-merge order.
   const checks: Array<[string, GuardCheck]> =

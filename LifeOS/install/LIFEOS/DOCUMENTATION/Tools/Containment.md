@@ -45,7 +45,7 @@ The underscore-prefix rule for `private-skills` is the interface contract. If a 
 Zones drift. Before running `ShadowRelease --create <version>`:
 
 1. Open `hooks/lib/containment-zones.ts`.
-2. Walk `$LIFEOS_ROOT/` at depth 1-2 (e.g. `ls -la && ls -la LIFEOS/ && ls -la skills/`) and compare against the zone list.
+2. Walk `{{LIFEOS_ROOT}}/` at depth 1-2 (e.g. `ls -la && ls -la LIFEOS/ && ls -la skills/`) and compare against the zone list.
 3. Ask, for every new top-level or first-nested dir since the last release:
     - Does it contain anything principal-specific? → **Add a zone or extend an existing one.**
     - Is it runtime state the harness writes? → **Add it to `install-state` or the RSYNC_EXCLUDES in `ShadowRelease.ts`.**
@@ -75,13 +75,13 @@ The concrete patterns live in `skills/_LIFEOS/Tools/ShadowRelease.ts` (`IDENTITY
 
 ### I am writing a new file and it needs to reference the principal
 
-Use `${HOME}`, `${LIFEOS_DIR}`, `${LIFEOS_DIR}`, or a configurable placeholder. Never hard-code absolute paths containing the principal's username in a public file.
+Use `${HOME}`, `{{LIFEOS_DIR}}`, `{{LIFEOS_DIR}}`, or a configurable placeholder. Never hard-code absolute paths containing the principal's username in a public file.
 
 ### I am writing a new file and it needs secrets
 
 1. Load from `process.env.X` at runtime.
 2. Document the var name in the file itself, no default value that contains the secret.
-3. Fallback path: read from `$LIFEOS_ROOT/.env` directly (file is the canonical env source; `LIFEOS/.env` and `~/.config/LIFEOS/.env` are symlinks to it). Use Node `fs.readFileSync` + a small parser, not a shared helper — no central env helper exists by design.
+3. Fallback path: read from `{{LIFEOS_ROOT}}/.env` directly (file is the canonical env source; `LIFEOS/.env` and `~/.config/LIFEOS/.env` are symlinks to it). Use Node `fs.readFileSync` + a small parser, not a shared helper — no central env helper exists by design.
 4. If the secret lookup misses, emit a single stderr warning and degrade gracefully — never silently continue with an empty string.
 
 ### I am adding personal notes, work sessions, or memory
@@ -162,7 +162,7 @@ Populated by the audit. Updated as files are sanitized or relocated.
 | `LIFEOS/TOOLS/SessionHarvester.ts` | Comment references derivation, not literal path | **KEEP** — uses `CLAUDE_DIR.replace(...)` dynamically |
 | `LIFEOS/TOOLS/gmail.ts` | Uses `homedir()` at runtime, not a literal path | **KEEP** — dynamic resolution |
 | `LIFEOS/PULSE/checks/health.ts` | Hardcoded site list for health monitoring | **TODO-REFACTOR** — move site list to `LIFEOS_CONFIG.yaml`, read at startup |
-| `agents/<agent>.md` | Write-permission path literals in agent definitions | **TODO-REFACTOR** — verify env-expansion support in Claude Code agent spec, then replace with `$LIFEOS_ROOT/...` |
+| `agents/<agent>.md` | Write-permission path literals in agent definitions | **TODO-REFACTOR** — verify env-expansion support in Claude Code agent spec, then replace with `{{LIFEOS_ROOT}}/...` |
 
 ---
 

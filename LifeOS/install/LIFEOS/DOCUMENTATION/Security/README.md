@@ -93,7 +93,7 @@ That's the entire defense delta beyond L1 and L2 on the ingress side.
 
 ## Release Deny-List (canonical sensitive-pattern source)
 
-The release pipeline has its own constitutional surface: the **deny-list** at `$LIFEOS_ROOT/skills/_LIFEOS/DENY_LIST.txt`. Plain text, one ripgrep-compatible regex per line, four sections (`Identity`, `Hostnames`, `Cloudflare IDs`, `Private Tokens`).
+The release pipeline has its own constitutional surface: the **deny-list** at `{{LIFEOS_ROOT}}/skills/_LIFEOS/DENY_LIST.txt`. Plain text, one ripgrep-compatible regex per line, four sections (`Identity`, `Hostnames`, `Cloudflare IDs`, `Private Tokens`).
 
 | Consumer | What it does |
 |----------|--------------|

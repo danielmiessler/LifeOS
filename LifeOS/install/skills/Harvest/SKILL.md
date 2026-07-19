@@ -43,7 +43,7 @@ Take one piece of content and ask a single question: **is there anything in here
 ```
 harvest https://youtu.be/VIDEO_ID
 # → fabric -y transcript → extract candidates → map to LifeOS surfaces → ranked table + verdict
-# → ALWAYS finishes: bun $LIFEOS_ROOT/skills/_HARVEST/Tools/harvest.ts <url> → KNOWLEDGE note written
+# → ALWAYS finishes: bun {{LIFEOS_ROOT}}/skills/_HARVEST/Tools/harvest.ts <url> → KNOWLEDGE note written
 
 harvest https://someblog.com/post-on-agent-memory
 # → WebFetch body → same analysis
@@ -57,5 +57,5 @@ harvest "long pasted idea about a new eval technique..."
 After completing the workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Harvest","workflow":"Harvest","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"Harvest","workflow":"Harvest","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> "${LIFEOS_DIR}/MEMORY/SKILLS/execution.jsonl"
 ```

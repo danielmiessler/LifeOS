@@ -10,7 +10,7 @@ version: 1.1.6
 
 > Fabric patterns are reusable moves in the LifeOS hill-climb (`LifeOs/LifeOsThesis.md`) — packaged transformations the DA applies to incoming content.
 
-**Primary Skill:** `$LIFEOS_ROOT/skills/Fabric/SKILL.md`
+**Primary Skill:** `{{LIFEOS_ROOT}}/skills/Fabric/SKILL.md`
 
 This document provides a quick reference. For full functionality, invoke the Fabric skill.
 
@@ -18,7 +18,7 @@ This document provides a quick reference. For full functionality, invoke the Fab
 
 ## Quick Reference
 
-**Patterns Location:** `$LIFEOS_ROOT/skills/Fabric/Patterns/` (240+ patterns)
+**Patterns Location:** `{{LIFEOS_ROOT}}/skills/Fabric/Patterns/` (240+ patterns)
 
 ### Invoke Fabric Skill
 
@@ -77,20 +77,20 @@ Only use `fabric` command for:
 User: "Update fabric patterns"
 -> Fabric skill > UpdatePatterns workflow
 -> Runs fabric -U
--> Syncs to $LIFEOS_ROOT/skills/Fabric/Patterns/
+-> Syncs to {{LIFEOS_ROOT}}/skills/Fabric/Patterns/
 ```
 
 **Manual:**
 ```bash
-fabric -U && rsync -av ~/.config/fabric/patterns/ $LIFEOS_ROOT/skills/Fabric/Patterns/
+fabric -U && rsync -av ~/.config/fabric/patterns/ "${LIFEOS_ROOT}/skills/Fabric/Patterns/"
 ```
 
 ---
 
 ## See Also
 
-- **Full Skill:** `$LIFEOS_ROOT/skills/Fabric/SKILL.md`
-- **Pattern Execution:** `$LIFEOS_ROOT/skills/Fabric/Workflows/ExecutePattern.md`
-- **Pattern Updates:** `$LIFEOS_ROOT/skills/Fabric/Workflows/UpdatePatterns.md`
-- **All Patterns:** `$LIFEOS_ROOT/skills/Fabric/Patterns/`
-- **Architecture:** `$LIFEOS_DIR/DOCUMENTATION/LifeosSystemArchitecture.md` — Master LifeOS architecture reference
+- **Full Skill:** `{{LIFEOS_ROOT}}/skills/Fabric/SKILL.md`
+- **Pattern Execution:** `{{LIFEOS_ROOT}}/skills/Fabric/Workflows/ExecutePattern.md`
+- **Pattern Updates:** `{{LIFEOS_ROOT}}/skills/Fabric/Workflows/UpdatePatterns.md`
+- **All Patterns:** `{{LIFEOS_ROOT}}/skills/Fabric/Patterns/`
+- **Architecture:** `{{LIFEOS_DIR}}/DOCUMENTATION/LifeosSystemArchitecture.md` — Master LifeOS architecture reference

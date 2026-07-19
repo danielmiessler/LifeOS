@@ -169,6 +169,17 @@ if (!existsSync(targetPath)) {
       addedEnv.push(k);
       continue;
     }
+    // These values define the active installation root and are owned by the
+    // installer. Preserving a stale value here makes every later session and
+    // the model-facing runtime-path contract point at the wrong tree.
+    if (
+      (k === "LIFEOS_ROOT" || k === "LIFEOS_DIR" || k === "LIFEOS_HOME") &&
+      curEnv[k] !== v
+    ) {
+      curEnv[k] = v;
+      updatedEnv.push(k);
+      continue;
+    }
     // Narrow migration for the shipped legacy collision only; arbitrary user
     // overrides remain untouched.
     if (

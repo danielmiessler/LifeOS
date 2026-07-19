@@ -20,7 +20,7 @@ Running the **CanonicalizeSkill** workflow in the **CreateSkill** skill to restr
 **REQUIRED FIRST:** Read the canonical structure:
 
 ```
-$LIFEOS_DIR/SkillSystem.md
+{{LIFEOS_DIR}}/SkillSystem.md
 ```
 
 This defines exactly what "canonicalize" means.
@@ -30,7 +30,7 @@ This defines exactly what "canonicalize" means.
 ## Step 2: Read the Current Skill
 
 ```bash
-$LIFEOS_ROOT/skills/[skill-name]/SKILL.md
+"${LIFEOS_ROOT}/skills/[skill-name]/SKILL.md"
 ```
 
 Identify what's wrong:
@@ -47,10 +47,10 @@ Identify what's wrong:
 ## Step 3: Backup
 
 ```bash
-cp -r $LIFEOS_ROOT/skills/[skill-name]/ $LIFEOS_ROOT/History/Backups/[skill-name]-backup-$(date +%Y%m%d)/
+cp -r "${LIFEOS_ROOT}/skills/[skill-name]/" "${LIFEOS_ROOT}/History/Backups/[skill-name]-backup-$(date +%Y%m%d)/"
 ```
 
-**Note:** Backups go to `$LIFEOS_ROOT/History/Backups/`, NEVER inside skill directories.
+**Note:** Backups go to `{{LIFEOS_ROOT}}/History/Backups/`, NEVER inside skill directories.
 
 ---
 
@@ -85,7 +85,7 @@ cp -r $LIFEOS_ROOT/skills/[skill-name]/ $LIFEOS_ROOT/History/Backups/[skill-name
 **Rename files if needed:**
 ```bash
 # Example: rename workflow files
-cd $LIFEOS_ROOT/skills/[SkillName]/Workflows/
+cd "${LIFEOS_ROOT}/skills/[SkillName]/Workflows/"
 mv create.md Create.md
 mv update-info.md UpdateInfo.md
 mv sync_repo.md SyncRepo.md
@@ -103,7 +103,7 @@ Scan for folders deeper than 2 levels:
 
 ```bash
 # Find any folders 3+ levels deep (FORBIDDEN)
-find $LIFEOS_ROOT/skills/[SkillName]/ -type d -mindepth 2 -maxdepth 3
+find "${LIFEOS_ROOT}/skills/[SkillName]/" -type d -mindepth 2 -maxdepth 3
 ```
 
 ### ❌ Common Violations to Fix
@@ -224,7 +224,7 @@ If the markdown body already had routing information in a different format, cons
 
 List workflow files:
 ```bash
-ls $LIFEOS_ROOT/skills/[SkillName]/Workflows/
+ls "${LIFEOS_ROOT}/skills/[SkillName]/Workflows/"
 ```
 
 For EACH file:

@@ -33,7 +33,7 @@ If a `REFERENCE` image is given, `Read` it and capture: dominant background grad
 ### 2. Pick the real expression-matched face
 
 ```bash
-bun $LIFEOS_ROOT/skills/Art/Tools/PickExpression.ts --topic "<TOPIC>"
+bun "${LIFEOS_ROOT}/skills/Art/Tools/PickExpression.ts" --topic "<TOPIC>"
 # or force it: --sentiment skeptical|neutral|positive|curious|thinking|disgust|shock|surprise|casual
 ```
 
@@ -41,7 +41,7 @@ Returns the path to a real expression-labeled headshot. `Read` it to confirm the
 
 *Optional `--generate-face`:* when the library has no fitting expression, generate a fresh expression FROM the real headshots as face refs (honors "a new face shot of me"):
 ```bash
-bun $LIFEOS_ROOT/skills/Art/Tools/Generate.ts --workflow=StyleMatchedThumbnail --model nano-banana-pro \
+bun "${LIFEOS_ROOT}/skills/Art/Tools/Generate.ts" --workflow=StyleMatchedThumbnail --model nano-banana-pro \
   --size 2K --aspect-ratio 1:1 --no-signature \
   --reference-image <headshot-clean.png> --reference-image <headshot-smiling.png> \
   --prompt "Photorealistic head-and-shoulders portrait of the man in the references, <EXPRESSION>, looking at camera, plain near-black background, studio lighting, NO text." \
@@ -61,7 +61,7 @@ His real thumbnails are a **solid deep-navy field `#1A2744`** plus, optionally, 
 
 **Solo layout** (Main-style: navy + supporting art + cutout face + text top-left):
 ```bash
-bun $LIFEOS_ROOT/skills/Art/Tools/ThumbnailText.ts \
+bun "${LIFEOS_ROOT}/skills/Art/Tools/ThumbnailText.ts" \
   --face "<headshot from step 2>" --art "<diagram.png, optional>" \
   --kicker "A DEEP DIVE ON MY" --title "PERSONAL AI" --subtitle "INFRASTRUCTURE" --tag "v2 (December 2025)" \
   --variant core --face-side right \
@@ -70,7 +70,7 @@ bun $LIFEOS_ROOT/skills/Art/Tools/ThumbnailText.ts \
 
 **Interview layout** (Sponsored/Main7-style: centered text + two framed stills + name labels):
 ```bash
-bun $LIFEOS_ROOT/skills/Art/Tools/ThumbnailText.ts --mode interview \
+bun "${LIFEOS_ROOT}/skills/Art/Tools/ThumbnailText.ts" --mode interview \
   --kicker "A CONVERSATION WITH" --title "GRANT LEE" --subtitle "ON BUILDING GAMMA" \
   --face host.png --face2 guest.png --name1 "{{PRINCIPAL_FULL_NAME}}" --name2 "Grant Lee" \
   --accent "#F5A623" --variant sponsored \

@@ -75,9 +75,9 @@ Collect the source path. If content is pasted, write it to a temp file first.
 Run the scanner:
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/MigrateScan.ts --source <path>
+bun "${LIFEOS_DIR}/TOOLS/MigrateScan.ts" --source <path>
 # or
-echo "$CONTENT" | bun $LIFEOS_DIR/TOOLS/MigrateScan.ts --stdin
+echo "$CONTENT" | bun "${LIFEOS_DIR}/TOOLS/MigrateScan.ts" --stdin
 ```
 
 Scanner output includes:
@@ -114,19 +114,19 @@ Based on the user's preference:
 
 **Fast path** (he says "approve all trusted"):
 ```bash
-bun $LIFEOS_DIR/TOOLS/MigrateApprove.ts --approve-all
+bun "${LIFEOS_DIR}/TOOLS/MigrateApprove.ts" --approve-all
 ```
 Commits everything non-UNCLEAR. Then walk through UNCLEAR chunks conversationally.
 
 **Category path** (he says "approve goals and wisdom, skip knowledge"):
 ```bash
-bun $LIFEOS_DIR/TOOLS/MigrateApprove.ts --approve-target TELOS/GOALS.md
-bun $LIFEOS_DIR/TOOLS/MigrateApprove.ts --approve-target TELOS/WISDOM.md
+bun "${LIFEOS_DIR}/TOOLS/MigrateApprove.ts" --approve-target TELOS/GOALS.md
+bun "${LIFEOS_DIR}/TOOLS/MigrateApprove.ts" --approve-target TELOS/WISDOM.md
 ```
 
 **Walk-through path** (he wants careful review):
 ```bash
-bun $LIFEOS_DIR/TOOLS/MigrateApprove.ts --review
+bun "${LIFEOS_DIR}/TOOLS/MigrateApprove.ts" --review
 ```
 Show each pending chunk. For each:
 - Show preview + proposed target + confidence + alternatives

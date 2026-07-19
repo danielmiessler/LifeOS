@@ -44,20 +44,33 @@ into the wrong tree. This is the layer the PR makes root-agnostic.
 workflows, `LIFEOS/DOCUMENTATION`, agents). These files carry literal shell
 commands and file references like `bun ~/.claude/LIFEOS/TOOLS/Foo.ts`, and the
 model executes them verbatim — on a custom-home install they fail (or worse,
-touch a parallel default install). The payload markdown was rewritten to two
-env vars that every session carries via the settings template's `env` block:
+touch a parallel default install). The payload markdown uses semantic path
+placeholders in model-facing prose and tool instructions:
 
-- `$LIFEOS_DIR` → `<configRoot>/LIFEOS` (existing) — for everything under `LIFEOS/`.
-- `$LIFEOS_ROOT` → `<configRoot>` (new) — for root-level paths (`skills/`,
+- `{{LIFEOS_DIR}}` → `<configRoot>/LIFEOS` — for everything under `LIFEOS/`.
+- `{{LIFEOS_ROOT}}` → `<configRoot>` — for root-level paths (`skills/`,
   `hooks/`, `agents/`, `History/`, `Pulse/`, `settings.json`, `.env`, …).
+- `{{LIFEOS_CONFIG_DIR}}` → the private USER-data home.
 
-Both values are `$HOME`-expanded at write time and retargeted by
-`InstallSettings` on a custom root, so the same markdown works on default and
-custom installs alike. Deliberately **not** rewritten: `~/.claude/projects/`
-(the harness's own session storage, which genuinely stays under `~/.claude`),
-prose describing the default install location, historical changelog entries,
-and the system prompt's constitutional privacy rule (a semantic change owned
-by upstream, not this PR).
+`LoadContext.hook.ts` grounds all three placeholders with their concrete values
+at every `SessionStart`, including subagent sessions, and instructs the model to
+resolve them before invoking Read/Edit/Write/Glob/Grep/Bash. Claude Code does
+not natively substitute arbitrary `{{...}}` tokens; this is an explicit LifeOS
+model-context contract. The settings template still carries `LIFEOS_ROOT`,
+`LIFEOS_DIR`, and `LIFEOS_CONFIG_DIR` as environment variables for executable
+shell code and runtime processes. As a fail-safe, `PreToolGuard.hook.ts` rejects
+unresolved LifeOS placeholders in Bash commands and Read/Write/Edit/Glob/Grep
+path fields before a tool can touch the wrong tree; placeholder text in document
+content remains allowed.
+
+The two layers stay deliberately distinct: prose and model tool paths use
+`{{LIFEOS_*}}`; executable shell snippets use quoted variables such as
+`"${LIFEOS_DIR}/TOOLS/Doctor.ts"`. A skill's own `SKILL.md` may use Claude
+Code's native `${CLAUDE_SKILL_DIR}` substitution. Supporting workflow/reference
+files do not rely on that substitution because they are loaded later through
+Read rather than rendered as the skill entrypoint. Harness session storage is
+rooted at `{{LIFEOS_ROOT}}/projects/`, so arbitrary `CLAUDE_CONFIG_DIR` installs
+do not fall back to the real `~/.claude` tree.
 
 ## How we changed all the paths — one pattern, applied mechanically
 
@@ -126,4 +139,4 @@ end-to-end:
   isolation, exercise a root containing spaces, audit statusline/runtime commands,
   and assert the packaged nested LifeOS installer matches the authoritative skill.
 
-The current suite passes **82/82** checks.
+The current suite passes **93/93** checks.

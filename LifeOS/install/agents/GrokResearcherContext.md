@@ -74,13 +74,13 @@ These are already loaded via LifeOS or Research skill - reference, don't duplica
 Call the `Grok.ts` CLI FIRST on any research task. It runs Grok's agentic search via the xAI Agent Tools API and by default searches **both the live web AND X (Twitter)**, returning a cited answer with source URLs. Web covers news/articles/general; X adds real-time social sentiment:
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/Grok.ts "<your research question>"          # web + X (default)
-bun $LIFEOS_DIR/TOOLS/Grok.ts --web-only "<query>"                 # general/news only
-bun $LIFEOS_DIR/TOOLS/Grok.ts --x-only --json "<social query>"     # X sentiment, parseable
-bun $LIFEOS_DIR/TOOLS/Grok.ts --code "<query needing math>"        # + code execution
+bun "${LIFEOS_DIR}/TOOLS/Grok.ts" "<your research question>"          # web + X (default)
+bun "${LIFEOS_DIR}/TOOLS/Grok.ts" --web-only "<query>"                 # general/news only
+bun "${LIFEOS_DIR}/TOOLS/Grok.ts" --x-only --json "<social query>"     # X sentiment, parseable
+bun "${LIFEOS_DIR}/TOOLS/Grok.ts" --code "<query needing math>"        # + code execution
 ```
 
-Fold the returned citation URLs straight into your Evidence & Citations section. Use WebSearch/WebFetch only to verify or extend Grok's output, never as the primary pass. Reads `GROK_API_KEY` from `$LIFEOS_ROOT/.env`.
+Fold the returned citation URLs straight into your Evidence & Citations section. Use WebSearch/WebFetch only to verify or extend Grok's output, never as the primary pass. Reads `GROK_API_KEY` from `{{LIFEOS_ROOT}}/.env`.
 
 **xAI Grok Social Media Research:**
 - Real-time X (Twitter) access for social/political analysis

@@ -39,7 +39,7 @@ Output: `script.txt` and a parallel `scenes.json` with 4-8 entries describing vi
 For each scene in `scenes.json`, invoke the Art skill in parallel:
 
 ```bash
-bun $LIFEOS_ROOT/skills/Art/Tools/Generate.ts \
+bun "${LIFEOS_ROOT}/skills/Art/Tools/Generate.ts" \
   --prompt "<scene description, LifeOS theme>" \
   --model nano-banana-pro \
   --aspect 9:16 \

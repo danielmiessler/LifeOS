@@ -16,8 +16,8 @@ Running **DailyBrief** in **LocalIntelligence**...
 ## Procedure
 
 1. Resolve hometown via `Tools/Hometown.ts`. If absent, surface a setup-help message and exit.
-2. Run `bun run $LIFEOS_ROOT/skills/LocalIntelligence/Tools/Refresh.ts` — orchestrator runs all eight fetchers via `Promise.allSettled`.
-3. Read the resulting `$LIFEOS_DIR/MEMORY/DATA/LocalIntelligence/latest.json`.
+2. Run `bun run "${LIFEOS_ROOT}/skills/LocalIntelligence/Tools/Refresh.ts"` — orchestrator runs all eight fetchers via `Promise.allSettled`.
+3. Read the resulting `{{LIFEOS_DIR}}/MEMORY/DATA/LocalIntelligence/latest.json`.
 4. Summarize top 3 items per category, with date and source link.
 5. Surface any `meta.errors` entries — name the failing source, do not hide it.
 
@@ -30,11 +30,11 @@ Running **DailyBrief** in **LocalIntelligence**...
 | "json only" | `--json` | Emit raw JSON, no chat summary |
 
 ```bash
-bun run $LIFEOS_ROOT/skills/LocalIntelligence/Tools/Refresh.ts [--force] [--summary] [--json]
+bun run "${LIFEOS_ROOT}/skills/LocalIntelligence/Tools/Refresh.ts" [--force] [--summary] [--json]
 ```
 
 ## Output
 
-- File: `$LIFEOS_DIR/MEMORY/DATA/LocalIntelligence/<YYYY-MM-DD>_<city>_<state>_digest.json`
-- Symlink: `$LIFEOS_DIR/MEMORY/DATA/LocalIntelligence/latest.json`
+- File: `{{LIFEOS_DIR}}/MEMORY/DATA/LocalIntelligence/<YYYY-MM-DD>_<city>_<state>_digest.json`
+- Symlink: `{{LIFEOS_DIR}}/MEMORY/DATA/LocalIntelligence/latest.json`
 - Chat: top-3 items per section + `meta.errors` listed if any.

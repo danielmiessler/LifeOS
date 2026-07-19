@@ -18,7 +18,7 @@ Every Pulse module is a sub-surface of the Dashboard: real-time observability, v
 **Implementation:** The unified daemon of LifeOS — a single always-on process that handles cron jobs, voice notifications, hook validation, observability APIs + dashboard, Telegram chat, iMessage chat, and GitHub work polling. Pulse is THE local runtime for all LifeOS services. It absorbed VoiceServer, TelegramBot, the iMessage bot, and the Observability server into crash-isolated modules running under one process, one port (31337), and one launchd plist (`com.lifeos.pulse`).
 
 **Version:** 2.0 (2026-04-01)
-**Location:** `$LIFEOS_DIR/PULSE/`
+**Location:** `{{LIFEOS_DIR}}/PULSE/`
 
 ---
 
@@ -118,7 +118,7 @@ sendVoiceSummary(ctx, fullText) — fire-and-forget IIFE
 
 - **Module load order matters for ELEVENLABS_API_KEY scrubbing.** Telegram imports first in Pulse; if it deletes `ELEVENLABS_API_KEY` from `process.env` at import time, VoiceServer's later init reads `apiKeyConfigured: false` and the CLI `/notify` channel goes dark. Telegram captures the key into a module-local const but does NOT delete from env. (The Anthropic-key scrubs at module top do still delete — those keys have a single consumer; the ElevenLabs key has two.)
 - **disallowedTools shape gotcha.** The SDK's `disallowedTools?: string[]` field accepts tool **names** (`"Bash"`, `"Read"`), not glob patterns like `"Bash(curl *31337/notify*)"` (that's Claude Code's `settings.json permissions.deny` syntax). An earlier attempt to backstop the prompt-level `/notify` ban via `disallowedTools` patterns was silently ignored by the SDK. The hard barrier is now the `LIFEOS_NOTIFICATION_CHANNEL` env-var channel gate inside each voice-firing hook (see "Channel separation" row above) — `canUseTool` stops the model from calling /notify directly, but the env gate stops the hooks themselves from leaking even when the model behaves perfectly. The two together close every path: model→Bash→/notify blocked by canUseTool; SDK subprocess→Stop hook→/notify blocked by the env gate.
-- **SDK subprocess Stop hooks were the actual desktop-voice leak.** Discovered 2026-05-24: even with `canUseTool` blocking model-initiated `/notify` calls, the SDK subprocess's own Stop / StopFailure / UserPromptSubmit events fired the user-level hooks in `$LIFEOS_ROOT/settings.json`, four of which POST to `localhost:31337/notify`. `voice-events.jsonl` showed Telegram replies (e.g., "can't write from Telegram. Open a terminal session.") being played on the desktop speaker. Fixed by propagating `LIFEOS_NOTIFICATION_CHANNEL=telegram` via `sdkOptions.env` so the hooks themselves can detect the remote channel and skip — see `hooks/lib/notification-channel.ts` and the "Channel separation" row above.
+- **SDK subprocess Stop hooks were the actual desktop-voice leak.** Discovered 2026-05-24: even with `canUseTool` blocking model-initiated `/notify` calls, the SDK subprocess's own Stop / StopFailure / UserPromptSubmit events fired the user-level hooks in `{{LIFEOS_ROOT}}/settings.json`, four of which POST to `localhost:31337/notify`. `voice-events.jsonl` showed Telegram replies (e.g., "can't write from Telegram. Open a terminal session.") being played on the desktop speaker. Fixed by propagating `LIFEOS_NOTIFICATION_CHANNEL=telegram` via `sdkOptions.env` so the hooks themselves can detect the remote channel and skip — see `hooks/lib/notification-channel.ts` and the "Channel separation" row above.
 - **Sonnet via Inference.ts is slower than naive estimates.** Real measured cost is 4-6 seconds for short-summary tasks (claude CLI subprocess spawn + actual inference). The outer race was originally 3.5s — too tight, fired routinely. Now 10s. Total post-text voice latency is typically 5-8s.
 
 ### Doctrine cross-refs
@@ -273,7 +273,7 @@ enabled = true
 
 ### Script Jobs (`type = "script"`)
 
-Run a shell command via `bash -c`. The working directory is `$LIFEOS_ROOT/Pulse/`. Environment variables from `$LIFEOS_ROOT/.env` are available. The process has a 60-second timeout (SIGTERM on expiry).
+Run a shell command via `bash -c`. The working directory is `{{LIFEOS_ROOT}}/Pulse/`. Environment variables from `{{LIFEOS_ROOT}}/.env` are available. The process has a 60-second timeout (SIGTERM on expiry).
 
 Cost: $0. All computation is local or uses free APIs.
 
@@ -346,7 +346,7 @@ The threshold is hardcoded at `MAX_FAILURES = 3` in `pulse.ts`.
 
 ### state.json
 
-Located at `$LIFEOS_ROOT/Pulse/state/state.json`. Written atomically (write to `.tmp`, rename) after each job execution.
+Located at `{{LIFEOS_ROOT}}/Pulse/state/state.json`. Written atomically (write to `.tmp`, rename) after each job execution.
 
 ```json
 {
@@ -400,9 +400,9 @@ Pulse is managed by macOS launchd via `com.lifeos.pulse.plist`. Key properties:
 | `RunAtLoad` | `true` | Starts on login |
 | `KeepAlive` | `true` | Auto-restarts on crash |
 | `ThrottleInterval` | `30` | Minimum 30 seconds between restart attempts |
-| `WorkingDirectory` | `$LIFEOS_ROOT/Pulse` | CWD for the process |
+| `WorkingDirectory` | `{{LIFEOS_ROOT}}/Pulse` | CWD for the process |
 
-Logs go to `$LIFEOS_ROOT/Pulse/logs/pulse-stdout.log` and `pulse-stderr.log`.
+Logs go to `{{LIFEOS_ROOT}}/Pulse/logs/pulse-stdout.log` and `pulse-stderr.log`.
 
 ### Startup
 
@@ -471,7 +471,7 @@ output = "telegram"
 enabled = true
 ```
 
-3. Restart Pulse: `$LIFEOS_ROOT/Pulse/manage.sh restart`
+3. Restart Pulse: `{{LIFEOS_ROOT}}/Pulse/manage.sh restart`
 
 ### Modifying an Existing Job
 
@@ -586,7 +586,7 @@ With all jobs enabled including proactive-suggestions: ~$0.065/day.
 ### Check Status
 
 ```bash
-$LIFEOS_ROOT/Pulse/manage.sh status
+"${LIFEOS_ROOT}/Pulse/manage.sh" status
 ```
 
 Shows PID, uptime, and per-job last run times with failure counts.
@@ -595,13 +595,13 @@ Shows PID, uptime, and per-job last run times with failure counts.
 
 ```bash
 # Recent stdout (structured JSON)
-tail -50 $LIFEOS_ROOT/Pulse/logs/pulse-stdout.log
+tail -50 "${LIFEOS_ROOT}/Pulse/logs/pulse-stdout.log"
 
 # Recent errors
-tail -50 $LIFEOS_ROOT/Pulse/logs/pulse-stderr.log
+tail -50 "${LIFEOS_ROOT}/Pulse/logs/pulse-stderr.log"
 
 # Follow live
-tail -f $LIFEOS_ROOT/Pulse/logs/pulse-stdout.log | bun -e "process.stdin.on('data', d => { try { const e = JSON.parse(d); console.log(e.ts, e.level, e.msg) } catch {} })"
+tail -f "${LIFEOS_ROOT}/Pulse/logs/pulse-stdout.log" | bun -e "process.stdin.on('data', d => { try { const e = JSON.parse(d); console.log(e.ts, e.level, e.msg) } catch {} })"
 ```
 
 ### Common Issues
@@ -611,10 +611,10 @@ tail -f $LIFEOS_ROOT/Pulse/logs/pulse-stdout.log | bun -e "process.stdin.on('dat
 | "NOT RUNNING (no PID file)" | Pulse not started or crashed without recovery | `manage.sh install` |
 | "DEAD (stale PID)" | Process died but launchd did not restart | `manage.sh restart` |
 | Job stuck in circuit breaker | 3+ consecutive failures | Fix the check script, then `manage.sh restart` |
-| "Telegram dispatch skipped" | Missing env vars | Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_PRINCIPAL_CHAT_ID` in `$LIFEOS_ROOT/.env` |
-| "ntfy dispatch skipped" | Missing env var | Set `NTFY_TOPIC` in `$LIFEOS_ROOT/.env` |
+| "Telegram dispatch skipped" | Missing env vars | Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_PRINCIPAL_CHAT_ID` in `{{LIFEOS_ROOT}}/.env` |
+| "ntfy dispatch skipped" | Missing env var | Set `NTFY_TOPIC` in `{{LIFEOS_ROOT}}/.env` |
 | Voice notifications silent | Voice module not running or Pulse down | `manage.sh restart`; check `[voice] enabled = true` in PULSE.toml |
-| Calendar returns NO_EVENTS always | Missing or expired refresh token | Set `GOOGLE_CALENDAR_REFRESH_TOKEN` in `$LIFEOS_ROOT/.env` |
+| Calendar returns NO_EVENTS always | Missing or expired refresh token | Set `GOOGLE_CALENDAR_REFRESH_TOKEN` in `{{LIFEOS_ROOT}}/.env` |
 | State file corrupt | Interrupted write (unlikely, writes are atomic) | Delete `state/state.json` and restart |
 
 ### Manual Job Test
@@ -622,7 +622,7 @@ tail -f $LIFEOS_ROOT/Pulse/logs/pulse-stdout.log | bun -e "process.stdin.on('dat
 Run a check script directly to verify it works:
 
 ```bash
-cd $LIFEOS_ROOT/Pulse
+cd "${LIFEOS_ROOT}/Pulse"
 bun run checks/health.ts
 bun run checks/calendar.ts
 bun run checks/email.ts
@@ -634,7 +634,7 @@ bun run checks/github.ts
 ## File Inventory
 
 ```
-$LIFEOS_ROOT/Pulse/
+{{LIFEOS_ROOT}}/Pulse/
 ├── pulse.ts                  # Main daemon -- startup, module init, heartbeat loop
 ├── PULSE.toml                # Job + module configuration
 ├── manage.sh                 # Process management -- start/stop/status/install
@@ -682,7 +682,7 @@ $LIFEOS_ROOT/Pulse/
 
 LifeOS Pulse includes a native macOS menu bar app that shows daemon status at a glance. The menu bar app is launched automatically by Pulse on startup -- no separate launchd plist needed.
 
-**Location:** `$LIFEOS_DIR/PULSE/MenuBar/`
+**Location:** `{{LIFEOS_DIR}}/PULSE/MenuBar/`
 **Installed to:** `~/Applications/LifeOS Pulse.app`
 **Launched by:** Pulse process on startup (no separate launchd plist)
 
@@ -704,7 +704,7 @@ Reads `state/state.json` directly every 5 seconds (no HTTP endpoint needed). Che
 ### Building and Installing
 
 ```bash
-cd $LIFEOS_DIR/PULSE/MenuBar
+cd "${LIFEOS_DIR}/PULSE/MenuBar"
 bash install.sh    # Builds, deploys to ~/Applications, installs plist
 ```
 
@@ -735,7 +735,7 @@ Pulse includes an integrated HTTP hook validation server as the `hooks` module (
 
 ### Hook Configuration
 
-The hooks are configured in `$LIFEOS_ROOT/settings.json` as HTTP hooks pointing to `http://localhost:31337/hooks/*`.
+The hooks are configured in `{{LIFEOS_ROOT}}/settings.json` as HTTP hooks pointing to `http://localhost:31337/hooks/*`.
 
 ---
 
@@ -802,7 +802,7 @@ This ensures the browser always picks up new builds without stale content.
 After building the Observatory dashboard, Pulse must be restarted to pick up new files:
 
 ```bash
-cd $LIFEOS_DIR/Observability && bun run build
+cd "${LIFEOS_DIR}/Observability" && bun run build
 launchctl stop com.lifeos.pulse && launchctl start com.lifeos.pulse
 ```
 
@@ -849,7 +849,7 @@ Note: static catalogs baked into a page or module (e.g. Amber's 11-input list mi
 - **Keepalive:** `: keepalive\n\n` comment every 25s per subscriber so corporate proxies / macOS loopback don't drop idle connections.
 - **Disable:** `LIFEOS_NO_SSE=1` env var → 503 on the endpoint, dashboard falls back to legacy 2s polling identically to pre-change behavior.
 - **Dashboard contract:** `useAlgorithmState` hook tries SSE on mount; on three consecutive `onerror` events drops the EventSource and reverts polling to 2s. While SSE is connected, polling drops to 30s (safety net).
-- **Atomic emitter:** `bun $LIFEOS_DIR/TOOLS/AlgoPhase.ts <phase>` writes the current session's phase into `work.json` in ~22ms (p95 27ms). The Algorithm doctrine prescribes invocation at every phase transition. (Until 2026-07-11 a `TheRouter.hook.ts` pre-emit via `markAlgorithmStarting` closed the wrong-phase window at session start; that hook was deleted with the mode/tier retirement, so the first `AlgoPhase.ts`/`ISASync` write now sets the phase.)
+- **Atomic emitter:** `bun "${LIFEOS_DIR}/TOOLS/AlgoPhase.ts" <phase>` writes the current session's phase into `work.json` in ~22ms (p95 27ms). The Algorithm doctrine prescribes invocation at every phase transition. (Until 2026-07-11 a `TheRouter.hook.ts` pre-emit via `markAlgorithmStarting` closed the wrong-phase window at session start; that hook was deleted with the mode/tier retirement, so the first `AlgoPhase.ts`/`ISASync` write now sets the phase.)
 
 Full architectural reasoning in `MEMORY/WORK/20260524-072107_pulse-agents-realtime-phase-tracking/ISA.md`.
 

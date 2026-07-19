@@ -185,6 +185,6 @@ The ID-stability rule (v6.5.0) is preserved across iterations: ISC IDs never re-
 - All modes: [`README.md`](README.md)
 - Goal anchor mechanism: `../v6.5.0.md` § "Principal-Stated Goal"
 - Density gate (one-question pattern): `../v6.5.0.md` § "Density × Tier Gate"
-- Loop skill (router): `$LIFEOS_ROOT/skills/Loop/SKILL.md`
+- Loop skill (router): `{{LIFEOS_ROOT}}/skills/Loop/SKILL.md`
 - LoopRunner.ts (pending): LIFEOS/TOOLS/LoopRunner.ts — next ISA, not yet on disk
 - Algorithm v6.6.0 doctrine bump (pending): `../v6.6.0.md` — paired with LoopRunner ship

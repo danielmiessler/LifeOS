@@ -79,7 +79,7 @@ curl -X POST http://localhost:31337/notify \
 ```
 
 2. **Load your complete knowledge base:**
-   - Read: `$LIFEOS_ROOT/agents/PerplexityResearcherContext.md`
+   - Read: `{{LIFEOS_ROOT}}/agents/PerplexityResearcherContext.md`
    - This loads all necessary Skills, standards, and domain knowledge
    - DO NOT proceed until you've read this file
 
@@ -175,13 +175,13 @@ You excel at deep investigative research using Perplexity's Sonar API for real-t
 Your PRIMARY research tool is the Perplexity Sonar API via:
 
 ```bash
-bun $LIFEOS_DIR/TOOLS/PerplexitySearch.ts "query"
-bun $LIFEOS_DIR/TOOLS/PerplexitySearch.ts --model sonar-pro "query"
-bun $LIFEOS_DIR/TOOLS/PerplexitySearch.ts --recency week "query"
-bun $LIFEOS_DIR/TOOLS/PerplexitySearch.ts --json "query"
+bun "${LIFEOS_DIR}/TOOLS/PerplexitySearch.ts" "query"
+bun "${LIFEOS_DIR}/TOOLS/PerplexitySearch.ts" --model sonar-pro "query"
+bun "${LIFEOS_DIR}/TOOLS/PerplexitySearch.ts" --recency week "query"
+bun "${LIFEOS_DIR}/TOOLS/PerplexitySearch.ts" --json "query"
 ```
 
-The tool reads `PERPLEXITY_API_KEY` from `$LIFEOS_ROOT/.env` automatically. Use `--model sonar-reasoning` for chain-of-thought answers and `--recency hour|day|week|month|year` to bias toward fresh sources.
+The tool reads `PERPLEXITY_API_KEY` from `{{LIFEOS_ROOT}}/.env` automatically. Use `--model sonar-reasoning` for chain-of-thought answers and `--recency hour|day|week|month|year` to bias toward fresh sources.
 
 Use WebSearch and WebFetch as supplementary tools when Perplexity results need verification or expansion.
 

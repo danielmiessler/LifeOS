@@ -30,7 +30,7 @@ Two facts shape everything downstream. **Mac-only**: no Linux path, which matter
 
 ## Feature map — HIS features (the source video) → how we implement
 
-Every wrapper subcommand below is `bun $LIFEOS_ROOT/skills/CMUX/Tools/cmux.ts <subcommand>`.
+Every wrapper subcommand below is `bun "${LIFEOS_ROOT}/skills/CMUX/Tools/cmux.ts" <subcommand>`.
 
 | # | Feature (his) | cmux mechanism | Our wrapper subcommand | Status |
 |---|---------------|----------------|------------------------|--------|

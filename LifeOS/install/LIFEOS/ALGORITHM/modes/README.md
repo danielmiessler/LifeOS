@@ -110,8 +110,8 @@ E-level sets the tier; mode sets the execution pattern. Both can be set simultan
 - Pulse tab source of truth: `LIFEOS/PULSE/Observability/src/app/agents/page.tsx` lines 23-30
 - Dashboard components: `LIFEOS/PULSE/Observability/src/components/activity/{UnifiedWorkDashboard,OptimizeDashboard,LoopDashboard,NativeDashboard,NoveltyDashboard}.tsx`
 - Ladder page: `LIFEOS/PULSE/Observability/src/app/ladder/page.tsx`
-- Loop skill: `$LIFEOS_ROOT/skills/Loop/SKILL.md`
-- Ideate skill (router stub): `$LIFEOS_ROOT/skills/Ideate/SKILL.md`
+- Loop skill: `{{LIFEOS_ROOT}}/skills/Loop/SKILL.md`
+- Ideate skill (router stub): `{{LIFEOS_ROOT}}/skills/Ideate/SKILL.md`
 - Parameter schema: `../parameter-schema.md`
 - Capabilities: the system-prompt skill list is the sole inventory (capabilities.md removed at v7.0.0)
 - Target types: `../target-types.md`

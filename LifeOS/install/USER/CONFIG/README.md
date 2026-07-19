@@ -19,10 +19,10 @@ single source of truth for "where does my stuff live and how do I authenticate."
 `LIFEOS_CONFIG.yaml` itself does **not** store credentials. Secrets live in
 two places:
 
-- **`$LIFEOS_ROOT/.env`** — environment variables (`ELEVENLABS_API_KEY`,
+- **`{{LIFEOS_ROOT}}/.env`** — environment variables (`ELEVENLABS_API_KEY`,
   `TELEGRAM_BOT_TOKEN`, etc.). Pulse loads this on boot. The installer
   writes here when you complete the voice / Telegram steps.
-- **`$LIFEOS_DIR/USER/CREDENTIALS/`** — credential JSON files (Google
+- **`{{LIFEOS_DIR}}/USER/CREDENTIALS/`** — credential JSON files (Google
   OAuth, AWS profiles, etc.). The directory does not exist by default;
   create it on demand and `chmod 700` it.
 

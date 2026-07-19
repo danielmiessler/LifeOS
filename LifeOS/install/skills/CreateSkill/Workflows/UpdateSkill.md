@@ -20,7 +20,7 @@ Running the **UpdateSkill** workflow in the **CreateSkill** skill to modify exis
 **REQUIRED FIRST:** Read the canonical structure:
 
 ```
-$LIFEOS_DIR/SkillSystem.md
+{{LIFEOS_DIR}}/SkillSystem.md
 ```
 
 ---
@@ -28,7 +28,7 @@ $LIFEOS_DIR/SkillSystem.md
 ## Step 2: Read the Current Skill
 
 ```bash
-$LIFEOS_ROOT/skills/[SkillName]/SKILL.md
+"${LIFEOS_ROOT}/skills/[SkillName]/SKILL.md"
 ```
 
 Understand the current:
@@ -57,12 +57,12 @@ What needs to change?
 
 2. **Create the workflow file:**
 ```bash
-touch $LIFEOS_ROOT/skills/[SkillName]/Workflows/[WorkflowName].md
+touch "${LIFEOS_ROOT}/skills/[SkillName]/Workflows/[WorkflowName].md"
 ```
 
 Example:
 ```bash
-touch $LIFEOS_ROOT/skills/_DAEMON/Workflows/UpdatePublicRepo.md
+touch "${LIFEOS_ROOT}/skills/_DAEMON/Workflows/UpdatePublicRepo.md"
 ```
 
 3. **Add entry to `## Workflow Routing` section in SKILL.md:**
@@ -88,13 +88,13 @@ description: [What it does]. USE WHEN [updated intent triggers using OR]. [Capab
 
 1. **Create TitleCase tool file:**
 ```bash
-touch $LIFEOS_ROOT/skills/[SkillName]/Tools/ToolName.ts
-touch $LIFEOS_ROOT/skills/[SkillName]/Tools/ToolName.help.md
+touch "${LIFEOS_ROOT}/skills/[SkillName]/Tools/ToolName.ts"
+touch "${LIFEOS_ROOT}/skills/[SkillName]/Tools/ToolName.help.md"
 ```
 
 2. **Ensure Tools/ directory exists:**
 ```bash
-mkdir -p $LIFEOS_ROOT/skills/[SkillName]/Tools
+mkdir -p "${LIFEOS_ROOT}/skills/[SkillName]/Tools"
 ```
 
 ---
@@ -104,8 +104,8 @@ mkdir -p $LIFEOS_ROOT/skills/[SkillName]/Tools
 After making changes, verify naming:
 
 ```bash
-ls $LIFEOS_ROOT/skills/[SkillName]/Workflows/
-ls $LIFEOS_ROOT/skills/[SkillName]/Tools/
+ls "${LIFEOS_ROOT}/skills/[SkillName]/Workflows/"
+ls "${LIFEOS_ROOT}/skills/[SkillName]/Tools/"
 ```
 
 All files must use TitleCase:

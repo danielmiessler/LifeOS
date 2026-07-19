@@ -149,7 +149,7 @@ interface StopPayload extends BasePayload {
 | Hook | Purpose | Blocking | Dependencies |
 |------|---------|----------|--------------|
 | `KittyEnvPersist.hook.ts` | Persist Kitty env vars + tab reset | No | None |
-| `LoadContext.hook.ts` | Inject dynamic context (relationship, learning, work) | Yes (stdout) | `settings.json`, `MEMORY/` |
+| `LoadContext.hook.ts` | Ground `{{LIFEOS_*}}` runtime paths, then inject relationship/learning/work context (path contract also loads for subagents) | Yes (stdout) | `settings.json`, `MEMORY/` |
 | (inline) `FreshnessCache.ts` | Statusline freshness cache | No | None |
 
 ### UserPromptSubmit Hooks (in fire order)
@@ -165,6 +165,7 @@ interface StopPayload extends BasePayload {
 
 | Hook | Matcher | Purpose | Blocking | Dependencies |
 |------|---------|---------|----------|--------------|
+| `PreToolGuard.hook.ts` | Bash / Write / Edit / MultiEdit / Read / Glob / Grep | Block unresolved `{{LIFEOS_*}}` tool paths for every matcher; dispatch the existing write/egress guards on their applicable tools | Yes (exit 2) | `SystemFileGuard`, `CommunicationSkillGuard`, `EgressClassGuard` |
 | `ContextReduction.hook.sh` | Bash | rtk rewrite of STATUS-path commands only (git/gh/test/build/lint/containers — 60-90% token savings). READ-path commands (rg/grep, cat/head, ls/tree/find, diff, curl/wget, psql/aws) are NEVER rewritten: rtk's parse-fail falls back to a different binary (rg→BSD grep) and silently corrupts results the model reasons over. Invariant in hook header; incident 2026-06-10. Regression gate: `cd hooks && bun test ContextReduction.test.ts` (30 probes — read-path identity + kept-class structure). | Yes (updatedInput) | `rtk` binary, `jq` |
 | `ArtWorkflowGuard.hook.ts` | Bash | Block freeform Art skill calls (force `--workflow=`) | Yes (decision) | None |
 | `SetQuestionTab.hook.ts` | AskUserQuestion | Set teal tab for questions | No | Kitty terminal |
@@ -182,7 +183,7 @@ interface StopPayload extends BasePayload {
 | `Safety.hook.ts` | WebFetch / WebSearch | Tag external content with "treat as data" warning + injection-shape marker. Same file as the PermissionRequest hook below; dispatches by event. | No | `lib/safety-classifier.ts` |
 | `QuestionAnswered.hook.ts` | AskUserQuestion | Reset tab state after question answered | No | Kitty terminal |
 | `ISASync.hook.ts` | Edit / Write / MultiEdit | Sync ISA frontmatter → `work.json` + KV push | No | `MEMORY/WORK/`, `work.json` |
-| `CheckpointPerISC.hook.ts` | Edit / Write / MultiEdit | Auto-commit per-ISC durability checkpoint | No | `$LIFEOS_ROOT/checkpoint-repos.txt` |
+| `CheckpointPerISC.hook.ts` | Edit / Write / MultiEdit | Auto-commit per-ISC durability checkpoint | No | `{{LIFEOS_ROOT}}/checkpoint-repos.txt` |
 | `TelosSummarySync.hook.ts` | Edit / Write / MultiEdit | Regenerate `PRINCIPAL_TELOS.md` on TELOS edits | No | `GenerateTelosSummary.ts` |
 | `ToolActivityTracker.hook.ts` | (catch-all) | Ground-truth audit log of every tool call | No | `MEMORY/OBSERVABILITY/tool-activity.jsonl` |
 
@@ -413,8 +414,8 @@ Hooks are configured in `settings.json` under the `hooks` key:
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "$LIFEOS_ROOT/hooks/KittyEnvPersist.hook.ts" },
-          { "type": "command", "command": "$LIFEOS_ROOT/hooks/LoadContext.hook.ts" }
+          { "type": "command", "command": "{{LIFEOS_ROOT}}/hooks/KittyEnvPersist.hook.ts" },
+          { "type": "command", "command": "{{LIFEOS_ROOT}}/hooks/LoadContext.hook.ts" }
         ]
       }
     ],
@@ -422,7 +423,7 @@ Hooks are configured in `settings.json` under the `hooks` key:
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "$LIFEOS_ROOT/hooks/ContextReduction.hook.sh" }
+          { "type": "command", "command": "{{LIFEOS_ROOT}}/hooks/ContextReduction.hook.sh" }
         ]
       }
     ],
@@ -430,7 +431,7 @@ Hooks are configured in `settings.json` under the `hooks` key:
       {
         "matcher": "WebFetch",
         "hooks": [
-          { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts" }
+          { "type": "command", "command": "{{LIFEOS_ROOT}}/hooks/Safety.hook.ts" }
         ]
       }
     ],
@@ -438,7 +439,7 @@ Hooks are configured in `settings.json` under the `hooks` key:
       {
         "matcher": "Write|Edit|MultiEdit|Bash",
         "hooks": [
-          { "type": "command", "command": "$LIFEOS_ROOT/hooks/Safety.hook.ts" }
+          { "type": "command", "command": "{{LIFEOS_ROOT}}/hooks/Safety.hook.ts" }
         ]
       }
     ]
@@ -579,7 +580,7 @@ When modifying ANY hook:
 
 1. Verify `Safety.hook.ts` registered on `PermissionRequest` with matcher `Write|Edit|MultiEdit|Bash`
 2. Test: `echo '{"session_id":"t","hook_event_name":"PermissionRequest","tool_name":"Bash","tool_input":{"command":"ls /tmp"}}' | bun hooks/Safety.hook.ts` — should emit `{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}`
-3. Tail observability: `tail -f $LIFEOS_DIR/MEMORY/OBSERVABILITY/permission-decisions.jsonl`
+3. Tail observability: `tail -f "${LIFEOS_DIR}/MEMORY/OBSERVABILITY/permission-decisions.jsonl"`
 
 ---
 

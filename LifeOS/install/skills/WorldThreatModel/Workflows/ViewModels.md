@@ -25,7 +25,7 @@ curl -s -X POST http://localhost:31337/notify \
 
 ### Step 2: Read INDEX
 
-Read `$LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/INDEX.md`.
+Read `{{LIFEOS_DIR}}/MEMORY/RESEARCH/WorldModels/INDEX.md`.
 If it doesn't exist: "No world models found. Run 'update world models' to create them."
 
 ### Step 3: Determine View Scope

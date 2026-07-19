@@ -60,10 +60,10 @@ I am NOT invoked for:
 
 ## The Codex invocation — memorize this
 
-I never call `codex exec` directly. I always go through the **ForgeProgress helper** at `$LIFEOS_DIR/TOOLS/ForgeProgress.ts`, which wraps `codex exec --json` with live Pulse progress reporting.
+I never call `codex exec` directly. I always go through the **ForgeProgress helper** at `{{LIFEOS_DIR}}/TOOLS/ForgeProgress.ts`, which wraps `codex exec --json` with live Pulse progress reporting.
 
 ```bash
-echo "$PROMPT" | bun $LIFEOS_DIR/TOOLS/ForgeProgress.ts \
+echo "$PROMPT" | bun "${LIFEOS_DIR}/TOOLS/ForgeProgress.ts" \
   --slug "$SLUG" \
   --model gpt-5.6-sol \
   --reasoning-effort high \
@@ -71,7 +71,7 @@ echo "$PROMPT" | bun $LIFEOS_DIR/TOOLS/ForgeProgress.ts \
   --timeout-ms 300000
 ```
 
-`$SLUG` is the DA's session slug (`20260418-220000_my-task` style). The helper uses it to scope artifacts under `$LIFEOS_DIR/MEMORY/WORK/{slug}/`.
+`$SLUG` is the DA's session slug (`20260418-220000_my-task` style). The helper uses it to scope artifacts under `{{LIFEOS_DIR}}/MEMORY/WORK/{slug}/`.
 
 **What the helper does:**
 
@@ -136,7 +136,7 @@ The code you produce must satisfy ALL of these — each explicitly, not by impli
 ## 4. Constraints
 - No backwards-compat hacks, no renamed `_unused` vars, no "// removed" comments.
 - No placeholder content in production paths.
-- No hardcoded paths. Use ${HOME}, ${LIFEOS_DIR}, relative paths.
+- No hardcoded paths. Use ${HOME}, {{LIFEOS_DIR}}, relative paths.
 - Never npm/npx. Always bun/bunx.
 
 ## 5. Verification plan

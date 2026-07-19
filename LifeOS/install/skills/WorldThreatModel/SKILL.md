@@ -44,7 +44,7 @@ All workflows support three execution tiers:
 
 ## World Model Storage
 
-Models are stored at: `$LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/`
+Models are stored at: `{{LIFEOS_DIR}}/MEMORY/RESEARCH/WorldModels/`
 
 ### Horizon Models (base views)
 
@@ -65,7 +65,7 @@ Models are stored at: `$LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/`
 
 ### Scenario Models (alternative futures)
 
-Stored at: `$LIFEOS_DIR/MEMORY/RESEARCH/WorldModels/Scenarios/`
+Stored at: `{{LIFEOS_DIR}}/MEMORY/RESEARCH/WorldModels/Scenarios/`
 
 | File | Scenario |
 |------|----------|
@@ -102,7 +102,7 @@ Then output: `Running the **WorkflowName** workflow in the **WorldThreatModel** 
 ## Customization Check
 
 Before execution, check for user customizations at:
-`$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/WorldThreatModel/`
+`{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/WorldThreatModel/`
 
 ## Gotchas
 
@@ -132,7 +132,7 @@ User: "what could go wrong with our newsletter business model?"
 After completing any workflow, append a single JSONL entry:
 
 ```bash
-echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"WorldThreatModel","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> $LIFEOS_DIR/MEMORY/SKILLS/execution.jsonl
+echo '{"ts":"'$(date -u +%Y-%m-%dT%H:%M:%SZ)'","skill":"WorldThreatModel","workflow":"WORKFLOW_USED","input":"8_WORD_SUMMARY","status":"ok|error","duration_s":SECONDS}' >> "${LIFEOS_DIR}/MEMORY/SKILLS/execution.jsonl"
 ```
 
 Replace `WORKFLOW_USED` with the workflow executed, `8_WORD_SUMMARY` with a brief input description, and `SECONDS` with approximate wall-clock time. Log `status: "error"` if the workflow failed.

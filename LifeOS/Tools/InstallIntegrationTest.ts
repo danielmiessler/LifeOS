@@ -29,9 +29,9 @@
  *   (--keep retains the temp workspace; it is always retained on failure)
  */
 
-import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 
 const toolsDir = import.meta.dir;
 const skillRoot = join(toolsDir, "..");
@@ -45,7 +45,7 @@ function check(scenario: string, name: string, passed: boolean, detail?: string)
 /** Env for a spawned tool: real PATH etc., fake HOME, LifeOS path vars scrubbed. */
 function toolEnv(fakeHome: string, extra: Record<string, string> = {}): Record<string, string> {
   const env: Record<string, string> = {};
-  const scrub = new Set(["LIFEOS_HOME", "CLAUDE_CONFIG_DIR", "LIFEOS_CONFIG_DIR", "LIFEOS_DIR", "CLAUDE_PLUGIN_ROOT"]);
+  const scrub = new Set(["LIFEOS_HOME", "CLAUDE_CONFIG_DIR", "LIFEOS_CONFIG_DIR", "LIFEOS_DIR", "LIFEOS_ROOT", "CLAUDE_PLUGIN_ROOT"]);
   for (const [k, v] of Object.entries(process.env)) {
     if (v === undefined || scrub.has(k)) continue;
     env[k] = v;
@@ -61,6 +61,84 @@ function runTool(tool: string, args: string[], env: Record<string, string>): { c
   let json: Record<string, unknown> | null = null;
   try { json = JSON.parse(out); } catch { /* non-JSON output stays raw */ }
   return { code: proc.exitCode ?? -1, json, raw: out + proc.stderr.toString() };
+}
+
+function isQuotedAt(line: string, position: number): boolean {
+  let single = false;
+  let double = false;
+  let escaped = false;
+  for (let i = 0; i < position; i++) {
+    const char = line[i];
+    if (escaped) { escaped = false; continue; }
+    if (char === "\\" && !single) { escaped = true; continue; }
+    if (char === "'" && !double) single = !single;
+    if (char === '"' && !single) double = !double;
+  }
+  return single || double;
+}
+
+/** Enforce the boundary between model placeholders and executable shell vars. */
+function markdownPathConventionViolations(root: string): string[] {
+  const violations: string[] = [];
+  const files: string[] = [];
+  const walk = (dir: string): void => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      const path = join(dir, entry.name);
+      if (entry.isDirectory()) walk(path);
+      else if (entry.isFile() && entry.name.endsWith(".md")) files.push(path);
+    }
+  };
+  walk(root);
+
+  for (const file of files) {
+    let fence: string | null = null;
+    const inlineShellCommand = /^\s*(?:bun(?:\s+run)?|bash|sh|zsh|cd|ls|rg|grep|cat|tail|head|find|cp|mv|mkdir|touch|chmod|source|echo|jq|rsync|fabric|git)\b/;
+    const lines = readFileSync(file, "utf-8").split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const marker = line.match(/^\s*```([^`]*)/);
+      if (marker) {
+        fence = fence === null ? marker[1].trim().toLowerCase() : null;
+        continue;
+      }
+      const shell = ["bash", "sh", "shell", "zsh"].includes(fence ?? "") || line.trimStart().startsWith("!`");
+      const label = `${file}:${i + 1}`;
+      const modelFacingLine = shell ? line : line.replace(/`([^`\n]+)`/g, (span, code: string) => {
+        if (!inlineShellCommand.test(code)) return span;
+        if (/\{\{LIFEOS_(?:ROOT|DIR|CONFIG_DIR)\}\}/.test(code)) {
+          violations.push(`${label}: model placeholder in inline shell command`);
+        }
+        if (/\$LIFEOS_(?:ROOT|DIR|CONFIG_DIR)\b/.test(code)) {
+          violations.push(`${label}: unbraced variable in inline shell command`);
+        }
+        for (const match of code.matchAll(/\$\{(?:LIFEOS_(?:ROOT|DIR|CONFIG_DIR)|CLAUDE_SKILL_DIR)\}/g)) {
+          if (!isQuotedAt(code, match.index ?? 0)) violations.push(`${label}: unquoted inline shell path`);
+        }
+        return "";
+      });
+      if (shell) {
+        if (!line.trimStart().startsWith("#") && /\{\{LIFEOS_(?:ROOT|DIR|CONFIG_DIR)\}\}/.test(line)) {
+          violations.push(`${label}: model placeholder in executable shell`);
+        }
+        if (/\$LIFEOS_(?:ROOT|DIR|CONFIG_DIR)\b/.test(line)) {
+          violations.push(`${label}: unbraced LifeOS shell variable`);
+        }
+        for (const match of line.matchAll(/\$\{(?:LIFEOS_(?:ROOT|DIR|CONFIG_DIR)|CLAUDE_SKILL_DIR)\}/g)) {
+          if (!isQuotedAt(line, match.index ?? 0)) violations.push(`${label}: unquoted shell path variable`);
+        }
+      } else if (/\$\{?LIFEOS_(?:ROOT|DIR|CONFIG_DIR)\}?/.test(modelFacingLine)) {
+        violations.push(`${label}: shell variable in model-facing content`);
+      }
+      if (basename(file) !== "SKILL.md" && /\$\{CLAUDE_SKILL_DIR\}/.test(line)) {
+        violations.push(`${label}: CLAUDE_SKILL_DIR outside rendered SKILL.md`);
+      }
+      if (/(?:bun|bash|sh|rg|grep|ls|cd)\s+\$\{CLAUDE_SKILL_DIR\}/.test(line)) {
+        violations.push(`${label}: unquoted CLAUDE_SKILL_DIR command path`);
+      }
+    }
+  }
+  return violations;
 }
 
 const keep = process.argv.includes("--keep");
@@ -86,6 +164,22 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   check(S, "InstallSettings ok", settingsRun.code === 0 && settingsRun.json?.ok === true, settingsRun.raw);
   check(S, "settings.json written under the custom root", existsSync(settingsPath));
 
+  // Managed root variables must be repaired, not preserved as arbitrary user
+  // overrides: otherwise the next model/session context points at two trees.
+  if (existsSync(settingsPath)) {
+    const stale = JSON.parse(readFileSync(settingsPath, "utf-8")) as Record<string, any>;
+    stale.env.LIFEOS_ROOT = join(fakeHome, ".claude");
+    stale.env.LIFEOS_DIR = join(fakeHome, ".claude", "LIFEOS");
+    stale.env.LIFEOS_HOME = join(fakeHome, ".claude");
+    writeFileSync(settingsPath, JSON.stringify(stale, null, 2) + "\n");
+    const repairedRun = runTool("InstallSettings.ts", [...flags, "--skill-root", skillRoot, "--apply"], env);
+    const repaired = JSON.parse(readFileSync(settingsPath, "utf-8")) as Record<string, any>;
+    check(S, "InstallSettings repairs stale managed root variables", repairedRun.code === 0 &&
+      repaired.env?.LIFEOS_ROOT === configRoot &&
+      repaired.env?.LIFEOS_DIR === join(configRoot, "LIFEOS") &&
+      repaired.env?.LIFEOS_HOME === configRoot, repairedRun.raw + JSON.stringify(repaired.env));
+  }
+
   // DeployCore (skills + runtime + MEMORY scaffold + deps)
   const core = runTool("DeployCore.ts", [...flags, "--skill-root", skillRoot, "--apply"], env);
   check(S, "DeployCore ok", core.code === 0 && core.json?.ok === true, core.raw.slice(0, 2000));
@@ -108,10 +202,12 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
     check(S, "env.LIFEOS_DIR points at the custom root", settings.env?.LIFEOS_DIR === join(configRoot, "LIFEOS"), String(settings.env?.LIFEOS_DIR));
     check(S, "env.LIFEOS_CONFIG_DIR points at the user-data home", settings.env?.LIFEOS_CONFIG_DIR === configDir, String(settings.env?.LIFEOS_CONFIG_DIR));
     check(S, "env.LIFEOS_ROOT points at the custom root", settings.env?.LIFEOS_ROOT === configRoot, String(settings.env?.LIFEOS_ROOT));
+    check(S, "env.LIFEOS_HOME persists the custom root", settings.env?.LIFEOS_HOME === configRoot, String(settings.env?.LIFEOS_HOME));
     check(S, "permission globs carry the custom root", JSON.stringify(settings.permissions?.allow ?? []).includes(`Write(${configRoot}/**)`), "no retargeted Write glob found");
     const hookCmds = JSON.stringify(settings.hooks ?? {});
     check(S, "merged hook commands carry the custom root", hookCmds.includes(join(configRoot, "hooks")), hookCmds.slice(0, 500));
     check(S, "hook paths with spaces are shell-quoted", hookCmds.includes(`'${join(configRoot, "hooks")}`), hookCmds.slice(0, 500));
+    check(S, "unresolved-path guard covers model path tools", hookCmds.includes("Read|Glob|Grep"), hookCmds.slice(0, 1000));
   }
 
   // Instruction layer: deployed model-read markdown must not carry executable
@@ -123,6 +219,10 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
     const hits = g.stdout.toString().trim().split("\n").filter(Boolean).filter((f) => !/changelog/i.test(f));
     check(S, "deployed markdown has no hardcoded ~/.claude/LIFEOS paths", mdRoots.length > 0 && hits.length === 0, hits.slice(0, 5).join(", ") || `scanned: ${mdRoots.join(", ")}`);
   }
+
+  const conventionViolations = markdownPathConventionViolations(join(skillRoot, "install"));
+  check(S, "markdown separates model placeholders from quoted shell variables",
+    conventionViolations.length === 0, conventionViolations.slice(0, 20).join("\n"));
 
   // CLAUDE.md overlay (Setup step 4 does this by hand) + ScaffoldUser + LinkUser + ActivateImports
   cpSync(join(skillRoot, "install", "CLAUDE.template.md"), join(configRoot, "CLAUDE.md"));
@@ -219,6 +319,57 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   const hookProbe = Bun.spawnSync(["bun", "-e", `const m = await import(${JSON.stringify(hookResolver)}); console.log(m.getClaudeDir())`], { env: resolverEnv, stdout: "pipe", stderr: "pipe" });
   check(SP, "deployed hook resolver self-locates the custom root", hookProbe.exitCode === 0 && hookProbe.stdout.toString().trim() === realpathSync(configRoot), hookProbe.stdout.toString() + hookProbe.stderr.toString());
 
+  // SessionStart must ground semantic placeholders even for subagents, which
+  // intentionally skip the personal relationship/learning context.
+  const loadContext = join(configRoot, "hooks", "LoadContext.hook.ts");
+  const contextEnv = toolEnv(fakeHome, {
+    // Deliberately stale/legacy values: LIFEOS_DIR and hook self-location win.
+    LIFEOS_ROOT: join(fakeHome, ".claude"),
+    LIFEOS_DIR: lifeosDir,
+    LIFEOS_CONFIG_DIR: lifeosDir,
+    CLAUDE_AGENT_TYPE: "integration-test",
+  });
+  const contextProbe = Bun.spawnSync(["bun", loadContext], { env: contextEnv, stdout: "pipe", stderr: "pipe" });
+  const contextOut = contextProbe.stdout.toString();
+  check(SP, "SessionStart grounds all LifeOS model path placeholders",
+    contextProbe.exitCode === 0 &&
+    contextOut.includes(`{{LIFEOS_ROOT}} = ${JSON.stringify(configRoot)}`) &&
+    contextOut.includes(`{{LIFEOS_DIR}} = ${JSON.stringify(lifeosDir)}`) &&
+    contextOut.includes(`{{LIFEOS_CONFIG_DIR}} = ${JSON.stringify(configDir)}`),
+    contextOut + contextProbe.stderr.toString());
+  check(SP, "SessionStart forbids unresolved placeholders in tool calls",
+    contextOut.includes("Never pass an unresolved LifeOS placeholder to a tool"), contextOut);
+
+  const preToolGuard = join(configRoot, "hooks", "PreToolGuard.hook.ts");
+  const unresolvedProbe = Bun.spawnSync(["bun", preToolGuard], {
+    env: contextEnv,
+    stdin: new Blob([JSON.stringify({
+      tool_name: "Read",
+      tool_input: { file_path: "{{LIFEOS_ROOT}}/settings.json" },
+    })]),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  check(SP, "PreToolUse blocks unresolved LifeOS paths",
+    unresolvedProbe.exitCode === 2 && unresolvedProbe.stderr.toString().includes("Unresolved {{LIFEOS_ROOT}}"),
+    unresolvedProbe.stdout.toString() + unresolvedProbe.stderr.toString());
+
+  const documentedPlaceholderProbe = Bun.spawnSync(["bun", preToolGuard], {
+    env: contextEnv,
+    stdin: new Blob([JSON.stringify({
+      tool_name: "Write",
+      tool_input: {
+        file_path: join(configRoot, "example.md"),
+        content: "Model paths use {{LIFEOS_ROOT}}/skills in documentation.",
+      },
+    })]),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  check(SP, "PreToolUse allows placeholders as documentation content",
+    documentedPlaceholderProbe.exitCode === 0,
+    documentedPlaceholderProbe.stdout.toString() + documentedPlaceholderProbe.stderr.toString());
+
   // The installed launcher must make an arbitrary custom root visible to a
   // fresh Claude process. A fake binary captures cwd/env without contacting
   // Claude or touching any real user configuration.
@@ -294,6 +445,7 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   if (existsSync(settingsPath)) {
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8")) as Record<string, any>;
     check(S, "env.LIFEOS_DIR is the expanded default", settings.env?.LIFEOS_DIR === join(defaultRoot, "LIFEOS"), String(settings.env?.LIFEOS_DIR));
+    check(S, "env.LIFEOS_ROOT is the expanded default", settings.env?.LIFEOS_ROOT === defaultRoot, String(settings.env?.LIFEOS_ROOT));
     check(S, "env.LIFEOS_CONFIG_DIR points at the private default data home", settings.env?.LIFEOS_CONFIG_DIR === join(fakeHome, ".config", "LIFEOS"), String(settings.env?.LIFEOS_CONFIG_DIR));
     check(S, "template ~/.claude permission globs untouched", JSON.stringify(settings.permissions?.allow ?? []).includes("Write(~/.claude/**)"), "default globs were rewritten — regression!");
     check(S, "no retarget was reported", settingsRun.json?.retargetedStrings === undefined, JSON.stringify(settingsRun.json));

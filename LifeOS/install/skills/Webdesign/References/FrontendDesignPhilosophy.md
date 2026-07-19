@@ -214,7 +214,7 @@ Web output gets verified via the **Interceptor skill** before declaring done. Th
 
 ### Customization layer
 
-LifeOS users may set personal aesthetic defaults at `$LIFEOS_DIR/USER/CUSTOMIZATIONS/SKILLS/Webdesign/PREFERENCES.md`. If that file exists and DirectDesign is invoked, Step 1's aesthetic-tone choice is biased toward (not bound to) the user's stated preference. Without preferences, choose freshly each time and rotate registers across sessions.
+LifeOS users may set personal aesthetic defaults at `{{LIFEOS_DIR}}/USER/CUSTOMIZATIONS/SKILLS/Webdesign/PREFERENCES.md`. If that file exists and DirectDesign is invoked, Step 1's aesthetic-tone choice is biased toward (not bound to) the user's stated preference. Without preferences, choose freshly each time and rotate registers across sessions.
 
 ### When to choose DirectDesign vs ClaudeDesign
 
