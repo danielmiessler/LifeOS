@@ -107,4 +107,4 @@ end-to-end:
   isolation, exercise a root containing spaces, audit statusline/runtime commands,
   and assert the packaged nested LifeOS installer matches the authoritative skill.
 
-The current suite passes **78/78** checks.
+The current suite passes **82/82** checks.

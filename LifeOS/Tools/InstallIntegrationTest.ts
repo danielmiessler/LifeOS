@@ -346,6 +346,7 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   const nested = join(skillRoot, "install", "skills", "LifeOS");
   for (const rel of [
     "Tools/ActivateImports.ts",
+    "Tools/DetectEnv.ts",
     "Tools/DeployComponents.ts",
     "Tools/DeployCore.ts",
     "Tools/InstallEngine.ts",
@@ -353,8 +354,11 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
     "Tools/InstallSettings.ts",
     "Tools/LinkUser.ts",
     "Tools/ScaffoldUser.ts",
+    "Tools/ScanConflicts.ts",
     "Tools/SeedPulse.ts",
+    "Workflows/Interview.md",
     "Workflows/Setup.md",
+    "Workflows/Uninstall.md",
     "Workflows/Update.md",
     "INSTALL.md",
     "install/CLAUDE.template.md",
