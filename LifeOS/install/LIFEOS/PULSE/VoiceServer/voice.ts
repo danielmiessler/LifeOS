@@ -356,6 +356,15 @@ interface AudioPlayer {
   buildArgs: (file: string, volume: number) => string[]
 }
 
+// `volume` is a multiplier where 1.0 is normal, matching afplay's -v. Each Linux
+// player expresses volume on its own integer scale, so map onto that range and
+// clamp. A non-finite or negative value falls back to the player's normal level
+// rather than silencing playback.
+function scaleVolume(volume: number, max: number): number {
+  if (!Number.isFinite(volume) || volume < 0) return max
+  return Math.min(max, Math.round(volume * max))
+}
+
 let resolvedPlayer: AudioPlayer | null | undefined = undefined
 
 function resolveAudioPlayer(): AudioPlayer | null {
@@ -365,9 +374,30 @@ function resolveAudioPlayer(): AudioPlayer | null {
     process.platform === "darwin"
       ? [{ cmd: "afplay", buildArgs: (file, volume) => ["-v", volume.toString(), file] }]
       : [
-          { cmd: "ffplay", buildArgs: (file) => ["-nodisp", "-autoexit", "-loglevel", "quiet", file] },
+          {
+            cmd: "ffplay",
+            // ffplay -h: "-volume volume  set startup volume 0=min 100=max"
+            buildArgs: (file, volume) => [
+              "-nodisp",
+              "-autoexit",
+              "-loglevel",
+              "quiet",
+              "-volume",
+              String(scaleVolume(volume, 100)),
+              file,
+            ],
+          },
+          // mpg123 scales with -f, but its range was not verified here; left as-is
+          // rather than guessing a factor.
           { cmd: "mpg123", buildArgs: (file) => ["-q", file] },
-          { cmd: "paplay", buildArgs: (file) => [file] },
+          {
+            cmd: "paplay",
+            // paplay --help: "--volume=VOLUME  Specify the initial (linear) volume
+            // in range 0...65536"
+            buildArgs: (file, volume) => [`--volume=${scaleVolume(volume, 65536)}`, file],
+          },
+          // aplay has no volume-set option (only --disable-softvol), so volume
+          // cannot be honoured on this fallback.
           { cmd: "aplay", buildArgs: (file) => ["-q", file] },
         ]
 
