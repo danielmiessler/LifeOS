@@ -15,6 +15,7 @@
  */
 
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { join } from "node:path";
 import { detectDevTree, mergeHooks } from "./InstallEngine";
 
@@ -101,7 +102,28 @@ function main(): void {
   cpSync(hooksPayloadDir, hooksDestDir, { recursive: true });
   const hookFilesCopied = countFilesRec(hooksDestDir);
 
-  console.log(JSON.stringify({ ...report, written: true, backup, hookFilesCopied }, null, 2));
+  // Copying hook scripts and merging the manifest are two independent operations;
+  // a hook can land on disk without any settings entry naming it. Ask the shipped
+  // reconciler whether every copied hook is actually reachable, so an unwired hook
+  // is loud at install time rather than silent until someone runs Doctor by hand.
+  const doctorPath = join(configRoot, "LIFEOS", "TOOLS", "Doctor.ts");
+  let unwired: string[] | undefined;
+  let reconcile: string | undefined;
+  if (existsSync(doctorPath)) {
+    try {
+      const out = execFileSync("bun", [doctorPath, "--reconcile"], {
+        encoding: "utf-8",
+        env: { ...process.env, CLAUDE_CONFIG_DIR: configRoot },
+      });
+      unwired = JSON.parse(out).unwired ?? [];
+    } catch (err) {
+      reconcile = `reconciler failed: ${err instanceof Error ? err.message : String(err)}`;
+    }
+  } else {
+    reconcile = `Doctor.ts not found at ${doctorPath} — hooks copied but not reconciled`;
+  }
+
+  console.log(JSON.stringify({ ...report, written: true, backup, hookFilesCopied, unwired, reconcile }, null, 2));
   process.exit(0);
 }
 
