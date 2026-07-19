@@ -179,7 +179,7 @@ function CSVTable({ content }: { content: string }) {
   const lines = content.trim().split('\n')
   if (lines.length === 0) return <p className="text-gray-500">Empty file</p>
 
-  const headers = lines[0].split(',').map(h => h.trim())
+  const headers = (lines[0] ?? '').split(',').map(h => h.trim())
   const rows = lines.slice(1).map(line => line.split(',').map(cell => cell.trim()))
 
   return (

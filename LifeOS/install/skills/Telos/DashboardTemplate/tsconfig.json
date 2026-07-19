@@ -3,6 +3,8 @@
     "forceConsistentCasingInFileNames": true,
     // Environment setup & latest features
     "lib": [
+      "DOM",
+      "DOM.Iterable",
       "ESNext"
     ],
     "target": "ESNext",
