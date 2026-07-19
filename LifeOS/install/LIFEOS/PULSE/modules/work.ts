@@ -32,7 +32,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync, statSync } from "fs
 import { join } from "path";
 import { loadWorkConfig, type WorkConfig } from "../../../hooks/lib/work-config";
 import { getDAName } from "../../../hooks/lib/identity";
-import { claudeDir } from "../../TOOLS/lifeos-root";
+import { claudeDir, shellQuote } from "../../TOOLS/lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -325,9 +325,9 @@ function setupTemplate(reason: string): Response {
     reason,
     subtype,
     instructions: [
-      "Configure the work repo via the privacy-attested CLI: `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts <owner/repo>`. The CLI calls `gh repo view --json visibility,isPrivate` and refuses to write the config unless the repo is currently private.",
+      `Configure the work repo via the privacy-attested CLI: \`bun ${shellQuote(join(claudeDir(), "skills", "_ULWORK", "Tools", "SetWorkRepo.ts"))} <owner/repo>\`. The CLI calls \`gh repo view --json visibility,isPrivate\` and refuses to write the config unless the repo is currently private.`,
       `Ensure the repo has these labels: Type:feature, Type:reminder, Type:research, Type:queue, Status:queued, Status:in-progress, Status:in-review, Status:blocked, Status:done, Priority:P0..P3, Property:internal, Agent:${getDAName()}, pai-sync.`,
-      "Restart Pulse so this module re-reads work_repo.json: `bun ~/.claude/LIFEOS/PULSE/manage.sh restart`.",
+      `Restart Pulse so this module re-reads work_repo.json: \`bash ${shellQuote(join(claudeDir(), "LIFEOS", "PULSE", "manage.sh"))} restart\`.`,
       "Run an Algorithm session — ULWorkSync.hook.ts will open the first issue at SessionEnd.",
     ],
     docs: "skills/_ULWORK/SKILL.md (search 'Capture flow')",

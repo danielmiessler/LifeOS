@@ -50,6 +50,12 @@ export function expandPath(path: string): string {
     .replace(/^~(?=\/|$)/, home);
 }
 
+/** Quote one POSIX-shell argument, preserving readable output for safe paths. */
+export function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
 /**
  * Get the LifeOS data directory (expanded).
  *

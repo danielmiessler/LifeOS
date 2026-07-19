@@ -3,7 +3,11 @@ import fs from 'fs'
 import path from 'path'
 import os from 'os'
 
-const TELOS_DIR = path.join(os.homedir(), '.claude/skills/Telos')
+const configuredLifeosDir = process.env.LIFEOS_DIR
+  ?.replace(/^\$HOME(?=\/|$)/, os.homedir())
+  .replace(/^\$\{HOME\}(?=\/|$)/, os.homedir())
+  .replace(/^~(?=\/|$)/, os.homedir())
+const TELOS_DIR = path.join(configuredLifeosDir || path.join(os.homedir(), '.claude', 'LIFEOS'), 'USER', 'TELOS')
 
 export async function POST(request: Request) {
   try {

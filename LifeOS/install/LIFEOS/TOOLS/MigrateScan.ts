@@ -29,7 +29,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, appendFileSync } from "fs";
 import { join, basename, dirname, extname } from "path";
 import { randomUUID } from "crypto";
-import { claudeDir } from "./lifeos-root";
+import { claudeDir, shellQuote } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -316,7 +316,7 @@ function main(): void {
     console.log(`⚠️  ${lowConf.length} chunks classified at <40% confidence — review recommended.`);
   }
   console.log(``);
-  console.log(`Next: bun ~/.claude/LIFEOS/TOOLS/MigrateApprove.ts --review`);
+  console.log(`Next: bun ${shellQuote(join(claudeDir(), "LIFEOS", "TOOLS", "MigrateApprove.ts"))} --review`);
 }
 
 main();

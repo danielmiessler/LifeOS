@@ -23,9 +23,8 @@
  */
 
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
-import { homedir } from "node:os";
 import { join } from "node:path";
-import { copyMissing, detectDevTree } from "./InstallEngine";
+import { copyMissing, detectDevTree, resolveConfigRoot } from "./InstallEngine";
 
 // Runtime top-level entries this tool does NOT deploy:
 //  - USER           shipped separately as a scaffold (ScaffoldUser) + symlinked (LinkUser)
@@ -166,8 +165,7 @@ function deployDependencies(payloadInstall: string, configRoot: string, apply: b
 
 function main(): void {
   const a = process.argv.slice(2);
-  const home = process.env.HOME || homedir();
-  const configRoot = arg(a, "--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+  const configRoot = resolveConfigRoot(arg(a, "--config-root"));
   const skillRoot = arg(a, "--skill-root") || join(import.meta.dir, "..");
   const payloadInstall = join(skillRoot, "install");
   const apply = a.includes("--apply");

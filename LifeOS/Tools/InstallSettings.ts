@@ -19,7 +19,9 @@
  * Semantics match the sibling installers (DeployCore/InstallHooks):
  *   - settings.json absent → write the expanded template whole.
  *   - settings.json present → additive merge: only ABSENT top-level keys and
- *     ABSENT env keys are added (expanded); existing values are never touched.
+ *     ABSENT env keys are added (expanded); existing values are never touched
+ *     except the one known legacy LIFEOS_CONFIG_DIR self-link value, which is
+ *     repaired to the resolved private data home.
  *   - Dry-run by default; `--apply` mutates; backup before every write.
  *   - REFUSES the author's live source tree (`--allow-dev` to override).
  *
@@ -28,6 +30,7 @@
  */
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { detectDevTree, resolveConfigDir, resolveConfigRoot } from "./InstallEngine";
 
@@ -107,7 +110,7 @@ function retargetStrings(node: unknown, configRoot: string): { node: unknown; re
 }
 
 const args = parseArgs();
-const home = process.env.HOME || "";
+const home = process.env.HOME || homedir();
 const templatePath = join(args.skillRoot, "install", "settings.system.json");
 const targetPath = join(args.configRoot, "settings.json");
 const isCustomRoot = home !== "" && resolve(args.configRoot) !== resolve(join(home, ".claude"));
@@ -130,12 +133,16 @@ if (isCustomRoot) {
   const retargeted = retargetStrings(template, args.configRoot);
   template = retargeted.node as Record<string, unknown>;
   retargetedCount = retargeted.replaced;
-  // LIFEOS_CONFIG_DIR is the private user-data home, NOT <configRoot>/LIFEOS —
-  // the blanket retarget above follows the template's (ambiguous) default, so
-  // pin it to the resolved configDir the installers actually use.
-  if (template.env && typeof template.env === "object") {
-    (template.env as Record<string, unknown>).LIFEOS_CONFIG_DIR = args.configDir;
-  }
+}
+// LIFEOS_CONFIG_DIR is the private user-data home, NOT <configRoot>/LIFEOS.
+// Pin it on every install so a later setup/update session cannot reinterpret
+// the old runtime-system value and collapse the USER symlink onto itself.
+if (template.env && typeof template.env === "object") {
+  const templateEnv = template.env as Record<string, unknown>;
+  templateEnv.LIFEOS_CONFIG_DIR = args.configDir;
+  // Persist the dedicated root into future project-scoped sessions too. Runtime
+  // consumers still use LIFEOS_DIR; this value is for installer/update tools.
+  if (isCustomRoot) templateEnv.LIFEOS_HOME = args.configRoot;
 }
 const expandedCount = expandEnvBlock(template, home);
 
@@ -155,13 +162,30 @@ if (!existsSync(targetPath)) {
   const curEnv = (current.env && typeof current.env === "object" ? current.env : (current.env = {})) as Record<string, unknown>;
   const tplEnv = (template.env || {}) as Record<string, unknown>;
   const addedEnv: string[] = [];
+  const updatedEnv: string[] = [];
   for (const [k, v] of Object.entries(tplEnv)) {
-    if (!(k in curEnv)) { curEnv[k] = v; addedEnv.push(k); }
+    if (!(k in curEnv)) {
+      curEnv[k] = v;
+      addedEnv.push(k);
+      continue;
+    }
+    // Narrow migration for the shipped legacy collision only; arbitrary user
+    // overrides remain untouched.
+    if (
+      k === "LIFEOS_CONFIG_DIR" &&
+      typeof curEnv[k] === "string" &&
+      resolve(expandLeadingHome(curEnv[k] as string, home)) === resolve(join(args.configRoot, "LIFEOS")) &&
+      curEnv[k] !== v
+    ) {
+      curEnv[k] = v;
+      updatedEnv.push(k);
+    }
   }
   report.mode = "merge";
   report.addedKeys = addedKeys;
   report.addedEnv = addedEnv;
-  if (args.apply && (addedKeys.length || addedEnv.length)) {
+  report.updatedEnv = updatedEnv;
+  if (args.apply && (addedKeys.length || addedEnv.length || updatedEnv.length)) {
     copyFileSync(targetPath, targetPath + ".backup-" + new Date().toISOString().replace(/[:.]/g, "-"));
     writeFileSync(targetPath, JSON.stringify(current, null, 2) + "\n");
   } else if (args.apply) {

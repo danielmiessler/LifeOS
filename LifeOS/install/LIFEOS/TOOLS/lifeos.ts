@@ -22,7 +22,7 @@ import { spawn, spawnSync } from "bun";
 import { getIdentity, getStartupCatchphrase } from "../../hooks/lib/identity";
 import { existsSync, readFileSync, writeFileSync, readdirSync, symlinkSync, unlinkSync, lstatSync } from "fs";
 import { homedir } from "os";
-import { join, basename } from "path";
+import { join, basename, dirname, resolve } from "path";
 import { claudeDir } from "./lifeos-root";
 
 // ============================================================================
@@ -36,6 +36,36 @@ const BANNER_SCRIPT = join(claudeDir(), "LIFEOS", "TOOLS", "Banner.ts");
 const VOICE_SERVER = "http://localhost:31337/notify/personality";
 const WALLPAPER_DIR = join(homedir(), "Projects", "Wallpaper");
 // Note: RAW archiving removed - Claude Code handles its own cleanup (30-day retention in projects/)
+
+/**
+ * Make Claude load the same root this launcher came from.
+ *
+ * A project-scoped `<project>/.claude` can preserve normal global+project
+ * merging by launching from `<project>`. An arbitrary custom root has no
+ * discoverable project parent, so use CLAUDE_CONFIG_DIR for that process.
+ */
+function prepareClaudeLaunch(env: Record<string, string>, stayLocal = false): void {
+  const root = resolve(CLAUDE_DIR);
+  const defaultRoot = resolve(join(homedir(), ".claude"));
+  if (root === defaultRoot) {
+    if (!stayLocal) process.chdir(root);
+    return;
+  }
+
+  env.LIFEOS_HOME = root;
+  const projectRoot = basename(root) === ".claude" ? dirname(root) : null;
+  if (projectRoot && !stayLocal) {
+    // Project settings are discovered from the parent and merge with global.
+    delete env.CLAUDE_CONFIG_DIR;
+    process.chdir(projectRoot);
+    return;
+  }
+
+  // Arbitrary roots (and --local, which keeps the caller's cwd) require the
+  // harness-level override to be discoverable.
+  env.CLAUDE_CONFIG_DIR = root;
+  if (!stayLocal) process.chdir(root);
+}
 
 // MCP shorthand mappings
 const MCP_SHORTCUTS: Record<string, string> = {
@@ -433,11 +463,6 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; resumeId?: s
     }
   }
 
-  // Change to LifeOS directory unless --local flag is set
-  if (!options.local) {
-    process.chdir(CLAUDE_DIR);
-  }
-
   // Voice notification (using focused marker for calmer tone).
   // Reads daidentity.startupCatchphrase from settings.json so the user's
   // install-time catchphrase is actually honored. Falls back to the
@@ -448,9 +473,10 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; resumeId?: s
   // BILLING: subscription, not API. Strip ANTHROPIC_API_KEY before spawn so the
   // interactive session uses OAuth (`claude /login`) instead of API-key billing.
   // Mirrors the protection in cmdPrompt() — same hazard, same fix.
-  const launchEnv = { ...process.env };
+  const launchEnv: Record<string, string> = { ...process.env } as Record<string, string>;
   delete launchEnv.ANTHROPIC_API_KEY;
   launchEnv.CLAUDE_CODE_WORKFLOWS = "1";
+  prepareClaudeLaunch(launchEnv, options.local);
   const proc = spawn(args, {
     stdio: ["inherit", "inherit", "inherit"],
     env: launchEnv,
@@ -596,11 +622,10 @@ async function cmdPrompt(prompt: string) {
     args.push("--append-system-prompt-file", systemPromptFile);
   }
 
-  process.chdir(CLAUDE_DIR);
-
   const env: Record<string, string> = { ...process.env } as Record<string, string>;
   delete env.ANTHROPIC_API_KEY;
   env.CLAUDE_CODE_WORKFLOWS = "1";
+  prepareClaudeLaunch(env);
   const proc = spawn(args, {
     stdio: ["inherit", "inherit", "inherit"],
     env,

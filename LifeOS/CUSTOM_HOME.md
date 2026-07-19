@@ -10,10 +10,20 @@ codebase was made root-agnostic. It is a reviewer-facing companion to the PR;
 
 - **Env var `LIFEOS_HOME`** (highest priority) and **`install.sh --home <dir>`**
   (which exports it) select the config root. `detectEnv()` resolves
-  `configRoot = LIFEOS_HOME || harness.configRoot || ~/.claude`.
+  `configRoot = --config-root || LIFEOS_HOME || CLAUDE_CONFIG_DIR ||
+  dirname(LIFEOS_DIR) || ~/.claude`. `LIFEOS_DIR` is the persisted recovery path
+  for later sessions after the bootstrap shell exits.
 - `configDir` (private USER data) follows the custom home
   (`<configRoot>/USER-data`), overridable with `--config-dir`, so two instances
-  never share USER data — isolation is the whole point.
+  never share USER data — isolation is the whole point. A direct custom
+  `--config-root` or `CLAUDE_CONFIG_DIR` gets the same isolated default. The legacy poisoned
+  `LIFEOS_CONFIG_DIR=<configRoot>/LIFEOS` value is ignored and repaired.
+
+The bootstrap temporarily launches Claude Code with
+`CLAUDE_CONFIG_DIR=<configRoot>` so `/lifeos-setup` can discover the staged skill
+from any caller directory. The installed `lifeos` launcher preserves normal
+global+project merging for `<project>/.claude` roots by starting from the project
+parent; arbitrary custom roots use `CLAUDE_CONFIG_DIR` for the spawned process.
 
 ## Two layers had to become root-aware
 
@@ -83,10 +93,18 @@ end-to-end:
 - **Scenario A** — full custom-home install; asserts everything lands under the
   custom root and the written `settings.json` has **zero** `.claude` references,
   the symlink contract holds, and nothing leaks to `<home>/.claude`.
-- **Scenario B** — self-symlink guard (the `LIFEOS_CONFIG_DIR` double-meaning bug).
+- **Scenario B** — ambient legacy config-dir recovery plus explicit self-symlink guard.
 - **Scenario C** — default-install regression: with no `LIFEOS_HOME`, everything
-  lands in `~/.claude` and the template ships byte-identical.
+  lands in `~/.claude`; default permission globs and hook commands remain unchanged.
 - **Scenario D** — Pulse runtime + launchd wiring: the resolver ships under the
   custom root, a PULSE module routes through it, and `manage.sh render` emits a
   plist with **zero** `.claude`, `WorkingDirectory` and `LIFEOS_DIR` pointing at
   the custom root, and no unresolved placeholder.
+- **Lifecycle/edge checks** — execute both deployed resolvers with root env vars
+  scrubbed, launch a fake Claude process through both the bootstrap and installed
+  launcher, recover a later session from `LIFEOS_DIR`, repair the legacy default
+  config-dir collision, verify direct `--config-root` / `CLAUDE_CONFIG_DIR`
+  isolation, exercise a root containing spaces, audit statusline/runtime commands,
+  and assert the packaged nested LifeOS installer matches the authoritative skill.
+
+The current suite passes **78/78** checks.

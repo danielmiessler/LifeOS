@@ -68,7 +68,7 @@ const DEFAULTS = {
  * Load configuration from environment
  */
 function loadConfig(): Config {
-  const envPath = process.env.LIFEOS_CONFIG_DIR ? join(process.env.LIFEOS_CONFIG_DIR, '.env') : join(claudeDir(), '.env');
+  const envPath = join(claudeDir(), '.env');
 
   try {
     const envContent = readFileSync(envPath, 'utf-8');
@@ -79,7 +79,7 @@ function loadConfig(): Config {
       ?.trim();
 
     if (!apiKey) {
-      console.error('Error: LIMITLESS_API_KEY not found in ~/.claude/.env');
+      console.error(`Error: LIMITLESS_API_KEY not found in ${envPath}`);
       process.exit(1);
     }
 
@@ -89,8 +89,8 @@ function loadConfig(): Config {
       baseUrl: DEFAULTS.baseUrl,
     };
   } catch (error) {
-    console.error(`Error: Cannot read ~/.claude/.env file`);
-    console.error('Make sure LIMITLESS_API_KEY is set in ~/.claude/.env');
+    console.error(`Error: Cannot read ${envPath}`);
+    console.error(`Make sure LIMITLESS_API_KEY is set in ${envPath}`);
     process.exit(1);
   }
 }

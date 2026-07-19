@@ -15,7 +15,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 
 // ── Types (inlined — the skill ships without the engine's types.ts) ──
 
@@ -72,7 +72,95 @@ export interface EnvDetection {
   claudeMdExists: boolean;
   homeDir: string;
   configRoot: string;
+  /** Private user-data home (`<configDir>/USER` is the symlink target). */
+  configDir: string;
   timezone: string;
+}
+
+// ── Root resolution (single source of truth for every setup Tool) ──
+
+/** Expand a LEADING $HOME / ${HOME} / ~ path segment. Mid-string refs are left alone. */
+export function expandHomePrefix(value: string, home: string): string {
+  if (!home) return value;
+  if (value === "$HOME" || value === "${HOME}" || value === "~") return home;
+  if (value.startsWith("$HOME/")) return home + value.slice("$HOME".length);
+  if (value.startsWith("${HOME}/")) return home + value.slice("${HOME}".length);
+  if (value.startsWith("~/")) return home + value.slice(1);
+  return value;
+}
+
+/** Quote one POSIX-shell argument, preserving readable output for safe paths. */
+export function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
+/** Recover `<configRoot>` from the persisted `<configRoot>/LIFEOS` runtime env. */
+export function configRootFromLifeosDir(value = process.env.LIFEOS_DIR): string | undefined {
+  if (!value) return undefined;
+  const home = process.env.HOME || homedir();
+  const expanded = expandHomePrefix(value, home);
+  return basename(expanded).toLowerCase() === "lifeos" ? dirname(expanded) : undefined;
+}
+
+/**
+ * Resolve the LifeOS config root (where LIFEOS/, settings.json, hooks/,
+ * CLAUDE.md land). Priority: explicit --config-root flag > LIFEOS_HOME (the
+ * dedicated LifeOS custom-home override — relocates ONLY LifeOS, not the
+ * harness's whole config dir) > CLAUDE_CONFIG_DIR (the harness's own override)
+ * > persisted LIFEOS_DIR parent > ~/.claude. Every setup Tool resolves its root through this one function so
+ * no Tool can drift to a different default (the "defensive fallbacks" lesson).
+ */
+export function resolveConfigRoot(flagValue?: string): string {
+  const home = process.env.HOME || homedir();
+  const raw = flagValue || process.env.LIFEOS_HOME || process.env.CLAUDE_CONFIG_DIR || configRootFromLifeosDir() || join(home, ".claude");
+  return expandHomePrefix(raw, home);
+}
+
+/**
+ * Resolve the private user-data home (configDir; `<configDir>/USER` is the
+ * symlink target of `<configRoot>/LIFEOS/USER`). Priority: explicit
+ * --config-dir flag > custom-home default `<configRoot>/USER-data` when the
+ * config root is non-default (two LifeOS instances must NEVER share one USER
+ * tree — isolation is the point of a custom home) > LIFEOS_CONFIG_DIR >
+ * ~/.config/LIFEOS. The legacy poisoned value `<configRoot>/LIFEOS` is ignored.
+ */
+export function resolveConfigDir(configRoot: string, flagValue?: string): string {
+  const home = process.env.HOME || homedir();
+  if (flagValue) return expandHomePrefix(flagValue, home);
+  const defaultRoot = join(home, ".claude");
+  if (resolve(configRoot) !== resolve(defaultRoot)) return join(configRoot, "USER-data");
+  const envDir = process.env.LIFEOS_CONFIG_DIR;
+  if (envDir) {
+    const expanded = expandHomePrefix(envDir, home);
+    // Old settings used this runtime-system path as if it were the private data
+    // home. Falling through repairs reruns instead of merely refusing them.
+    if (resolve(expanded) !== resolve(join(configRoot, "LIFEOS"))) return expanded;
+  }
+  return join(home, ".config", "LIFEOS");
+}
+
+/**
+ * Guard the system/user separation contract BEFORE any linking: the data home
+ * `<configDir>/USER` must never resolve to the live `<configRoot>/LIFEOS/USER`
+ * itself — LinkUser would symlink the dir onto itself and destroy the contract.
+ * Legacy ambient settings that used this value are repaired by
+ * `resolveConfigDir`; this guard remains the final defense for an explicitly
+ * supplied unsafe `--config-dir`. Fail LOUD instead.
+ */
+export function checkUserDataSeparation(configRoot: string, configDir: string): { ok: boolean; detail: string } {
+  const liveUserDir = resolve(join(configRoot, "LIFEOS", "USER"));
+  const dataUserDir = resolve(join(configDir, "USER"));
+  if (liveUserDir === dataUserDir) {
+    return {
+      ok: false,
+      detail:
+        `user-data home ${dataUserDir} IS the live <configRoot>/LIFEOS/USER — refusing to symlink a directory onto itself. ` +
+        `Likely cause: LIFEOS_CONFIG_DIR in the environment points at <configRoot>/LIFEOS (the settings.json env value) ` +
+        `instead of the private data home. Pass an explicit --config-dir outside <configRoot>/LIFEOS.`,
+    };
+  }
+  return { ok: true, detail: `${dataUserDir} is distinct from the live USER dir` };
 }
 
 // ── Low-level probes (from engine detect.ts, unchanged) ──
@@ -166,6 +254,15 @@ export function detectEnv(): EnvDetection {
   const home = homedir();
   const os = detectOS();
   const harness = detectHarness(home);
+  // Explicit/persisted root signals relocate the LifeOS install root (and with
+  // it the skills dir) without changing which harness was detected. LIFEOS_DIR
+  // is what settings persist into later sessions after LIFEOS_HOME is gone.
+  const persistedRoot = configRootFromLifeosDir();
+  if (process.env.LIFEOS_HOME || process.env.CLAUDE_CONFIG_DIR || persistedRoot) {
+    const overrideRoot = resolveConfigRoot();
+    harness.configRoot = overrideRoot;
+    harness.skillsDir = join(overrideRoot, "skills");
+  }
   const configRoot = harness.configRoot || join(home, ".claude");
   const settingsPath = join(configRoot, "settings.json");
   const claudeMdPath = join(configRoot, "CLAUDE.md");
@@ -187,6 +284,7 @@ export function detectEnv(): EnvDetection {
     claudeMdExists: existsSync(claudeMdPath),
     homeDir: home,
     configRoot,
+    configDir: resolveConfigDir(configRoot),
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
   };
 }
@@ -482,6 +580,12 @@ export function setupUserSeparation(
   const liveUserDir = join(configRoot, "LIFEOS", "USER");
   const dataUserDir = join(configDir, "USER");
 
+  // Guard: never link a dir onto itself (see checkUserDataSeparation).
+  const separation = checkUserDataSeparation(configRoot, configDir);
+  if (!separation.ok) {
+    return { action: "linked", target: dataUserDir, copied: 0, error: separation.detail };
+  }
+
   // Branch (a): already a correct symlink → no-op.
   if (existsSync(liveUserDir)) {
     const st = lstatSync(liveUserDir);
@@ -560,7 +664,7 @@ type HooksMap = Record<string, MatcherGroup[]>;
 /**
  * Normalize a hook command for dedup: collapse the harness/PAI path-var forms to
  * a single canonical token and squeeze whitespace, so the same hook expressed as
- * `${LIFEOS_DIR}/x`, `$LIFEOS_DIR/x`, or `~/.claude/x` dedupes to one.
+ * `${LIFEOS_DIR}/x`, `$CLAUDE_PROJECT_DIR/x`, or `~/.claude/x` dedupes to one.
  */
 function normalizeCommand(cmd: string): string {
   return cmd

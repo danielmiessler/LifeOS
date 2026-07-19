@@ -35,7 +35,7 @@
 import { execFileSync } from "node:child_process";
 import { chmodSync, copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { copyMissing, detectDevTree } from "./InstallEngine";
+import { copyMissing, detectDevTree, resolveConfigRoot, shellQuote } from "./InstallEngine";
 
 // Enhancement components are the à-la-carte half of setup. The "LifeOS Core"
 // (skills + system prompt + base settings + CLAUDE.md) is installed by Setup's
@@ -155,9 +155,7 @@ function deployStatusline(ctx: Ctx): ComponentResult {
   // Build the settings.json command from the ACTUAL install root (ctx.lifeosDir),
   // not a hardcoded ~/.claude — a custom --config-root (e.g. ~/.claude-fable) places
   // the script under its own LIFEOS/, and the old literal pointed at the wrong tree.
-  const command = scriptPath.startsWith(`${ctx.home}/`)
-    ? `$HOME/${scriptPath.slice(ctx.home.length + 1)}`
-    : scriptPath;
+  const command = shellQuote(scriptPath);
 
   if (!av.inLive && !av.inPayload) {
     r.blockers.push(`LIFEOS_StatusLine.sh not in live tree (${scriptPath}) or payload`);
@@ -386,7 +384,7 @@ function deploy(component: Component, ctx: Ctx): ComponentResult {
 function main(): void {
   const a = process.argv.slice(2);
   const home = process.env.HOME || "";
-  const configRoot = arg(a, "--config-root") || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+  const configRoot = resolveConfigRoot(arg(a, "--config-root"));
   const skillRoot = arg(a, "--skill-root") || join(import.meta.dir, "..");
   const apply = a.includes("--apply");
   const allowDev = a.includes("--allow-dev");

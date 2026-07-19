@@ -5,6 +5,9 @@
  * Validates skill and agent tool calls via HTTP hooks.
  */
 
+import { join } from "node:path"
+import { claudeDir, shellQuote } from "../../TOOLS/lifeos-root"
+
 // ── Types ──
 
 export interface HooksConfig {
@@ -111,11 +114,12 @@ function handleAgentGuard(body: {
   if (ti.run_in_background === true) {
     stats.agentGuard.passed++
     const name = ti.description || ti.name || ti.subagent_type || "unknown"
+    const watchdog = shellQuote(join(claudeDir(), "LIFEOS", "TOOLS", "AgentWatchdog.ts"))
     return Response.json({
       hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "allow",
-        additionalContext: `WATCHDOG: Background agent "${name}" launching. If not already running, start an agent watchdog Monitor:\nMonitor({ description: "Agent watchdog", persistent: true, timeout_ms: 3600000, command: "bun $HOME/.claude/LIFEOS/TOOLS/AgentWatchdog.ts" })`,
+        additionalContext: `WATCHDOG: Background agent "${name}" launching. If not already running, start an agent watchdog Monitor:\nMonitor({ description: "Agent watchdog", persistent: true, timeout_ms: 3600000, command: "bun ${watchdog}" })`,
       },
     })
   }

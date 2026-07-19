@@ -37,7 +37,7 @@ import { readHookInput, parseTranscriptFromInput } from "./lib/hook-io";
 import { appendFileSync, mkdirSync, existsSync, readFileSync } from "fs";
 import { createHash } from "crypto";
 import { dirname, join } from "path";
-import { getClaudeDir } from "./lib/paths";
+import { getClaudeDir, shellQuote } from "./lib/paths";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -50,6 +50,7 @@ const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const OBS_PATH = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "writing-gate.jsonl");
 const RUNS_PATH = join(LIFEOS_DIR, "MEMORY", "OBSERVABILITY", "pangram-runs.jsonl");
 const RUN_WINDOW_MS = 30 * 60 * 1000; // a run counts as "this turn" within 30 min
+const PANGRAM_COMMAND = `bun ${shellQuote(join(LIFEOS_DIR, "TOOLS", "PangramScore.ts"))} --file <draft>`;
 
 // ── Publication-content signals ───────────────────────────────────────────────
 // STRONG (teeth): a disclosure hashtag ALONE on a line (caption shape, not a
@@ -145,7 +146,7 @@ const BLOCK_REASON =
   "through the _WRITING skill AND the detector before it is shown (OPERATIONAL_RULES.md § Authored content). " +
   "The gate checks for a real PangramScore.ts run on the draft — a typed token does NOT satisfy it. Before " +
   "stopping: (1) run Skill(\"_WRITING\") DETECT mode on the draft and fix every P0/P1 in the right voice; " +
-  "(2) run `bun ~/.claude/LIFEOS/TOOLS/PangramScore.ts --file <draft>` on the ACTUAL draft text so the run is " +
+  `(2) run \`${PANGRAM_COMMAND}\` on the ACTUAL draft text so the run is ` +
   "logged; (3) cite the detect result + the reported AI% in a `✍️ WRITING-AUDIT:` line. Pangram saturates on " +
   "model prose, so the number is REPORTED, not a pass/fail bar — the requirement is that the audit RAN.";
 

@@ -27,7 +27,6 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
  */
 
 import { readFileSync } from 'fs'
-import { homedir } from 'os'
 import { join } from 'path'
 import { claudeDir } from "./lifeos-root";
 
@@ -52,7 +51,7 @@ const colors = {
 
 // Load environment
 function loadEnv(): Record<string, string> {
-  const envPath = process.env.LIFEOS_CONFIG_DIR ? join(process.env.LIFEOS_CONFIG_DIR, '.env') : join(claudeDir(), '.env')
+  const envPath = join(claudeDir(), '.env')
   const env: Record<string, string> = {}
   try {
     const content = readFileSync(envPath, 'utf-8')

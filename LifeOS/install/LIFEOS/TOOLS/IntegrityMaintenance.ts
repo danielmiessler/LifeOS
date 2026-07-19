@@ -23,7 +23,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join, basename, dirname } from 'path';
 import { inference } from './Inference';
 import { getIdentity } from '../../hooks/lib/identity';
-import { claudeDir } from "./lifeos-root";
+import { claudeDir, shellQuote } from "./lifeos-root";
 
 // ============================================================================
 // Types
@@ -720,7 +720,7 @@ async function generateVerboseNarrative(
         future_impact: aiNarrative.future_impact,
         future_bullets: aiNarrative.future_bullets,
         verification_steps: aiNarrative.verification_steps,
-        verification_commands: [`bun ~/.claude/skills/_LIFEOS/Tools/UpdateSearch.ts recent 5`],
+        verification_commands: [`bun ${shellQuote(join(claudeDir(), "skills", "_LIFEOS", "Tools", "UpdateSearch.ts"))} recent 5`],
         confidence: 'high',
       },
       aiTitle: aiNarrative.title,
@@ -750,7 +750,7 @@ async function generateVerboseNarrative(
       future_impact: `The ${changeType.replace('_', ' ')} will use updated behavior.`,
       future_bullets: ['Changes are active for future sessions'],
       verification_steps: ['Changes applied via automatic detection'],
-      verification_commands: [`bun ~/.claude/skills/_LIFEOS/Tools/UpdateSearch.ts recent 5`],
+      verification_commands: [`bun ${shellQuote(join(claudeDir(), "skills", "_LIFEOS", "Tools", "UpdateSearch.ts"))} recent 5`],
       confidence: 'medium',
     },
   };

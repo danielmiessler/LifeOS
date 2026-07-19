@@ -35,7 +35,7 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from "node:fs";
 import { resolve as pathResolve, dirname } from "node:path";
 import { homedir } from "node:os";
-import { getClaudeDir } from "./lib/paths";
+import { getClaudeDir, shellQuote } from "./lib/paths";
 
 const CLAUDE_ROOT = pathResolve(getClaudeDir());
 const WRITES_LOG = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/memory-writes.jsonl");
@@ -43,6 +43,7 @@ const CURSOR = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/memory-delt
 const HEALTH_LOG = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/OBSERVABILITY/memory-health.jsonl");
 const FRESHNESS_CACHE = pathResolve(CLAUDE_ROOT, "LIFEOS/USER/CACHE/freshness.json");
 const HEARTBEAT = pathResolve(CLAUDE_ROOT, "LIFEOS/MEMORY/STATE/delta-surface-heartbeat");
+const HEALTH_COMMAND = `bun ${shellQuote(pathResolve(CLAUDE_ROOT, "LIFEOS/TOOLS/MemoryHealthCheck.ts"))}`;
 
 // Only the autonomic write path counts as "the system adjusting itself".
 const AUTONOMIC_WRITER = "MemorySystem.add";
@@ -163,7 +164,7 @@ function criticalHealthLine(): string | null {
       .filter((f: any) => f.severity === "critical")
       .map((f: any) => f.message)
       .slice(0, 3);
-    return `🩺 MEMORY HEALTH: CRITICAL — ${blockers.join(" · ") || `${last.counts?.critical ?? "?"} blocker(s)`}. Fix: bun ~/.claude/LIFEOS/TOOLS/MemoryHealthCheck.ts`;
+    return `🩺 MEMORY HEALTH: CRITICAL — ${blockers.join(" · ") || `${last.counts?.critical ?? "?"} blocker(s)`}. Fix: ${HEALTH_COMMAND}`;
   } catch {
     return null;
   }

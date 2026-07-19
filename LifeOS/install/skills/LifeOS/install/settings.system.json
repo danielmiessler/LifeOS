@@ -6,7 +6,7 @@
     "PROJECTS_DIR": "$HOME/Projects",
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
     "API_TIMEOUT_MS": "1800000",
-    "LIFEOS_CONFIG_DIR": "$HOME/.claude/LIFEOS",
+    "LIFEOS_CONFIG_DIR": "$HOME/.config/LIFEOS",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "CLAUDE_CODE_FORK_SUBAGENT": "1"
   },
@@ -48,8 +48,6 @@
       "Write(~/Projects/**)",
       "Edit(~/.claude/**)",
       "Edit(~/Projects/**)",
-      "MultiEdit(~/.claude/**)",
-      "MultiEdit(~/Projects/**)",
       "Bash(grep:*)",
       "Bash(rg:*)",
       "Bash(egrep:*)",
@@ -170,25 +168,22 @@
       "Agent(Forge)",
       "Agent(pr-review-toolkit:*)",
       "Agent(statusline-setup)",
-      "mcp__*",
+      "mcp__claude_ai_Gmail__*",
+      "mcp__claude_ai_Google_Calendar__*",
+      "mcp__claude_ai_Google_Drive__*",
+      "mcp__claude_ai_Spotify__*",
       "Write(~/Downloads/**)",
       "Edit(~/Downloads/**)",
-      "MultiEdit(~/Downloads/**)",
       "Write(/tmp/**)",
       "Edit(/tmp/**)",
-      "MultiEdit(/tmp/**)",
       "Write(/private/tmp/**)",
       "Edit(/private/tmp/**)",
-      "MultiEdit(/private/tmp/**)",
       "Write(**/tmp/**)",
       "Edit(**/tmp/**)",
-      "MultiEdit(**/tmp/**)",
       "Write(tmp/**)",
       "Edit(tmp/**)",
-      "MultiEdit(tmp/**)",
       "Write(/var/folders/**)",
       "Edit(/var/folders/**)",
-      "MultiEdit(/var/folders/**)",
       "Bash(git push:*)",
       "Bash(git mv:*)",
       "Bash(git add:*)",
@@ -304,11 +299,7 @@
       "Edit(~/.claude/.env)",
       "Edit(~/.claude/.env.*)",
       "Edit(~/.claude/**/.env)",
-      "Edit(~/.claude/**/.env.*)",
-      "MultiEdit(~/.claude/.env)",
-      "MultiEdit(~/.claude/.env.*)",
-      "MultiEdit(~/.claude/**/.env)",
-      "MultiEdit(~/.claude/**/.env.*)"
+      "Edit(~/.claude/**/.env.*)"
     ],
     "defaultMode": "auto",
     "additionalDirectories": []
@@ -321,11 +312,6 @@
     "http://localhost:31337/hooks/*"
   ],
   "httpHookAllowedEnvVars": [],
-  "statusLine": {
-    "type": "command",
-    "command": "$HOME/.claude/LIFEOS/LIFEOS_StatusLine.sh",
-    "refreshInterval": 1
-  },
   "enabledPlugins": {
     "code-review@claude-plugins-official": true,
     "pr-review-toolkit@claude-plugins-official": true,
@@ -395,7 +381,6 @@
       "~/Projects/ contains project repositories. ALL operations within ~/Projects/ are trusted — cd, build, deploy, query, test commands are routine development work.",
       "Routine trusted operations include: creating directories under MEMORY/WORK/ for ISAs, writing/editing any file under ~/.claude/LIFEOS/, running bun, bunx, git, curl, wrangler commands, spawning agents and tasks, mkdir -p for any path under ~/.claude/, and all file operations on LifeOS infrastructure files.",
       "Compound shell commands (cd X && bunx Y, cmd | rg Z) are standard development patterns — always approve when sub-commands are individually trusted.",
-      "Source control: github.com/<your-github-user>",
       "Trusted local service: pai:31337"
     ]
   },

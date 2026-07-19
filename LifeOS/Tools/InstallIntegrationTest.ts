@@ -14,10 +14,9 @@
  *      hook commands) contains ZERO `.claude` references, the symlink contract
  *      holds against `<configRoot>/USER-data`, identity imports activated, and
  *      nothing was written to `<fakeHome>/.claude` or `<fakeHome>/.config/LIFEOS`.
- *   B. Self-symlink guard: LIFEOS_CONFIG_DIR pointing at `<configRoot>/LIFEOS`
- *      (the settings.json env value — the ambiguity that used to collapse
- *      dataUserDir onto the live USER dir) must make ScaffoldUser/LinkUser
- *      refuse LOUDLY instead of linking a directory onto itself.
+ *   B. Legacy recovery + explicit self-symlink guard: an ambient legacy
+ *      LIFEOS_CONFIG_DIR value is repaired, while an explicitly requested
+ *      unsafe data home is still refused before any filesystem mutation.
  *   C. Default regression: with NO LIFEOS_HOME the install lands in
  *      `<fakeHome>/.claude` and the settings template ships byte-identical
  *      (`~/.claude` permission globs untouched, `$HOME`-expanded env values).
@@ -30,9 +29,9 @@
  *   (--keep retains the temp workspace; it is always retained on failure)
  */
 
-import { cpSync, existsSync, lstatSync, mkdtempSync, readFileSync, readlinkSync, rmSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readlinkSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 const toolsDir = import.meta.dir;
 const skillRoot = join(toolsDir, "..");
@@ -71,7 +70,7 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
 {
   const S = "A:custom-home";
   const fakeHome = join(workRoot, "home-custom");
-  const configRoot = join(fakeHome, "lifeos-home"); // deliberately NO ".claude" in the name → a clean substring assertion below
+  const configRoot = join(fakeHome, "lifeos home"); // spaces exercise shell-safe command generation; deliberately NO ".claude"
   const configDir = join(configRoot, "USER-data");
   const env = toolEnv(fakeHome, { LIFEOS_HOME: configRoot });
   const flags = ["--config-root", configRoot]; // belt-and-suspenders on top of LIFEOS_HOME, like the Setup workflow passes
@@ -111,6 +110,7 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
     check(S, "permission globs carry the custom root", JSON.stringify(settings.permissions?.allow ?? []).includes(`Write(${configRoot}/**)`), "no retargeted Write glob found");
     const hookCmds = JSON.stringify(settings.hooks ?? {});
     check(S, "merged hook commands carry the custom root", hookCmds.includes(join(configRoot, "hooks")), hookCmds.slice(0, 500));
+    check(S, "hook paths with spaces are shell-quoted", hookCmds.includes(`'${join(configRoot, "hooks")}`), hookCmds.slice(0, 500));
   }
 
   // CLAUDE.md overlay (Setup step 4 does this by hand) + ScaffoldUser + LinkUser + ActivateImports
@@ -137,7 +137,8 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   check(S, "DeployComponents statusline ok", status.code === 0 && status.json?.ok === true, status.raw.slice(0, 1500));
   if (existsSync(settingsPath)) {
     const cmd = (JSON.parse(readFileSync(settingsPath, "utf-8")) as any).statusLine?.command ?? "";
-    check(S, "statusLine command targets the custom root", cmd.includes("lifeos-home/LIFEOS/LIFEOS_StatusLine.sh"), cmd);
+    check(S, "statusLine command targets the custom root", cmd.includes("lifeos home/LIFEOS/LIFEOS_StatusLine.sh"), cmd);
+    check(S, "statusLine path with spaces is shell-quoted", cmd === `'${join(configRoot, "LIFEOS", "LIFEOS_StatusLine.sh")}'`, cmd);
   }
 
   // Isolation: nothing leaked into the default locations of the (fake) home.
@@ -152,11 +153,22 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   const SP = "D:pulse-custom-home";
   const lifeosDir = join(configRoot, "LIFEOS");
   const pulseDir = join(lifeosDir, "PULSE");
+  const statuslinePath = join(lifeosDir, "LIFEOS_StatusLine.sh");
 
   check(SP, "canonical resolver lifeos-root.ts deployed under custom root", existsSync(join(lifeosDir, "TOOLS", "lifeos-root.ts")));
   check(SP, "a PULSE module routes through the resolver (codemod shipped)",
     existsSync(join(pulseDir, "modules", "memory.ts")) && readFileSync(join(pulseDir, "modules", "memory.ts"), "utf-8").includes("lifeos-root"),
     "memory.ts does not import lifeos-root");
+  if (existsSync(statuslinePath)) {
+    const statusline = readFileSync(statuslinePath, "utf-8");
+    const statuslineLeaks = [
+      'CLAUDE_HOME="$HOME/.claude"',
+      'source "$HOME/.claude/.env"',
+      'bun "$HOME/.claude/LIFEOS/TOOLS/GetCounts.ts"',
+      '"$HOME"/.claude/projects/',
+    ].filter((needle) => statusline.includes(needle));
+    check(SP, "statusline internals use the resolved custom root", statuslineLeaks.length === 0, statuslineLeaks.join(", "));
+  }
 
   const pulsePlistTpl = join(pulseDir, "com.lifeos.pulse.plist");
   if (existsSync(pulsePlistTpl)) {
@@ -179,17 +191,71 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
     check(SP, "LIFEOS_DIR env set to <configRoot>/LIFEOS", plist.includes(`<string>${lifeosDir}</string>`), plist.slice(0, 500));
   }
 
-  // ─── Scenario B: self-symlink guard ────────────────────────────────
-  const SG = "B:self-symlink-guard";
-  // Simulate the installer re-run inside a live session: LIFEOS_CONFIG_DIR
-  // carries the settings.json env value `<configRoot>/LIFEOS` (NO --config-dir
-  // flag and NO LIFEOS_HOME, so the ambient var is what the tools fall back to).
+  // Execute both deployed resolvers with every root env scrubbed. This verifies
+  // self-location behavior instead of only checking that imports exist in text.
+  const resolverEnv = toolEnv(fakeHome);
+  const runtimeResolver = join(lifeosDir, "TOOLS", "lifeos-root.ts");
+  const runtimeProbe = Bun.spawnSync(["bun", "-e", `const m = await import(${JSON.stringify(runtimeResolver)}); console.log(m.claudeDir())`], { env: resolverEnv, stdout: "pipe", stderr: "pipe" });
+  check(SP, "deployed runtime resolver self-locates the custom root", runtimeProbe.exitCode === 0 && runtimeProbe.stdout.toString().trim() === realpathSync(configRoot), runtimeProbe.stdout.toString() + runtimeProbe.stderr.toString());
+  const hookResolver = join(configRoot, "hooks", "lib", "paths.ts");
+  const hookProbe = Bun.spawnSync(["bun", "-e", `const m = await import(${JSON.stringify(hookResolver)}); console.log(m.getClaudeDir())`], { env: resolverEnv, stdout: "pipe", stderr: "pipe" });
+  check(SP, "deployed hook resolver self-locates the custom root", hookProbe.exitCode === 0 && hookProbe.stdout.toString().trim() === realpathSync(configRoot), hookProbe.stdout.toString() + hookProbe.stderr.toString());
+
+  // The installed launcher must make an arbitrary custom root visible to a
+  // fresh Claude process. A fake binary captures cwd/env without contacting
+  // Claude or touching any real user configuration.
+  const fakeBin = join(workRoot, "fake-bin");
+  const launchCapture = join(workRoot, "launcher-capture.json");
+  mkdirSync(fakeBin, { recursive: true });
+  const fakeClaude = join(fakeBin, "claude");
+  writeFileSync(fakeClaude, `#!/bin/sh\nif [ "$1" = "--version" ]; then echo "2.0.0"; exit 0; fi\nprintf '{"cwd":"%s","lifeosHome":"%s","claudeConfigDir":"%s"}\\n' "$PWD" "$LIFEOS_HOME" "$CLAUDE_CONFIG_DIR" > "$LIFEOS_LAUNCH_CAPTURE"\n`);
+  chmodSync(fakeClaude, 0o755);
+  const launcherEnv = toolEnv(fakeHome, {
+    PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
+    LIFEOS_LAUNCH_CAPTURE: launchCapture,
+  });
+  const launcher = Bun.spawnSync(["bun", join(lifeosDir, "TOOLS", "lifeos.ts")], { env: launcherEnv, stdout: "pipe", stderr: "pipe" });
+  const captured = existsSync(launchCapture) ? JSON.parse(readFileSync(launchCapture, "utf-8")) as Record<string, string> : {};
+  check(SP, "launcher exports and enters the arbitrary custom root", launcher.exitCode === 0 && captured.cwd === realpathSync(configRoot) && captured.lifeosHome === realpathSync(configRoot) && captured.claudeConfigDir === realpathSync(configRoot), launcher.stdout.toString() + launcher.stderr.toString() + JSON.stringify(captured));
+
+  // A later session no longer has the installer's transient LIFEOS_HOME. It
+  // does retain LIFEOS_DIR/LIFEOS_CONFIG_DIR from settings and must recover one
+  // coherent pair rather than mixing ~/.claude with the custom data home.
+  const resumedEnv = toolEnv(fakeHome, { LIFEOS_DIR: lifeosDir, LIFEOS_CONFIG_DIR: configDir });
+  const resumedDetect = runTool("DetectEnv.ts", [], resumedEnv);
+  check(SP, "later session recovers configRoot from LIFEOS_DIR", resumedDetect.json?.configRoot === configRoot, resumedDetect.raw);
+  check(SP, "later session keeps the matching configDir", resumedDetect.json?.configDir === configDir, resumedDetect.raw);
+  const resumedScaffold = runTool("ScaffoldUser.ts", ["--skill-root", skillRoot], resumedEnv);
+  check(SP, "later ScaffoldUser defaults stay inside the custom root", resumedScaffold.code === 0 && resumedScaffold.json?.to === join(configDir, "USER"), resumedScaffold.raw);
+
+  const actionableFiles = [
+    join(pulseDir, "modules", "hooks.ts"),
+    join(pulseDir, "modules", "work.ts"),
+    join(configRoot, "hooks", "MemoryHealthGate.hook.ts"),
+    join(configRoot, "hooks", "MemoryDeltaSurface.hook.ts"),
+    join(configRoot, "hooks", "WritingGate.hook.ts"),
+  ];
+  const actionableLeaks = actionableFiles.filter((p) => existsSync(p) && /bun (?:\$HOME\/\.claude|~\/\.claude)/.test(readFileSync(p, "utf-8")));
+  check(SP, "agent-actionable runtime commands have no default-root hardcode", actionableLeaks.length === 0, actionableLeaks.join(", "));
+
+  // ─── Scenario B: legacy recovery + explicit self-symlink guard ─────
+  const SG = "B:legacy-and-guard";
+  // A legacy ambient value is ignored and automatically recovers to the
+  // isolated custom data home.
   const poisoned = toolEnv(fakeHome, { LIFEOS_CONFIG_DIR: join(configRoot, "LIFEOS") });
   const guardLink = runTool("LinkUser.ts", ["--config-root", configRoot, "--apply"], poisoned);
-  check(SG, "LinkUser refuses the self-symlink", guardLink.code !== 0 && guardLink.json?.refused === "user-data-separation", guardLink.raw);
+  check(SG, "LinkUser recovers from an ambient legacy configDir", guardLink.code === 0 && (guardLink.json?.contract as any)?.passed === true, guardLink.raw);
   const guardScaffold = runTool("ScaffoldUser.ts", ["--config-root", configRoot, "--skill-root", skillRoot, "--apply"], poisoned);
-  check(SG, "ScaffoldUser refuses the self-symlink", guardScaffold.code !== 0 && guardScaffold.json?.refused === "user-data-separation", guardScaffold.raw);
-  check(SG, "live USER symlink survived the refused runs",
+  check(SG, "ScaffoldUser recovers from an ambient legacy configDir", guardScaffold.code === 0 && guardScaffold.json?.to === join(configDir, "USER"), guardScaffold.raw);
+
+  // An explicit unsafe request remains an error: explicit flags outrank the
+  // recovery heuristic, and the separation guard prevents self-linking.
+  const unsafeDir = join(configRoot, "LIFEOS");
+  const explicitGuardLink = runTool("LinkUser.ts", ["--config-root", configRoot, "--config-dir", unsafeDir, "--apply"], env);
+  check(SG, "LinkUser refuses an explicitly unsafe configDir", explicitGuardLink.code !== 0 && explicitGuardLink.json?.refused === "user-data-separation", explicitGuardLink.raw);
+  const explicitGuardScaffold = runTool("ScaffoldUser.ts", ["--config-root", configRoot, "--config-dir", unsafeDir, "--skill-root", skillRoot, "--apply"], env);
+  check(SG, "ScaffoldUser refuses an explicitly unsafe configDir", explicitGuardScaffold.code !== 0 && explicitGuardScaffold.json?.refused === "user-data-separation", explicitGuardScaffold.raw);
+  check(SG, "live USER symlink survived the explicit refused runs",
     lstatSync(liveUser).isSymbolicLink() && readlinkSync(liveUser) === join(configDir, "USER"));
 }
 
@@ -210,6 +276,7 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   if (existsSync(settingsPath)) {
     const settings = JSON.parse(readFileSync(settingsPath, "utf-8")) as Record<string, any>;
     check(S, "env.LIFEOS_DIR is the expanded default", settings.env?.LIFEOS_DIR === join(defaultRoot, "LIFEOS"), String(settings.env?.LIFEOS_DIR));
+    check(S, "env.LIFEOS_CONFIG_DIR points at the private default data home", settings.env?.LIFEOS_CONFIG_DIR === join(fakeHome, ".config", "LIFEOS"), String(settings.env?.LIFEOS_CONFIG_DIR));
     check(S, "template ~/.claude permission globs untouched", JSON.stringify(settings.permissions?.allow ?? []).includes("Write(~/.claude/**)"), "default globs were rewritten — regression!");
     check(S, "no retarget was reported", settingsRun.json?.retargetedStrings === undefined, JSON.stringify(settingsRun.json));
   }
@@ -219,6 +286,82 @@ const workRoot = mkdtempSync(join(tmpdir(), "lifeos-install-test-"));
   if (existsSync(settingsPath)) {
     const hookCmds = JSON.stringify((JSON.parse(readFileSync(settingsPath, "utf-8")) as any).hooks ?? {});
     check(S, "default hook commands still use $HOME/.claude", hookCmds.includes("$HOME/.claude/hooks/"), hookCmds.slice(0, 300));
+  }
+
+  // Legacy settings poisoned LIFEOS_CONFIG_DIR with <configRoot>/LIFEOS. The
+  // resolver must ignore it immediately and InstallSettings must repair it.
+  const legacyEnv = toolEnv(fakeHome, { LIFEOS_DIR: join(defaultRoot, "LIFEOS"), LIFEOS_CONFIG_DIR: join(defaultRoot, "LIFEOS") });
+  const legacyScaffold = runTool("ScaffoldUser.ts", ["--skill-root", skillRoot], legacyEnv);
+  check(S, "legacy poisoned configDir no longer blocks a default rerun", legacyScaffold.code === 0 && legacyScaffold.json?.to === join(fakeHome, ".config", "LIFEOS", "USER"), legacyScaffold.raw);
+  if (existsSync(settingsPath)) {
+    const legacySettings = JSON.parse(readFileSync(settingsPath, "utf-8")) as Record<string, any>;
+    legacySettings.env.LIFEOS_CONFIG_DIR = join(defaultRoot, "LIFEOS");
+    writeFileSync(settingsPath, JSON.stringify(legacySettings, null, 2) + "\n");
+    const repair = runTool("InstallSettings.ts", ["--skill-root", skillRoot, "--apply"], legacyEnv);
+    const repaired = JSON.parse(readFileSync(settingsPath, "utf-8")) as Record<string, any>;
+    check(S, "InstallSettings repairs the legacy LIFEOS_CONFIG_DIR value", repair.code === 0 && repaired.env?.LIFEOS_CONFIG_DIR === join(fakeHome, ".config", "LIFEOS"), repair.raw);
+  }
+}
+
+// ─── Scenario E: direct explicit root is isolated without LIFEOS_HOME ──
+{
+  const S = "E:explicit-root";
+  const fakeHome = join(workRoot, "home-explicit");
+  const explicitRoot = join(fakeHome, "explicit root");
+  const env = toolEnv(fakeHome);
+  const scaffold = runTool("ScaffoldUser.ts", ["--config-root", explicitRoot, "--skill-root", skillRoot], env);
+  check(S, "--config-root defaults USER data under that root", scaffold.code === 0 && scaffold.json?.to === join(explicitRoot, "USER-data", "USER"), scaffold.raw);
+  const harnessEnv = toolEnv(fakeHome, { CLAUDE_CONFIG_DIR: explicitRoot });
+  const harnessDetect = runTool("DetectEnv.ts", [], harnessEnv);
+  check(S, "CLAUDE_CONFIG_DIR override gets an isolated USER data home", harnessDetect.json?.configRoot === explicitRoot && harnessDetect.json?.configDir === join(explicitRoot, "USER-data"), harnessDetect.raw);
+}
+
+// ─── Scenario G: bootstrap makes the staged custom skill discoverable ──
+{
+  const S = "G:bootstrap-handoff";
+  const fakeHome = join(workRoot, "home-bootstrap");
+  const configRoot = join(fakeHome, "bootstrap root");
+  const fakeBin = join(workRoot, "bootstrap-bin");
+  const capturePath = join(workRoot, "bootstrap-capture.json");
+  mkdirSync(fakeBin, { recursive: true });
+  const fakeClaude = join(fakeBin, "claude");
+  writeFileSync(fakeClaude, `#!/bin/sh\nprintf '{"arg":"%s","lifeosHome":"%s","claudeConfigDir":"%s"}\\n' "$1" "$LIFEOS_HOME" "$CLAUDE_CONFIG_DIR" > "$LIFEOS_BOOTSTRAP_CAPTURE"\n`);
+  chmodSync(fakeClaude, 0o755);
+  const env = toolEnv(fakeHome, {
+    PATH: `${fakeBin}:${process.env.PATH ?? ""}`,
+    LIFEOS_SRC: dirname(skillRoot),
+    LIFEOS_TAG: "v-test",
+    LIFEOS_BOOTSTRAP_CAPTURE: capturePath,
+  });
+  const bootstrap = Bun.spawnSync(["bash", join(skillRoot, "install", "install.sh"), "--home", configRoot], { env, stdout: "pipe", stderr: "pipe" });
+  const captured = existsSync(capturePath) ? JSON.parse(readFileSync(capturePath, "utf-8")) as Record<string, string> : {};
+  check(S, "bootstrap stages LifeOS under the custom root", existsSync(join(configRoot, "skills", "LifeOS", "SKILL.md")), bootstrap.stdout.toString() + bootstrap.stderr.toString());
+  check(S, "bootstrap launches the staged skill through CLAUDE_CONFIG_DIR", bootstrap.exitCode === 0 && captured.arg === "/lifeos-setup" && captured.lifeosHome === configRoot && captured.claudeConfigDir === configRoot, bootstrap.stdout.toString() + bootstrap.stderr.toString() + JSON.stringify(captured));
+}
+
+// The nested LifeOS payload is a supported direct-deploy path; keep its
+// installer implementation synchronized with the authoritative outer skill.
+{
+  const S = "F:packaged-copy";
+  const nested = join(skillRoot, "install", "skills", "LifeOS");
+  for (const rel of [
+    "Tools/ActivateImports.ts",
+    "Tools/DeployComponents.ts",
+    "Tools/DeployCore.ts",
+    "Tools/InstallEngine.ts",
+    "Tools/InstallHooks.ts",
+    "Tools/InstallSettings.ts",
+    "Tools/LinkUser.ts",
+    "Tools/ScaffoldUser.ts",
+    "Tools/SeedPulse.ts",
+    "Workflows/Setup.md",
+    "Workflows/Update.md",
+    "INSTALL.md",
+    "install/CLAUDE.template.md",
+    "install/install.sh",
+    "install/settings.system.json",
+  ]) {
+    check(S, `packaged ${rel} matches the authoritative skill`, readFileSync(join(skillRoot, rel), "utf-8") === readFileSync(join(nested, rel), "utf-8"), rel);
   }
 }
 

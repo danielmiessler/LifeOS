@@ -16,10 +16,10 @@
 
 import { execFileSync } from "node:child_process";
 import { join } from "node:path";
-import { getClaudeDir } from "./lib/paths";
+import { getClaudeDir, shellQuote } from "./lib/paths";
 
-const HOME = process.env.HOME || "";
 const CHECK = join(getClaudeDir(), "LIFEOS/TOOLS/MemoryHealthCheck.ts");
+const CHECK_COMMAND = `bun ${shellQuote(CHECK)}`;
 
 try {
   const out = execFileSync("bun", [CHECK], {
@@ -29,7 +29,7 @@ try {
   });
   const report = JSON.parse(out);
   if (report.overall === "critical") {
-    console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: bun ~/.claude/LIFEOS/TOOLS/MemoryHealthCheck.ts`);
+    console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: ${CHECK_COMMAND}`);
   } else if (report.overall === "warn") {
     console.error(`⚠️  Memory health: WARN — ${report.counts.warn} finding(s).`);
   }
@@ -42,7 +42,7 @@ try {
     if (stdout) {
       const report = JSON.parse(stdout);
       if (report.overall === "critical") {
-        console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: bun ~/.claude/LIFEOS/TOOLS/MemoryHealthCheck.ts`);
+        console.error(`🚨 Memory health: CRITICAL — ${report.counts.critical} blocker(s). Run: ${CHECK_COMMAND}`);
       } else if (report.overall === "warn") {
         console.error(`⚠️  Memory health: WARN — ${report.counts.warn} finding(s).`);
       }

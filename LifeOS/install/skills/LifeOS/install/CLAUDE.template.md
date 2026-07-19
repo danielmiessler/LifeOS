@@ -1,4 +1,4 @@
-# LifeOS {{LIFEOS_VERSION}} — LifeOS (the Life Operating System)
+# LifeOS 7.1.1 — LifeOS (the Life Operating System)
 
 > **LifeOS is the Life OS. The DA is the principal's AI assistant. Pulse is the Life Dashboard.**
 > Canonical thesis: `LIFEOS/DOCUMENTATION/LifeOs/LifeOsThesis.md`. Everyone running LifeOS names their own DA. LifeOS targets AS3 on the LifeOS Maturity Model, with lineage from "The Real Internet of Things" (2016).
@@ -16,7 +16,7 @@
 
 Constitutional rules, the unified response format, verification doctrine, hard prohibitions, security protocol, and operational rules all live in the system prompt: `LIFEOS/LIFEOS_SYSTEM_PROMPT.md`. When this file and the system prompt disagree, the system prompt wins.
 
-This file is the **routing table** — it tells you where everything lives. The only mandatory startup `@`-import shipped with public LifeOS is `ARCHITECTURE_SUMMARY`. The five identity files (`PRINCIPAL_TELOS`, `PRINCIPAL_IDENTITY`, `DA_IDENTITY`, `PROJECTS`, `OPERATIONAL_RULES`) are commented out above — the agentic `/lifeos-setup` (via `Tools/ActivateImports.ts`) uncomments them once the principal's USER scaffold is populated. Claude Code does not follow transitive `@`-imports from inside imported files, so each identity file must be listed here at top level. Everything below is **on-demand** lookup. Paths are relative to `~/.claude/` unless noted.
+This file is the **routing table** — it tells you where everything lives. The only mandatory startup `@`-import shipped with public LifeOS is `ARCHITECTURE_SUMMARY`. The five identity files (`PRINCIPAL_TELOS`, `PRINCIPAL_IDENTITY`, `DA_IDENTITY`, `PROJECTS`, `OPERATIONAL_RULES`) are commented out above — the agentic `/lifeos-setup` (via `Tools/ActivateImports.ts`) uncomments them once the principal's USER scaffold is populated. Claude Code does not follow transitive `@`-imports from inside imported files, so each identity file must be listed here at top level. Everything below is **on-demand** lookup. Paths are relative to the harness config root (default `~/.claude/`; a custom LifeOS home if this install used one) unless noted.
 
 ## LifeOS System (paths under `LIFEOS/DOCUMENTATION/` unless noted)
 
@@ -81,7 +81,7 @@ Populated during `/lifeos-setup`. Typical layout:
 - Finances — `FINANCES/`
 - Integration configs — `INTEGRATIONS/*.yaml`
 - Work system — `WORK/config.yaml`
-- Secrets — `~/.claude/.env` (canonical; see OPERATIONAL_RULES.md)
+- Secrets — `<config root>/.env`, default `~/.claude/.env` (canonical; see OPERATIONAL_RULES.md)
 
 ## Project-Specific Rules
 

@@ -36,9 +36,8 @@
  */
 
 import { readFileSync } from 'fs'
-import { homedir } from 'os'
 import { join } from 'path'
-import { claudeDir } from "./lifeos-root";
+import { claudeDir, shellQuote } from "./lifeos-root";
 
 const colors = {
   reset: '\x1b[0m', bold: '\x1b[1m', dim: '\x1b[2m',
@@ -47,9 +46,7 @@ const colors = {
 
 // Load environment — mirrors LIFEOS/TOOLS/Grok.ts convention
 function loadEnv(): Record<string, string> {
-  const envPath = process.env.LIFEOS_CONFIG_DIR
-    ? join(process.env.LIFEOS_CONFIG_DIR, '.env')
-    : join(claudeDir(), '.env')
+  const envPath = join(claudeDir(), '.env')
   const env: Record<string, string> = {}
   try {
     const content = readFileSync(envPath, 'utf-8')
@@ -129,12 +126,12 @@ async function main() {
   const { opts, query } = parseArgs(process.argv.slice(2))
 
   if (!API_KEY) {
-    console.error(`${colors.red}Error: PERPLEXITY_API_KEY not set in ~/.claude/.env${colors.reset}`)
+    console.error(`${colors.red}Error: PERPLEXITY_API_KEY not set in ${join(claudeDir(), '.env')}${colors.reset}`)
     process.exit(1)
   }
   if (!query) {
     console.error(`${colors.red}Error: no query provided${colors.reset}`)
-    console.error(`Usage: bun ~/.claude/LIFEOS/TOOLS/PerplexitySearch.ts [--model sonar-pro] [--recency day] [--json] "<query>"`)
+    console.error(`Usage: bun ${shellQuote(join(claudeDir(), 'LIFEOS', 'TOOLS', 'PerplexitySearch.ts'))} [--model sonar-pro] [--recency day] [--json] "<query>"`)
     process.exit(1)
   }
 

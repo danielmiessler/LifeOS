@@ -205,7 +205,18 @@ info "hooks with your permission. Nothing changes without you saying yes."
 echo
 if command -v claude >/dev/null 2>&1 && [ -z "${CLAUDECODE:-}" ]; then
   info "Launching setup..."
+  # LIFEOS_HOME is our installer override, not a Claude Code setting. Point the
+  # bootstrap session at the staged root so it can actually discover the new
+  # LifeOS skill regardless of the caller's current working directory.
+  if [ -n "$LIFEOS_HOME" ]; then
+    export CLAUDE_CONFIG_DIR="$LIFEOS_HOME"
+  fi
   exec claude "/lifeos-setup"
 else
-  printf "  ${BOLD}Open your harness and run:${RESET}  ${LIGHT_BLUE}/lifeos-setup${RESET}\n\n"
+  if [ -n "$LIFEOS_HOME" ]; then
+    printf -v SETUP_ROOT_Q '%q' "$LIFEOS_HOME"
+    printf "  ${BOLD}Open a terminal and run:${RESET}  ${LIGHT_BLUE}CLAUDE_CONFIG_DIR=%s claude /lifeos-setup${RESET}\n\n" "$SETUP_ROOT_Q"
+  else
+    printf "  ${BOLD}Open your harness and run:${RESET}  ${LIGHT_BLUE}/lifeos-setup${RESET}\n\n"
+  fi
 fi

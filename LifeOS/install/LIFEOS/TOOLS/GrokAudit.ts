@@ -108,9 +108,7 @@ interface AuditResponse {
 }
 
 function loadEnv(): Record<string, string> {
-  const envPath = process.env.LIFEOS_CONFIG_DIR
-    ? join(process.env.LIFEOS_CONFIG_DIR, ".env")
-    : join(claudeDir(), ".env");
+  const envPath = join(claudeDir(), ".env");
   const env: Record<string, string> = {};
   try {
     for (const line of readFileSync(envPath, "utf-8").split("\n")) {

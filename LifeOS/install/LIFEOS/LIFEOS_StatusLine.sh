@@ -36,7 +36,9 @@ case "$LIFEOS_DIR" in
     *'$HOME'*|*'${HOME}'*|*'~'*) echo "LifeOS"; exit 0 ;;
 esac
 
-CLAUDE_HOME="$HOME/.claude"
+# The statusline is deployed beside this LIFEOS directory. Derive its config
+# root from LIFEOS_DIR so custom homes do not read global settings or caches.
+CLAUDE_HOME="$(dirname "$LIFEOS_DIR")"
 SETTINGS_FILE="$CLAUDE_HOME/settings.json"
 RATINGS_FILE="$LIFEOS_DIR/MEMORY/LEARNING/SIGNALS/ratings.jsonl"
 MODEL_CACHE="$LIFEOS_DIR/MEMORY/STATE/model-cache.txt"
@@ -81,13 +83,9 @@ USER_TZ="${USER_TZ:-UTC}"
 # LIFEOS_VERSION: read from PAI/VERSION (canonical, also read by install.sh,
 # Banner.ts, _LIFEOS/Tools/UpdateLifeosVersion.ts, ShadowRelease.ts, install web
 # server). Same multi-path pattern as ALGO_VERSION below to survive
-# hook-spawn contexts where HOME/LIFEOS_DIR may not resolve.
+# hook-spawn contexts where HOME may not resolve.
 LIFEOS_VERSION=""
-for _pai_v_path in \
-    "$LIFEOS_DIR/VERSION" \
-    "$HOME/.claude/LIFEOS/VERSION" \
-    "/Users/$(id -un 2>/dev/null)/.claude/LIFEOS/VERSION" \
-    "$(eval echo ~"$(id -un 2>/dev/null)")/.claude/LIFEOS/VERSION"; do
+for _pai_v_path in "$LIFEOS_DIR/VERSION"; do
     if [ -n "$_pai_v_path" ] && [ -f "$_pai_v_path" ]; then
         LIFEOS_VERSION="$(cat "$_pai_v_path" 2>/dev/null | tr -d '[:space:]')"
         [ -n "$LIFEOS_VERSION" ] && break
@@ -95,15 +93,9 @@ for _pai_v_path in \
 done
 LIFEOS_VERSION="${LIFEOS_VERSION:-—}"
 # v6.2.0+: LATEST is the single source of truth for the Algorithm version.
-# Hardened against Claude Code's hook-spawn context where $HOME or $LIFEOS_DIR
-# may not resolve as expected (subprocess spawn with non-default env). Try
-# multiple candidate paths in order, keeping the first non-empty result.
+# Hardened against Claude Code's hook-spawn context where $HOME may not resolve.
 ALGO_VERSION=""
-for _algo_path in \
-    "$LIFEOS_DIR/ALGORITHM/LATEST" \
-    "$HOME/.claude/LIFEOS/ALGORITHM/LATEST" \
-    "/Users/$(id -un 2>/dev/null)/.claude/LIFEOS/ALGORITHM/LATEST" \
-    "$(eval echo ~"$(id -un 2>/dev/null)")/.claude/LIFEOS/ALGORITHM/LATEST"; do
+for _algo_path in "$LIFEOS_DIR/ALGORITHM/LATEST"; do
     if [ -n "$_algo_path" ] && [ -f "$_algo_path" ]; then
         ALGO_VERSION="$(cat "$_algo_path" 2>/dev/null | tr -d '[:space:]')"
         [ -n "$ALGO_VERSION" ] && break
@@ -131,10 +123,8 @@ USAGE_CACHE_TTL=900      # 15 min: /api/oauth/usage has aggressive per-token rat
 USAGE_HARD_EXPIRY=21600  # P5: 6h. Show last-known-good (dimmed + stale badge) until here, then hide —
                          # replaces the old 1800s cliff that deleted the cache and vanished the counters.
 
-# Source .env for API keys. Canonical location is $HOME/.claude/.env (which is
-# typically a symlink to $HOME/.config/LIFEOS/.env). The historical $HOME/.claude/LIFEOS/.env
-# path is wrong and has been removed everywhere else — do not reintroduce it.
-[ -f "$HOME/.claude/.env" ] && source "$HOME/.claude/.env"
+# Source .env for API keys from the resolved config root.
+[ -f "$CLAUDE_HOME/.env" ] && source "$CLAUDE_HOME/.env"
 
 # Cross-platform file mtime (seconds since epoch). Detect stat flavor once;
 # probing both variants on every mtime check is expensive on macOS.
@@ -312,8 +302,8 @@ if [ "$context_pct" = "0" ] && [ "$total_input" -eq 0 ] 2>/dev/null; then
             [ -n "$_f" ] && [ -f "$LIFEOS_DIR/$_f" ] && _est=$((_est + $(wc -c < "$LIFEOS_DIR/$_f") * 10 / 35))
         done < <(jq -r '.loadAtStartup.files[]? // empty' "$SETTINGS_FILE" 2>/dev/null)
 
-        # Project memory files (CC native memory at ~/.claude/projects/*/memory/)
-        for _f in "$HOME"/.claude/projects/*/memory/MEMORY.md; do
+        # Project memory files (CC native memory under the resolved config root)
+        for _f in "$CLAUDE_HOME"/projects/*/memory/MEMORY.md; do
             [ -f "$_f" ] && _est=$((_est + $(wc -c < "$_f") * 10 / 35))
         done
 
@@ -729,7 +719,7 @@ if [ "$MODE" != "nano" ]; then
 
     # Hook count flows through GetCounts.ts — same source banner uses. --single hooks
     # short-circuits all other walks (~20ms). Don't reintroduce inline jq here.
-    _hooks_cnt=$(bun "$HOME/.claude/LIFEOS/TOOLS/GetCounts.ts" --single hooks 2>/dev/null || echo 0)
+    _hooks_cnt=$(bun "$LIFEOS_DIR/TOOLS/GetCounts.ts" --single hooks 2>/dev/null || echo 0)
 
     _ratings_cnt=0
     [ -f "$RATINGS_FILE" ] && _ratings_cnt=$(wc -l < "$RATINGS_FILE" 2>/dev/null | tr -d ' ')

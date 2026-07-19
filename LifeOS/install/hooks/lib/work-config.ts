@@ -33,7 +33,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
  */
 import { existsSync, readFileSync, writeFileSync, chmodSync } from "fs";
 import { join } from "path";
-import { getClaudeDir } from "./paths";
+import { getClaudeDir, shellQuote } from "./paths";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -48,6 +48,7 @@ const HOME = process.env.HOME || "";
 const LIFEOS_DIR = process.env.LIFEOS_DIR || join(getClaudeDir(), "LIFEOS");
 const REPO_JSON_PATH = join(LIFEOS_DIR, "USER", "WORK", "work_repo.json");
 const COLUMNS_YAML_PATH = join(LIFEOS_DIR, "USER", "WORK", "config.yaml");
+const SET_WORK_REPO_COMMAND = `bun ${shellQuote(join(getClaudeDir(), "skills", "_ULWORK", "Tools", "SetWorkRepo.ts"))} <owner/repo>`;
 
 // Slimmed kanban — {{PRINCIPAL_NAME}} asked for 5 lanes that map to how he actually moves work.
 const DEFAULT_COLUMNS = ["Queued", "Blocked", "In-Progress", "In-Review", "Complete"];
@@ -119,7 +120,7 @@ export function loadWorkConfig(): WorkConfig {
   if (!existsSync(REPO_JSON_PATH)) {
     return disabled(
       "missing",
-      "USER/WORK/work_repo.json missing — run `bun ~/.claude/skills/_ULWORK/Tools/SetWorkRepo.ts <owner/repo>`",
+      `USER/WORK/work_repo.json missing — run \`${SET_WORK_REPO_COMMAND}\``,
     );
   }
 

@@ -22,7 +22,7 @@
 
 import { copyFileSync, cpSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { detectDevTree, mergeHooks, resolveConfigRoot } from "./InstallEngine";
+import { detectDevTree, mergeHooks, resolveConfigRoot, shellQuote } from "./InstallEngine";
 
 interface Args { configRoot: string; skillRoot: string; apply: boolean; allowDev: boolean; }
 
@@ -49,6 +49,7 @@ const DEFAULT_ROOT_FORMS = ["${HOME}/.claude", "$HOME/.claude", "~/.claude"];
  */
 function retargetHookCommands(incoming: Record<string, Array<{ hooks?: Array<{ command?: string }> }>>, configRoot: string): number {
   let replaced = 0;
+  const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   for (const groups of Object.values(incoming ?? {})) {
     if (!Array.isArray(groups)) continue;
     for (const group of groups) {
@@ -57,9 +58,13 @@ function retargetHookCommands(incoming: Record<string, Array<{ hooks?: Array<{ c
         if (typeof h.command !== "string") continue;
         let cmd = h.command;
         for (const form of DEFAULT_ROOT_FORMS) {
-          const parts = cmd.split(form);
-          replaced += parts.length - 1;
-          cmd = parts.join(configRoot);
+          // Quote the complete path token, not just the root, so custom homes
+          // containing spaces/metacharacters remain one safe shell argument.
+          const pathToken = new RegExp(`${escapeRegExp(form)}([^\\s;&|<>()"']*)`, "g");
+          cmd = cmd.replace(pathToken, (_match, suffix: string) => {
+            replaced++;
+            return shellQuote(configRoot + suffix);
+          });
         }
         h.command = cmd;
       }

@@ -15,7 +15,7 @@
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
-import { join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 
 // ── Types (inlined — the skill ships without the engine's types.ts) ──
 
@@ -89,33 +89,54 @@ export function expandHomePrefix(value: string, home: string): string {
   return value;
 }
 
+/** Quote one POSIX-shell argument, preserving readable output for safe paths. */
+export function shellQuote(value: string): string {
+  if (/^[A-Za-z0-9_@%+=:,./-]+$/.test(value)) return value;
+  return `'${value.replace(/'/g, `'"'"'`)}'`;
+}
+
+/** Recover `<configRoot>` from the persisted `<configRoot>/LIFEOS` runtime env. */
+export function configRootFromLifeosDir(value = process.env.LIFEOS_DIR): string | undefined {
+  if (!value) return undefined;
+  const home = process.env.HOME || homedir();
+  const expanded = expandHomePrefix(value, home);
+  return basename(expanded).toLowerCase() === "lifeos" ? dirname(expanded) : undefined;
+}
+
 /**
  * Resolve the LifeOS config root (where LIFEOS/, settings.json, hooks/,
  * CLAUDE.md land). Priority: explicit --config-root flag > LIFEOS_HOME (the
  * dedicated LifeOS custom-home override — relocates ONLY LifeOS, not the
  * harness's whole config dir) > CLAUDE_CONFIG_DIR (the harness's own override)
- * > ~/.claude. Every setup Tool resolves its root through this one function so
+ * > persisted LIFEOS_DIR parent > ~/.claude. Every setup Tool resolves its root through this one function so
  * no Tool can drift to a different default (the "defensive fallbacks" lesson).
  */
 export function resolveConfigRoot(flagValue?: string): string {
   const home = process.env.HOME || homedir();
-  const raw = flagValue || process.env.LIFEOS_HOME || process.env.CLAUDE_CONFIG_DIR || join(home, ".claude");
+  const raw = flagValue || process.env.LIFEOS_HOME || process.env.CLAUDE_CONFIG_DIR || configRootFromLifeosDir() || join(home, ".claude");
   return expandHomePrefix(raw, home);
 }
 
 /**
  * Resolve the private user-data home (configDir; `<configDir>/USER` is the
  * symlink target of `<configRoot>/LIFEOS/USER`). Priority: explicit
- * --config-dir flag > custom-home default `<configRoot>/USER-data` when
- * LIFEOS_HOME is set (two LifeOS instances must NEVER share one USER tree —
- * isolation is the point of a custom home) > LIFEOS_CONFIG_DIR > ~/.config/LIFEOS.
+ * --config-dir flag > custom-home default `<configRoot>/USER-data` when the
+ * config root is non-default (two LifeOS instances must NEVER share one USER
+ * tree — isolation is the point of a custom home) > LIFEOS_CONFIG_DIR >
+ * ~/.config/LIFEOS. The legacy poisoned value `<configRoot>/LIFEOS` is ignored.
  */
 export function resolveConfigDir(configRoot: string, flagValue?: string): string {
   const home = process.env.HOME || homedir();
   if (flagValue) return expandHomePrefix(flagValue, home);
-  if (process.env.LIFEOS_HOME) return join(configRoot, "USER-data");
+  const defaultRoot = join(home, ".claude");
+  if (resolve(configRoot) !== resolve(defaultRoot)) return join(configRoot, "USER-data");
   const envDir = process.env.LIFEOS_CONFIG_DIR;
-  if (envDir) return expandHomePrefix(envDir, home);
+  if (envDir) {
+    const expanded = expandHomePrefix(envDir, home);
+    // Old settings used this runtime-system path as if it were the private data
+    // home. Falling through repairs reruns instead of merely refusing them.
+    if (resolve(expanded) !== resolve(join(configRoot, "LIFEOS"))) return expanded;
+  }
   return join(home, ".config", "LIFEOS");
 }
 
@@ -123,10 +144,9 @@ export function resolveConfigDir(configRoot: string, flagValue?: string): string
  * Guard the system/user separation contract BEFORE any linking: the data home
  * `<configDir>/USER` must never resolve to the live `<configRoot>/LIFEOS/USER`
  * itself — LinkUser would symlink the dir onto itself and destroy the contract.
- * This is reachable today: settings.json ships `LIFEOS_CONFIG_DIR` pointing at
- * `<configRoot>/LIFEOS` (its env-block meaning), while the installers read the
- * same var as the private data home — an installer re-run inside a live session
- * inherits the env value and collapses the two. Fail LOUD instead.
+ * Legacy ambient settings that used this value are repaired by
+ * `resolveConfigDir`; this guard remains the final defense for an explicitly
+ * supplied unsafe `--config-dir`. Fail LOUD instead.
  */
 export function checkUserDataSeparation(configRoot: string, configDir: string): { ok: boolean; detail: string } {
   const liveUserDir = resolve(join(configRoot, "LIFEOS", "USER"));
@@ -234,11 +254,12 @@ export function detectEnv(): EnvDetection {
   const home = homedir();
   const os = detectOS();
   const harness = detectHarness(home);
-  // LIFEOS_HOME relocates the LifeOS install root (and with it the skills dir)
-  // without touching which harness was detected — the harness stays whatever it
-  // is; only WHERE LifeOS lives moves.
-  if (process.env.LIFEOS_HOME) {
-    const overrideRoot = expandHomePrefix(process.env.LIFEOS_HOME, home);
+  // Explicit/persisted root signals relocate the LifeOS install root (and with
+  // it the skills dir) without changing which harness was detected. LIFEOS_DIR
+  // is what settings persist into later sessions after LIFEOS_HOME is gone.
+  const persistedRoot = configRootFromLifeosDir();
+  if (process.env.LIFEOS_HOME || process.env.CLAUDE_CONFIG_DIR || persistedRoot) {
+    const overrideRoot = resolveConfigRoot();
     harness.configRoot = overrideRoot;
     harness.skillsDir = join(overrideRoot, "skills");
   }

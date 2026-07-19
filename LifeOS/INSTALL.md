@@ -74,13 +74,14 @@ What it changes, and what it doesn't:
 - `LIFEOS_HOME` moves **only where LifeOS installs** (`configRoot`: `LIFEOS/`, `settings.json`, `hooks/`, `skills/`, `CLAUDE.md`). It is NOT `CLAUDE_CONFIG_DIR` — it doesn't relocate the harness's own config or disable merging with your global `~/.claude` at runtime.
 - The private user-data home (`configDir`, symlink target of `<configRoot>/LIFEOS/USER`) follows the custom home to `<configRoot>/USER-data`, so two instances never share one USER tree. Override with `--config-dir` on `ScaffoldUser`/`LinkUser` if you want it elsewhere.
 - The install tools retarget everything the harness reads literally — `settings.json` env values and permission globs, and every hook command — to the custom root. `DetectEnv` reports the resolved `configRoot`/`configDir`; verify the written `settings.json` contains no `~/.claude` references.
+- The bootstrap launches `/lifeos-setup` with a temporary `CLAUDE_CONFIG_DIR=<configRoot>` so Claude Code can discover the staged skill even when the installer was run from another directory. Written custom settings persist both `LIFEOS_HOME` and `LIFEOS_DIR`, so later setup/update runs recover the same root.
 
 **The runtime half (don't skip):** installing into a custom home only places the files — the harness must also LOAD them. For Claude Code there are two ways:
 
 1. **Project-scoped `.claude`** (recommended for a per-project assistant): install into `<project>/.claude` and launch Claude Code from `<project>` — it picks the directory's `.claude` up as project settings alongside your global config.
 2. **Whole-config relocation:** launch with `CLAUDE_CONFIG_DIR=<configRoot> claude` — the harness then uses ONLY that config dir (no global merge). This is the right tool when the instance should be fully self-contained.
 
-Wire the `lifeos` launch command (step 7) against the custom `<configRoot>` either way — that part is identical.
+Wire the `lifeos` launch command (step 7) against the custom `<configRoot>` either way. The launcher preserves global+project merging for a `<project>/.claude` root by launching from `<project>`; for an arbitrary custom root it sets `CLAUDE_CONFIG_DIR` for the spawned process.
 
 ### 3. Scan for conflicts (read-only)
 
@@ -126,15 +127,15 @@ The payload ships the launcher — `install/LIFEOS/TOOLS/lifeos.ts` — which sp
 
 - **Claude Code (zsh / bash)** — append to `~/.zshrc` (or `~/.bashrc`):
   ```
-  alias lifeos='bun <configRoot>/LIFEOS/TOOLS/lifeos.ts -s <configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md'
+  alias lifeos='bun "<configRoot>/LIFEOS/TOOLS/lifeos.ts" -s "<configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md"'
   ```
-  fish: `alias lifeos "bun <configRoot>/LIFEOS/TOOLS/lifeos.ts -s <configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md"; funcsave lifeos`. After this, **`lifeos` launches Claude WITH the constitution**; plain `claude` stays vanilla (which is fine — the user opts in by launching `lifeos`).
+  fish: `alias lifeos 'bun "<configRoot>/LIFEOS/TOOLS/lifeos.ts" -s "<configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md"'; funcsave lifeos`. After this, **`lifeos` launches Claude WITH the constitution and the matching custom settings/hooks/skills**; plain `claude` stays vanilla (which is fine — the user opts in by launching `lifeos`).
 
 - **Any other harness** — use that harness's own system-prompt flag against the same file. e.g. pi: `pi --append-system-prompt <configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md`. If a harness has no system-prompt flag, load `LIFEOS_SYSTEM_PROMPT.md` through its context file (AGENTS.md / rules) as the closest equivalent, and tell your human plainly that the constitution is loading as context, not as a true system-prompt layer.
 
 If your human declines the shell edit, give them the one-line launch command to run by hand so the constitution still loads:
 ```
-bun <configRoot>/LIFEOS/TOOLS/lifeos.ts -s <configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md
+bun "<configRoot>/LIFEOS/TOOLS/lifeos.ts" -s "<configRoot>/LIFEOS/LIFEOS_SYSTEM_PROMPT.md"
 ```
 
 ### 8. Choose the components — install all, or pick a subset (WITH PERMISSION)

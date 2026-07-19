@@ -45,9 +45,8 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
  */
 
 import { readFileSync } from 'fs'
-import { homedir } from 'os'
 import { join } from 'path'
-import { claudeDir } from "./lifeos-root";
+import { claudeDir, shellQuote } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -63,9 +62,7 @@ const colors = {
 
 // Load environment — mirrors LIFEOS/TOOLS/YouTubeApi.ts convention
 function loadEnv(): Record<string, string> {
-  const envPath = process.env.LIFEOS_CONFIG_DIR
-    ? join(process.env.LIFEOS_CONFIG_DIR, '.env')
-    : join(claudeDir(), '.env')
+  const envPath = join(claudeDir(), '.env')
   const env: Record<string, string> = {}
   try {
     const content = readFileSync(envPath, 'utf-8')
@@ -137,12 +134,12 @@ async function main() {
   const { opts, query } = parseArgs(process.argv.slice(2))
 
   if (!API_KEY) {
-    console.error(`${colors.red}Error: GROK_API_KEY (or XAI_API_KEY) not set in ~/.claude/.env${colors.reset}`)
+    console.error(`${colors.red}Error: GROK_API_KEY (or XAI_API_KEY) not set in ${join(claudeDir(), '.env')}${colors.reset}`)
     process.exit(1)
   }
   if (!query) {
     console.error(`${colors.red}Error: no query provided${colors.reset}`)
-    console.error(`Usage: bun ~/.claude/LIFEOS/TOOLS/Grok.ts [--x-only|--web-only] [--model <id>] [--json] "<query>"`)
+    console.error(`Usage: bun ${shellQuote(join(claudeDir(), 'LIFEOS', 'TOOLS', 'Grok.ts'))} [--x-only|--web-only] [--model <id>] [--json] "<query>"`)
     process.exit(1)
   }
 

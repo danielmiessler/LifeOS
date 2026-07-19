@@ -16,7 +16,7 @@
 import { writeFileSync } from "node:fs";
 import { resolve as pathResolve } from "node:path";
 import { homedir } from "node:os";
-import { claudeDir } from "./lifeos-root";
+import { claudeDir, shellQuote } from "./lifeos-root";
 import {
   ENVELOPE, CANONICAL_TYPES, TYPE_TO_DIR, PER_TYPE_REQUIRED,
   RELATION_VOCAB, SOURCE_KINDS, STATUS_VALUES, SCHEMA_VERSION,
@@ -26,6 +26,7 @@ const OUT = pathResolve(claudeDir(), "LIFEOS/MEMORY/KNOWLEDGE/_schema.md");
 
 function render(): string {
   const L: string[] = [];
+  const tool = (name: string): string => shellQuote(pathResolve(claudeDir(), "LIFEOS", "TOOLS", name));
   L.push("---");
   L.push('title: "Knowledge Archive Schema"');
   L.push("type: moc");
@@ -35,7 +36,7 @@ function render(): string {
   L.push(`# Knowledge Archive Schema — ${SCHEMA_VERSION}`);
   L.push("");
   L.push("> **Generated from `LIFEOS/TOOLS/KnowledgeSchema.ts` — do not edit by hand.**");
-  L.push("> Regenerate: `bun ~/.claude/LIFEOS/TOOLS/GenerateKnowledgeSchemaDoc.ts`.");
+  L.push(`> Regenerate: \`bun ${tool("GenerateKnowledgeSchemaDoc.ts")}\`.`);
   L.push("> The code is the single source of truth; `KnowledgeLint.ts` enforces this contract, `MigrateKnowledge.ts` brings old notes onto it, and new notes are born on it via `MemorySystem.renderInitialNote`.");
   L.push("");
   L.push("The archive stores **entities** — things you'd look up later. Every note is one of the object types below, carries the **Core Envelope** of flat typed frontmatter, and links to others via typed `related:` edges. Topic is a **tag**, entity is a **type**.");
@@ -85,11 +86,11 @@ function render(): string {
   L.push("## Querying");
   L.push("");
   L.push("```bash");
-  L.push("bun ~/.claude/LIFEOS/TOOLS/KnowledgeQuery.ts --source-author \"<name>\"");
-  L.push("bun ~/.claude/LIFEOS/TOOLS/KnowledgeQuery.ts --type idea --tag security --created-after 2026-05");
-  L.push("bun ~/.claude/LIFEOS/TOOLS/KnowledgeQuery.ts --related-type contradicts --slugs");
-  L.push("bun ~/.claude/LIFEOS/TOOLS/KnowledgeQuery.ts --quality-max 2 --count   # stubs to enrich");
-  L.push("bun ~/.claude/LIFEOS/TOOLS/KnowledgeLint.ts                            # conformance");
+  L.push(`bun ${tool("KnowledgeQuery.ts")} --source-author \"<name>\"`);
+  L.push(`bun ${tool("KnowledgeQuery.ts")} --type idea --tag security --created-after 2026-05`);
+  L.push(`bun ${tool("KnowledgeQuery.ts")} --related-type contradicts --slugs`);
+  L.push(`bun ${tool("KnowledgeQuery.ts")} --quality-max 2 --count   # stubs to enrich`);
+  L.push(`bun ${tool("KnowledgeLint.ts")}                            # conformance`);
   L.push("```");
   L.push("");
   L.push("The archive is markdown+YAML, so once fields are consistent, Obsidian Bases queries `KNOWLEDGE/` as a database with zero extra code.");

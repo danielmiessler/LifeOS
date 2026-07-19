@@ -24,6 +24,7 @@
 import { readFileSync, writeFileSync, appendFileSync, readdirSync } from "fs";
 import { join } from "path";
 import { CURRENT, ALIAS, EFFORT_MODEL, CLAUDE_ID_PATTERN, type ClaudeTier } from "./models";
+import { claudeDir, shellQuote } from "./lifeos-root";
 
 const CLAUDE_DIR = join(import.meta.dir, "..", "..");
 const REGISTRY_PATH = join(import.meta.dir, "models.ts");
@@ -112,7 +113,7 @@ export function buildActionCommands(ids: string[]): string[] {
   return ids.map((id) => {
     const t = tierOf(id);
     return t
-      ? `bun ~/.claude/LIFEOS/TOOLS/UpdateModels.ts --apply ${t} ${id} && bun ~/.claude/LIFEOS/TOOLS/UpdateModels.ts --check`
+      ? `bun ${shellQuote(join(claudeDir(), "LIFEOS", "TOOLS", "UpdateModels.ts"))} --apply ${t} ${id} && bun ${shellQuote(join(claudeDir(), "LIFEOS", "TOOLS", "UpdateModels.ts"))} --check`
       : `review ${id} (unparseable tier)`;
   });
 }

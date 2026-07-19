@@ -36,7 +36,7 @@ import { getDAName } from "../../hooks/lib/identity"
 
 import { join } from "path";
 import { loadWorkConfig } from "../../hooks/lib/work-config";
-import { claudeDir } from "./lifeos-root";
+import { claudeDir, shellQuote } from "./lifeos-root";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -533,7 +533,7 @@ async function sweepBpeCadence(
     "",
     `**Run:** \`Skill("BitterPillEngineering", "audit")\` over the ${BPE_AUDIT_TARGETS}.`,
     `**Cadence:** every ${BPE_CADENCE_DAYS} days. Last audit: ${days === null ? "never" : days + " days ago"}.`,
-    `**Then stamp it:** \`bun ~/.claude/LIFEOS/TOOLS/WorkSweep.ts --stamp-bpe\` to reset the clock.`,
+    `**Then stamp it:** \`bun ${shellQuote(join(claudeDir(), "LIFEOS", "TOOLS", "WorkSweep.ts"))} --stamp-bpe\` to reset the clock.`,
     "",
     `Propose-only — never auto-cut. A cut needs judgment + ratification (the producer-lock / shadow-log call is why).`,
     "",

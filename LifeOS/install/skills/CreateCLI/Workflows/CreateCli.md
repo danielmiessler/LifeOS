@@ -202,7 +202,10 @@ const DEFAULTS = {
  * Load configuration from environment
  */
 function loadConfig(): Config {
-  const envPath = process.env.LIFEOS_CONFIG_DIR ? join(process.env.LIFEOS_CONFIG_DIR, '.env') : join(homedir(), '.claude', 'LifeOS', '.env');
+  const configRoot = process.env.LIFEOS_HOME
+    ?? process.env.CLAUDE_CONFIG_DIR
+    ?? (process.env.LIFEOS_DIR ? dirname(process.env.LIFEOS_DIR) : join(homedir(), '.claude'));
+  const envPath = join(configRoot, '.env');
 
   try {
     const envContent = readFileSync(envPath, 'utf-8');
@@ -213,7 +216,7 @@ function loadConfig(): Config {
       ?.trim();
 
     if (!apiKey) {
-      console.error('Error: {{ENV_VAR_NAME}} not found in ${LIFEOS_CONFIG_DIR}/.env');
+      console.error(`Error: {{ENV_VAR_NAME}} not found in ${envPath}`);
       process.exit(1);
     }
 
@@ -223,8 +226,8 @@ function loadConfig(): Config {
       {{ADDITIONAL_CONFIG}}
     };
   } catch (error) {
-    console.error(`Error: Cannot read ${LIFEOS_CONFIG_DIR}/.env file`);
-    console.error('Make sure {{ENV_VAR_NAME}} is set in ${LIFEOS_CONFIG_DIR}/.env');
+    console.error(`Error: Cannot read ${envPath}`);
+    console.error(`Make sure {{ENV_VAR_NAME}} is set in ${envPath}`);
     process.exit(1);
   }
 }
@@ -622,7 +625,7 @@ Files generated:
 - QUICKSTART.md
 
 Next steps:
-1. Configure: Add {{ENV_VAR_NAME}} to ${LIFEOS_CONFIG_DIR}/.env
+1. Configure: Add {{ENV_VAR_NAME}} to the LifeOS config root's `.env`
 2. Test: ./{{CLI_NAME}}.ts --help
 3. Use: ./{{CLI_NAME}}.ts {{EXAMPLE_COMMAND}}
 
@@ -655,7 +658,7 @@ Commands available:
 - notioncli --help                       # Show full help
 
 Next steps:
-1. Add NOTION_API_KEY=your_key to ${LIFEOS_CONFIG_DIR}/.env
+1. Add `NOTION_API_KEY=your_key` to the LifeOS config root's `.env`
 2. Test: notioncli databases
 3. Read: ~/.claude/LIFEOS/TOOLS/notioncli/README.md
 

@@ -70,7 +70,7 @@ function loadKey(): string {
     const line = env.split("\n").find((l) => l.startsWith("PANGRAM_API_KEY="));
     if (line) return line.slice("PANGRAM_API_KEY=".length).replace(/^["']|["']$/g, "").trim();
   } catch {}
-  console.error("No PANGRAM_API_KEY found. Add it to ~/.claude/.env, then re-run.");
+  console.error(`No PANGRAM_API_KEY found. Add it to ${ENV_PATH}, then re-run.`);
   process.exit(1);
 }
 
