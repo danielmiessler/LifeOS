@@ -117,7 +117,7 @@ const MIGRATIONS: Migration[] = [
       // policy gitignores LEARNING/, OBSERVABILITY/, STATE/, etc. selectively;
       // Phase G may broaden this. For now, we detect "any LIFEOS/MEMORY/ rule" as
       // applied.
-      return /^LifeOS\/MEMORY\//m.test(content);
+      return /^LIFEOS\/MEMORY\//m.test(content);
     },
     apply: () => {
       throw new Error("m-005 apply not implemented — modify .gitignore in source PR rather than via tool. The detect-only check surfaces missing state.");
