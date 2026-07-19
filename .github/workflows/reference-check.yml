@@ -1,0 +1,45 @@
+name: Reference Check
+
+on:
+  pull_request:
+    paths:
+      - 'LifeOS/install/**'
+  push:
+    branches: [main]
+    paths:
+      - 'LifeOS/install/**'
+  workflow_dispatch:
+
+jobs:
+  reference-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # ReferenceCheck resolves its root as $HOME/.claude, so stage the release
+      # payload in the shape it ships as. No source change required.
+      - name: Stage payload as an install
+        run: cp -R LifeOS/install "$HOME/.claude"
+
+      - name: Run ReferenceCheck against the shipped tree
+        id: refcheck
+        continue-on-error: true
+        run: |
+          cd "$HOME/.claude/LIFEOS/TOOLS"
+          bun ReferenceCheck.ts --quiet | tee "$RUNNER_TEMP/refcheck.txt"
+
+      - name: Summarise
+        run: |
+          {
+            echo '## Reference check — shipped payload'
+            echo
+            echo '```'
+            tail -1 "$RUNNER_TEMP/refcheck.txt"
+            echo '```'
+            echo
+            echo 'Report-only. See the PR description for why this does not gate yet.'
+          } >> "$GITHUB_STEP_SUMMARY"
