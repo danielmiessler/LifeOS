@@ -57,6 +57,7 @@ import {
   isKnownType,
   resolveStoragePath,
   inferProposalKind,
+  pinProposalTargetFile,
   ALL_TYPES,
   TIER_B_AUDIT_PATH,
   PRINCIPAL_MEMORY_PATH,
@@ -171,6 +172,14 @@ function enqueueProposal(item: TypedItem & { type: "proposal" }): { ok: true; id
   // the Telegram surfacer can render the [kind] badge. Falls back to the
   // path-based inference when the reviewer omits target_kind (legacy compat).
   const targetKind = item.target_kind ?? inferProposalKind(item.target_file);
+  // Pin target_file to the kind's canonical file (see pinProposalTargetFile):
+  // most kinds map to exactly one file, so trusting the reviewer's free-text
+  // path lets a hallucinated path get persisted and then silently mis-file or
+  // fail to apply. null = a multi-file (identity) path outside the allowed set.
+  const targetFile = pinProposalTargetFile(targetKind, item.target_file);
+  if (targetFile === null) {
+    return { ok: false, code: "EINVAL_ITEM", message: `target_file '${item.target_file}' is not an allowed '${targetKind}' target` };
+  }
   try {
     mkdirSync(dirname(path), { recursive: true });
     appendFileSync(
@@ -179,7 +188,7 @@ function enqueueProposal(item: TypedItem & { type: "proposal" }): { ok: true; id
         id,
         ts: new Date().toISOString(),
         status: "pending",
-        target_file: item.target_file,
+        target_file: targetFile,
         target_kind: targetKind,
         edit: item.edit,
         confidence: item.confidence,

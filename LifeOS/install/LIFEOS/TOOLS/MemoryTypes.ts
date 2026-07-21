@@ -214,6 +214,26 @@ export function inferProposalKind(targetFile: string): ProposalTargetKind {
   return "identity";
 }
 
+/**
+ * Pin a proposal's target_file to its kind's canonical file.
+ *
+ * Most kinds map to exactly ONE file (PROPOSAL_KIND_TO_FILES), so the target is
+ * fully determined by the kind. The reviewer emits target_file as free text, and
+ * a hallucinated path (wrong casing, a dropped path segment) would otherwise be
+ * persisted and then silently mis-file or fail to apply. For a single-file kind
+ * we therefore ignore the supplied path and return the canonical one. For a
+ * multi-file kind (identity) we can't pin, so we return the supplied path iff it
+ * is one of the allowed files, else null (the caller rejects the proposal rather
+ * than storing an out-of-set path). An unknown kind returns the supplied path
+ * unchanged (the caller validates the kind separately).
+ */
+export function pinProposalTargetFile(kind: ProposalTargetKind, suppliedTargetFile: string): string | null {
+  const allowed = PROPOSAL_KIND_TO_FILES[kind];
+  if (!allowed || allowed.length === 0) return suppliedTargetFile;
+  if (allowed.length === 1) return allowed[0];
+  return allowed.includes(suppliedTargetFile) ? suppliedTargetFile : null;
+}
+
 export function isKnownProposalKind(k: string): k is ProposalTargetKind {
   return (ALL_PROPOSAL_KINDS as readonly string[]).includes(k);
 }
@@ -463,6 +483,19 @@ function smokeTest(): number {
   check("infer: CONTACTS → contacts",             inferProposalKind(CONTACTS_PATH) === "contacts");
   check("infer: unknown path defaults to identity (legacy compat)",
     inferProposalKind("/tmp/random.md") === "identity");
+
+  // 14b. pinProposalTargetFile — single-file kinds pin (supplied path ignored),
+  //      identity validates within its set, out-of-set identity → null (reject).
+  check("pin: operational-rule ignores a hallucinated path → canonical",
+    pinProposalTargetFile("operational-rule", "/Users/anyone/LifeOS/USER/CONFIG/OPERATIONAL_RULES.md") === OPERATIONAL_RULES_PATH);
+  check("pin: style ignores any supplied path → canonical",
+    pinProposalTargetFile("style", "/tmp/whatever.md") === WRITINGSTYLE_PATH);
+  check("pin: identity keeps an in-set path (PRINCIPAL_IDENTITY)",
+    pinProposalTargetFile("identity", PRINCIPAL_IDENTITY_PATH) === PRINCIPAL_IDENTITY_PATH);
+  check("pin: identity keeps an in-set path (DA_IDENTITY)",
+    pinProposalTargetFile("identity", DA_IDENTITY_PATH) === DA_IDENTITY_PATH);
+  check("pin: identity rejects an out-of-set path → null",
+    pinProposalTargetFile("identity", "/tmp/evil.md") === null);
 
   // 15. Known-kind helper
   check("isKnownProposalKind: 'style' true", isKnownProposalKind("style"));
