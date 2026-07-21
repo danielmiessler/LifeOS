@@ -76,7 +76,15 @@ Rules for the report:
 - Recommend, don't do. Adoption of any item is a separate step that needs {{PRINCIPAL_NAME}}'s explicit go-ahead.
 - Keep it tight. A harvest is a filter, not an essay.
 
-## Step 7 — Ingest into the Knowledge Archive (ALWAYS the final step)
+## Step 7 — Eval before adoption (behavior-changing candidates only)
+
+For any candidate whose adoption would change system **behavior** — Algorithm mechanics, a skill's workflow logic, hooks, routing/delegation policy — the Recommended action proposes **eval-first**: an offline comparison against the current mechanism, with a decision rule written down before results exist, and blind judging where feasible. Write eval criteria to the standard of `ALGORITHM/eval-guide.md` (the 3-question test). Past ISA Changelog `conjectured → refuted_by` entries make useful test labels where they exist. Adoption still requires {{PRINCIPAL_NAME}}'s explicit go-ahead after the eval.
+
+Cosmetic or non-measurable candidates (format rules, doc grafts) skip the eval — note the skip in one line. When unsure whether a candidate is behavior-changing, treat it as behavior-changing.
+
+**Why:** review catches bad designs; only evals catch worse-than-baseline designs. A mechanism can survive adversarial review and still lose a blind comparison to the status quo it was meant to replace.
+
+## Step 8 — Ingest into the Knowledge Archive (ALWAYS the final step)
 
 Every harvest ends by preserving the source as a KNOWLEDGE note, regardless of how thin the mining verdict was:
 
