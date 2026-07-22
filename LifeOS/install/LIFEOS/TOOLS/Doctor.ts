@@ -119,13 +119,24 @@ function envKey(name: string): string | null {
   return null;
 }
 
+function whichPath(bin: string): string | null {
+  const hit = (process.env.PATH || '').split(':').find(p => p && existsSync(join(p, bin)));
+  return hit ? join(hit, bin) : null;
+}
+
 function chromeBinary(): string | null {
   const candidates = [
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Nix Apps/Google Chrome.app/Contents/MacOS/Google Chrome',
     '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+    '/Applications/Nix Apps/Brave Browser.app/Contents/MacOS/Brave Browser',
     '/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser',
   ];
-  return candidates.find(existsSync) || null;
+  // Nix/Home Manager installs expose the browser on PATH rather than in /Applications
+  return candidates.find(existsSync)
+    || whichPath('google-chrome') || whichPath('chromium')
+    || whichPath('brave') || whichPath('brave-browser')
+    || null;
 }
 
 // ── capability registry ──────────────────────────────────────────────────────
