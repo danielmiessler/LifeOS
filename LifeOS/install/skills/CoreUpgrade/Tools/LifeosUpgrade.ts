@@ -27,16 +27,18 @@
  * Usage:
  *   bun LifeosUpgrade.ts --payload <install-payload-dir>            # dry-run
  *   bun LifeosUpgrade.ts --payload <dir> --apply                   # execute
- *   flags: --config-root <dir> (default ~/.claude), --backup-dir <dir>,
+ *   flags: --config-root <dir> (default $CLAUDE_CONFIG_DIR or ~/.claude), --backup-dir <dir>,
  *          --split-claude-md (extract CLAUDE.md customizations → USER/CUSTOMIZATIONS/GLOBAL.md,
  *          then replace CLAUDE.md with the payload base), --help
  */
-import { existsSync, readdirSync, lstatSync, readlinkSync, symlinkSync, rmSync, mkdirSync, copyFileSync, cpSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, lstatSync, rmSync, mkdirSync, copyFileSync, cpSync, readFileSync, writeFileSync } from "node:fs";
 import { join, sep, resolve, dirname } from "node:path";
 import { homedir } from "node:os";
 
 const ensureParentDir = (p: string) => mkdirSync(dirname(p), { recursive: true });
 const errCode = (e: unknown): string | undefined => (e as { code?: string })?.code;
+/** lstat-based existence — sees a symlink ITSELF (existsSync follows links, so a dangling symlink reads as absent and breaks backup/rollback verification). */
+const lexists = (p: string): boolean => { try { lstatSync(p); return true; } catch { return false; } };
 
 // ── Zone policy (the load-bearing correctness surface) ──────────────────────
 
@@ -102,21 +104,22 @@ export function computeClearList(configRoot: string, payloadRoot: string): strin
   return out.filter((r) => !isPreserved(r));   // belt-and-suspenders vs a future consider() that forgets the check
 }
 
-// ── copyMissing (mirrors v7 DeployCore: recursive, existsSync-guarded, never overwrites) ──
-// lstat (no symlink follow → no cycle). Only ENOENT means "nothing to copy"; real errors propagate → rollback.
+// ── copyMissing (mirrors upstream DeployCore: recursive, never overwrites) ──
+// Payload SYMLINKS ARE SKIPPED, exactly like upstream DeployCore (its isFile/isDirectory
+// branches never match a symlink) — deploying a payload-authored symlink would let a
+// tampered payload plant a link to an arbitrary target (symlink-target injection).
+// dst guards use lexists so a dangling symlink at dst is treated as occupied, not absent.
+// Only ENOENT on src means "nothing to copy"; real errors propagate → rollback.
 export function copyMissing(src: string, dst: string): { copied: number } {
   let copied = 0;
   let st;
   try { st = lstatSync(src); }
   catch (e) { if (errCode(e) === "ENOENT") return { copied }; throw e; }
-  if (st.isSymbolicLink()) {
-    if (!existsSync(dst)) { ensureParentDir(dst); symlinkSync(readlinkSync(src), dst); copied++; }
-    return { copied };
-  }
+  if (st.isSymbolicLink()) return { copied };            // never deploy payload symlinks (matches upstream)
   if (st.isDirectory()) {
-    if (!existsSync(dst)) mkdirSync(dst, { recursive: true });
+    if (!lexists(dst)) mkdirSync(dst, { recursive: true });
     for (const e of readdirSync(src)) copied += copyMissing(join(src, e), join(dst, e)).copied;
-  } else if (!existsSync(dst)) {
+  } else if (!lexists(dst)) {
     ensureParentDir(dst);
     copyFileSync(src, dst); copied++;
   }
@@ -155,10 +158,14 @@ export function preflight(configRoot: string, payloadRoot: string, backupDir?: s
     errs.push(`config-root has no LIFEOS/ dir — not a LifeOS install (a stray CLAUDE.md is not enough): ${configRoot}`);
   else if (!existsSync(join(configRoot, "settings.json")) && !existsSync(join(configRoot, "CLAUDE.md")))
     errs.push(`config-root has LIFEOS/ but no settings.json/CLAUDE.md — refusing an ambiguous target: ${configRoot}`);
+  // Same predicate as InstallEngine.detectDevTree() — deliberately inlined, not imported:
+  // this tool REPLACES the very tree that helper ships in, and skills are self-contained
+  // by repo convention (zero cross-skill imports exist anywhere in the payload).
   if (existsSync(join(configRoot, "skills", "_LIFEOS")))
     errs.push("DEV-TREE REFUSAL: skills/_LIFEOS present — refusing to mutate a LifeOS source repo.");
   if (!payloadRoot || !existsSync(payloadRoot)) errs.push(`--payload dir missing or not found: ${payloadRoot}`);
   if (backupDir) {
+    // Lexical (non-realpath) comparison — same documented limitation as safeRemove's escape guard.
     const b = resolve(backupDir), c = resolve(configRoot);
     if (b === c || b.startsWith(c + sep)) errs.push(`--backup-dir must be OUTSIDE config-root (would nest the backup inside the tree being cleared): ${backupDir}`);
   }
@@ -180,7 +187,7 @@ export function scopedBackup(configRoot: string, backupDir: string, clear: strin
     const dst = join(backupDir, rel);
     ensureParentDir(dst);
     cpSync(join(configRoot, rel), dst, { recursive: true, errorOnExist: false });
-    if (!existsSync(dst)) throw new Error(`backup verification failed for ${rel} — aborting before any delete`);
+    if (!lexists(dst)) throw new Error(`backup verification failed for ${rel} — aborting before any delete`);
   }
 }
 
@@ -206,19 +213,20 @@ export function rollback(configRoot: string, backupDir: string, clear: string[],
       const rel = `${dest}/${child}`;
       if (beforeSet.has(child)) continue;                  // pre-existing (cleared ones are restored below)
       if (isPreserved(rel)) continue;
-      try { safeRemove(configRoot, rel); } catch { failed.push(`(new)${rel}`); }
+      try { safeRemove(configRoot, rel); }
+      catch (e) { console.error(`  rollback: could not remove ${rel}: ${(e as Error)?.message ?? String(e)}`); failed.push(`(new)${rel}`); }
     }
   }
-  // 2) restore cleared entries from backup (through the guarded delete)
+  // 2) restore cleared entries from backup (through the guarded delete; lexists so symlink-bearing backups verify correctly)
   for (const rel of clear) {
     const bak = join(backupDir, rel), live = join(configRoot, rel);
-    if (!existsSync(bak)) { failed.push(rel); continue; }
+    if (!lexists(bak)) { failed.push(rel); continue; }
     try {
-      if (existsSync(live)) safeRemove(configRoot, rel);   // remove partial deploy remnants (guarded)
+      if (lexists(live)) safeRemove(configRoot, rel);      // remove partial deploy remnants (guarded)
       ensureParentDir(live);
       cpSync(bak, live, { recursive: true, errorOnExist: false });
-      if (!existsSync(live)) failed.push(rel);
-    } catch { failed.push(rel); }
+      if (!lexists(live)) failed.push(rel);
+    } catch (e) { console.error(`  rollback: could not restore ${rel}: ${(e as Error)?.message ?? String(e)}`); failed.push(rel); }
   }
   return failed;
 }
@@ -382,8 +390,12 @@ export function applyClaudeSplit(configRoot: string, payloadRoot: string, backup
 /** Undo a split: restore CLAUDE.md from backup, remove only a GLOBAL.md this run created. Returns entries it could NOT restore. */
 export function undoClaudeSplit(configRoot: string, undo: SplitUndo): string[] {
   const failed: string[] = [];
-  try { copyFileSync(undo.claudeBackup, join(configRoot, "CLAUDE.md")); } catch { failed.push("CLAUDE.md"); }
-  if (undo.globalCreated) { try { rmSync(undo.globalCreated, { force: true }); } catch { failed.push(GLOBAL_REL); } }
+  try { copyFileSync(undo.claudeBackup, join(configRoot, "CLAUDE.md")); }
+  catch (e) { console.error(`  split-undo: could not restore CLAUDE.md: ${(e as Error)?.message ?? String(e)}`); failed.push("CLAUDE.md"); }
+  if (undo.globalCreated) {
+    try { rmSync(undo.globalCreated, { force: true }); }
+    catch (e) { console.error(`  split-undo: could not remove ${GLOBAL_REL}: ${(e as Error)?.message ?? String(e)}`); failed.push(GLOBAL_REL); }
+  }
   return failed;
 }
 
@@ -402,7 +414,7 @@ Usage:
 Flags:
   --payload <dir>       REQUIRED. The target version's install/ payload tree.
   --apply               Execute. Without it, dry-run only.
-  --config-root <dir>   LifeOS install to upgrade (default: ~/.claude).
+  --config-root <dir>   LifeOS install to upgrade (default: $CLAUDE_CONFIG_DIR, else ~/.claude).
   --backup-dir <dir>    Backup location (default: <config-root>-backup-<ts>; must be outside config-root).
   --split-claude-md     Extract CLAUDE.md customizations → LIFEOS/USER/CUSTOMIZATIONS/GLOBAL.md,
                         then replace CLAUDE.md with the payload base (imports ship commented;
@@ -438,7 +450,8 @@ function main() {
   catch (e) { die(`ARG ERROR: ${(e as Error).message}\n\n${USAGE}`); }
   if (a.help || process.argv.length <= 2) { console.log(USAGE); return; }
 
-  const configRoot = resolve((a.configRoot as string) || join(homedir(), ".claude"));  // default only when flag ABSENT
+  // Default resolution honors CLAUDE_CONFIG_DIR (upstream PR #696 convention; matches ActivateImports.ts).
+  const configRoot = resolve((a.configRoot as string) || process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"));
   const payloadRoot = a.payload ? resolve(a.payload as string) : "";
   const apply = a.apply === true;
   const splitClaudeMd = a.splitClaudeMd === true;
