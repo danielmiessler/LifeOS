@@ -394,6 +394,26 @@ function cmdWallpaper(args: string[]) {
 }
 
 
+// True when the current directory is a git repo's MAIN checkout (not a linked
+// worktree) AND the repo uses the .claude/worktrees convention. The main checkout
+// has --git-dir == --git-common-dir; a linked worktree's --git-dir points into
+// .git/worktrees/<name>, so they differ. Used to stop a --local launch from running
+// a whole session on whatever branch the root happens to be parked on.
+export function inMainCheckoutWithWorktrees(): boolean {
+  try {
+    // No --path-format flag → works on any git version; the two paths stay directly
+    // comparable (both ".git" in a main checkout, divergent in a linked worktree).
+    const r = spawnSync(["git", "rev-parse", "--git-dir", "--git-common-dir"]);
+    if (r.exitCode !== 0) return false; // not a git repo
+    const [gitDir, commonDir] = r.stdout.toString().trim().split("\n");
+    if (!gitDir || gitDir !== commonDir) return false; // linked worktree → fine
+    const top = spawnSync(["git", "rev-parse", "--show-toplevel"]).stdout.toString().trim();
+    return top.length > 0 && existsSync(join(top, ".claude", "worktrees"));
+  } catch {
+    return false;
+  }
+}
+
 // ============================================================================
 // Commands
 // ============================================================================
@@ -402,6 +422,17 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; resumeId?: s
   // CLAUDE.md is now static — no build step needed.
   // Algorithm spec is loaded on-demand when Algorithm mode triggers.
   // (InstantiatePAI.ts is retired — kept for reference only)
+
+  // Guard: --local launches Claude in the CURRENT directory. If that's a repo's main
+  // checkout (not a worktree) and the repo uses worktrees, the whole session would run
+  // on whatever stale branch the root is parked on. Refuse unless explicitly overridden.
+  if (options.local && process.env.LIFEOS_ALLOW_ROOT !== "1" && inMainCheckoutWithWorktrees()) {
+    error(
+      "You're in the main checkout root, not a worktree.\n" +
+        "   A --local session here runs on whatever branch the root is parked on.\n" +
+        "   cd into a worktree first, or set LIFEOS_ALLOW_ROOT=1 to override.",
+    );
+  }
 
   requireClaudeCli();
   displayBanner();
