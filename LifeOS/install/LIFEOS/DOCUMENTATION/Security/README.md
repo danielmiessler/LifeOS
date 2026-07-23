@@ -62,6 +62,21 @@ Lives in `LIFEOS/LIFEOS_SYSTEM_PROMPT.md` under "Security Protocol". Concretely 
 
 Loaded at every session start. Survives compaction. Untouched by this simplification.
 
+### Session termination — `EndConversation`
+
+The sanctioned mechanism for ending a session is the harness's `EndConversation` tool (Claude Code 2.1.214+), not an ad-hoc refusal loop. Scope is narrow and deliberate:
+
+- **Use it for** sustained abuse directed at the assistant, or persistent jailbreak attempts after the boundary has been stated.
+- **Do NOT use it for** ordinary disagreement, a request declined on other grounds, or a task that merely touches a sensitive topic. Declining a request and ending a conversation are different actions with different thresholds.
+
+It ships as a **deferred tool**: only the name is in context at session start, so its schema must be loaded before it can be called.
+
+```
+ToolSearch("select:EndConversation")
+```
+
+Reference: <https://www.anthropic.com/research/end-subset-conversations>
+
 ## L2 — Native `permissions.deny`
 
 In `settings.json`, scoped narrowly to **irrecoverable** ops only. Categories:
