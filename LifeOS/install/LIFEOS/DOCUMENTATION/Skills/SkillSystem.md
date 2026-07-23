@@ -225,6 +225,22 @@ science_cycle_time: meso         # Optional: micro | meso | macro
 - **Max 500 characters recommended, 650 hard ceiling.** Claude Code has a total character budget for all skill descriptions combined. In practice, descriptions over ~650 chars cause skills to be silently dropped from the session listing — the skill becomes invisible and unroutable. Keep descriptions tight: brief prose summary + USE WHEN trigger keywords. Move detailed explanations to the SKILL.md body, not the YAML description.
 - **NO separate `triggers:` or `workflows:` arrays in YAML**
 
+**Execution-shape fields — `context` and `background`.**
+
+| Field | Values | Meaning |
+|-------|--------|---------|
+| `context` | `inline` \| `fork` | Where the skill runs. `inline` expands into the current conversation; `fork` spawns a subagent. Omit for `inline`. |
+| `background` | `true` \| `false` | Whether a forked skill runs detached. Only meaningful alongside `context: fork`. |
+
+**Gotcha (Claude Code 2.1.218):** `context: fork` skills now run in the **background by default** — previously they blocked the main thread. A forked skill returns via task notification rather than inline output, so any skill whose result the *same turn* depends on must opt out explicitly:
+
+```yaml
+context: fork
+background: false
+```
+
+The test: would the user ask this skill a question and expect the answer in that turn? If yes, set `background: false`. Long-running deliberation skills (research, debate, evaluation) should keep the background default — detaching them is the point.
+
 ### Science Protocol Compliance (Optional)
 
 Skills that involve systematic investigation, iteration, or evidence-based improvement can declare Science Protocol compliance:
