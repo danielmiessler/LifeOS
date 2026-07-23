@@ -71,9 +71,10 @@ Review the dry-run's split report (additions / flagged modifications / matched /
 ## Post-Upgrade Steps (manual, printed by the tool)
 
 1. `--split-claude-md` used → run the payload's `ActivateImports.ts` (imports ship commented).
-2. Run the payload's `InstallHooks.ts` to wire new-version hooks.
-3. Reconcile `settings*.json` against the payload templates.
-4. Re-apply any custom edits you had made inside replaced SYSTEM dirs (from the backup; better: move them to `skills/_*` first, where they're preserved automatically).
+2. **Install deps + build any deployed component that needs it.** The tool copies source, not `node_modules` or built frontend output — so a deployed dir with a new dependency or a build step will fail until you run its `bun install` (and build). Known case: `LIFEOS/PULSE` needs `bun install`, and its `Observability/` dashboard needs `bun install && bun run build`, or the dashboard 503s. Check every deployed component that ships a `package.json` or a build output dir.
+3. Run the payload's `InstallHooks.ts` to wire new-version hooks.
+4. Reconcile `settings*.json` against the payload templates.
+5. Re-apply any custom edits you had made inside replaced SYSTEM dirs (from the backup; better: move them to `skills/_*` first, where they're preserved automatically).
 
 ## Verification
 

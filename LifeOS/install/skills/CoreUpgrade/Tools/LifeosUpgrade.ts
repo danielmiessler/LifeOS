@@ -147,6 +147,7 @@ export function planUpgrade(configRoot: string, payloadRoot: string): Plan {
     warnings.push("SYSTEM dirs (LIFEOS/*, public skills) are replaced wholesale — custom code placed INSIDE a shipped dir (e.g. a tool in LIFEOS/TOOLS) is backed up but NOT merged; the payload version wins. Move custom code into a preserved private skills/_* skill before upgrading, or re-apply it from the backup after.");
   warnings.push("PRESERVED, never replaced: CLAUDE.md + settings*.json (they hold your @-imports and hook registrations). Reconcile them by hand against the payload's CLAUDE.template.md + settings templates after deploy.");
   warnings.push("Config reconciliation is a MANUAL post-step (by design — it depends on YOUR customizations): (1) run the payload's InstallHooks.ts to wire new hooks; (2) fold new CLAUDE.md/settings structure in by hand; (3) re-apply any edits to replaced SYSTEM files from the backup dir.");
+  warnings.push("Deployed components with their own dependencies or a build step (e.g. LIFEOS/PULSE) need `bun install` + their build re-run AFTER deploy — this tool copies source, not node_modules or built output. A component with a new dependency or an unbuilt frontend will fail (e.g. HTTP 503) until then.");
   return { configRoot, payloadRoot, clear, deployRoots, warnings };
 }
 
