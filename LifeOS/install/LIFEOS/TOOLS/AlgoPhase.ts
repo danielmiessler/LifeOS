@@ -13,11 +13,12 @@
  * Phases (case-insensitive):
  *   observe | think | plan | build | execute | verify | learn | complete | starting
  *
- * Slug resolution priority:
+ * Slug resolution priority (all deterministic — no guessing):
  *   1. --slug X (explicit)
  *   2. row whose sessionUUID === CLAUDE_SESSION_ID env var
  *   3. row whose sessionUUID === --uuid X
- *   4. most-recent (by updatedAt) algorithm-mode row in work.json
+ *   (no most-recent-row fallback — an unidentified session errors instead of
+ *    silently bumping an unrelated row; see resolveSlug)
  *
  * Output:
  *   On success — prints `OK: <slug> <prev>→<phase>` to stdout, exits 0.
@@ -76,11 +77,11 @@ Usage:
 
 Phases: observe | think | plan | build | execute | verify | learn | complete | starting
 
-Slug resolution priority:
+Slug resolution priority (deterministic only):
   1. --slug X
   2. row with sessionUUID === \$CLAUDE_SESSION_ID
   3. row with sessionUUID === --uuid X
-  4. most-recent algorithm-mode row in work.json
+  (no most-recent-row fallback — unidentified session errors)
 
 Examples:
   bun ~/.claude/LIFEOS/TOOLS/AlgoPhase.ts think
@@ -102,22 +103,7 @@ interface Session {
   modeHistory?: Array<{ mode: string; startedAt: number; endedAt?: number }>;
 }
 
-function pickAlgorithmModeRow(sessions: Record<string, Session>): string | null {
-  let best: { slug: string; t: number } | null = null;
-  for (const [slug, s] of Object.entries(sessions)) {
-    if (slug === '__pulse_strip') continue;
-    if (s.phase === 'complete') continue;
-    const isAlgo = s.currentMode === 'algorithm'
-      || s.mode === 'starting'
-      || (s.mode === 'interactive' && s.phase && s.phase !== 'native');
-    if (!isAlgo) continue;
-    const t = new Date(s.updatedAt || s.started || 0).getTime();
-    if (!best || t > best.t) best = { slug, t };
-  }
-  return best ? best.slug : null;
-}
-
-function resolveSlug(args: Args, sessions: Record<string, Session>): string | null {
+export function resolveSlug(args: Args, sessions: Record<string, Session>): string | null {
   // 1. explicit --slug
   if (args.slug) return args.slug in sessions ? args.slug : null;
 
@@ -136,19 +122,12 @@ function resolveSlug(args: Args, sessions: Record<string, Session>): string | nu
     }
   }
 
-  // 4. most-recent algorithm-mode row — multi-tab hazard.
-  // If two Algorithm sessions are alive concurrently and the caller passed
-  // neither --slug, --uuid, nor CLAUDE_SESSION_ID, we'd write to the
-  // most-recent one — possibly the WRONG one. Emit a stderr warning so this
-  // ambiguity is visible. Cato 2026-05-24 self-review flagged this.
-  const fallback = pickAlgorithmModeRow(sessions);
-  if (fallback) {
-    process.stderr.write(
-      `WARN: AlgoPhase falling back to most-recent algorithm-mode row "${fallback}". ` +
-      `Pass --slug or --uuid (or set CLAUDE_SESSION_ID) when multiple Algorithm sessions are alive.\n`
-    );
-  }
-  return fallback;
+  // No deterministic identifier resolved. Do NOT fall back to the most-recent
+  // algorithm-mode row — that guess silently bumped an unrelated session's phase
+  // (observed during the LifeOS v6 migration, 2026-07-06). Return null so main()
+  // errors instead of writing to the wrong row. Callers must pass --slug/--uuid
+  // or set CLAUDE_SESSION_ID.
+  return null;
 }
 
 function main(): number {
