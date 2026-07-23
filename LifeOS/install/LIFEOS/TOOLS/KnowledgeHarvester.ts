@@ -604,7 +604,37 @@ function matchStaged(staged: StagedNote[], target: string): StagedNote[] {
 // MOC Dashboard Generation
 // ============================================================================
 
-function regenerateMOC(domain: string): void {
+// Single-pass backlink index: read every note once and tally each [[target]] wikilink
+// into a slug→count map. Replaces the former per-note `rg -c '[[slug'` scan that re-read
+// the ENTIRE archive once per note — O(n²), heavy I/O and ~13min on a 6k-note archive.
+// This is one O(n) sweep. Compute it ONCE per command run and pass into every
+// regenerateMOC/expireStaleSeedlings call. Counts distinct source notes per target and
+// matches exact targets (the old prefix match let [[foo]] wrongly count toward [[foo-bar]]).
+function computeBacklinks(): Map<string, number> {
+  const sources = new Map<string, Set<string>>(); // target slug -> set of source slugs
+  for (const domain of DOMAINS) {
+    const domainDir = path.join(KNOWLEDGE_DIR, domain);
+    if (!fs.existsSync(domainDir)) continue;
+    for (const file of fs.readdirSync(domainDir)) {
+      // Skip generated MOC/index files (_*.md) — they list every note as a [[link]] and
+      // would inflate real note-to-note counts. Matches the ripple search's `!_*` glob.
+      if (!file.endsWith(".md") || file.startsWith("_")) continue;
+      const sourceSlug = file.replace(/\.md$/, "");
+      const content = fs.readFileSync(path.join(domainDir, file), "utf-8");
+      for (const match of content.matchAll(/\[\[([^\]|#\n]+)/g)) {
+        const target = match[1].trim();
+        if (!target || target === sourceSlug) continue;
+        if (!sources.has(target)) sources.set(target, new Set());
+        sources.get(target)!.add(sourceSlug);
+      }
+    }
+  }
+  const counts = new Map<string, number>();
+  for (const [target, srcs] of sources) counts.set(target, srcs.size);
+  return counts;
+}
+
+function regenerateMOC(domain: string, backlinks: Map<string, number>): void {
   const domainDir = path.join(KNOWLEDGE_DIR, domain);
   if (!fs.existsSync(domainDir)) return;
 
@@ -616,16 +646,8 @@ function regenerateMOC(domain: string): void {
     const fm = parseFrontmatter(content);
     const slug = file.replace(/\.md$/, "");
 
-    // Count backlinks across all KNOWLEDGE/ files
-    let backlinkCount = 0;
-    try {
-      const { execSync } = require("child_process");
-      const result = execSync(`rg -c '\\[\\[${slug}' "${KNOWLEDGE_DIR}" 2>/dev/null || echo "0"`, { encoding: "utf-8" });
-      backlinkCount = result.split("\n").reduce((acc: number, line: string) => {
-        const match = line.match(/:(\d+)$/);
-        return acc + (match ? parseInt(match[1]) : 0);
-      }, 0);
-    } catch { /* rg not available or no matches */ }
+    // Backlink count from the single-pass index (O(1) lookup, was a per-note rg scan).
+    const backlinkCount = backlinks.get(slug) ?? 0;
 
     notes.push({
       slug,
@@ -850,7 +872,7 @@ function getArchiveStats(): ArchiveStats {
   return stats;
 }
 
-function expireStaleSeedlings(): string[] {
+function expireStaleSeedlings(backlinks: Map<string, number>): string[] {
   const expired: string[] = [];
   for (const domain of DOMAINS) {
     const domainDir = path.join(KNOWLEDGE_DIR, domain);
@@ -867,17 +889,9 @@ function expireStaleSeedlings(): string[] {
       const daysSince = (Date.now() - new Date(fm.created).getTime()) / (1000 * 60 * 60 * 24);
       if (daysSince <= SEEDLING_EXPIRY_DAYS) continue;
 
-      // Check for inbound references
-      try {
-        const slug = file.replace(/\.md$/, "");
-        const { execSync } = require("child_process");
-        const result = execSync(`rg -c '\\[\\[${slug}' "${KNOWLEDGE_DIR}" 2>/dev/null || echo ""`, { encoding: "utf-8" });
-        const totalRefs = result.split("\n").reduce((acc: number, line: string) => {
-          const match = line.match(/:(\d+)$/);
-          return acc + (match ? parseInt(match[1]) : 0);
-        }, 0);
-        if (totalRefs > 0) continue; // Has references, don't expire
-      } catch { /* rg failed, be conservative — don't expire */ continue; }
+      // Check for inbound references via the single-pass index (was a per-note rg scan).
+      const slug = file.replace(/\.md$/, "");
+      if ((backlinks.get(slug) ?? 0) > 0) continue; // Has references, don't expire
 
       // Move to archive
       const archivePath = path.join(ARCHIVE_DIR, file);
@@ -965,7 +979,8 @@ function cmdHarvest(sourceFilter: string | null, dryRun: boolean, maxNotes: numb
 
   if (!dryRun) {
     // Expire stale seedlings in the committed archive
-    const expired = expireStaleSeedlings();
+    const backlinks = computeBacklinks();
+    const expired = expireStaleSeedlings(backlinks);
     if (expired.length > 0) {
       console.log(`\n  📦 Archived ${expired.length} stale low-quality note(s):`);
       for (const e of expired) console.log(`     ${e}`);
@@ -1035,8 +1050,9 @@ function cmdPromote(target: string | null, all: boolean): void {
 
   if (affectedDomains.size > 0) {
     console.log("\n  📑 Regenerating MOCs...");
+    const backlinks = computeBacklinks();
     for (const domain of affectedDomains) {
-      regenerateMOC(domain);
+      regenerateMOC(domain, backlinks);
       console.log(`     ${domain}/_index.md`);
     }
     regenerateMasterMOC();
@@ -1219,8 +1235,9 @@ function cmdContradictions(): void {
 
 function cmdIndex(): void {
   console.log("📑 Regenerating all MOC dashboards...");
+  const backlinks = computeBacklinks();
   for (const domain of DOMAINS) {
-    regenerateMOC(domain);
+    regenerateMOC(domain, backlinks);
     console.log(`  ${domain}/_index.md`);
   }
   regenerateMasterMOC();
