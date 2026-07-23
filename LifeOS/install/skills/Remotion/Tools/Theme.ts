@@ -102,10 +102,10 @@ export const LIFEOS_THEME = {
 } as const
 
 // Type exports
-export type PAITheme = typeof LIFEOS_THEME
-export type PAIColors = typeof LIFEOS_THEME.colors
-export type PAITypography = typeof LIFEOS_THEME.typography
-export type PAIAnimation = typeof LIFEOS_THEME.animation
+export type LifeosTheme = typeof LIFEOS_THEME
+export type LifeosColors = typeof LIFEOS_THEME.colors
+export type LifeosTypography = typeof LIFEOS_THEME.typography
+export type LifeosAnimation = typeof LIFEOS_THEME.animation
 
 // Utility: Get interpolate input/output for fade
 export const fadeInterpolation = (startFrame = 0) => ({
