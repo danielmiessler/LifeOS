@@ -724,7 +724,7 @@ async function addBackgroundColor(inputPath: string, outputPath: string, hexColo
  * thumbnail is derived, so the signature lands on BOTH versions.
  * Pointsize scales with image width so it reads at any resolution.
  */
-async function stampKaiSignature(imagePath: string): Promise<void> {
+async function stampDaSignature(imagePath: string): Promise<void> {
   // Derive pointsize from the image width (≈3% of width; 1024px → ~31pt —
   // 2026-07-09: reduced from 4.5% so it reads as a painter's mark, not a label).
   let pointsize = 31;
@@ -1194,7 +1194,7 @@ async function main(): Promise<void> {
     const signatureDefault = args.workflow === "Essay" || args.thumbnail === true;
     const stampSignature = args.signature ?? signatureDefault;
     if (stampSignature) {
-      await stampKaiSignature(actualOutput);
+      await stampDaSignature(actualOutput);
     }
 
     // Generate thumbnail with background color if requested (blog header mode)
