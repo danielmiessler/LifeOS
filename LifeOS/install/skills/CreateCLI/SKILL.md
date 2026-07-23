@@ -228,7 +228,7 @@ Every generated CLI follows:
 **Usage:**
 ```bash
 ghcli repos --user exampleuser
-ghcli issues create --repo pai --title "Bug fix"
+ghcli issues create --repo myrepo --title "Bug fix"
 ghcli search "typescript CLI"
 ghcli --help
 ```
