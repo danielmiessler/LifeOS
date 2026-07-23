@@ -5,6 +5,7 @@ description: "Manage the LifeOS Knowledge Archive — a curated, typed graph of 
 argument-hint: [search|add|harvest|develop|ingest|contradictions|graph|retrieve|mine|<query>]
 effort: low
 context: fork
+background: false
 ---
 
 # Knowledge Skill
