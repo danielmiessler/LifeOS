@@ -665,7 +665,7 @@
       "settings.json is the single source of truth for all LifeOS configuration.",
       "daidentity in settings.json controls {{DA_NAME}}'s name, color, voice, and personality.",
       "principal in settings.json stores your name, timezone, and voice clone.",
-      "The statusline command runs from PAI/LIFEOS_StatusLine.sh.",
+      "The statusline command runs from LIFEOS/LIFEOS_StatusLine.sh.",
       "Personality traits (0-100) shape how emotions are expressed vocally.",
       "Never hardcode paths. Use ${LIFEOS_DIR}, ${PROJECTS_DIR}, {PRINCIPAL.NAME}.",
       "Interceptor-first: if you haven't SEEN it with the Interceptor skill, you can't claim it works.",
