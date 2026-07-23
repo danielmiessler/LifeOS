@@ -25,7 +25,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
-import { readTelosFreshness, sectionSlug, type SectionFreshness } from "./TelosFreshness";
+import { readTelosFreshness, sectionSlug, splitFilePathForSlug, parseFrontmatter, type SectionFreshness } from "./TelosFreshness";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -274,7 +274,17 @@ function parseTelosSections(content: string): Map<string, string> {
 
 function extractSectionBody(target: RegistryTarget, sections: Map<string, string>): string | null {
   if (!target.path.startsWith(TELOS_SECTION_PREFIX)) return null;
-  return sections.get(sectionSlug(target.name)) ?? null;
+  const slug = sectionSlug(target.name);
+  // Split-file mode wins: TELOS.md is a thin index, so the per-concept file is
+  // authoritative when it has content — matching GenerateTelosSummary and TELOS.md's
+  // own "split file wins" rule. Strip frontmatter so scoring matches how TELOS.md H2
+  // bodies are measured (and a prior last_updated bump can't inflate the body).
+  const splitPath = splitFilePathForSlug(slug, TELOS_PATH);
+  if (splitPath) {
+    const body = parseFrontmatter(readFileSync(splitPath, "utf-8")).rest;
+    if (body != null && body.trim().length > 0) return body;
+  }
+  return sections.get(slug) ?? null;
 }
 
 function freshnessForSection(target: RegistryTarget): SectionFreshness | null {

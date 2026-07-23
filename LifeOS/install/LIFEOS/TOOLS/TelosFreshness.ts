@@ -32,7 +32,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { getDAName } from "../../hooks/lib/identity"
 
-import { basename, join } from "path";
+import { basename, dirname, join } from "path";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -114,6 +114,50 @@ export const STALENESS_THRESHOLDS: Record<string, number> = {
 };
 
 const DEFAULT_THRESHOLD_DAYS = 180;
+
+// ─── Split-file mode support ────────────────────────────────────────────────
+//
+// LifeOS schema "one concept → one file": TELOS.md can be a thin index while
+// each section's content lives in its own ALLCAPS sibling file (MISSION.md,
+// GOALS.md, …). This map is the section-slug → split-filename source of truth,
+// consumed by readTelosFreshness (below) and InterviewScan.extractSectionBody
+// so both read split content when the TELOS.md H2 is absent. Irregular pairs
+// (food→FOOD_PREFERENCES, learning_interests→LEARNING) are explicit; consistent
+// with GenerateTelosSummary's LEGACY_FILE_TO_SECTION inverse.
+export const SPLIT_FILE_BY_SLUG: Record<string, string> = {
+  mission: "MISSION.md", goals: "GOALS.md", problems: "PROBLEMS.md",
+  strategies: "STRATEGIES.md", challenges: "CHALLENGES.md", narratives: "NARRATIVES.md",
+  beliefs: "BELIEFS.md", models: "MODELS.md", frames: "FRAMES.md", traumas: "TRAUMAS.md",
+  wrong: "WRONG.md", wisdom: "WISDOM.md", predictions: "PREDICTIONS.md", ideas: "IDEAS.md",
+  sparks: "SPARKS.md", books: "BOOKS.md", authors: "AUTHORS.md", bands: "BANDS.md",
+  movies: "MOVIES.md", restaurants: "RESTAURANTS.md", food: "FOOD_PREFERENCES.md",
+  meetups: "MEETUPS.md", civic: "CIVIC.md", learning_interests: "LEARNING.md", team: "TEAM.md",
+};
+
+/** Absolute path to a section's split file if it exists as a TELOS-dir sibling, else null. */
+export function splitFilePathForSlug(slug: string, telosPath: string = TELOS_PATH): string | null {
+  const filename = SPLIT_FILE_BY_SLUG[slug];
+  if (!filename) return null;
+  const p = join(dirname(telosPath), filename);
+  return existsSync(p) ? p : null;
+}
+
+function prettifySlug(slug: string): string {
+  return slug.split("_").map((w) => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(" ");
+}
+
+// First substantive body line, trimmed of markup and capped, for a section preview.
+// Shared by the H2-section scan and the split-file scan. skipHeadings drops '#'
+// lines (a split file body can carry its own headings; an H2 section body cannot).
+function extractPreview(lines: string[], skipHeadings = false): string {
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || t.startsWith("<!--") || t.startsWith(">") || t.startsWith("---")) continue;
+    if (skipHeadings && t.startsWith("#")) continue;
+    return t.replace(/^[#>*\-\s]+/, "").slice(0, 80);
+  }
+  return "";
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -407,19 +451,33 @@ export function readTelosFreshness(path: string = TELOS_PATH): TelosFreshness {
       }
     }
 
-    // First substantive line of the section body, for preview.
-    let preview = "";
-    for (let j = i + 1; j < Math.min(i + 12, lines.length); j++) {
-      const t = lines[j].trim();
-      if (!t || t.startsWith("<!--") || t.startsWith(">") || t.startsWith("---")) continue;
-      preview = t.replace(/^[#>*\-\s]+/, "").slice(0, 80);
-      break;
-    }
+    const preview = extractPreview(lines.slice(i + 1, i + 12));
 
     const ageDays = updated ? daysBetween(updated, now) : null;
     const stale = ageDays === null || ageDays > thresholdDays;
 
     sections.push({ name, slug, updated, ageDays, thresholdDays, stale, preview, line: i + 1 });
+  }
+
+  // Split-file mode: TELOS.md is a thin index — surface each existing split file
+  // as its own section (freshness from the split file's own frontmatter). When a
+  // section exists as both a TELOS.md H2 and a split file, the split file wins —
+  // matching GenerateTelosSummary and TELOS.md's own "split file wins" rule.
+  const idxBySlug = new Map(sections.map((s, i) => [s.slug, i]));
+  const telosDir = dirname(path);
+  for (const [slug, filename] of Object.entries(SPLIT_FILE_BY_SLUG)) {
+    const splitPath = join(telosDir, filename);
+    if (!existsSync(splitPath)) continue;
+    const { fm: splitFm, rest } = parseFrontmatter(readFileSync(splitPath, "utf-8"));
+    const updated = parseDate(splitFm.last_updated);
+    const thresholdDays = STALENESS_THRESHOLDS[slug] ?? DEFAULT_THRESHOLD_DAYS;
+    const ageDays = updated ? daysBetween(updated, now) : null;
+    const stale = ageDays === null || ageDays > thresholdDays;
+    const preview = extractPreview(rest.split("\n"), true);
+    const splitSection = { name: prettifySlug(slug), slug, updated, ageDays, thresholdDays, stale, preview, line: 0 };
+    const existing = idxBySlug.get(slug);
+    if (existing !== undefined) sections[existing] = splitSection;
+    else sections.push(splitSection);
   }
 
   const staleSections = sections
@@ -619,6 +677,17 @@ export function bumpTelosTimestamp(
       break;
     }
     raw = lines.join("\n");
+  }
+
+  // Split-file mode: slug wasn't a TELOS.md H2 — bump the split file's own
+  // frontmatter so readTelosFreshness reads it fresh.
+  if (slug && !sectionFound) {
+    const splitPath = splitFilePathForSlug(slug, path);
+    if (splitPath) {
+      const rawSplit = readFileSync(splitPath, "utf-8");
+      writeFileSync(splitPath, bumpFileFrontmatter(rawSplit, isoNow, by));
+      sectionFound = true;
+    }
   }
 
   writeFileSync(path, raw);
