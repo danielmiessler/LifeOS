@@ -71,7 +71,7 @@ In `settings.json`, scoped narrowly to **irrecoverable** ops only. Categories:
 - Pipe-to-shell: `curl|sh`, `wget|bash`, etc.
 - Force-push to main/master: `git push --force * main`
 - Permission bombs: `chmod -R 777 /`, fork bomb
-- System-root file writes: `Edit(/etc/**)`, `Write(/usr/**)`, etc.
+- System-root file writes: `Edit(/etc/**)`, `Edit(/usr/**)`, etc. (`Edit(path)` rules govern Edit, Write, and NotebookEdit alike; a bare `Write(path)` rule is accepted but never matched by file permission checks, so it must not be used)
 - Credential reads: SSH private keys, cloud credentials, GPG private keyring
 
 Intentionally **NOT** denied: `rm -rf node_modules`, `git reset --hard`, `chmod` on user files. These are recoverable; the model's judgment plus the constitutional rule are sufficient.
