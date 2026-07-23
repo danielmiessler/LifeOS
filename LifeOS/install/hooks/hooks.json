@@ -136,6 +136,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$HOME/.claude/hooks/PostToolObserver.hook.ts",
+            "timeout": 5
+          },
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/EventLogger.hook.ts",
             "timeout": 5,
             "async": true
@@ -208,8 +213,28 @@
         "hooks": [
           {
             "type": "command",
+            "command": "$HOME/.claude/hooks/DriftReminder.hook.ts",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
             "command": "$HOME/.claude/hooks/MemoryTurnStart.hook.ts",
             "timeout": 8
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/AlgorithmNudge.hook.ts",
+            "timeout": 5,
+            "async": true
           }
         ]
       }
