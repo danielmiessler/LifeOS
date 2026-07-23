@@ -43,7 +43,7 @@ function arg(a: string[], flag: string): string | undefined {
 }
 
 interface DeployResult {
-  what: "skills" | "runtime" | "memory" | "dependencies";
+  what: "skills" | "runtime" | "memory" | "dependencies" | "nested-dependencies";
   src: string;
   dst: string;
   present: boolean;
@@ -164,6 +164,81 @@ function deployDependencies(payloadInstall: string, configRoot: string, apply: b
   return r;
 }
 
+/**
+ * (e) nested runtime deps: several directories INSIDE the deployed runtime tree
+ * ship their OWN package.json (LIFEOS/PULSE, LIFEOS/PULSE/Observability,
+ * LIFEOS/TOOLS, ...) — declaring a dependency there does not make bun/node
+ * resolve it. Module resolution stops walking up at the first ancestor
+ * directory that owns a package.json, so the shared configRoot/node_modules
+ * deployDependencies() just installed never satisfies these. This is exactly
+ * why a fresh install dies with `Cannot find package 'smol-toml'` on `bun run
+ * pulse.ts`: LIFEOS/PULSE/package.json lists smol-toml correctly, but nothing
+ * ever ran `bun install` inside LIFEOS/PULSE/. Walk the deployed runtime tree
+ * for every package.json (skipping node_modules/.git) and `bun install --cwd`
+ * each one it finds. The Observability dashboard additionally needs a build —
+ * it ships as a Next.js static export (Observability/out/index.html) that
+ * pulse.ts itself already detects as missing and reports as a copy-paste fix
+ * command; building it here just does that automatically instead of leaving
+ * every fresh Pulse install to 503 until the human runs it by hand.
+ */
+function findNestedDependencyDirs(runtimeDst: string): string[] {
+  const found: string[] = [];
+  const walk = (dir: string): void => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "node_modules" || entry.name === ".git") continue;
+      const p = join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(p);
+      } else if (entry.isFile() && entry.name === "package.json") {
+        found.push(dir);
+      }
+    }
+  };
+  walk(runtimeDst);
+  return found.sort();
+}
+
+function deployNestedDependencies(configRoot: string, apply: boolean): DeployResult {
+  const runtimeDst = join(configRoot, "LIFEOS");
+  const r: DeployResult = {
+    what: "nested-dependencies", src: runtimeDst, dst: runtimeDst,
+    present: existsSync(runtimeDst), copied: 0, actions: [], blockers: [], failures: [],
+  };
+  if (!r.present) return r; // runtime not deployed yet — deployRuntime() already reports that blocker
+
+  const dirs = findNestedDependencyDirs(runtimeDst);
+  for (const dir of dirs) {
+    const isObservability = dir === join(runtimeDst, "PULSE", "Observability");
+    const needsBuild = isObservability && !existsSync(join(dir, "out", "index.html"));
+
+    if (!apply) {
+      r.actions.push(`bun install --cwd ${dir}`);
+      if (needsBuild) r.actions.push(`bun run build --cwd ${dir}`);
+      continue;
+    }
+
+    const proc = Bun.spawnSync(["bun", "install"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+    if (proc.exitCode !== 0) {
+      r.failures.push(`bun install --cwd ${dir} exited ${proc.exitCode}: ${proc.stderr.toString().trim()}`);
+      continue;
+    }
+    r.copied++;
+    r.actions.push(`bun install --cwd ${dir}`);
+
+    // Build the Observability dashboard once its deps resolve — see comment above.
+    if (needsBuild) {
+      const build = Bun.spawnSync(["bun", "run", "build"], { cwd: dir, stdout: "pipe", stderr: "pipe" });
+      if (build.exitCode !== 0) {
+        r.failures.push(`bun run build --cwd ${dir} exited ${build.exitCode}: ${build.stderr.toString().trim()}`);
+      } else {
+        r.actions.push(`bun run build --cwd ${dir}`);
+      }
+    }
+  }
+  return r;
+}
+
 function main(): void {
   const a = process.argv.slice(2);
   const home = process.env.HOME || homedir();
@@ -187,6 +262,7 @@ function main(): void {
     deployRuntime(payloadInstall, configRoot, apply),
     scaffoldMemory(configRoot, apply),
     deployDependencies(payloadInstall, configRoot, apply),
+    deployNestedDependencies(configRoot, apply),
   ];
 
   // A missing required payload source (blocker) or a copy failure is a hard
