@@ -1,7 +1,7 @@
 ---
 name: ISA
 version: 1.0.13
-description: "Owns the Ideal State Artifact — the primitive holding a project or task's articulated ideal state; scaffolds, interviews, scores completeness, reconciles feature excerpts to master, seeds from a repo, and appends decisions/changelog/verification across a locked fourteen-section order. USE WHEN ISA, ISC, ideal state, ideal state criteria, project specification, hill-climb, articulating done. NOT FOR creating new skills (use CreateSkill)."
+description: "Owns the Ideal State Artifact — the primitive holding a project or task's articulated ideal state; scaffolds, interviews, grills a half-formed idea into shape via checkpointed discovery, scores completeness, reconciles feature excerpts to master, seeds from a repo, and appends decisions/changelog/verification across a locked fourteen-section order. USE WHEN ISA, ISC, ideal state, ideal state criteria, project specification, hill-climb, articulating done, grill me, discovery interview. NOT FOR creating new skills (use CreateSkill)."
 effort: medium
 ---
 
@@ -106,6 +106,7 @@ Match the verb in the request to a workflow. When ambiguous, default to Scaffold
 |---------------|----------|------|
 | "scaffold", "create", "generate", "new ISA from this prompt", "extract feature as ephemeral" | **Scaffold** | `Workflows/Scaffold.md` |
 | "interview me", "fill in the ISA", "deepen", "ask me questions" | **Interview** | `Workflows/Interview.md` |
+| "grill me", "grill", "discovery interview", "figure out the shape" | **Grill** | `Workflows/Grill.md` |
 | "check", "audit", "score this ISA", "is it complete?" | **CheckCompleteness** | `Workflows/CheckCompleteness.md` |
 | "reconcile", "merge feature file back", "ephemeral → master" | **Reconcile** | `Workflows/Reconcile.md` |
 | "seed", "bootstrap from this repo", "draft an ISA from existing code" | **Seed** | `Workflows/Seed.md` |
