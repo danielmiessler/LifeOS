@@ -5,11 +5,46 @@
  *
  * Time model: each app-focus event represents one poll interval of that app (capped —
  * a sleep gap does not inflate time because launchd fires no polls while asleep).
+ *
+ * FALLBACK: app-focus needs macOS `osascript`, so on every other platform it yields
+ * nothing and the whole time model reads zero while capture reports healthy. When a
+ * day has no focus time, time is derived from claude-session cadence instead — the
+ * signal that IS present everywhere. It is labelled as derived in the block itself,
+ * because inferred keyboard time and measured focus time are not the same claim and
+ * the record should not blur them.
  */
 import { mkdirSync, renameSync, writeFileSync } from "node:fs";
 import { classifyApp } from "./classify.ts";
 import { DAILY_DIR, dailyPathsFor } from "./paths.ts";
 import type { ConduitEvent, DailyBlock, DailyRecord } from "./types.ts";
+
+/** Label marks the number as inferred, so a reader never mistakes it for measured focus. */
+const DERIVED_LABEL = "Claude Code (derived from session cadence)";
+
+/**
+ * Time between consecutive claude-session events, capped so an overnight gap is not
+ * counted as work. The cap self-tunes to 2× the day's median gap rather than a fixed
+ * constant: the capture cadence is set by the cron schedule (every 5 minutes at time
+ * of writing), not by pollIntervalSec, so a hardcoded cap would silently undercount
+ * the moment that schedule changed.
+ *
+ * Each event is credited with the gap BACK to the previous one — N events yield N-1
+ * spans, which deliberately claims nothing about time after the final event.
+ */
+function deriveSessionSeconds(sessionTimestamps: number[]): number {
+  if (sessionTimestamps.length < 2) return 0;
+  const sorted = [...sessionTimestamps].sort((a, b) => a - b);
+  const gaps: number[] = [];
+  for (let i = 1; i < sorted.length; i++) gaps.push((sorted[i] - sorted[i - 1]) / 1000);
+
+  const ordered = [...gaps].sort((a, b) => a - b);
+  const median = ordered[Math.floor(ordered.length / 2)] || 0;
+  // Floor/ceiling keep a degenerate median (one burst, or a single long gap) from
+  // producing an absurd cap in either direction.
+  const cap = Math.min(Math.max(median * 2, 60), 1800);
+
+  return gaps.reduce((n, g) => n + Math.min(g, cap), 0);
+}
 
 /** Aggregate a day's raw events into the deterministic record. Pure. */
 export function buildDailyRecord(
@@ -20,6 +55,7 @@ export function buildDailyRecord(
 ): DailyRecord {
   const perAppSec = new Map<string, number>();
   const seenSha = new Set<string>();
+  const sessionTimestamps: number[] = [];
   let commits = 0;
   let sessions = 0;
 
@@ -37,7 +73,16 @@ export function buildDailyRecord(
       commits++;
     } else if (e.type === "claude-session") {
       sessions++;
+      const t = Date.parse(e.ts);
+      if (!Number.isNaN(t)) sessionTimestamps.push(t);
     }
+  }
+
+  // Fallback only. Measured focus always wins where it exists, so a macOS host is
+  // completely unaffected and upstream behaviour is preserved.
+  if (perAppSec.size === 0) {
+    const derivedSec = deriveSessionSeconds(sessionTimestamps);
+    if (derivedSec > 0) perAppSec.set(DERIVED_LABEL, derivedSec);
   }
 
   const blocks: DailyBlock[] = [...perAppSec.entries()]

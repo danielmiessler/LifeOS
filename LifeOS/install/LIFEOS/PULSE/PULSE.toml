@@ -206,6 +206,30 @@ command = "bun run checks/life-morning-brief.ts"
 output = "voice"
 enabled = true
 
+# ── Conduit insight ──
+
+# BuildInsight.ts ships with a launchd installer (InstallConduitInsight.ts writes
+# ~/Library/LaunchAgents/com.lifeos.conduit.insight.plist), which exists only on
+# macOS. Everywhere else nothing ever runs it, so the Conduit page permanently
+# reads "No activity captured yet today" while advertising an hourly cadence.
+# Scheduling it here makes the hourly read real on every platform.
+#
+# Safe to double-run where the launchd agent IS installed: BuildInsight is
+# idempotent against a `since` watermark and exits WITHOUT an inference call when
+# no new events have landed, so extra firings on idle hours cost nothing.
+#
+# :23 past every 2nd hour, brute-forced against every enabled job rather than
+# eyeballed. The obvious :15 collides with FIVE of them — cost-aggregation and
+# the */5 pollers all land on multiples of 5 — and this job holds an inference
+# call open for ~50s, so it should not share a tick with anything.
+[[job]]
+name = "conduit-insight"
+schedule = "23 */2 * * *"
+type = "script"
+command = "bun run Conduit/BuildInsight.ts"
+output = "log"
+enabled = true
+
 # ── Migration note (2026-05-03) ──
 # All personal/{{PRINCIPAL_NAME}}-specific jobs (cost-tracker, monitor-*, lifelog-digest,
 # apple-health-ingest, local-intelligence-refresh, update-pai-state, the
