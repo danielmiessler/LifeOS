@@ -13,7 +13,11 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { parse as parseYaml } from 'yaml';
-import { loadLifeosConfig } from '../../LIFEOS/TOOLS/LifeosConfig';
+import {
+  loadLifeosConfig,
+  type LifeosDa,
+  type LifeosPrincipal,
+} from '../../LIFEOS/TOOLS/LifeosConfig';
 
 const HOME = process.env.HOME!;
 const SETTINGS_PATH = join(HOME, '.claude/settings.json');
@@ -171,10 +175,53 @@ function mapFrontmatterPersonality(traits: any, baseVoice: string | undefined): 
 
 /**
  * Get DA (Digital Assistant) identity.
- * Reads settings.daidentity first (canonical runtime read point),
- * falls back to DA_IDENTITY.md frontmatter (authoring source).
+ *
+ * LIFEOS_CONFIG.toml `[da]` wins for every field it carries. It is the typed
+ * loader, it is where setup tells the principal to name their DA, and
+ * LifeosConfig itself refuses to load without a non-empty `[da].name` — so it
+ * is the one source guaranteed to be both present and current.
+ *
+ * The settings.daidentity → DA_IDENTITY.md frontmatter → DEFAULT_IDENTITY chain
+ * below stays the fallback: it covers the fields config does not carry, and an
+ * install that has no config yet resolves exactly as it did before.
  */
 export function getIdentity(): Identity {
+  const base = legacyIdentity();
+
+  let da: LifeosDa | undefined;
+  try {
+    da = loadLifeosConfig().da;
+  } catch {
+    return base; // no config yet (fresh install) — legacy chain governs
+  }
+  if (!da?.name) return base;
+
+  const main = da.voices?.main;
+  return {
+    ...base,
+    name: da.name,
+    fullName: da.fullName || da.name,
+    displayName: da.displayName || da.name,
+    color: da.color || base.color,
+    mainDAVoiceID: main?.voiceId || base.mainDAVoiceID,
+    voice: main
+      ? {
+          stability: main.stability ?? 0,
+          similarityBoost: main.similarityBoost ?? 0,
+          style: main.style ?? 0,
+          speed: main.speed ?? 1,
+          useSpeakerBoost: main.useSpeakerBoost ?? false,
+          volume: main.volume,
+        }
+      : base.voice,
+  };
+}
+
+/**
+ * The pre-config resolution chain: settings.daidentity (runtime read point),
+ * then DA_IDENTITY.md frontmatter (authoring source), then the placeholder.
+ */
+function legacyIdentity(): Identity {
   const settings = loadSettings();
   const daidentity = (settings.daidentity || {}) as any;
   const voices = daidentity.voices || {};
@@ -212,9 +259,31 @@ export function getIdentity(): Identity {
 
 /**
  * Get Principal (human owner) identity.
- * Reads frontmatter from PRINCIPAL_IDENTITY.md first, falls back to settings.principal.
+ *
+ * Same contract as getIdentity(): LIFEOS_CONFIG.toml `[principal]` wins, and
+ * LifeosConfig requires a non-empty name and timezone there. The
+ * PRINCIPAL_IDENTITY.md frontmatter → settings.principal chain is the fallback.
  */
 export function getPrincipal(): Principal {
+  const base = legacyPrincipal();
+
+  let p: LifeosPrincipal | undefined;
+  try {
+    p = loadLifeosConfig().principal;
+  } catch {
+    return base; // no config yet (fresh install) — legacy chain governs
+  }
+  if (!p?.name) return base;
+
+  return {
+    name: p.name,
+    pronunciation: p.pronunciation || base.pronunciation,
+    timezone: p.timezone || base.timezone,
+  };
+}
+
+/** The pre-config chain: PRINCIPAL_IDENTITY.md frontmatter, then settings. */
+function legacyPrincipal(): Principal {
   const fm = loadPrincipalFrontmatter();
   const core = fm.core ?? {};
 
