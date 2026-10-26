@@ -3601,7 +3601,11 @@ function buildSnapshotFromCurrentState(): Array<{ id: string; label: string; v: 
   return out.length > 0 ? out : null
 }
 
-function buildPreferencesFromTelos(): {
+// Unified-TELOS section with legacy per-file fallback (issue #2393): a
+// post-consolidation install ships ONLY TELOS.md, so reading the per-topic
+// legacy files directly renders the Preference strip empty. Resolve through
+// telosSectionOrFile() like every other handler.
+function buildPreferencesFromTelos(sections: Record<string, string>): {
   books: string[]
   films: string[]
   anime: string[]
@@ -3610,9 +3614,9 @@ function buildPreferencesFromTelos(): {
   hobbies: string[]
   literature: string[]
 } | null {
-  const books = parseBullets(readMd(join(TELOS_DIR, "BOOKS.md"))).slice(0, 8)
-  const movies = parseBullets(readMd(join(TELOS_DIR, "MOVIES.md"))).slice(0, 8)
-  const authors = parseBullets(readMd(join(TELOS_DIR, "AUTHORS.md"))).slice(0, 8)
+  const books = parseBullets(telosSectionOrFile(sections, "books", "BOOKS.md")).slice(0, 8)
+  const movies = parseBullets(telosSectionOrFile(sections, "movies", "MOVIES.md")).slice(0, 8)
+  const authors = parseBullets(telosSectionOrFile(sections, "authors", "AUTHORS.md")).slice(0, 8)
   if (books.length === 0 && movies.length === 0 && authors.length === 0) return null
   return {
     books,
@@ -4283,7 +4287,7 @@ async function handleTelosOverview(): Promise<Response> {
 
     const dimensions = buildDimensionsFromIdealState()
     const snapshot = buildSnapshotFromCurrentState()
-    const preferences = buildPreferencesFromTelos()
+    const preferences = buildPreferencesFromTelos(sections)
     const workNarrative = await buildWorkNarrative()
 
     // Live status sections — real sources only (Bunker monitor, work registry,
