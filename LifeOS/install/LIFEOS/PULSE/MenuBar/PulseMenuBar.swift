@@ -11,8 +11,24 @@ import Foundation
 // the Pulse API is unreachable, so the menu always opens.
 // ============================================================================
 
-let PULSE_API = "http://localhost:31337/api/menubar"
-let PULSE_DASHBOARD = "http://localhost:31337"
+// Configured Pulse port: PULSE_PORT env -> first `port =` line in PULSE.toml -> 31337 (#2392).
+func configuredPulsePort() -> String {
+    if let env = ProcessInfo.processInfo.environment["PULSE_PORT"], let n = Int(env), (1...65535).contains(n) { return env }
+    let tomlPath = FileManager.default.homeDirectoryForCurrentUser.path + "/.claude/LIFEOS/PULSE/PULSE.toml"
+    if let content = try? String(contentsOfFile: tomlPath, encoding: .utf8) {
+        for line in content.split(separator: "\n") {
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("port"), let eq = t.firstIndex(of: "=") {
+                let val = t[t.index(after: eq)...].trimmingCharacters(in: .whitespaces)
+                if let n = Int(val), (1...65535).contains(n) { return val }
+            }
+        }
+    }
+    return "31337"
+}
+let PULSE_PORT_CFG = configuredPulsePort()
+let PULSE_API = "http://localhost:\(PULSE_PORT_CFG)/api/menubar"
+let PULSE_DASHBOARD = "http://localhost:\(PULSE_PORT_CFG)"
 let LAST_SEEN_KEY = "lifeos.pulse.menubar.lastSeenMs"
 
 // MARK: - /api/menubar payload

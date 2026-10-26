@@ -27,12 +27,13 @@ import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { invariant } from "./Invariant";
+import { PULSE_BASE } from "../PULSE/endpoint";
 
 const HOME = homedir();
 const OBS_DIR = join(HOME, ".claude", "LIFEOS", "MEMORY", "OBSERVABILITY");
 const LOG_PATH = join(OBS_DIR, "pegwatch.jsonl");
 const STATE_PATH = join(HOME, ".claude", "LIFEOS", "MEMORY", "STATE", "pegwatch.json");
-const PULSE_NOTIFY = "http://localhost:31337/notify";
+const PULSE_NOTIFY = `${PULSE_BASE}/notify`; // port via endpoint.ts resolver (#2392)
 
 const GPU_PEG = 90; // % — both samples must reach it
 const CPU_PEG = 90; // % — total (100 - idle)

@@ -17,6 +17,7 @@ import { join } from "path"
 import { readFileSync, existsSync } from "fs"
 import { loadLifeosConfig } from "../TOOLS/LifeosConfig"
 import { isLoopbackHostHeader } from "./lib/host-guard.ts"
+import { PULSE_PORT } from "./endpoint"
 
 // ── Load .env before anything else ──
 
@@ -437,7 +438,9 @@ async function loadPulseConfig(): Promise<PulseConfig> {
   const userSyslog = userParsed?.syslog as PulseConfig["syslog"] | undefined
 
   return {
-    port: (parsed.port as number) ?? parseInt(process.env.PULSE_PORT || "31337", 10),
+    // Same resolver as every client/guard (endpoint.ts) so the server bind and
+    // the port-dependent security sites can never disagree. #2392
+    port: (parsed.port as number) ?? PULSE_PORT,
     modules: resolveModules(parsed, userParsed),
     tls: (parsed.tls as PulseConfig["tls"]) ?? undefined,
     voice: (parsed.voice as PulseConfig["voice"]) ?? { enabled: true },

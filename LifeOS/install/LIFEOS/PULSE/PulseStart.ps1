@@ -9,15 +9,19 @@ $ErrorActionPreference = "Stop"
 
 $pulseDir = $PSScriptRoot
 $bun = Join-Path $env:USERPROFILE ".bun\bin\bun.exe"
+# Configured Pulse port: PULSE_PORT env -> first `port =` line in PULSE.toml -> 31337 (#2392)
+$pulsePort = if ($env:PULSE_PORT) { $env:PULSE_PORT }
+             else { (Select-String -Path (Join-Path $pulseDir "PULSE.toml") -Pattern '^port\s*=\s*(\d+)' -ErrorAction SilentlyContinue | Select-Object -First 1).Matches[0].Groups[1].Value }
+if (-not $pulsePort) { $pulsePort = "31337" }
 
 # Already up? Task Scheduler retries on failure and the user may also start Pulse
-# by hand, so a second instance must not fight the first for :31337. Probe a
+# by hand, so a second instance must not fight the first for the Pulse port. Probe a
 # Pulse-SPECIFIC endpoint: /healthz returns a JSON body carrying a "status" field
 # (HTTP 200 healthy, 503 degraded — both mean Pulse already owns the port). A bare
-# 200 from some unrelated process that grabbed :31337 must NOT read as "Pulse up".
+# 200 from some unrelated process that grabbed the port must NOT read as "Pulse up".
 function Test-PulseUp {
     try {
-        $r = Invoke-WebRequest -Uri "http://localhost:31337/healthz" -UseBasicParsing -TimeoutSec 2
+        $r = Invoke-WebRequest -Uri "http://localhost:$pulsePort/healthz" -UseBasicParsing -TimeoutSec 2
         return ($r.Content -match '"status"')
     } catch {
         # PowerShell throws on non-2xx; a 503-degraded Pulse still owns the port,

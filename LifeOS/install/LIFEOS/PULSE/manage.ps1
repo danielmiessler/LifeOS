@@ -16,7 +16,11 @@ $ErrorActionPreference = "Stop"
 $pulseDir = $PSScriptRoot
 $startScript = Join-Path $pulseDir "PulseStart.ps1"
 $taskName = "LifeOS Pulse"
-$pulseUrl = "http://localhost:31337/"
+# Configured Pulse port: PULSE_PORT env -> first `port =` line in PULSE.toml -> 31337 (#2392)
+$pulsePort = if ($env:PULSE_PORT) { $env:PULSE_PORT }
+             else { (Select-String -Path (Join-Path $pulseDir "PULSE.toml") -Pattern '^port\s*=\s*(\d+)' -ErrorAction SilentlyContinue | Select-Object -First 1).Matches[0].Groups[1].Value }
+if (-not $pulsePort) { $pulsePort = "31337" }
+$pulseUrl = "http://localhost:$pulsePort/"
 
 function Test-PulseUp {
     try {
@@ -80,7 +84,7 @@ switch ($Command.ToLower()) {
     "status" {
         $task = Get-ScheduledTask -TaskName $taskName -ErrorAction SilentlyContinue
         Write-Host "Scheduled task: $(if ($task) { $task.State } else { 'not installed' })"
-        Write-Host "Responding on :31337: $(if (Test-PulseUp) { 'yes' } else { 'no' })"
+        Write-Host "Responding on :$pulsePort: $(if (Test-PulseUp) { 'yes' } else { 'no' })"
         $procs = Get-PulseProcess
         Write-Host "bun pulse.ts processes: $(@($procs).Count)"
     }

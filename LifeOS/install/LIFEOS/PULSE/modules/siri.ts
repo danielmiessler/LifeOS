@@ -22,6 +22,7 @@ import { buildLifeosContextBlock } from "../lib/lifeos-context"
 import { loadRemoteMcpServers, mcpStatusPromptLine } from "../lib/mcp-allowlist"
 import { homedir } from "node:os";
 import { getDAName, getPrincipalName } from "../../../hooks/lib/identity";
+import { PULSE_PORT } from "../endpoint"
 
 const CWD = `${homedir()}/.claude`
 const IDLE_TIMEOUT_MS = 60 * 60 * 1000 // 60 min idle gap resets the SDK thread
@@ -107,9 +108,9 @@ async function runTurn(text: string): Promise<string> {
         const cmd = typeof input === "object" && input !== null && "command" in input
           ? String((input as Record<string, unknown>).command)
           : String(input)
-        if (cmd.includes("31337") || cmd.includes("/notify")) {
+        if (cmd.includes(String(PULSE_PORT)) || cmd.includes("/notify")) { // port via endpoint.ts resolver (#2392)
           log("warn", "canUseTool blocked /notify curl from SDK subprocess", { cmd: cmd.slice(0, 200) })
-          return { behavior: "deny", message: "Siri mode: /notify and port 31337 are blocked. The reply is spoken by Siri on the phone." }
+          return { behavior: "deny", message: `Siri mode: /notify and port ${PULSE_PORT} are blocked. The reply is spoken by Siri on the phone.` }
         }
       }
       return { behavior: "allow", updatedInput: (typeof input === "object" && input !== null ? input : {}) as Record<string, unknown> }

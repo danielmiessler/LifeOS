@@ -1447,7 +1447,7 @@ function handleSecurityHooksDetail(): Response {
         event: "PermissionRequest + PostToolUse (WebFetch | WebSearch | ToolSearch | mcp__* inbound sources)",
         canBlock: false,
       },
-      "http://localhost:31337/hooks/skill-guard": {
+      [`${PULSE_BASE}/hooks/skill-guard`]: { // port via endpoint.ts resolver (#2392)
         description:
           "Validates skill invocations via Pulse HTTP route. Prevents false-positive skill triggers.",
         behavior:
@@ -1455,7 +1455,7 @@ function handleSecurityHooksDetail(): Response {
         event: "PreToolUse (Skill)",
         canBlock: true,
       },
-      "http://localhost:31337/hooks/agent-guard": {
+      [`${PULSE_BASE}/hooks/agent-guard`]: { // port via endpoint.ts resolver (#2392)
         description:
           "Validates agent spawning via Pulse HTTP route. Enforces background execution policies.",
         behavior:

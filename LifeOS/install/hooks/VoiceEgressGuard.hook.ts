@@ -23,12 +23,13 @@
 
 import { readFileSync } from "node:fs";
 import { isDesktopChannel, getNotificationChannel, logSkippedVoice } from "./lib/notification-channel";
+import { PULSE_PORT } from "../LIFEOS/PULSE/endpoint";
 
 type BlockResult = { block: true; message: string } | null;
 
 // Speaker-reaching VoiceServer endpoints: /notify, /notify/personality, /pai, /voice.
-// Deliberately NOT /voice/health. Port 31337 is the Pulse server.
-const SPEAKER_ENDPOINT = /(?:localhost|127\.0\.0\.1):31337\/(?:notify|pai\b|voice(?!\/health))/;
+// Deliberately NOT /voice/health. Port is the configured Pulse port (endpoint.ts PULSE_PORT, #2392).
+const SPEAKER_ENDPOINT = new RegExp(`(?:localhost|127\\.0\\.0\\.1):${PULSE_PORT}\\/(?:notify|pai\\b|voice(?!\\/health))`);
 
 export function check(input: any): BlockResult {
   const command = input?.tool_input?.command;

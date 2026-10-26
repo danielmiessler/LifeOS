@@ -66,6 +66,7 @@ import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, statSy
 import { join } from 'path';
 import { resolveBun } from './lib/resolve-bin';
 import { deriveAscent, type AscentState } from '../LIFEOS/TOOLS/ascent';
+import { PULSE_PORT } from '../LIFEOS/PULSE/endpoint';
 import { homedir } from "node:os";
 
 const PAI = join(homedir(), '.claude');
@@ -130,7 +131,7 @@ const CAP_COMMAND_RES: Array<{ id: string; re: RegExp }> = [
   // Both hostnames: source now builds this URL from PULSE_BASE (127.0.0.1),
   // but hand-typed curls and older scripts still say localhost.
   // public issue #1618, @asdf8675309
-  { id: 'voice', re: /(?:localhost|127\.0\.0\.1):31337\/notify/ },
+  { id: 'voice', re: new RegExp(`(?:localhost|127\\.0\\.0\\.1):${PULSE_PORT}\\/notify`) }, // port from endpoint.ts resolver (#2392)
   { id: 'interceptor', re: /\binterceptor\b/ },
 ];
 

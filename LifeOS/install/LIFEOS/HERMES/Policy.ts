@@ -24,6 +24,7 @@
  */
 
 import { writeFileSync } from "node:fs";
+import { PULSE_PORT } from "../PULSE/endpoint";
 
 export interface DenyRule {
   /** fnmatch-style glob, matched against the absolute path AND its `~` form. */
@@ -168,9 +169,11 @@ export const SHELL_DENY_GLOBS: readonly string[] = [
   // workflow" curl because the sidecar runtime has none of Claude Code's
   // hooks). Denied wholesale, /voice/health included — the sidecar has no
   // legitimate reason to reach the voice surface at all.
-  "*31337/notify*",
-  "*31337/pai*",
-  "*31337/voice*",
+  // Resolved at emit time from the configured Pulse port (#2392) — same
+  // parameterize-at-emit pattern as launcherGlobs().
+  `*${PULSE_PORT}/notify*`,
+  `*${PULSE_PORT}/pai*`,
+  `*${PULSE_PORT}/voice*`,
 ];
 
 /**

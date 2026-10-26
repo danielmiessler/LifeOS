@@ -1,6 +1,6 @@
 #!/bin/bash
 # LifeOS Pulse — Process Management
-# Usage: manage.sh {start|stop|restart|status|install|uninstall}
+# Usage: manage.sh {start|stop|restart|status|install|uninstall|repoint}
 
 PULSE_DIR="$HOME/.claude/LIFEOS/PULSE"
 PLIST_NAME="com.lifeos.pulse"
@@ -33,6 +33,17 @@ OS=$(uname -s)
 SERVICE_SRC="$PULSE_DIR/$PLIST_NAME.service"
 SYSTEMD_SERVICE_DIR="$HOME/.config/systemd/user"
 SERVICE_DST="$SYSTEMD_SERVICE_DIR/$PLIST_NAME.service"
+
+# Resolve the configured Pulse port: PULSE_PORT env -> first `port =` line in
+# PULSE.toml -> 31337. Mirrors the TS resolver in endpoint.ts (single knob,
+# #2392) so scripts, verification, and the daemon all agree on one port.
+pulse_port() {
+  if [ -n "${PULSE_PORT:-}" ]; then echo "$PULSE_PORT"; return; fi
+  local p
+  p=$(grep -m1 -E '^port[[:space:]]*=[[:space:]]*[0-9]+' "$PULSE_DIR/PULSE.toml" 2>/dev/null | grep -oE '[0-9]+' || true)
+  echo "${p:-31337}"
+}
+PULSE_PORT_NOW="$(pulse_port)"
 
 case "$1" in
   start)
@@ -112,7 +123,7 @@ case "$1" in
       mkdir -p "$SYSTEMD_SERVICE_DIR"
       # Kill any prior pulse before installing fresh — prevents the stale-PID
       # / unbound-port half-dead state where a previous service-managed pulse
-      # is alive with open fds but never bound :31337.
+      # is alive with open fds but never bound the Pulse port.
       systemctl --user stop "$PLIST_NAME" 2>/dev/null || true
       pkill -9 -f "bun.*pulse.ts" 2>/dev/null || true
       sleep 1
@@ -127,7 +138,7 @@ case "$1" in
     else
       # Cleanup any prior pulse before installing fresh — prevents the stale-PID
       # / unbound-port half-dead state where a previous launchd-managed pulse is
-      # alive with open fds but never bound :31337.
+      # alive with open fds but never bound the Pulse port.
       if [ -f "$PLIST_DST" ]; then
         launchctl unload "$PLIST_DST" 2>/dev/null || true
       fi
@@ -140,19 +151,19 @@ case "$1" in
       launchctl load "$PLIST_DST"
     fi
 
-    # Verify pulse actually binds :31337 within 10s. Fail loud if not — prior
+    # Verify pulse actually binds the configured port within 10s. Fail loud if not — prior
     # behavior was silent success even when the daemon never came up.
     for _ in $(seq 1 20); do
       sleep 0.5
-      if curl -sS --max-time 1 -o /dev/null -X POST http://localhost:31337/notify \
+      if curl -sS --max-time 1 -o /dev/null -X POST "http://localhost:$PULSE_PORT_NOW/notify" \
            -H "Content-Type: application/json" \
            -d '{"message":"","voice_enabled":false}' 2>/dev/null; then
-        echo "LifeOS Pulse installed and verified on port 31337 (bun: $BUN_PATH)"
+        echo "LifeOS Pulse installed and verified on port $PULSE_PORT_NOW (bun: $BUN_PATH)"
         exit 0
       fi
     done
 
-    echo "ERROR: LifeOS Pulse installed but port 31337 did not bind within 10s." >&2
+    echo "ERROR: LifeOS Pulse installed but port $PULSE_PORT_NOW did not bind within 10s." >&2
     echo "  Check: tail -50 $PULSE_DIR/logs/pulse-stderr.log" >&2
     exit 1
     ;;
@@ -168,8 +179,68 @@ case "$1" in
     echo "LifeOS Pulse uninstalled"
     ;;
 
+  repoint)
+    # Move this install to a different Pulse port in one shot: PULSE.toml +
+    # settings.json hook URLs + Hermes guard policy + restart + verify.
+    # No source edits — the TS resolver (endpoint.ts) reads PULSE.toml. #2392
+    NEW_PORT="${2:-}"
+    DRY_RUN=""
+    [ "${3:-}" = "--dry-run" ] && DRY_RUN=1
+    OLD_PORT="$PULSE_PORT_NOW"
+    if ! [[ "$NEW_PORT" =~ ^[0-9]+$ ]] || [ "$NEW_PORT" -lt 1 ] || [ "$NEW_PORT" -gt 65535 ]; then
+      echo "Usage: $0 repoint <port> [--dry-run]" >&2
+      exit 2
+    fi
+    if [ "$NEW_PORT" = "$OLD_PORT" ]; then
+      echo "Already on port $OLD_PORT — nothing to do."
+      exit 0
+    fi
+    if ss -tln 2>/dev/null | grep -qE "[:.]$NEW_PORT[[:space:]]"; then
+      echo "ERROR: port $NEW_PORT is already in use (possibly another install) — pick a free port." >&2
+      exit 1
+    fi
+    if [ -n "$DRY_RUN" ]; then echo "Repointing LifeOS Pulse: $OLD_PORT -> $NEW_PORT (dry-run)"; else echo "Repointing LifeOS Pulse: $OLD_PORT -> $NEW_PORT"; fi
+    if [ "$DRY_RUN" = "1" ]; then
+      echo "  1. PULSE.toml: first 'port = ' line -> $NEW_PORT (daemon bind + resolver)"
+      echo "  2. settings.json: hook URLs localhost:$OLD_PORT -> localhost:$NEW_PORT"
+      echo "  3. hermes policy.json: re-emit deny-globs with port $NEW_PORT"
+      echo "  4. restart $PLIST_NAME and verify the new bind"
+      exit 0
+    fi
+
+    # 1. PULSE.toml — first `port =` line (awk: portable first-match replacement)
+    TMP_TOML="$(mktemp)"
+    awk -v p="$NEW_PORT" 'BEGIN{done=0} !done && /^port[ \t]*=[ \t]*[0-9]+/ { sub(/^port[ \t]*=[ \t]*[0-9]+/, "port = " p); done=1 } { print }' \
+      "$PULSE_DIR/PULSE.toml" > "$TMP_TOML" && mv "$TMP_TOML" "$PULSE_DIR/PULSE.toml"
+
+    # 2. settings.json — skill/agent-guard hook URLs
+    sed -i.bak "s|localhost:$OLD_PORT/hooks/|localhost:$NEW_PORT/hooks/|g" "$HOME/.claude/settings.json" && rm -f "$HOME/.claude/settings.json.bak"
+
+    # 3. Hermes guard — canonical remount: Mount.ts owns BOTH the plugin
+    #    policy.json and the config.yaml approvals.deny list (single owner,
+    #    so the deny globs can never drift apart).
+    bun "$HOME/.claude/LIFEOS/HERMES/Mount.ts" || { echo "ERROR: hermes remount failed — PULSE.toml/settings.json updated but the guard may still name port $OLD_PORT." >&2; exit 1; }
+
+    # 4. Restart + verify the new bind (same 10s probe as install)
+    bash "$PULSE_DIR/manage.sh" restart
+    OK=0
+    for _ in $(seq 1 20); do
+      sleep 0.5
+      if curl -sS --max-time 1 -o /dev/null -X POST "http://localhost:$NEW_PORT/notify" \
+           -H "Content-Type: application/json" \
+           -d '{"message":"","voice_enabled":false}' 2>/dev/null; then OK=1; break; fi
+    done
+    if [ "$OK" = "1" ]; then
+      echo "LifeOS Pulse repointed and verified on port $NEW_PORT"
+    else
+      echo "ERROR: port $NEW_PORT did not bind within 10s." >&2
+      tail -5 "$PULSE_DIR/logs/pulse-stderr.log" >&2
+      exit 1
+    fi
+    ;;
+
   *)
-    echo "Usage: $0 {start|stop|restart|status|install|uninstall}"
+    echo "Usage: $0 {start|stop|restart|status|install|uninstall|repoint}"
     exit 1
     ;;
 esac

@@ -24,6 +24,7 @@
 import { readFileSync, writeFileSync, appendFileSync, readdirSync } from "fs";
 import { join } from "path";
 import { CURRENT, EFFORT_MODEL, CLAUDE_ID_PATTERN, type ClaudeTier } from "./models";
+import { PULSE_BASE } from "../PULSE/endpoint";
 
 const CLAUDE_DIR = join(import.meta.dir, "..", "..");
 const REGISTRY_PATH = join(import.meta.dir, "models.ts");
@@ -151,7 +152,7 @@ export function emitModelProposal(
   // Best-effort reach the principal — never let a notify failure break the caller.
   if (notify) try {
     Bun.spawnSync(
-      ["curl", "-sk", "-m", "5", "-X", "POST", "http://localhost:31337/notify",
+      ["curl", "-sk", "-m", "5", "-X", "POST", `${PULSE_BASE}/notify`, // port via endpoint.ts resolver (#2392)
        "-H", "Content-Type: application/json",
        "-d", JSON.stringify({ message: `New Claude model detected: ${ids.join(", ")}. Review and run UpdateModels --apply.`, voice_enabled: true })],
       { stdout: "ignore", stderr: "ignore" },

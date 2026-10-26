@@ -34,6 +34,7 @@ import { join } from "path";
 import { homedir } from "os";
 import { createHash } from "crypto";
 import { addUpgrade } from "./Upgrades";
+import { PULSE_BASE } from "../PULSE/endpoint";
 
 const BASE = process.env.LIFEOS_DIR || join(homedir(), ".claude", "LIFEOS");
 const KNOWLEDGE = join(BASE, "MEMORY", "KNOWLEDGE");
@@ -334,7 +335,7 @@ ${g.contradiction_candidates.map((p) => `- possible contradiction: \`${p.a}\` â†
 
   // best-effort notification â€” Pulse may be down; never fail the run over it
   try {
-    await fetch("http://localhost:31337/notify", {
+    await fetch(`${PULSE_BASE}/notify`, { // port via endpoint.ts resolver (#2392)
       method: "POST", headers: { "Content-Type": "application/json" },
       // voice_enabled must be explicit: /notify defaults voice ON, and scheduled tasks never voice ({{PRINCIPAL_NAME}}, 2026-08-14)
       body: JSON.stringify({ message: `Cortex distill complete: ${routedContent.length} content ideas, ${routedSystem.length} upgrades filed.`, voice_enabled: false }),

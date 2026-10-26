@@ -16,7 +16,7 @@
 
 import { join, resolve } from "path"
 import { copyFileSync, existsSync, mkdirSync } from "fs"
-import { PULSE_BASE } from "./endpoint"
+import { PULSE_BASE, PULSE_PORT } from "./endpoint"
 import { homedir } from "node:os";
 
 const HOME = process.env.HOME ?? process.env.USERPROFILE ?? homedir()
@@ -363,7 +363,7 @@ async function healthCheck(): Promise<void> {
       ok(`Hook server responding — ${(data.jobs as unknown[])?.length ?? 0} jobs loaded`)
     }
   } catch {
-    warn("Hook server not responding on port 31337")
+    warn(`Hook server not responding on port ${PULSE_PORT}`)
   }
 }
 
