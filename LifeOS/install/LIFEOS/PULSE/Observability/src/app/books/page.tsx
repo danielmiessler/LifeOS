@@ -16,6 +16,7 @@ interface Book {
   rating?: number;
   themes?: string[];
   canonical?: boolean;
+  note?: string;
 }
 interface Group { category: string; books: Book[] }
 interface BooksData { count: number; lastUpdated: string | null; groups: Group[] }
@@ -60,10 +61,12 @@ export default function BooksPage() {
                       )}
                       <span>{b.title}</span>
                     </div>
-                    <div className="text-ink-2 text-sm mt-0.5">
-                      {b.author}
-                      {b.year ? ` · ${b.year}` : ""}
-                    </div>
+                    {(b.author || b.year) && (
+                      <div className="text-ink-2 text-sm mt-0.5">
+                        {b.author}
+                        {b.year ? ` · ${b.year}` : ""}
+                      </div>
+                    )}
                   </div>
                   {typeof b.rating === "number" && (
                     <span className="shrink-0 font-semibold tabular-nums text-sm" style={{ color: "var(--accent-blue)" }}>
@@ -77,6 +80,9 @@ export default function BooksPage() {
                       <Pill key={t} dim="neutral">{t}</Pill>
                     ))}
                   </div>
+                )}
+                {b.note && (
+                  <p className="text-ink-2 text-xs mt-2 leading-relaxed">{b.note}</p>
                 )}
               </Panel>
             ))}

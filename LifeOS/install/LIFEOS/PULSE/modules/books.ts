@@ -1,7 +1,11 @@
 /**
- * Books Pulse module — read-only surface over USER/BOOKS.md ({{PRINCIPAL_NAME}}'s favorite books).
- * Holds ZERO data: parses the USER file on each request and serves it. The dashboard
- * page renders whatever this returns.
+ * Books Pulse module — read-only surface over the user's book list.
+ * Holds ZERO data: parses the source file on each request and serves it. The
+ * dashboard page renders whatever this returns.
+ *
+ * Source resolution (issue #2393 class, consolidated 2026-05-01): the unified
+ * TELOS.md `## Books` section first — a post-consolidation install ships only
+ * TELOS.md — with the legacy USER/BOOKS.md pseudo-YAML file as fallback.
  *
  * Route: GET /api/books → { count, lastUpdated, groups: [{ category, books:[…] }] }
  */
@@ -10,7 +14,9 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 const MODULE_NAME = "books";
-const BOOKS_PATH = join(process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), "LIFEOS", "USER", "BOOKS.md");
+const CONFIG_DIR = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
+const BOOKS_PATH = join(CONFIG_DIR, "LIFEOS", "USER", "BOOKS.md");
+const TELOS_PATH = join(CONFIG_DIR, "LIFEOS", "USER", "TELOS", "TELOS.md");
 const state = { running: false };
 
 interface Book {
@@ -20,6 +26,8 @@ interface Book {
   rating?: number;
   themes?: string[];
   canonical?: boolean;
+  /** One-line "why this book" note from the unified TELOS.md format. */
+  note?: string;
 }
 interface Group { category: string; books: Book[] }
 
@@ -65,7 +73,62 @@ function parseBooks(md: string): { groups: Group[]; lastUpdated: string | null }
   return { groups: out, lastUpdated };
 }
 
+// ── Unified TELOS.md source ──
+
+/** Extract the `## Books` H2 section body (up to the next H2) from TELOS.md. */
+function extractTelosBooksSection(md: string): string | null {
+  const lines = md.split("\n");
+  let start = -1;
+  for (let i = 0; i < lines.length; i++) {
+    if (/^##\s+Books\s*$/i.test(lines[i].trim())) { start = i + 1; break; }
+  }
+  if (start === -1) return null;
+  const body: string[] = [];
+  for (let i = start; i < lines.length; i++) {
+    if (/^##\s+/.test(lines[i])) break;
+    body.push(lines[i]);
+  }
+  return body.join("\n");
+}
+
+/**
+ * Parse the unified `## Books` section: `### Category` headings plus
+ * `- **Title** — note` bullets (em or en dash optional). Blockquotes,
+ * comments, and bullets without a bold title are not books and are skipped.
+ */
+function parseTelosBooks(section: string): { groups: Group[]; lastUpdated: string | null } {
+  const groups = new Map<string, Book[]>();
+  let category = "General";
+  let lastUpdated: string | null = null;
+  const lu = section.match(/<!--\s*updated:\s*(\d{4}-\d{2}-\d{2})/);
+  if (lu) lastUpdated = lu[1];
+  for (const raw of section.split("\n")) {
+    const line = raw.replace(/\r$/, "");
+    const h = line.match(/^###\s+(.+?)\s*$/);
+    if (h) { category = h[1].trim(); continue; }
+    const b = line.match(/^\s*[-*]\s+\*\*(.+?)\*\*\s*(?:[—–]\s*(.*))?$/);
+    if (!b) continue;
+    const title = b[1].trim();
+    if (!title) continue;
+    const note = b[2]?.trim() || undefined;
+    if (!groups.has(category)) groups.set(category, []);
+    groups.get(category)!.push(note ? { title, note } : { title });
+  }
+  const out: Group[] = [...groups.entries()].filter(([, b]) => b.length > 0).map(([c, b]) => ({ category: c, books: b }));
+  return { groups: out, lastUpdated };
+}
+
+/** Unified TELOS.md `## Books` first; legacy USER/BOOKS.md as fallback. */
 function read(): { count: number; lastUpdated: string | null; groups: Group[] } {
+  if (existsSync(TELOS_PATH)) {
+    const section = extractTelosBooksSection(readFileSync(TELOS_PATH, "utf8"));
+    if (section) {
+      const { groups, lastUpdated } = parseTelosBooks(section);
+      if (groups.length > 0) {
+        return { count: groups.reduce((n, g) => n + g.books.length, 0), lastUpdated, groups };
+      }
+    }
+  }
   if (!existsSync(BOOKS_PATH)) return { count: 0, lastUpdated: null, groups: [] };
   const { groups, lastUpdated } = parseBooks(readFileSync(BOOKS_PATH, "utf8"));
   return { count: groups.reduce((n, g) => n + g.books.length, 0), lastUpdated, groups };
