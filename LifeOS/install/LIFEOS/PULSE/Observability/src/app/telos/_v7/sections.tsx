@@ -136,7 +136,10 @@ export function MissionGoals({ telos, missionId, onMission, onTrace, onOpenGoal,
         </div>
       </header>
 
-      <RBtn
+      {!active && (
+        <p className="muted">No mission yet — add an M0 entry under ## Mission in TELOS.md.</p>
+      )}
+      {active && <RBtn
         className="telos-card mission-card"
         onClick={() => openFile ? openFile("TELOS.md") : onTrace(active.id)}
         style={{ background: "linear-gradient(90deg, rgba(154,203,255,0.08), #0F1A33)" }}
@@ -151,7 +154,7 @@ export function MissionGoals({ telos, missionId, onMission, onTrace, onOpenGoal,
         <div className="mission-foot muted">
           {telos.goals.length} goals serve this
         </div>
-      </RBtn>
+      </RBtn>}
 
       <div className="goals-grid" id="sec-goals">
         {telos.goals.map((g) => {
