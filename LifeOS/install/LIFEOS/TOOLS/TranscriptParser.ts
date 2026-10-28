@@ -18,7 +18,7 @@
  */
 
 import { readFileSync } from 'fs';
-import { getIdentity } from '../../hooks/lib/identity';
+import { closerPattern, getIdentity } from '../../hooks/lib/identity';
 
 const DA_IDENTITY = getIdentity();
 
@@ -32,9 +32,9 @@ const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 function voiceLinePatterns(): RegExp[] {
   const pats: RegExp[] = [];
   if (DA_IDENTITY.name) {
-    pats.push(new RegExp(`🗣️\\s*\\*{0,2}${escapeRe(DA_IDENTITY.name)}:\\*{0,2}\\s*(.+?)(?:\\n|$)`, 'gi'));
+    pats.push(new RegExp(`${closerPattern()}\\s*\\*{0,2}${escapeRe(DA_IDENTITY.name)}:\\*{0,2}\\s*(.+?)(?:\\n|$)`, 'gi'));
   }
-  pats.push(new RegExp(`🗣️\\s*\\*{0,2}[^:\\n]{1,32}:\\*{0,2}\\s*(.+?)(?:\\n|$)`, 'gi'));
+  pats.push(new RegExp(`${closerPattern()}\\s*\\*{0,2}[^:\\n]{1,32}:\\*{0,2}\\s*(.+?)(?:\\n|$)`, 'gi'));
   return pats;
 }
 
@@ -292,7 +292,7 @@ export function extractStructuredSections(text: string): StructuredResponse {
     results: /✅\s*RESULTS:\s*(.+?)(?:\n|$)/i,
     status: /📊\s*STATUS:\s*(.+?)(?:\n|$)/i,
     next: /➡️\s*NEXT:\s*(.+?)(?:\n|$)/i,
-    completed: new RegExp(`(?:🗣️\\s*[^:\\n]{1,32}:|🎯\\s*COMPLETED:)\\s*(.+?)(?:\\n|$)`, 'i'),
+    completed: new RegExp(`(?:${closerPattern()}\\s*[^:\\n]{1,32}:|🎯\\s*COMPLETED:)\\s*(.+?)(?:\\n|$)`, 'i'),
   };
 
   for (const [key, pattern] of Object.entries(patterns)) {

@@ -18,6 +18,7 @@
 
 import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { closerPattern, getCloserEmoji } from "../../hooks/lib/identity";
 import { invariant } from "./Invariant";
 import { PULSE_BASE } from "../PULSE/endpoint";
 
@@ -60,7 +61,7 @@ export function setOff(sessionId: string): void {
 // prose or backticks never matches (Fable review, 2026-10-03: an inline mention used
 // to swallow the real field and get spoken instead).
 const SPOKEN_LABEL_RE = /(?:^|\n)[ \t]*🎙️?[ \t]*\*{0,2}SPOKEN:\*{0,2}[ \t]*/g;
-const CLOSER_RE = /\n[ \t]*🗣️/;
+const closerRe = (): RegExp => new RegExp(`\\n[ \\t]*${closerPattern()}`);
 
 /** Plain speech from a markdown-ish block: no code, links, emphasis or bullets. */
 export function toSpeech(text: string): string {
@@ -83,7 +84,7 @@ export function extractSpoken(text: string): string {
   const last = labels[labels.length - 1];
   if (!last) return "";
   const body = text.slice(last.index! + last[0].length);
-  const end = body.search(CLOSER_RE);
+  const end = body.search(closerRe());
   return toSpeech(end >= 0 ? body.slice(0, end) : body);
 }
 
@@ -121,7 +122,7 @@ export function spokenLine(
 export function instruction(isaPath: string | null): string {
   const lines = [
     "VOICE MODE is on for this session (LIFEOS/DOCUMENTATION/VoiceMode/VoiceMode.md). The principal is listening and answers by dictation.",
-    "- Write the terminal answer as usual. Then, directly above the 🗣️ closer, add a `🎙️ SPOKEN:` field: two to five plain sentences written for the ear, carrying the point and the one thing you need from them. No code, file paths, tables, lists or markdown in it, and under 480 characters. It is spoken instead of the closer.",
+    `- Write the terminal answer as usual. Then, directly above the ${getCloserEmoji()} closer, add a \`🎙️ SPOKEN:\` field: two to five plain sentences written for the ear, carrying the point and the one thing you need from them. No code, file paths, tables, lists or markdown in it, and under 480 characters. It is spoken instead of the closer.`,
     "- Their prompts are dictated, so read through transcription slips. If a word that changes the meaning is unclear (do or don't, yes or no), ask before acting on it.",
   ];
   if (isaPath) {

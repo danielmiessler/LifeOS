@@ -340,6 +340,34 @@ export function getDAName(): string {
   return getIdentity().name;
 }
 
+/** The default closer emoji: the 🗣️ line every LifeOS response ends with. */
+export const DEFAULT_CLOSER = '🗣️';
+
+/**
+ * The closer emoji for this DA: LIFEOS_CONFIG.toml `[da] closer`, else 🗣️.
+ * Lets each DA carry its own mark (an owl for an assistant named Wise).
+ */
+export function getCloserEmoji(): string {
+  try {
+    const c = loadLifeosConfig().da?.closer?.trim();
+    if (c) return c;
+  } catch {
+    // no config yet (fresh install): the default governs
+  }
+  return DEFAULT_CLOSER;
+}
+
+/**
+ * Regex source that matches the closer mark: the configured emoji OR the
+ * default 🗣️, so transcripts written before a change, and quoted content,
+ * still parse. A non-capturing group; embed it with `new RegExp(...)`.
+ */
+export function closerPattern(): string {
+  const esc = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const marks = [...new Set([getCloserEmoji(), DEFAULT_CLOSER])];
+  return `(?:${marks.map(esc).join('|')})`;
+}
+
 /**
  * Startup catchphrase. Reads settings.daidentity.startupCatchphrase first (canonical),
  * falls back to DA_IDENTITY.md frontmatter core.startup_catchphrase (authoring source).

@@ -12,7 +12,7 @@
 
 import { setTabState, readTabState, tabTitleActivity, getSessionShortLabel, setAscentTab, isDegenerateDesc, resolveSessionRow } from '../lib/tab-setter';
 import { isValidCompletionTitle, gerundToPastTense, getWorkingFallback, trimToValidTitle, toGerund } from '../lib/output-validators';
-import { getDAName } from '../lib/identity';
+import { closerPattern, getDAName } from '../lib/identity';
 import { stripVoiceTags } from '../../LIFEOS/TOOLS/VoiceTags';
 
 import type { ParsedTranscript } from '../../LIFEOS/TOOLS/TranscriptParser';
@@ -26,7 +26,7 @@ function extractTabTitle(voiceLine: string): string | null {
   if (!voiceLine || voiceLine.length < 3) return null;
 
   const cleaned = stripVoiceTags(voiceLine
-    .replace(/^🗣️\s*/, ''))
+    .replace(new RegExp(`^${closerPattern()}\\s*`), ''))
     .replace(new RegExp(`^${getDAName()}:\\s*`, 'i'), '')
     .replace(/^(Done\.?\s*)/i, '')
     .trim();

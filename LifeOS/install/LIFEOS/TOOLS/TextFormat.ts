@@ -23,6 +23,7 @@
 
 const SILENT = "[SILENT]";
 
+import { closerPattern } from "../../hooks/lib/identity";
 import { stripVoiceTags } from "./VoiceTags";
 
 /** A line is the silence token when, stripped of markdown emphasis and trailing punctuation, it is [SILENT] in any case —
@@ -47,7 +48,7 @@ export function formatForText(result: string): string {
   let s = result.replace(/\r\n/g, "\n");
   // Terminal-format bytes that must never reach a phone.
   s = s.replace(/^[═]{3,}.*$/gm, "");
-  s = s.replace(/^🗣️\s*\w+:\s*(.*)$/gm, (_m, said: string) => stripVoiceTags(said)); // voice tags are performed, never texted
+  s = s.replace(new RegExp(`^${closerPattern()}\\s*\\w+:\\s*(.*)$`, "gm"), (_m, said: string) => stripVoiceTags(said)); // voice tags are performed, never texted
   s = s.replace(/^[🤖👾🧠⚙️]\s*[A-Z]{2,}\s*$/gmu, "");
   s = s.replace(/^(🔧 CHANGE|✅ VERIFY|❓ OPEN|⚙️ SYSTEM|🧠 MEMORY|🩺 MEMORY HEALTH|✍️ WRITING-AUDIT|🧭 ALGO-NUDGE|⏫ VERSION-DRIFT):.*$/gm, "");
   s = s.split("\n").filter((l) => !isSilentLine(l)).join("\n");
@@ -75,7 +76,7 @@ export function formatForText(result: string): string {
 function scrubTerminalBytes(result: string): string {
   let s = result.replace(/\r\n/g, "\n");
   s = s.replace(/^[═]{3,}.*$/gm, "");
-  s = s.replace(/^🗣️\s*\w+:\s*(.*)$/gm, (_m, said: string) => stripVoiceTags(said)); // voice tags are performed, never texted
+  s = s.replace(new RegExp(`^${closerPattern()}\\s*\\w+:\\s*(.*)$`, "gm"), (_m, said: string) => stripVoiceTags(said)); // voice tags are performed, never texted
   s = s.replace(/^[🤖👾🧠⚙️]\s*[A-Z]{2,}\s*$/gmu, "");
   s = s.replace(/^(🔧 CHANGE|✅ VERIFY|❓ OPEN|⚙️ SYSTEM|🧠 MEMORY|🩺 MEMORY HEALTH|✍️ WRITING-AUDIT|🧭 ALGO-NUDGE|⏫ VERSION-DRIFT):.*$/gm, "");
   return s.split("\n").filter((l) => !isSilentLine(l)).join("\n");

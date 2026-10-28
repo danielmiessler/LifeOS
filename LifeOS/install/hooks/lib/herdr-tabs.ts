@@ -14,6 +14,7 @@
  */
 
 import { fitNameLines, SURFACE_WIDTHS } from './fit-name';
+import { closerPattern } from './identity';
 import { getClaudeDir, getLifeosDir } from './paths';
 import { getNotificationChannel } from './notification-channel';
 import { execFileSync, spawn } from 'child_process';
@@ -340,7 +341,7 @@ export function countOpenItems(message: string): number {
   const lines = message.slice(at).split('\n').slice(1);
   let count = 0;
   for (const line of lines) {
-    if (/^\s*(🗣️|🔧|✅|⚙️|🧠|🩺|🔀)/u.test(line)) break;
+    if (new RegExp(`^\\s*(?:${closerPattern()}|🔧|✅|⚙️|🧠|🩺|🔀)`, 'u').test(line)) break;
     if (/^\s*\d+[.)]\s+\S/.test(line)) count++;
   }
   return count;
@@ -554,7 +555,7 @@ const BACKGROUND_RE = /\b(comes? back|still running|is running|are running|in th
 export function turnState(lastMessage: string, open: number, failed = false): TurnState {
   if (failed) return 'failed';
   if (open > 0) return 'needs';
-  const lines = [...(lastMessage || '').matchAll(/^🗣️?\s*[^:\n]{1,20}:\s*(.+)$/gmu)];
+  const lines = [...(lastMessage || '').matchAll(new RegExp(`^(?:${closerPattern()}|🗣)\\s*[^:\\n]{1,20}:\\s*(.+)$`, 'gmu'))];
   const spoken = stripVoiceTags(lines.at(-1)?.[1] ?? '').trim();
   if (!spoken) return 'done';
   if (GO_AHEAD_RE.test(spoken)) return 'needs';
@@ -773,7 +774,7 @@ export function reportHerdrTurnEnd(lastMessage: string, now: Date = new Date(), 
  * No closer gives empty lines, which clears the rows. Pure.
  */
 export function nextLines(lastMessage: string, cols = SURFACE_WIDTHS.sidebar.cols): { next: string; next2: string } {
-  const lines = [...(lastMessage || '').matchAll(/^🗣️?\s*[^:\n]{1,20}:\s*(.+)$/gmu)];
+  const lines = [...(lastMessage || '').matchAll(new RegExp(`^(?:${closerPattern()}|🗣)\\s*[^:\\n]{1,20}:\\s*(.+)$`, 'gmu'))];
   const spoken = stripVoiceTags(lines.at(-1)?.[1] ?? '');
   if (!spoken) return { next: '', next2: '' };
   const sentences = spoken.split(/(?<=[.!?])\s+/).filter((x) => /[A-Za-z0-9]/.test(x));

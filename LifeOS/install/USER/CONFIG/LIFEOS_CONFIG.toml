@@ -22,6 +22,7 @@ name = "Aria"                      # required — your DA's name (rename to anyt
 full_name = ""
 display_name = ""
 color = "#3B82F6"
+# closer = "🦉"                    # optional: emoji that opens the closing line (default 🗣️)
 
 [da.voices.main]
 fish_reference_id = "YOUR_FISH_REFERENCE_ID"  # your Fish Audio voice model id (Interview sets it); voice stays off until FISH_API_KEY is set

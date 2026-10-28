@@ -84,6 +84,7 @@ import { appendFileSync, mkdirSync, existsSync, readFileSync, writeFileSync, sta
 import { dirname, isAbsolute, join } from "path";
 import { createHash } from "crypto";
 import { homedir } from "node:os";
+import { closerPattern } from "./lib/identity";
 import { getLifeosDir } from "./lib/paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { recordGateRun } from "../LIFEOS/TOOLS/GateReach";
 import { bashWrittenPaths, claimsDone, languageViolations, pinDir, readPins, replyKey, unmentionedItems, writePins } from "./lib/ask-pins";
@@ -288,7 +289,7 @@ const T7_CREATED = /(^|\W)new:/i;
 const T7_PATH = /(?:~\/|\.{1,2}\/|\/)?[\w@+-]+(?:\.[\w@+-]+)*(?:\/[\w@.+-]+)+\.[A-Za-z0-9]{1,8}(?![\w/])/g;
 
 export function artifactClaimPaths(message: string): string[] {
-  const block = message.match(/🔧\s*CHANGE:([\s\S]*?)(?=\n\s*(?:✅\s*VERIFY|❓\s*OPEN|⚙️\s*SYSTEM|🧠\s*MEMORY|🗣️):|$)/);
+  const block = message.match(new RegExp(`🔧\\s*CHANGE:([\\s\\S]*?)(?=\\n\\s*(?:✅\\s*VERIFY|❓\\s*OPEN|⚙️\\s*SYSTEM|🧠\\s*MEMORY|${closerPattern()}):|$)`));
   if (!block) return [];
   const out: string[] = [];
   for (const line of block[1].split("\n")) {

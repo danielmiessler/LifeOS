@@ -33,6 +33,7 @@
 import { readHookInput, parseTranscriptFromInput } from "./lib/hook-io";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname, join } from "path";
+import { closerPattern, getCloserEmoji } from "./lib/identity";
 import { getLifeosDir } from "./lib/paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { hookDrawn } from "./lib/function-hooks";
 import { EM_DASH_MAX, packedBulletPairs } from "./lib/format-caps"; // public issue #2166, @IvanLeontev-stack
@@ -86,7 +87,7 @@ export function agentsLineProblem(message: string): string | null {
   if ([...line].length > AGENTS_LINE_MAX_CHARS) return `the 🤖 AGENTS line is ${[...line].length} chars (cap ${AGENTS_LINE_MAX_CHARS})`;
   // The field is followed by a blank line or by the next field (the closer, SPOKEN, or a hook line); anything else is a spill.
   const next = lines[at[0] + 1] ?? "";
-  if (next && !/^(🗣️|🎙️|⚙️|🧠)/u.test(next)) return "the 🤖 AGENTS field runs onto a second line";
+  if (next && !new RegExp(`^(?:${closerPattern()}|🎙️|⚙️|🧠)`, "u").test(next)) return "the 🤖 AGENTS field runs onto a second line";
   return null;
 }
 
@@ -121,7 +122,7 @@ function visibleLines(text: string): string[] {
   return text.split("\n").map((l) => l.trim()).filter((l) => l.length > 0);
 }
 
-const CLOSER = /🗣️/;
+const closerRe = (): RegExp => new RegExp(closerPattern());
 // The 🧠 line is action-first since 2026-09-06 ("Do next:" / a delta / a quiet
 // "memory N/M fresh"), not the old "MEMORY:" report card. Accept every shape the
 // line can take; the legacy prefix stays valid for in-flight transcripts.
@@ -171,18 +172,18 @@ export function checkFormat(
 
   // No banner check since 2026-10-01 (system prompt v3.16.0): the typed banner was
   // retired after it kept going missing from answers. `hookDrawn` gates only the 🧠/⚙️ lines.
-  if (!CLOSER.test(lines[lines.length - 1])) {
-    return { code: "no-closer", detail: "last visible line is not the 🗣️ closer" };
+  if (!closerRe().test(lines[lines.length - 1])) {
+    return { code: "no-closer", detail: `last visible line is not the ${getCloserEmoji()} closer` };
   }
   // A literal <DA> in the closer's NAME position means identity substitution failed
   // (public PR #2134, @zephyr91). Only the name slot, never the spoken text.
-  if (/^🗣️\s*<DA>\s*:/.test(lines[lines.length - 1])) {
+  if (new RegExp(`^${closerPattern()}\\s*<DA>\\s*:`).test(lines[lines.length - 1])) {
     return { code: "da-placeholder", detail: "closer contains literal <DA> placeholder instead of the DA name" };
   }
   // Spoken-length cap: measure only the text after the `🗣️ <name>:` prefix,
   // since that is exactly what extractVoiceCompletion hands to the voice server.
   // Drama 3 tags in the closer are performed, never spoken, so they never count (2026-10-14).
-  const spoken = stripVoiceTags(lines[lines.length - 1].replace(/^🗣️\s*[^:]{0,24}:\s*/u, "").trim());
+  const spoken = stripVoiceTags(lines[lines.length - 1].replace(new RegExp(`^${closerPattern()}\\s*[^:]{0,24}:\\s*`, "u"), "").trim());
   if (spoken.length > CLOSER_MAX_CHARS) {
     return { code: "closer-too-long", detail: `closer is ${spoken.length} chars spoken aloud (cap ${CLOSER_MAX_CHARS})` };
   }

@@ -18,6 +18,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync } from "node:fs";
 import { basename } from "node:path";
 import { readJson, statePath, writeJson } from "../LIFEOS/VIGIL/State";
+import { closerPattern } from "./lib/identity";
 import { statvsIndexPath, writeStatvsEvent } from "./lib/handoff-state";
 
 /** The event this hook writes: Vigil's event shape, as STATVS writeEvent takes it. */
@@ -41,7 +42,7 @@ import { readHookInput, parseTranscriptFromInput } from "./lib/hook-io";
 import { findActiveSessionByUUID } from "./lib/isa-utils";
 
 export const SOURCE = "tasks";
-const SECTION_END = /^(?:🔧|✅|❓|🗣️|⚙️|🧠|🩺|🔀|════)/u;
+const SECTION_END = new RegExp(`^(?:🔧|✅|❓|${closerPattern()}|⚙️|🧠|🩺|🔀|════)`, "u");
 
 /** Bullets under a `<marker> LABEL:` field, up to the next field. */
 export function sectionBullets(answer: string, marker: RegExp): string[] {

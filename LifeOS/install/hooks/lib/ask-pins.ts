@@ -14,6 +14,7 @@ import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, renameSync
 import { dirname, extname, join } from "node:path";
 import { createHash } from "node:crypto";
 import { invariant } from "../../LIFEOS/TOOLS/Invariant";
+import { closerPattern } from "./identity";
 import { getLifeosDir } from "./paths";
 
 export type Ask = { id: string; kind: "item" | "constraint"; text: string; keywords: string[] };
@@ -187,13 +188,13 @@ const NOT_DONE = /\b(?:not\s+(?:yet|done|finished|started)|still\s+working|in\s+
  * did work, and it does not say the work is partial. A prose "done" in a turn that changed nothing is a plan or an
  * answer ("Plan is done. Want me to start?"), never a done claim (acceptance round 5, 2026-10-08). */
 export function claimsDone(reply: string, _asks: Ask[] = [], opts: { didWork?: boolean } = {}): boolean {
-  const change = reply.match(/🔧\s*CHANGE:([\s\S]*?)(?=✅|❓|🗣️|$)/)?.[1]?.trim();
+  const change = reply.match(new RegExp(`🔧\\s*CHANGE:([\\s\\S]*?)(?=✅|❓|${closerPattern()}|$)`))?.[1]?.trim();
   const reportsWork = change !== undefined && change.length > 0 && !NO_CHANGE_TEXT.test(change);
   if (!reportsWork && !(DONE_PROSE.test(reply) && opts.didWork !== false)) return false;
   return !NOT_DONE.test(reply);
 }
 
-const FIELD_LABEL = /(?:🔧|✅|❓|🎯|💡|⚠️|🎙️|🗣️)\s*(?:CHANGE|VERIFY|OPEN|SPOKEN|[A-Z][a-z]+)?\s*:?|^\s*(?:CHANGE|VERIFY|OPEN)\s*:/gm;
+const fieldLabel = (): RegExp => new RegExp(`(?:🔧|✅|❓|🎯|💡|⚠️|🎙️|${closerPattern()})\\s*(?:CHANGE|VERIFY|OPEN|SPOKEN|[A-Z][a-z]+)?\\s*:?|^\\s*(?:CHANGE|VERIFY|OPEN)\\s*:`, "gm");
 
 /** Pinned list items the reply never mentions. Each item is matched on its distinctive stems, the ones no other pinned
  * item shares, so "add retries to the uploader" and "add logging to the uploader" are told apart by retries and logging.
@@ -202,7 +203,7 @@ const FIELD_LABEL = /(?:🔧|✅|❓|🎯|💡|⚠️|🎙️|🗣️)\s*(?:CHAN
 export function unmentionedItems(asks: Ask[], reply: string): Ask[] {
   const items = asks.filter((a) => a.kind === "item" && a.keywords.length > 0);
   // The reply's own field labels ("🔧 CHANGE:", "✅ VERIFY:") are not mentions of a "change" or "verify" ask.
-  const replyStems = new Set(keywords(reply.replace(FIELD_LABEL, " ")));
+  const replyStems = new Set(keywords(reply.replace(fieldLabel(), " ")));
   return items.filter((a) => {
     // A stem shared with another item, in any word form (caching/cache), does not tell this item apart.
     const others = items.filter((o) => o !== a).flatMap((o) => o.keywords);

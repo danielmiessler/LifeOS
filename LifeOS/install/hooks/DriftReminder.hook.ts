@@ -39,6 +39,7 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { firstBannedHit } from "./lib/banned-vocab";
+import { closerPattern, getCloserEmoji } from "./lib/identity";
 import { getLifeosDir, getSettingsPath } from "./lib/paths";
 import { hookDrawn, hookCovers } from "./lib/function-hooks"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { EM_DASH_MAX, packedBulletPairs } from "./lib/format-caps"; // public issue #2166, @IvanLeontev-stack
@@ -186,9 +187,9 @@ const CLOSER_MAX_CHARS = 110;
 
 /** Spoken chars: text after the `🗣️ <name>:` prefix on the LAST closer line. */
 function closerSpokenChars(text: string): number {
-  const closers = text.split("\n").filter((l) => l.includes("🗣️"));
+  const closers = text.split("\n").filter((l) => new RegExp(closerPattern()).test(l));
   if (closers.length === 0) return 0;
-  return closers[closers.length - 1].replace(/^\s*🗣️\s*[^:]{0,24}:\s*/u, "").trim().length;
+  return closers[closers.length - 1].replace(new RegExp(`^\\s*${closerPattern()}\\s*[^:]{0,24}:\\s*`, "u"), "").trim().length;
 }
 
 function measure(text: string): FormatMeasure {
@@ -197,7 +198,7 @@ function measure(text: string): FormatMeasure {
     lines: prose.split("\n").filter((l) => l.trim().length > 0).length,
     emDashes: countEmDashes(prose),
     banner: MODE_BANNERS.some((banner) => text.includes(banner)),
-    closer: /🗣️/.test(text),
+    closer: new RegExp(closerPattern()).test(text),
     closerChars: closerSpokenChars(text),
     banned: firstBannedHit(text),
     packedBullets: packedBulletPairs(text),
@@ -288,8 +289,8 @@ export function contractLine(cap: number | null, last: FormatMeasure | null, dra
     ? `open a final answer with a lone ${marker} line, then a blank line (the terminal draws the LifeOS bar there; never on an interim note)`
     : "no banner, open on the answer";
   const structure = drawn
-    ? `${opening}; the ⚙️/🧠 lines are logged by the harness this session — never type them; 🗣️ closer last (≤${CLOSER_MAX_CHARS} chars — it is spoken aloud), max ${EM_DASH_MAX} em-dashes, a blank line between bullets`
-    : `${opening}; 🗣️ closer last (≤${CLOSER_MAX_CHARS} chars — it is spoken aloud), max ${EM_DASH_MAX} em-dashes, a blank line between bullets`;
+    ? `${opening}; the ⚙️/🧠 lines are logged by the harness this session — never type them; ${getCloserEmoji()} closer last (≤${CLOSER_MAX_CHARS} chars — it is spoken aloud), max ${EM_DASH_MAX} em-dashes, a blank line between bullets`
+    : `${opening}; ${getCloserEmoji()} closer last (≤${CLOSER_MAX_CHARS} chars — it is spoken aloud), max ${EM_DASH_MAX} em-dashes, a blank line between bullets`;
   const previous = last
     ? (() => {
         const broke = breaksIn(last, cap, drawn);

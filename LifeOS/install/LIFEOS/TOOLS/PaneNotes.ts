@@ -8,6 +8,7 @@
  */
 import { closeSync, existsSync, openSync, readdirSync, readSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { closerPattern } from "../../hooks/lib/identity";
 import { getClaudeDir } from "./Paths";
 import { stripVoiceTags } from "./VoiceTags";
 
@@ -58,7 +59,7 @@ export function toolAsk(name: string, input: Record<string, unknown> = {}): stri
 export function closerOf(text: string): string | null {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   for (let i = lines.length - 1; i >= 0; i--) {
-    const m = /^🗣️\s*[^:]{1,24}:\s*(.+)$/u.exec(lines[i]!);
+    const m = new RegExp(`^${closerPattern()}\\s*[^:]{1,24}:\\s*(.+)$`, "u").exec(lines[i]!);
     if (m) return oneLine(stripVoiceTags(m[1]!));
   }
   return lines.length ? oneLine(lines[lines.length - 1]!) : null;

@@ -44,7 +44,7 @@ import { join } from "node:path"
 import { currentModel } from "../../TOOLS/models"
 import { readLegacyEnv } from "../../TOOLS/lib/EnvKey"
 import { fishSpeak, resolveFishVoice } from "../../TOOLS/FishTTS"
-import { getDAName, getPrincipalName } from "../../../hooks/lib/identity"
+import { closerPattern, getDAName, getPrincipalName } from "../../../hooks/lib/identity"
 import { redactSecrets } from "./callredact"
 
 const HOME = homedir()
@@ -70,7 +70,7 @@ const callModel = () => currentModel("haiku")
 export function scrubDelta(text: string): string {
   return text
     .replace(/[*#`_]/g, "")
-    .replace(/🗣️?\s*[A-Za-z]+:\s*/g, "") // drop a leaked "🗣️ <DA>:" closer label (emoji-anchored, safe)
+    .replace(new RegExp(`(?:${closerPattern()}|🗣)\\s*[A-Za-z]+:\\s*`, "g"), "") // drop a leaked "🗣️ <DA>:" closer label (emoji-anchored, safe)
     .replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}]/gu, "") // emoji/symbols TTS mangles
 }
 
