@@ -1,5 +1,5 @@
 /**
- * @version 1.4.0
+ * @version 1.5.0
  * transcript-evidence.ts — ground-truth evidence extraction for VerificationGate.
  *
  * The message is a CLAIM; the transcript is the EVIDENCE. This module parses the
@@ -33,9 +33,15 @@
  * carries it after the call (an assistant-authored or earlier result block is not an answer); strict
  * mode reads back past the tail in the session window too, and refuses a current-turn tool_use whose
  * name or input is not well formed; MultiEdit is an edit like Edit and Write.
+ *
+ * 1.5.0: browser evidence owners. An install can register browsers besides Interceptor in
+ * LIFEOS/USER/CONFIG/browser-evidence-owners.json (see loadBrowserEvidenceOwners). Their
+ * events reuse the interceptor-* kinds and carry `owner`; probedAfterDeploy ignores them
+ * unless the entry sets deployProof. No file, no change.
  */
 
 import { readFileSync, existsSync, statSync } from "fs";
+import { lifeosPath } from "./paths";
 
 export type EventKind =
   | "edit"              // Edit/MultiEdit/Write/NotebookEdit
@@ -72,6 +78,8 @@ export interface TxEvent {
    * result is not evidence that anything ran, passed or was seen. Absent only on
    * events built by hand, which read as answered. */
   hasResult?: boolean;
+  /** Set on browser events from a registered (non-built-in) owner; absent for Interceptor. */
+  owner?: { id: string; deployProof: boolean };
 }
 
 /**
@@ -148,6 +156,69 @@ const INTERACT_RE = /\b(click|type|fill|submit|act\b|keys)\b/i; // NOT eval — 
 const CAPTURE_RE = /\b(screenshot|capture|scrub)\b/i;
 const PROBE_RE = /\bcurl\b|\bhttpie\b/i; // not bare "http" — dodges `http.server` etc.
 const IMG_RE = /\.(png|jpe?g|webp)\b/i;
+
+/**
+ * Browser evidence owners beyond the built-in Interceptor. An install registers them in
+ * LIFEOS/USER/CONFIG/browser-evidence-owners.json instead of patching this file, e.g.
+ *   [{ "id": "gstack", "command": "^(\\S+[/])?browse\\s",
+ *      "interact": "\\b(click|fill|type|press|select|hover)\\b" }]
+ * `command` is tested against each shell segment (split on && || ; | and newlines; quotes
+ * are not parsed), so anchor it with ^. `capture`, `interact` and `nav` optionally replace
+ * the default verb patterns. Events keep the existing kinds, so every gate reads them
+ * unchanged; only probedAfterDeploy ignores them unless `deployProof` is true, which keeps
+ * Interceptor (or a curl probe) as the default proof that a deploy is live.
+ * Interceptor matching is untouched. A missing file, or an invalid entry, adds nothing.
+ */
+export interface BrowserEvidenceOwner {
+  id: string;
+  command: RegExp;
+  capture: RegExp;
+  interact: RegExp;
+  nav: RegExp;
+  deployProof: boolean;
+}
+
+export function loadBrowserEvidenceOwners(
+  path: string = lifeosPath("USER", "CONFIG", "browser-evidence-owners.json"),
+): BrowserEvidenceOwner[] {
+  let raw: unknown;
+  try {
+    if (!existsSync(path)) return [];
+    raw = JSON.parse(readFileSync(path, "utf-8"));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(raw)) return [];
+  const re = (s: unknown, fallback: RegExp) => (typeof s === "string" ? new RegExp(s, "i") : fallback);
+  return raw.flatMap((o) => {
+    if (!o || typeof o.id !== "string" || !o.id || o.id === "interceptor" || typeof o.command !== "string") return [];
+    try {
+      return [{
+        id: o.id,
+        command: new RegExp(o.command, "i"),
+        capture: re(o.capture, CAPTURE_RE),
+        interact: re(o.interact, INTERACT_RE),
+        nav: re(o.nav, NAV_RE),
+        deployProof: o.deployProof === true,
+      }];
+    } catch {
+      return []; // invalid regex: skip this entry only
+    }
+  });
+}
+
+let registeredOwners: BrowserEvidenceOwner[] | undefined;
+
+function matchRegisteredOwner(cmd: string): { owner: BrowserEvidenceOwner; segment: string } | null {
+  registeredOwners ??= loadBrowserEvidenceOwners();
+  if (registeredOwners.length === 0) return null;
+  const segments = cmd.split(/&&|\|\||[;|\n]/).map((s) => s.trim()).filter(Boolean);
+  for (const owner of registeredOwners) {
+    const segment = segments.find((s) => owner.command.test(s));
+    if (segment) return { owner, segment };
+  }
+  return null;
+}
 // Narrow: an HTTP 4xx/5xx STATUS LINE, or explicit failure words — NOT a bare
 // "500" (which matches "500.42 KiB" in normal wrangler output → FP-A) and not
 // a bare "error"/"failed" (common in success/deprecation text).
@@ -355,6 +426,7 @@ export function parseTurnEvents(
         push("edit", p, isCode);
       } else if (name === "Bash") {
         const cmd = String(input.command ?? "");
+        let owned: ReturnType<typeof matchRegisteredOwner>;
         if (DEPLOY_RE.test(cmd)) push("deploy", extractHost(cmd));
         else if (INTERCEPTOR_RE.test(cmd)) {
           // Capture-first: a `screenshot --type full` must read as a capture, not
@@ -363,6 +435,14 @@ export function parseTurnEvents(
           else if (INTERACT_RE.test(cmd)) push("interceptor-interact", extractHost(cmd));
           else if (NAV_RE.test(cmd)) push("interceptor-nav", extractHost(cmd));
           else push("interceptor-nav", extractHost(cmd));
+        } else if ((owned = matchRegisteredOwner(cmd))) {
+          const { owner, segment } = owned;
+          // Same capture-first order as Interceptor.
+          const kind: EventKind = owner.capture.test(segment) ? "interceptor-capture"
+            : owner.interact.test(segment) ? "interceptor-interact"
+            : "interceptor-nav";
+          push(kind, extractHost(segment));
+          events[events.length - 1]!.owner = { id: owner.id, deployProof: owner.deployProof };
         } else if (TEST_RE.test(cmd) && !/--dry-run/.test(cmd)) push("test-run", cmd.slice(0, 120));
         else if (PROBE_RE.test(cmd)) push("probe", extractHost(cmd));
         // Fallback: a plain command's failure must still be visible evidence.
@@ -416,6 +496,7 @@ export function probedAfterDeploy(ev: TxEvent[], host?: string): boolean {
   return ev.some(
     (e) => e.seq > after && !e.isError && answered(e) &&
       (e.kind === "probe" || e.kind === "interceptor-nav" || e.kind === "interceptor-capture") &&
+      (!e.owner || e.owner.deployProof) &&
       (!host || !e.target || eTLD1(host) === e.target),
   );
 }
