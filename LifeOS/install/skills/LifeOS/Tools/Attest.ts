@@ -173,7 +173,9 @@ export function attestationLine(a: Attestation | null): string {
     const list = a.modified.slice(0, 40).map((f) => `  - ${f}`).join("\n");
     const more = a.modified.length > 40 ? `\n  - …and ${a.modified.length - 40} more` : "";
     const missing = a.missing ? ` · ${a.missing} system file(s) missing` : "";
-    return `attestation: ${a.modified.length} system file(s) differ from ${a.reference}${missing}${a.modified.length ? ":\n" + list + more : ""}`;
+    // The list is the modified files, so it is labelled as such: after the missing count, a bare colon read as
+    // though the list named the missing files.
+    return `attestation: ${a.modified.length} system file(s) differ from ${a.reference}${missing}${a.modified.length ? "\ndiffering files:\n" + list + more : ""}`;
   }
   return `attestation: unattested (${a.reason})`;
 }
