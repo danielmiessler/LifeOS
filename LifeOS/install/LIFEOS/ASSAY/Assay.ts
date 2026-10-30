@@ -66,8 +66,12 @@ import { callExtractor, extractModel, type ExtractAnswers, type ExtractFields, t
 // Drift events go to STATVS writeEvent (migration design §2.1). The guarded optional import stays (ShadowRelease
 // OPTIONAL_IMPORT_SITES): an install without LIFEOS/STATVS/ still reverts and skips the event. A refusal throws into the caller's log line.
 const vigilEmitPath = join(import.meta.dir, "../STATVS/index.ts");
-const vigilEmitter = existsSync(vigilEmitPath) ? await import(vigilEmitPath) : undefined;
+// Loaded on first use, not with a top-level await: the await made this module, and every module that imports it,
+// async. The workflow CLI reaches Assay through engine/steps/judgment.ts, and VIGIL/Emit.ts's synchronous require of
+// STATVS/lib/event then failed with "require() async module … is unsupported", so no `workflow.ts` command started.
+let vigilEmitter: Record<string, unknown> | null | undefined;
 const emitVigil: DriftEmitter = (event) => {
+  if (vigilEmitter === undefined) vigilEmitter = existsSync(vigilEmitPath) ? (require(vigilEmitPath) as Record<string, unknown>) : null;
   if (!vigilEmitter) return undefined;
   const sent = (vigilEmitter.writeEvent as (e: VigilEvent) => { ok: boolean; refused?: string })(event);
   if (!sent.ok) throw new Error(sent.refused);
