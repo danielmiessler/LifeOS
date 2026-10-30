@@ -55,7 +55,10 @@ if (import.meta.main) {
   // Armed session: the LifeOSHooks plugin writes the time line from $.clock itself.
   // The presence block (hooks/lib/presence-context.ts) rides the same cap: HookBridge prompt-context composes it when armed.
   const covered = hookCovers(input.session_id ?? "", "prompt-context");
-  const out = covered ? null : run();
+  // A texting turn already carries `Now:` in its turn block. The minute here changed every
+  // text and sat just before the prompt-cache breakpoint, so each text rewrote ~47k cached tokens.
+  const texting = !!process.env.LIFEOS_TEXTING_SESSION;
+  const out = covered || texting ? null : run();
   const reach = covered ? null : (await import("./lib/presence-context")).presenceContext();
   if (out || reach || shape) process.stdout.write((out ?? "") + (reach ?? "") + (shape ? `${shape}\n` : ""));
 }

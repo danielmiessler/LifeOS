@@ -26,6 +26,7 @@ import * as fs from "fs";
 import * as path from "path";
 import { homedir } from "node:os";
 import { getClaudeDir, getLifeosDir } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
+import { renderMirror } from "./HeaderMirror";
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -271,7 +272,9 @@ function generate(): string {
 const withoutStamp = (s: string): string => s.replace(/^last_updated: .*$/m, "");
 
 function cmdGenerate(): void {
-  const summary = generate();
+  // Write the header-mirror block in the same write. Without it the file sat mirror-less
+  // until DerivedSync re-added the block ~30 s later, and a session starting in that gap missed the prompt cache.
+  const summary = renderMirror(generate());
   // Stamp-only rewrites dirtied git after most sessions; keep the bytes and bump
   // mtime so RebuildArchSummary's mtime check settles (public issue #2200, @corobis).
   if (fs.existsSync(SUMMARY_OUTPUT) && withoutStamp(fs.readFileSync(SUMMARY_OUTPUT, "utf-8")) === withoutStamp(summary)) {
