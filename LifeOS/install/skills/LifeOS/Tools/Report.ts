@@ -492,6 +492,30 @@ export function resolvePrArgs(dir: string, patch: string | undefined, branch: st
   return { patch: p, branch: b };
 }
 
+/** Repo-relative homes of the install tree, nearest first. The release repo keeps it under LifeOS/install/. */
+const INSTALL_ROOTS = ["", "LifeOS/install"];
+
+/**
+ * A contribution carries install-relative paths (diffAllowed), but the release repo keeps the install tree below
+ * its root, so applying at the root never matches a file. Applies the patch at the install root the clone has and
+ * returns the staged paths relative to that root, so the staged-path check reads the same paths the gate did.
+ */
+export function applyAtInstallRoot(repoDir: string, patchFile: string): { ok: boolean; err: string; prefix: string; stagedZ: string } {
+  const prefix = INSTALL_ROOTS.find((d) => existsSync(join(repoDir, d, "LIFEOS"))) ?? "";
+  const r = git(repoDir, ["apply", "--index", ...(prefix ? [`--directory=${prefix}`] : []), patchFile]);
+  if (!r.ok) return { ok: false, err: r.err, prefix, stagedZ: "" };
+  const staged = git(repoDir, ["diff", "--cached", "--name-only", "--no-renames", "-z"]);
+  if (!staged.ok) return { ok: false, err: staged.err || "could not list the staged paths", prefix, stagedZ: "" };
+  const strip = (p: string) => (prefix && p.startsWith(`${prefix}/`) ? p.slice(prefix.length + 1) : p);
+  return { ok: true, err: "", prefix, stagedZ: staged.out.split("\0").filter(Boolean).map(strip).join("\0") };
+}
+
+/** The PR body links the issue the report was already filed as on the same repo, so it reads as its fix. */
+export function prBodyFor(report: string, upstream: string, filed: string | undefined): string {
+  const n = filed?.startsWith(`https://github.com/${upstream}/issues/`) ? filed.split("/").pop() : undefined;
+  return n && /^\d+$/.test(n) ? `${report.trimEnd()}\n\nFixes #${n}\n` : report;
+}
+
 async function main(): Promise<void> {
   const a = process.argv.slice(2);
   const cmd = a[0];
@@ -642,18 +666,20 @@ async function main(): Promise<void> {
       const repoName = upstream.split("/")[1];
       const fork = `${login}/${repoName}`;
       const base = gh(["repo", "view", upstream, "--json", "defaultBranchRef", "-q", ".defaultBranchRef.name"]).out || "main";
+      const prBody = prBodyFor(readFileSync(reportPath, "utf8"), upstream, built.filed);
+      const linked = prBody.match(/\nFixes #(\d+)\n$/)?.[1];
       const plan = [
         `1. gh repo fork ${upstream} --clone=false           (no-op if ${fork} exists)`,
         `2. git clone --depth 1 -b ${base} https://github.com/${upstream}.git <tmp>`,
-        `3. git checkout -b ${branch} && git apply --index <diff>   (${gate.paths.length} file(s): ${gate.paths.join(", ")})`,
+        `3. git checkout -b ${branch} && git apply --index [--directory=<install root>] <diff>   (${gate.paths.length} file(s): ${gate.paths.join(", ")})`,
         `4. git commit && git push https://github.com/${fork}.git ${branch}   (auth: gh credential helper, per-command)`,
-        `5. gh pr create -R ${upstream} --base ${base} --head ${login}:${branch} --title "${built.title}" --body-file ${reportPath}`,
+        `5. gh pr create -R ${upstream} --base ${base} --head ${login}:${branch} --title "${built.title}" --body-file <tmp>/pr-body.md   (report.md${linked ? ` + "Fixes #${linked}"` : ""}, ${prBody.length} chars)`,
       ].join("\n");
       if (!yes) { console.log(`DRY RUN — nothing pushed. \`--yes\` runs:\n${plan}`); return; }
 
       // The push makes the patch public on the fork before the PR exists, so the patch and the PR text are proofed
       // here, before any fork or push; gh pr create proofs the PR text again at its own call.
-      const pre = await prePushGate(built.title, readFileSync(reportPath, "utf8"), patch);
+      const pre = await prePushGate(built.title, prBody, patch);
       if (pre) die(pre);
 
       const f = gh(["repo", "fork", upstream, "--clone=false"], 120_000);
@@ -667,18 +693,19 @@ async function main(): Promise<void> {
         let r = git(work, ["clone", "--depth", "1", "-b", base, `https://github.com/${upstream}.git`, repoDir]);
         if (!r.ok) die(r.err || "clone failed");
         r = git(repoDir, ["checkout", "-b", branch]); if (!r.ok) die(r.err);
-        r = git(repoDir, ["apply", "--index", patchFile]); if (!r.ok) die(`patch does not apply to ${upstream}@${base}: ${r.err}`);
+        const applied = applyAtInstallRoot(repoDir, patchFile);
+        if (!applied.ok) die(`patch does not apply to ${upstream}@${base}: ${applied.err}`);
         // The gate read the patch text; this reads what git actually staged, so no path is saved unchecked.
-        const staged = git(repoDir, ["diff", "--cached", "--name-only", "--no-renames", "-z"]);
-        if (!staged.ok) die(staged.err || "could not list the staged paths");
-        const stagedBad = stagedDenied(staged.out);
+        const stagedBad = stagedDenied(applied.stagedZ);
         if (stagedBad.length) die(`Applying the diff staged paths a contribution may never carry: ${stagedBad.join(", ")}`, 2);
         const ident = ["-c", `user.name=${login}`, "-c", `user.email=${login}@users.noreply.github.com`];
         r = git(repoDir, [...ident, "commit", "-m", `${built.title}\n\nFiled from a LifeOS install with the Report tool; the negative control and the green run are in the PR body.`]);
         if (!r.ok) die(r.err || "commit failed");
         r = git(repoDir, ["-c", "credential.helper=!gh auth git-credential", "push", `https://github.com/${fork}.git`, `HEAD:refs/heads/${branch}`]);
         if (!r.ok) die(r.err || "push failed");
-        const prSent = await gatedPublish(["pr", "create", "-R", upstream, "--base", base, "--head", `${login}:${branch}`, "--title", built.title, "--body-file", reportPath], built.title, readFileSync(reportPath, "utf8"), {}, 120_000);
+        const bodyFile = join(work, "pr-body.md");
+        writeFileSync(bodyFile, prBody);
+        const prSent = await gatedPublish(["pr", "create", "-R", upstream, "--base", base, "--head", `${login}:${branch}`, "--title", built.title, "--body-file", bodyFile], built.title, prBody, {}, 120_000);
         if ("blocked" in prSent) die(prSent.blocked);
         const pr = prSent.r;
         if (!pr.ok) die(pr.err || "gh pr create failed");
