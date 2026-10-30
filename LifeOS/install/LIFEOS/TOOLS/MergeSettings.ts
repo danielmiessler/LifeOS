@@ -302,9 +302,10 @@ export function permissionRuleRejectionReason(rule: string): string | null {
 
   if (rule.startsWith("mcp__")) {
     const parts = rule.split("__");
-    // Valid shape: mcp__<server>__<tool-or-glob> => at least 3 parts, server
-    // segment non-empty and not itself a wildcard.
-    if (parts.length < 3 || parts[1].length === 0 || parts[1].includes("*")) {
+    // Valid shapes: mcp__<server> (every tool from that server, per the Claude
+    // Code permissions docs) or mcp__<server>__<tool-or-glob>. Either way the
+    // server segment must be non-empty and not itself a wildcard.
+    if (parts[1].length === 0 || parts[1].includes("*")) {
       return `mcp wildcard "${rule}" is not in tool position — globs are only allowed after a literal mcp__<server>__ prefix`;
     }
     return null;
