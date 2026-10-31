@@ -5,7 +5,8 @@
  * checks the schedule still compiles (ISC-118, ISC-120), removes any legacy `com.lifeos.wf.<name>` job, and makes
  * sure the dispatcher is installed. Incident 2026-10-24: one launchd job per workflow (~2,750 starts an hour) made
  * macOS's dasd write ~5 GB a minute. The CLI's schedule verbs call `installSchedule` and `uninstallSchedule`;
- * nothing else in Workflows touches launchd.
+ * nothing else in Workflows touches launchd. On Linux the same one dispatcher runs as a systemd user service
+ * (`com.lifeos.workflows-dispatcher.service`, see `dispatcherUnit`), and no per-workflow job ever exists.
  *
  * Every effect is injectable so tests never reach the real launchd: the
  * LaunchAgents directory, the services registry path, and the launchctl runner.
@@ -63,11 +64,24 @@ export function launchdOptionsFromEnv(env: NodeJS.ProcessEnv = process.env): Ins
   };
 }
 
+/** The systemd user manager, for the Linux dispatcher; tests inject a recorder in its place. */
+export type Systemctl = (args: string[]) => { code: number; stderr: string };
+
+export function realSystemctl(args: string[]): { code: number; stderr: string } {
+  const p = Bun.spawnSync(["systemctl", "--user", ...args], { stdout: "pipe", stderr: "pipe" });
+  return { code: p.exitCode ?? 1, stderr: p.stderr.toString().slice(0, 300) };
+}
+
 export interface InstallOptions {
   defsDir?: string;
   launchAgentsDir?: string;
   servicesPath?: string;
   launchctl?: Launchctl;
+  /** The host the dispatcher is installed for; this process's platform by default. Linux uses systemd, everything else launchd. */
+  platform?: NodeJS.Platform;
+  /** Where the Linux dispatcher's unit file goes; `~/.config/systemd/user` by default. */
+  systemdUserDir?: string;
+  systemctl?: Systemctl;
   uid?: number;
   compile?: CompileOptions;
   /** false writes and registers without loading. */
@@ -185,6 +199,13 @@ export function installSchedule(name: string, opts: InstallOptions = {}): Instal
  * running (a reinstall would kill the runs it holds as children). `loaded` is true whenever the job is loaded afterwards.
  */
 export function ensureDispatcher(opts: InstallOptions & { home?: string } = {}): InstallResult {
+  if (onLinux(opts)) {
+    const unitPath = unitTarget(opts);
+    const current = existsSync(unitPath) && readFileSync(unitPath, "utf8") === dispatcherUnit({ home: opts.home, extraEnv: installRootEnv(opts.env) });
+    const running = opts.load !== false && (opts.systemctl ?? realSystemctl)(["is-active", "--quiet", DISPATCHER_UNIT]).code === 0;
+    if (current && (running || opts.load === false)) return { label: DISPATCHER_LABEL, plistPath: unitPath, loaded: running, calendar: 0, interval: null };
+    return installDispatcher(opts);
+  }
   const plistPath = plistTarget(opts.launchAgentsDir ?? defaultAgentsDir(), DISPATCHER_LABEL);
   const want = dispatcherPlist({ home: opts.home, extraEnv: installRootEnv(opts.env) });
   const current = existsSync(plistPath) && readFileSync(plistPath, "utf8") === want;
@@ -195,6 +216,8 @@ export function ensureDispatcher(opts: InstallOptions & { home?: string } = {}):
 
 export function uninstallSchedule(name: string, opts: InstallOptions = {}): { label: string; removedPlist: boolean; unregistered: boolean } {
   const label = labelFor(name);
+  // Linux never had per-workflow jobs (its dispatcher is a systemd unit), and launchctl does not exist there.
+  if (onLinux(opts)) return { label, removedPlist: false, unregistered: unregisterService(opts.servicesPath ?? defaultServicesPath(), label) };
   const agents = opts.launchAgentsDir ?? defaultAgentsDir();
   const plistPath = plistTarget(agents, label);
   if (opts.load !== false) {
@@ -281,7 +304,87 @@ export function dispatcherPlist(opts: { home?: string; bun?: string; path?: stri
   ].join("\n");
 }
 
+/* ── Linux: the same dispatcher as a systemd user service ───────────────── */
+
+export const DISPATCHER_UNIT = `${DISPATCHER_LABEL}.service`;
+
+const onLinux = (opts: InstallOptions) => (opts.platform ?? process.platform) === "linux";
+const defaultSystemdUserDir = (home: string = homedir()) => join(home, ".config", "systemd", "user");
+const linuxLogsDir = (home: string = homedir()) => join(process.env.XDG_STATE_HOME || join(home, ".local", "state"), "lifeos", "logs");
+
+function unitTarget(opts: InstallOptions & { home?: string }): string {
+  const dir = opts.systemdUserDir ?? defaultSystemdUserDir(opts.home);
+  mkdirSync(dir, { recursive: true });
+  const real = realpathSync(dir);
+  const path = join(real, DISPATCHER_UNIT);
+  invariant(dirname(path) === real, `Unit path escapes the systemd user directory: ${path}`);
+  return path;
+}
+
+/**
+ * The dispatcher's systemd user unit: the plist's twin. Restart=always is KeepAlive with its 30-second throttle, and
+ * KillMode=process is AbandonProcessGroup: runs are the dispatcher's children, and a restart must not kill them.
+ */
+export function dispatcherUnit(opts: { home?: string; bun?: string; path?: string; extraEnv?: Record<string, string> } = {}): string {
+  const home = opts.home ?? homedir();
+  const env = { ...(opts.extraEnv ?? {}), PATH: opts.path ?? defaultPath(home), HOME: home, LIFEOS_NOTIFICATION_CHANNEL: HEADLESS_CHANNEL };
+  // systemd expands % specifiers everywhere and reads backslash escapes inside quotes.
+  const unit = (s: string) => s.replace(/%/g, "%%");
+  const quoted = (s: string) => `"${unit(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+  const logs = linuxLogsDir(home);
+  // The PATH lookup, not this process's execPath, for the same reason as the plist.
+  const bun = opts.bun ?? Bun.which("bun", { PATH: opts.path ?? defaultPath(home) }) ?? process.execPath;
+  return [
+    `[Unit]`,
+    `Description=LifeOS Workflows dispatcher (evaluates every local time trigger)`,
+    ``,
+    `[Service]`,
+    `Type=simple`,
+    `ExecStart=${quoted(bun)} ${quoted(join(HERE, "dispatcher.ts"))} serve`,
+    ...Object.entries(env).map(([k, v]) => `Environment=${quoted(`${k}=${v}`)}`),
+    `Restart=always`,
+    `RestartSec=30`,
+    `KillMode=process`,
+    `StandardOutput=append:${unit(join(logs, `${DISPATCHER_LABEL}.out.log`))}`,
+    `StandardError=append:${unit(join(logs, `${DISPATCHER_LABEL}.err.log`))}`,
+    ``,
+    `[Install]`,
+    `WantedBy=default.target`,
+    ``,
+  ].join("\n");
+}
+
+function installDispatcherSystemd(opts: InstallOptions & { home?: string }): InstallResult {
+  const unitPath = unitTarget(opts);
+  mkdirSync(linuxLogsDir(opts.home), { recursive: true });
+  writeFileAtomic(unitPath, dispatcherUnit({ home: opts.home, extraEnv: installRootEnv(opts.env) }));
+  let loaded = false;
+  if (opts.load !== false) {
+    const systemctl = opts.systemctl ?? realSystemctl;
+    const reload = systemctl(["daemon-reload"]);
+    invariant(reload.code === 0, `systemctl --user daemon-reload failed (${reload.code}): ${reload.stderr}`);
+    // restart, not start: a unit that was already running picks up the rewritten file.
+    for (const args of [["enable", DISPATCHER_UNIT], ["restart", DISPATCHER_UNIT]]) {
+      const r = systemctl(args);
+      invariant(r.code === 0, `systemctl --user ${args.join(" ")} failed (${r.code}): ${r.stderr}`);
+    }
+    loaded = systemctl(["is-active", "--quiet", DISPATCHER_UNIT]).code === 0;
+  }
+  return { label: DISPATCHER_LABEL, plistPath: unitPath, loaded, calendar: 0, interval: null };
+}
+
+function uninstallDispatcherSystemd(opts: InstallOptions & { home?: string }): { label: string; removedPlist: boolean } {
+  const unitPath = unitTarget(opts);
+  const systemctl = opts.systemctl ?? realSystemctl;
+  if (opts.load !== false) systemctl(["disable", "--now", DISPATCHER_UNIT]);
+  const removedPlist = existsSync(unitPath);
+  if (removedPlist) Bun.spawnSync(["rm", "-f", unitPath]);
+  if (opts.load !== false) systemctl(["daemon-reload"]);
+  return { label: DISPATCHER_LABEL, removedPlist };
+}
+
 export function installDispatcher(opts: InstallOptions & { home?: string } = {}): InstallResult {
+  if (onLinux(opts)) return installDispatcherSystemd(opts);
   const agents = opts.launchAgentsDir ?? defaultAgentsDir();
   const plistPath = plistTarget(agents, DISPATCHER_LABEL);
   writeFileAtomic(plistPath, dispatcherPlist({ home: opts.home, extraEnv: installRootEnv(opts.env) }));
@@ -304,6 +407,7 @@ export function installDispatcher(opts: InstallOptions & { home?: string } = {})
 }
 
 export function uninstallDispatcher(opts: InstallOptions = {}): { label: string; removedPlist: boolean } {
+  if (onLinux(opts)) return uninstallDispatcherSystemd(opts);
   const plistPath = plistTarget(opts.launchAgentsDir ?? defaultAgentsDir(), DISPATCHER_LABEL);
   if (opts.load !== false) (opts.launchctl ?? realLaunchctl)(["bootout", `${domain(opts.uid ?? process.getuid!())}/${DISPATCHER_LABEL}`]);
   const removedPlist = existsSync(plistPath);
