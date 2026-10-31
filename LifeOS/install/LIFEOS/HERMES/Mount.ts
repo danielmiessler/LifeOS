@@ -54,6 +54,16 @@ interface Change {
   detail: string;
 }
 
+/** Decode one YAML flow scalar the way hermes writes them: bare, 'single' ('' escapes), or "double" (JSON escapes). */
+function yamlScalar(raw: string): string {
+  const s = raw.trim();
+  if (s.startsWith("'") && s.endsWith("'") && s.length >= 2) return s.slice(1, -1).replace(/''/g, "'");
+  if (s.startsWith('"') && s.endsWith('"') && s.length >= 2) {
+    try { return JSON.parse(s) as string; } catch { return s.slice(1, -1); }
+  }
+  return s;
+}
+
 /** Set or replace a top-level scalar key without creating a duplicate. */
 function setTopLevelKey(yaml: string, key: string, value: string): { yaml: string; changed: boolean } {
   const re = new RegExp(`^${key}\\s*:.*$`, "m");
@@ -72,9 +82,12 @@ function setSkillsExternalDirs(yaml: string, dirs: string[]): { yaml: string; ch
   const list = dirs.map((d) => `    - ${d}`).join("\n");
   if (/^skills:\s*$/m.test(yaml) || /^skills:\s*\n/m.test(yaml)) {
     if (/^\s+external_dirs\s*:/m.test(yaml)) {
-      // Replace the existing list wholesale.
+      // Replace the existing list wholesale. The key may carry an inline value — hermes' own
+      // wizard writes `external_dirs: []` — so match the rest of that line, not only a bare
+      // `external_dirs:` followed by `- item` lines; the inline form used to slip through
+      // untouched while the console still reported the skills as mounted.
       const next = yaml.replace(
-        /^(\s+)external_dirs\s*:\s*\n(?:\s+-\s+.*\n)*/m,
+        /^(\s+)external_dirs\s*:.*\n(?:\s+-\s+.*\n)*/m,
         `  external_dirs:\n${list}\n`,
       );
       return { yaml: next, changed: next !== yaml };
@@ -107,11 +120,31 @@ function ensureApprovals(yaml: string): { yaml: string; changed: boolean } {
     while (end < lines.length && (lines[end]!.trim() === "" || /^\s/.test(lines[end]!))) end++;
 
     const denyAt = lines.slice(start + 1, end).findIndex((l) => /^\s{2}deny:\s*$/.test(l));
-    if (denyAt === -1) return { yaml, changed: false }; // no deny list to own
+    if (denyAt === -1) {
+      // An `approvals:` block with no `deny:` list at all — the shape a stock or wizard-written
+      // config has (`mode`/`timeout` only). Returning "nothing to own" here meant such an install
+      // never received the shell deny globs while `--check` reported it current. Add the list at
+      // the end of the block; mode/timeout/cron_mode stay the operator's.
+      const next = [
+        ...lines.slice(0, end),
+        "  deny:",
+        ...SHELL_DENY_GLOBS.map((g) => `    - ${JSON.stringify(g)}`),
+        ...lines.slice(end),
+      ].join("\n");
+      return { yaml: next, changed: next !== yaml };
+    }
     const denyLine = start + 1 + denyAt;
 
     let after = denyLine + 1;
     while (after < end && /^\s+-\s/.test(lines[after]!)) after++;
+
+    // Compare VALUES, not lines. Hermes round-trips config.yaml through its own YAML
+    // dumper on every start and re-quotes these entries ('…' for "…"), which is not
+    // drift — comparing the literal lines made every gateway restart read as STALE
+    // and every mount flip the quotes back, a loop with no semantic change.
+    const existing = lines.slice(denyLine + 1, after).map((l) => yamlScalar(l.replace(/^\s+-\s+/, "")));
+    const same = existing.length === SHELL_DENY_GLOBS.length && existing.every((v, i) => v === SHELL_DENY_GLOBS[i]);
+    if (same) return { yaml, changed: false };
 
     const next = [
       ...lines.slice(0, denyLine + 1),
@@ -179,22 +212,50 @@ function assertSoulPassesHermesScanner(soul: string): void {
  */
 const COMMAND_ALLOWLIST_ENSURE: readonly string[] = ["script execution via heredoc"];
 
+const unquote = (s: string) => s.trim().replace(/^["']|["']$/g, "").trim();
+
 function ensureCommandAllowlist(yaml: string): { yaml: string; changed: boolean } {
   const lines = yaml.split("\n");
-  const start = lines.findIndex((l) => /^command_allowlist:\s*$/.test(l));
-  if (start === -1) {
+  // Every top-level occurrence, block (`command_allowlist:`) or inline (`command_allowlist: []`, the
+  // form a wizard-written or migrated config carries). A config an earlier mount already broke has both.
+  const keyAt = lines.flatMap((l, i) => (/^command_allowlist\s*:/.test(l) ? [i] : []));
+  if (keyAt.length === 0) {
     const block = ["command_allowlist:", ...COMMAND_ALLOWLIST_ENSURE.map((k) => `  - ${k}`)].join("\n");
     return { yaml: `${yaml.replace(/\n*$/, "")}\n${block}\n`, changed: true };
   }
-  let end = start + 1;
-  while (end < lines.length && (lines[end]!.trim() === "" || /^\s/.test(lines[end]!))) end++;
-  const existing = lines
-    .slice(start + 1, end)
-    .map((l) => l.replace(/^\s*-\s*/, "").replace(/^["']|["']$/g, "").trim());
-  const missing = COMMAND_ALLOWLIST_ENSURE.filter((k) => !existing.includes(k));
-  if (missing.length === 0) return { yaml, changed: false };
-  const next = [...lines.slice(0, end), ...missing.map((k) => `  - ${k}`), ...lines.slice(end)].join("\n");
-  return { yaml: next, changed: true };
+  const items: string[] = [];
+  const spans: Array<[number, number]> = [];
+  for (const start of keyAt) {
+    const inline = lines[start]!.replace(/^command_allowlist\s*:/, "").trim();
+    if (inline) items.push(...inline.replace(/^\[|\]$/g, "").split(",").map(unquote).filter(Boolean));
+    let end = start + 1;
+    while (end < lines.length && (lines[end]!.trim() === "" || /^\s/.test(lines[end]!))) {
+      const v = unquote(lines[end]!.replace(/^\s*-\s*/, ""));
+      if (v) items.push(v);
+      end++;
+    }
+    while (end > start + 1 && lines[end - 1]!.trim() === "") end--; // trailing blank lines belong to what follows
+    spans.push([start, end]);
+  }
+  const missing = COMMAND_ALLOWLIST_ENSURE.filter((k) => !items.includes(k));
+  const single = keyAt.length === 1 && lines[keyAt[0]!]!.replace(/^command_allowlist\s*:/, "").trim() === "";
+  if (single && missing.length === 0) return { yaml, changed: false };
+  if (single) {
+    const [, end] = spans[0]!;
+    return { yaml: [...lines.slice(0, end), ...missing.map((k) => `  - ${k}`), ...lines.slice(end)].join("\n"), changed: true };
+  }
+  // Inline or duplicated: fold every occurrence into one block at the first key's position.
+  const merged = [...new Set([...items, ...missing])];
+  const block = ["command_allowlist:", ...merged.map((k) => `  - ${k}`)];
+  const out: string[] = [];
+  let i = 0;
+  for (const [start, end] of spans) {
+    out.push(...lines.slice(i, start));
+    if (start === spans[0]![0]) out.push(...block);
+    i = end;
+  }
+  out.push(...lines.slice(i));
+  return { yaml: out.join("\n"), changed: true };
 }
 
 function installPlugin(): Change[] {
