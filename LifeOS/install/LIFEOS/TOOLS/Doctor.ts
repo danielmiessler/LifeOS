@@ -732,15 +732,11 @@ const CAPS: CapSpec[] = [
     fixCmd: 'add CLOUDFLARE_API_TOKEN to <configRoot>/.env, then: bun LIFEOS/TOOLS/Doctor.ts --network',
   },
   {
-    // A token that deploys Workers can still lack Workers AI permission, and then every judgment-layer call fails
-    // open in silence (public issue #2446). The network probe asks the engine one fixed public sentence through
-    // Assay's ask(), the same path as `bun LIFEOS/ASSAY/Engine.ts probe`.
     id: 'assay-engine',
     title: "Assay's judgment layer (Workers AI engine)",
     powers: 'typed judgment questions: eval judges, Cortex recall ranking, Errata triage, router lane picks',
     ttlHours: 24,
     configured: () => !!envKey('CLOUDFLARE_ACCOUNT_ID') && !!envKey('CLOUDFLARE_API_TOKEN'),
-    // The judgment layer is optional (Setup/Glance.md): its call sites fail open, so no credentials is not a fault.
     offWhenUnconfigured: 'off — CLOUDFLARE_ACCOUNT_ID or CLOUDFLARE_API_TOKEN is not set, so judgment-layer calls fail open. To turn it on: see LIFEOS/DOCUMENTATION/Setup/Glance.md',
     probeOffline: async () => {
       const missing = ['CLOUDFLARE_ACCOUNT_ID', 'CLOUDFLARE_API_TOKEN'].filter((k) => !envKey(k));
