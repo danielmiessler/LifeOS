@@ -230,7 +230,7 @@ const loadIssues: Loader = async (cfg, warn) => {
 };
 
 export const loadCaptures: Loader = async (cfg, warn) => {
-  const res = await fetch(`${PULSE}/api/synapse`, { signal: AbortSignal.timeout(8000) });
+  const res = await fetch(`${PULSE}/api/synapse?fresh=1`, { signal: AbortSignal.timeout(8000) });
   if (!res.ok) throw new Error(`synapse api returned ${res.status}`);
   const d: any = await res.json();
   checkFresh(d.generated_at, "synapse mirror", cfg, warn);

@@ -439,6 +439,7 @@ export async function handleRequest(req: Request, pathname: string): Promise<Res
   }
   if (pathname !== "/api/synapse" && pathname !== "/api/synapse/") return null;
   if (req.method !== "GET") return new Response("method not allowed", { status: 405 });
+  if (new URL(req.url).searchParams.get("fresh") === "1") return Response.json(await refresh(), { headers: { "X-Synapse-Cache": "fresh" } });
   if (state.cache && state.cache.expiresAt > Date.now()) {
     return Response.json(state.cache.payload, { headers: { "X-Synapse-Cache": "hit" } });
   }
