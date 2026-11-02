@@ -1081,7 +1081,8 @@ async function probeAll(network: boolean): Promise<Manifest> {
       probeClass === 'offline' && res.ok &&
       prev?.state === 'broken' && prev.probeClass === 'network' && !isStale(prev)
     ) {
-      m.capabilities[cap.id] = { ...prev, detail: `${prev.detail} [network verdict kept]` };
+      const KEPT = ' [network verdict kept]';
+      m.capabilities[cap.id] = { ...prev, detail: prev.detail.endsWith(KEPT) ? prev.detail : `${prev.detail}${KEPT}` };
       continue;
     }
     m.capabilities[cap.id] = {
