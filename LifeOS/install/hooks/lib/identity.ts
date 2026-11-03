@@ -76,6 +76,22 @@ export const SCAFFOLD_SENTINELS: ReadonlySet<string> = new Set([
   '21m00Tcm4TlvDq8ikWAM',   // [da.voices.main] voice_id (the shipped scaffold's placeholder)
 ]);
 
+/**
+ * The scaffold names still standing in for an unanswered Interview, as Doctor reports them. A name
+ * marked `confirmed = true` in its LIFEOS_CONFIG.toml section is a real answer even when it equals a
+ * sentinel (a DA genuinely named "Aria"), so it is not listed.
+ */
+export function unansweredIdentityNames(): string[] {
+  let cfg: { da?: LifeosDa; principal?: LifeosPrincipal } = {};
+  try { cfg = loadLifeosConfig(); } catch { /* no config: fall back to the resolved names */ }
+  const hits: string[] = [];
+  const da = getDAName();
+  if (isScaffoldSentinel(da) && !cfg.da?.confirmed) hits.push(`DA name is still "${da}"`);
+  const principal = getPrincipal()?.name;
+  if (isScaffoldSentinel(principal) && !cfg.principal?.confirmed) hits.push(`principal name is still "${principal}"`);
+  return hits;
+}
+
 /** True when a config value is still the shipped scaffold placeholder. */
 export function isScaffoldSentinel(value: string | null | undefined): boolean {
   return typeof value === 'string' && SCAFFOLD_SENTINELS.has(value.trim());
@@ -217,7 +233,7 @@ export function getIdentity(): Identity {
     return base; // no config yet (fresh install) — legacy chain governs
   }
   // Empty AND still-scaffold both mean unanswered (public issue #1885, @MatiasBarboza).
-  if (!da?.name || isScaffoldSentinel(da.name)) return base;
+  if (!da?.name || (isScaffoldSentinel(da.name) && !da.confirmed)) return base;
 
   // The voice block is judged separately: a renamed DA can still be carrying the
   // scaffold's public default voice_id, which is not this DA's voice.
@@ -294,7 +310,7 @@ export function getPrincipal(): Principal {
   }
   // Same contract as getIdentity(): the scaffold's "Your Name" is not a name
   // the principal gave us (public issue #1885, @MatiasBarboza).
-  if (!p?.name || isScaffoldSentinel(p.name)) return base;
+  if (!p?.name || (isScaffoldSentinel(p.name) && !p.confirmed)) return base;
 
   return {
     name: p.name,

@@ -48,6 +48,8 @@ export interface LifeosPrincipal {
   currency?: string;
   /** [principal.voice]: the one synthesis profile for the principal's voice clone. The voice id lives in env, never here. */
   voice?: LifeosPrincipalVoice;
+  /** `confirmed = true`: the Interview captured this name, even if it equals a scaffold default. */
+  confirmed?: boolean;
 }
 
 /** Every field is required once the table exists: a partial profile is exactly the per-tool drift it replaces. */
@@ -79,6 +81,8 @@ export interface LifeosDa {
   fullName?: string;
   displayName?: string;
   color?: string;
+  /** `confirmed = true`: the Interview captured this name, even if it equals the scaffold default ("Aria"). */
+  confirmed?: boolean;
   /** Every [da.voices.*] section, normalized. `main` is required; other profiles (presenter, …) are optional. */
   voices: { main: LifeosVoiceSettings } & Record<string, LifeosVoiceSettings | undefined>;
 }
@@ -197,6 +201,7 @@ function validateAndNormalize(raw: unknown, path: string): LifeosConfig {
       hometown: principal.hometown,
       voiceCloneId: principal.voice_clone_id ?? principal.voiceCloneId,
       currency: principal.currency,
+      confirmed: principal.confirmed === true ? true : undefined,
       voice: principal.voice === undefined ? undefined : normalizePrincipalVoice(principal.voice, path),
     },
     da: {
@@ -204,6 +209,7 @@ function validateAndNormalize(raw: unknown, path: string): LifeosConfig {
       fullName: da.full_name ?? da.fullName,
       displayName: da.display_name ?? da.displayName,
       color: da.color,
+      confirmed: da.confirmed === true ? true : undefined,
       voices: {
         ...Object.fromEntries(
           Object.entries(daVoices)

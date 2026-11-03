@@ -331,8 +331,9 @@ function tomlStrings(src: string): Map<string, string> {
     if (!line || line.startsWith("#")) continue;
     const sec = line.match(/^\[([^\]]+)\]$/);
     if (sec) { section = sec[1].trim(); continue; }
-    const kv = line.match(/^([A-Za-z0-9_]+)\s*=\s*"([^"]*)"/);
-    if (kv) out.set(section ? `${section}.${kv[1]}` : kv[1], kv[2]);
+    // Quoted strings, plus bare booleans (read as "true"/"false") for flags such as `[da] confirmed = true`.
+    const kv = line.match(/^([A-Za-z0-9_]+)\s*=\s*(?:"([^"]*)"|(true|false)\b)/);
+    if (kv) out.set(section ? `${section}.${kv[1]}` : kv[1], kv[2] ?? kv[3]);
   }
   return out;
 }
@@ -394,18 +395,22 @@ export function resolveIdentityVars(configRoot: string, payloadInstall: string, 
     return { vars, configPath, missing: [...missing, "{{PRINCIPAL_NAME}}", "{{PRINCIPAL_FULL_NAME}}", "{{DA_NAME}}", "{{DA_FULL_NAME}}"], pending };
   }
 
-  const set = (token: string, value: string | undefined): void => {
+  // `confirmed = true` in [principal] / [da] marks a name the Interview captured that happens to equal a
+  // scaffold default (a DA really named "Aria"); without it that name would stay pending forever.
+  const set = (token: string, value: string | undefined, confirmed = false): void => {
     const required = REQUIRED_IDENTITY_TOKENS.includes(token);
-    if (value && SCAFFOLD_NAMES.has(value.trim())) { if (required) pending.push(token); }
+    if (value && SCAFFOLD_NAMES.has(value.trim()) && !confirmed) { if (required) pending.push(token); }
     else if (value) vars[token] = value;
     else if (required) missing.push(token);
   };
   const principal = toml.get("principal.name");
   const da = toml.get("da.name");
-  set("{{PRINCIPAL_NAME}}", principal);
-  set("{{PRINCIPAL_FULL_NAME}}", toml.get("principal.full_name") || principal);
-  set("{{DA_NAME}}", da);
-  set("{{DA_FULL_NAME}}", toml.get("da.full_name") || da);
+  const principalConfirmed = toml.get("principal.confirmed") === "true";
+  const daConfirmed = toml.get("da.confirmed") === "true";
+  set("{{PRINCIPAL_NAME}}", principal, principalConfirmed);
+  set("{{PRINCIPAL_FULL_NAME}}", toml.get("principal.full_name") || principal, principalConfirmed);
+  set("{{DA_NAME}}", da, daConfirmed);
+  set("{{DA_FULL_NAME}}", toml.get("da.full_name") || da, daConfirmed);
   set("{{PRIMARY_VOICE_ID}}", toml.get("da.voices.main.voice_id") || toml.get("da.voices.main.fish_reference_id"));
   set("{{SECONDARY_VOICE_ID}}", toml.get("da.voices.secondary.voice_id") || toml.get("da.voices.secondary.fish_reference_id"));
   // The principal's own zone when the config names a real one; an unrendered token is

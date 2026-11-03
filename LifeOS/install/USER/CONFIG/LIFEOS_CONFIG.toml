@@ -19,6 +19,7 @@ currency = "USD"                   # optional — ISO 4217, drives Pulse Finance
 
 [da]
 name = "Aria"                      # required — your DA's name (rename to anything)
+# confirmed = true                 # set when the name you chose IS "Aria", so it is not read as the unanswered default
 full_name = ""
 display_name = ""
 color = "#3B82F6"

@@ -481,7 +481,9 @@ async function activeScaffoldIdentity(): Promise<string[]> {
   try {
     const idPath = join(CONFIG_ROOT, 'hooks', 'lib', 'identity.ts');
     if (!existsSync(idPath)) return [];
-    const { getDAName, getPrincipal, isScaffoldSentinel } = await import(idPath);
+    const { getDAName, getPrincipal, isScaffoldSentinel, unansweredIdentityNames } = await import(idPath);
+    // Honours `confirmed = true` (a real name that equals a scaffold default); older identity.ts lacks it.
+    if (typeof unansweredIdentityNames === 'function') return unansweredIdentityNames();
     if (typeof isScaffoldSentinel !== 'function') return [];
     const hits: string[] = [];
     const da = getDAName();
