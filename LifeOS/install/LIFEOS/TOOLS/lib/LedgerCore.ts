@@ -187,6 +187,7 @@ function flock(): FlockFn | null {
 export function withKernelLock<T>(lockPath: string, action: () => T, opts: LockOptions = {}): LockResult<T> {
   const deadlineMs = opts.deadlineMs ?? 5000;
   const retryMs = opts.retryMs ?? 25;
+  if (process.platform === "win32") return withWindowsKernelLock(lockPath, action, deadlineMs, retryMs);
   const fl = flock();
   if (!fl) return { ok: false, message: "lock acquisition failed: flock(2) unavailable" };
   let fd: number;
@@ -211,6 +212,56 @@ export function withKernelLock<T>(lockPath: string, action: () => T, opts: LockO
     return { ok: true, value: action() };
   } finally {
     try { closeSync(fd); } catch { /* closing releases the flock */ }
+  }
+}
+
+// Windows has no flock(2). Its kernel lock with the same contract is a handle opened with share
+// mode 0: no other process can open the file until the handle closes, and Windows closes it when
+// the holder exits or dies. No staleness, no takeover, and the lockfile is never removed.
+type Win32Lock = { open: (path: string) => bigint | null; close: (h: bigint) => void };
+let win32Lock: Win32Lock | null | undefined;
+
+function win32(): Win32Lock | null {
+  if (win32Lock !== undefined) return win32Lock;
+  try {
+    const { dlopen, FFIType, ptr } = require("bun:ffi") as typeof import("bun:ffi");
+    const k32 = dlopen("kernel32.dll", {
+      CreateFileW: { args: [FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.ptr, FFIType.u32, FFIType.u32, FFIType.ptr], returns: FFIType.i64 },
+      CloseHandle: { args: [FFIType.i64], returns: FFIType.i32 },
+    });
+    const GENERIC_READ_WRITE = 0xc0000000, OPEN_ALWAYS = 4, FILE_ATTRIBUTE_NORMAL = 0x80;
+    win32Lock = {
+      open: (path) => {
+        const wide = Buffer.from(`${path}\0`, "utf16le");
+        const h = BigInt(k32.symbols.CreateFileW(ptr(wide), GENERIC_READ_WRITE, 0, null, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, null) as number | bigint);
+        return h === -1n || h === 0n ? null : h; // INVALID_HANDLE_VALUE: held elsewhere (sharing violation)
+      },
+      close: (h) => { k32.symbols.CloseHandle(h); },
+    };
+  } catch {
+    win32Lock = null;
+  }
+  return win32Lock;
+}
+
+function withWindowsKernelLock<T>(lockPath: string, action: () => T, deadlineMs: number, retryMs: number): LockResult<T> {
+  const w = win32();
+  if (!w) return { ok: false, message: "lock acquisition failed: kernel32 CreateFileW unavailable" };
+  try { mkdirSync(dirname(lockPath), { recursive: true }); } catch (e: unknown) {
+    return { ok: false, message: `lock directory create failed: ${(e as Error)?.message ?? String(e)}` };
+  }
+  const deadline = Date.now() + deadlineMs;
+  let h = w.open(lockPath);
+  while (h === null) {
+    if (Date.now() >= deadline) return { ok: false, message: `lock held past deadline: ${lockPath}` };
+    Bun.sleepSync(retryMs <= 1 ? retryMs : retryMs / 2 + Math.random() * (retryMs / 2));
+    h = w.open(lockPath);
+  }
+  const held = h;
+  try {
+    return { ok: true, value: action() };
+  } finally {
+    w.close(held);
   }
 }
 
