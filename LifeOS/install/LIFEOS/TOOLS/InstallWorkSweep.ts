@@ -26,8 +26,9 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from "fs";
 import { join } from "path";
 import { homedir } from "node:os";
-import { lifeosPath } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
+import { getClaudeDir, lifeosPath } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { installVerb } from "./lib/InstallVerb";
+import * as wintask from "./lib/WinTask";
 
 declare const Bun: { spawn: (cmd: string[], opts?: any) => any };
 
@@ -207,8 +208,28 @@ async function statusLinux(): Promise<void> {
   if (!r.ok) process.exit(1);
 }
 
+// ── windows (Task Scheduler) ──
+// The same hourly cadence as the plist (StartInterval 3600 + RunAtLoad), logging
+// to the same file, through lib/WinTask.ts.
+
+async function windowsMain(arg: string): Promise<void> {
+  const spec = {
+    label: LABEL,
+    description: "LifeOS work sweep",
+    exec: [(await wintask.which("bun")) || process.execPath, lifeosPath("TOOLS", "WorkSweep.ts")],
+    logPath: lifeosPath("MEMORY", "STATE", "com.lifeos.worksweep.log"),
+    workingDirectory: getClaudeDir(),
+    schedule: { kind: "interval" as const, seconds: 3600 },
+  };
+  const log = (m: string) => console.log(`[InstallWorkSweep] ${m}`);
+  if (arg === "--uninstall") { await wintask.uninstall(spec, log); return; }
+  if (arg === "--status") { if (!(await wintask.status(spec, log))) process.exit(1); return; }
+  if (!(await wintask.install(spec, log))) process.exit(1);
+}
+
 async function main(): Promise<void> {
   const arg = installVerb(process.argv, "InstallWorkSweep");
+  if (wintask.isWindows()) return windowsMain(arg);
   if (arg === "--uninstall") return IS_LINUX ? uninstallLinux() : uninstall();
   if (arg === "--status") return IS_LINUX ? statusLinux() : status();
   return IS_LINUX ? installLinux() : install();

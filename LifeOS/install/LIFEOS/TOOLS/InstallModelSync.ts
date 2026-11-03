@@ -13,6 +13,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { lifeosPath } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { installVerb } from "./lib/InstallVerb";
+import * as wintask from "./lib/WinTask";
 
 const HOME = homedir();
 const LABEL = "com.lifeos.modelsync";
@@ -23,6 +24,27 @@ async function sh(cmd: string[]): Promise<{ exit: number; out: string }> {
   const proc = Bun.spawn(cmd, { stdout: "pipe", stderr: "pipe" });
   const out = (await new Response(proc.stdout).text()) + (await new Response(proc.stderr).text());
   return { exit: await proc.exited, out };
+}
+
+// Windows: Task Scheduler through lib/WinTask.ts — the same daily 05:10 run, the
+// same log, the same best-effort first sync. The launchd path below never runs there.
+if (wintask.isWindows()) {
+  const arg = installVerb(process.argv, "InstallModelSync");
+  const bun = (await wintask.which("bun")) || process.execPath;
+  const spec = {
+    label: LABEL,
+    description: "LifeOS model sync",
+    exec: [bun, lifeosPath("TOOLS", "ModelSync.ts"), "--daily"],
+    logPath: lifeosPath("MEMORY", "OBSERVABILITY", "model-sync-launchd.log"),
+    schedule: { kind: "calendar" as const, hour: 5, minute: 10 },
+  };
+  const log = (m: string) => console.log(`[InstallModelSync] ${m}`);
+  if (arg === "--uninstall") process.exit((await wintask.uninstall(spec, log)) ? 0 : 1);
+  if (arg === "--status") process.exit((await wintask.status(spec, log)) ? 0 : 1);
+  if (!(await wintask.install(spec, log))) process.exit(1);
+  const first = await sh([bun, lifeosPath("TOOLS", "ModelSync.ts"), "--sync"]);
+  console.log(first.exit === 0 ? "First sync: done" : `First sync skipped (${first.out.trim().split("\n").pop()}) — the daily job will retry`);
+  process.exit(0);
 }
 
 const uid = (await sh(["id", "-u"])).out.trim();

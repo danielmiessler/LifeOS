@@ -18,6 +18,8 @@ import { dirname, join, sep } from "node:path";
 import { invariant } from "../../TOOLS/Invariant.ts";
 import { defaultClaudeDir, expandPathFrom } from "../../TOOLS/Paths.ts";
 import { classifyServiceRow } from "../../TOOLS/Services.ts";
+import type { UnitSpec } from "../../TOOLS/lib/SystemdUser.ts";
+import * as wintask from "../../TOOLS/lib/WinTask.ts";
 import { loadDefinitionFile } from "./format.ts";
 import { writeFileAtomic } from "./ledger.ts";
 import { definitionsDir, pathForName } from "./paths.ts";
@@ -185,6 +187,11 @@ export function installSchedule(name: string, opts: InstallOptions = {}): Instal
  * running (a reinstall would kill the runs it holds as children). `loaded` is true whenever the job is loaded afterwards.
  */
 export function ensureDispatcher(opts: InstallOptions & { home?: string } = {}): InstallResult {
+  if (onWindowsHost(opts)) {
+    const spec = windowsDispatcherSpec(opts);
+    if (wintask.isCurrent(spec)) return { label: DISPATCHER_LABEL, plistPath: wintask.specPath(DISPATCHER_LABEL), loaded: true, calendar: 0, interval: null };
+    return installDispatcher(opts);
+  }
   const plistPath = plistTarget(opts.launchAgentsDir ?? defaultAgentsDir(), DISPATCHER_LABEL);
   const want = dispatcherPlist({ home: opts.home, extraEnv: installRootEnv(opts.env) });
   const current = existsSync(plistPath) && readFileSync(plistPath, "utf8") === want;
@@ -197,7 +204,8 @@ export function uninstallSchedule(name: string, opts: InstallOptions = {}): { la
   const label = labelFor(name);
   const agents = opts.launchAgentsDir ?? defaultAgentsDir();
   const plistPath = plistTarget(agents, label);
-  if (opts.load !== false) {
+  // Windows never had per-workflow launchd jobs, so there is nothing to boot out (and no uid to name one by).
+  if (opts.load !== false && !onWindowsHost(opts)) {
     const launchctl = opts.launchctl ?? realLaunchctl;
     launchctl(["bootout", `${domain(opts.uid ?? process.getuid!())}/${label}`]);
   }
@@ -281,7 +289,37 @@ export function dispatcherPlist(opts: { home?: string; bun?: string; path?: stri
   ].join("\n");
 }
 
+/* ── Windows: the same one dispatcher, as a Task Scheduler task ─────────── */
+
+/** The real Windows host, not a test: tests inject launchctl or a LaunchAgents dir and must never reach Task Scheduler. */
+function onWindowsHost(opts: InstallOptions): boolean {
+  return wintask.isWindows() && !opts.launchctl && !opts.launchAgentsDir;
+}
+
+/** dispatcherPlist's program, environment and KeepAlive, as a WinTask daemon spec. PATH is set by WinTaskRun.ts. */
+function windowsDispatcherSpec(opts: InstallOptions & { home?: string }): UnitSpec {
+  const home = opts.home ?? process.env.HOME ?? homedir();
+  return {
+    label: DISPATCHER_LABEL,
+    description: "LifeOS Workflows dispatcher",
+    exec: [Bun.which("bun") ?? process.execPath, join(HERE, "dispatcher.ts"), "serve"],
+    logPath: join(LIFEOS_ROOT, "MEMORY", "OBSERVABILITY", `${DISPATCHER_LABEL}.out.log`),
+    errLogPath: join(LIFEOS_ROOT, "MEMORY", "OBSERVABILITY", `${DISPATCHER_LABEL}.err.log`),
+    workingDirectory: home,
+    environment: { ...installRootEnv(opts.env), HOME: home, LIFEOS_NOTIFICATION_CHANNEL: HEADLESS_CHANNEL },
+    schedule: { kind: "daemon", restartSec: 30 },
+  };
+}
+
 export function installDispatcher(opts: InstallOptions & { home?: string } = {}): InstallResult {
+  if (onWindowsHost(opts)) {
+    const spec = windowsDispatcherSpec(opts);
+    if (opts.load === false) return { label: DISPATCHER_LABEL, plistPath: wintask.specPath(DISPATCHER_LABEL), loaded: false, calendar: 0, interval: null };
+    const lines: string[] = [];
+    const ok = wintask.installSync(spec, (m) => lines.push(m));
+    invariant(ok, `Task Scheduler install of ${DISPATCHER_LABEL} failed: ${lines.join("; ")}`);
+    return { label: DISPATCHER_LABEL, plistPath: wintask.specPath(DISPATCHER_LABEL), loaded: true, calendar: 0, interval: null };
+  }
   const agents = opts.launchAgentsDir ?? defaultAgentsDir();
   const plistPath = plistTarget(agents, DISPATCHER_LABEL);
   writeFileAtomic(plistPath, dispatcherPlist({ home: opts.home, extraEnv: installRootEnv(opts.env) }));
@@ -304,6 +342,11 @@ export function installDispatcher(opts: InstallOptions & { home?: string } = {})
 }
 
 export function uninstallDispatcher(opts: InstallOptions = {}): { label: string; removedPlist: boolean } {
+  if (onWindowsHost(opts)) {
+    const had = existsSync(wintask.specPath(DISPATCHER_LABEL));
+    wintask.removeSync(DISPATCHER_LABEL);
+    return { label: DISPATCHER_LABEL, removedPlist: had };
+  }
   const plistPath = plistTarget(opts.launchAgentsDir ?? defaultAgentsDir(), DISPATCHER_LABEL);
   if (opts.load !== false) (opts.launchctl ?? realLaunchctl)(["bootout", `${domain(opts.uid ?? process.getuid!())}/${DISPATCHER_LABEL}`]);
   const removedPlist = existsSync(plistPath);

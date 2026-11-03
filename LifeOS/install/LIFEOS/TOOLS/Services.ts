@@ -34,10 +34,12 @@ import { PRIVATE_SKILL_NAMES } from "./CodeDataBoundary.ts";
  */
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { isAbsolute, join } from "node:path";
 import { getClaudeDir } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
+import * as wintask from "./lib/WinTask";
 
 const IS_LINUX = process.platform === "linux";
+const IS_WINDOWS = process.platform === "win32";
 const HOME = homedir();
 const CLAUDE = getClaudeDir();
 const LIFEOS = join(CLAUDE, "LIFEOS");
@@ -114,6 +116,10 @@ export interface Svc {
   perInstance?: boolean;
   /** Document a conditional maintainer service without exposing its unshipped installer path. */
   maintainerOnly?: boolean;
+  /** Windows commands for a service whose `install` is a launchd/systemd shell script (Pulse's
+   *  manage.sh). Installers that take a spec need none: they reach Task Scheduler through
+   *  SystemdUser → lib/WinTask.ts on their own. */
+  windows?: { install: string; uninstall?: string };
 }
 
 // Canonical registry: the human-meaningful metadata. Mechanical facts (cadence,
@@ -121,7 +127,11 @@ export interface Svc {
 export const SERVICES: Svc[] = [
   { label: "com.lifeos.pulse", title: "Pulse (dashboard server)", category: "pulse", optIn: false,
     purpose: "The Life Dashboard HTTP server on :31337 — Pulse, the visible surface onto LifeOS.",
-    install: cmd("bash", join(PULSE, "manage.sh"), "install") },
+    install: cmd("bash", join(PULSE, "manage.sh"), "install"),
+    windows: {
+      install: cmd("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(PULSE, "manage.ps1"), "install"),
+      uninstall: cmd("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", join(PULSE, "manage.ps1"), "uninstall"),
+    } },
   { label: "com.lifeos.pulse-menubar", title: "Pulse menu-bar app", category: "pulse", optIn: false,
     purpose: "macOS menu-bar app for Pulse — quick status + open the dashboard.",
     install: cmd("bash", join(PULSE, "MenuBar/install.sh")) },
@@ -347,6 +357,10 @@ export const SAFE_LABEL = /^[A-Za-z0-9][A-Za-z0-9._-]{0,200}$/;
 export function defaultUninstall(label: string, opts: { linux: boolean; uid?: number } = { linux: IS_LINUX }): { code: number; out: string } {
   if (!SAFE_LABEL.test(label)) return { code: 1, out: `refusing to uninstall: unsafe service label ${JSON.stringify(label.slice(0, 80))}` };
   const rm = (p: string) => { try { rmSync(p, { force: true }); } catch { /* absent or unremovable: the launchctl/systemctl result below is the signal */ } };
+  if (IS_WINDOWS && !opts.linux) {
+    const r = wintask.removeSync(label);
+    return { code: r.ok ? 0 : 1, out: (r.err || r.out).trim() };
+  }
   if (opts.linux) {
     runArgv(["systemctl", "--user", "disable", "--now", `${label}.path`, `${label}.timer`, `${label}.service`]);
     for (const ext of ["service", "timer", "path"]) rm(join(SYSTEMD_USER, `${label}.${ext}`));
@@ -368,6 +382,19 @@ export function installerScript(install: string): string | null {
   if (argv) return argv.find((w) => /\.(?:ts|sh)$/.test(w)) ?? null;
   const m = install.match(/(\S+\.(?:ts|sh))/);
   return m ? m[1]! : null;
+}
+
+/**
+ * Can this service be scheduled on Windows? True for a row with explicit `windows` commands, and
+ * for a TypeScript installer that reaches Task Scheduler (through SystemdUser.hasUserScheduler()
+ * or lib/WinTask directly). A launchd/systemd shell script (the macOS menu-bar app) is not, and
+ * reads as unavailable rather than failing the install.
+ */
+export function windowsCapable(s: Svc): boolean {
+  if (s.windows) return true;
+  const script = installerScript(s.install);
+  if (!script?.endsWith(".ts") || !existsSync(script)) return false;
+  try { return /hasUserScheduler\(\)|wintask\./.test(readFileSync(script, "utf8")); } catch { return false; }
 }
 
 export function installExitCode(failed: number, skippedRequested: number): number {
@@ -404,7 +431,22 @@ function loadedLabelsLinux(): Set<string> {
 }
 
 export function loadedLabels(): Set<string> {
+  if (IS_WINDOWS) return wintask.loadedLabels();
   return IS_LINUX ? loadedLabelsLinux() : loadedLabelsDarwin();
+}
+
+/**
+ * Windows: the installed "unit" is the spec JSON lib/WinTask.ts (or Pulse's manage.ps1) writes
+ * beside the task. Not installed yet → the installer script stands in as "available", but only for
+ * a service that can be scheduled on Windows at all; the rest read "✗ missing", which is fact.
+ */
+function findPlistWindows(label: string): { path: string; installed: boolean } | null {
+  if (!SAFE_LABEL.test(label)) return null;
+  const spec = wintask.specPath(label);
+  if (existsSync(spec)) return { path: spec, installed: true };
+  const s = allServices().find((x) => x.label === label);
+  if (!s || !windowsCapable(s)) return null;
+  return { path: installerScript(s.windows?.install ?? s.install) ?? spec, installed: false };
 }
 
 /** Find the plist for a label: installed one wins, else a template in TOOLS/PULSE. */
@@ -454,6 +496,7 @@ function findPlistLinux(label: string): { path: string; installed: boolean } | n
 }
 
 export function findPlist(label: string): { path: string; installed: boolean } | null {
+  if (IS_WINDOWS) return findPlistWindows(label);
   return IS_LINUX ? findPlistLinux(label) : findPlistDarwin(label);
 }
 
@@ -489,6 +532,7 @@ function cadenceOfLinux(unitPath: string): string {
 }
 
 export function cadenceOf(unitPath: string): string {
+  if (IS_WINDOWS) return unitPath.endsWith(".json") ? wintask.cadenceOf(unitPath) : "—";
   return IS_LINUX ? cadenceOfLinux(unitPath) : cadenceOfDarwin(unitPath);
 }
 
@@ -542,7 +586,9 @@ if ((cmd === "status" || cmd === "list") && process.argv.includes("--json")) {
       console.log("  " + state.padEnd(13) + cad.padEnd(16) + `${s.title}  (${s.label})`);
     }
   }
-  const missingCore = REGISTRY.filter((s) => !s.optIn && !loaded.has(s.label));
+  // A core service with no scheduler path on this platform (the macOS menu-bar app on Windows) is
+  // unavailable here, not down; listing it would make the warning permanent noise.
+  const missingCore = REGISTRY.filter((s) => !s.optIn && !loaded.has(s.label) && (!IS_WINDOWS || windowsCapable(s)));
   if (missingCore.length) console.log(`\n  ⚠️ core not running: ${missingCore.map((s) => s.label).join(", ")}`);
 } else if (cmd === "doc") {
   console.log("| Service | Category | Cadence | Opt-in | Purpose | Install |");
@@ -594,7 +640,16 @@ if ((cmd === "status" || cmd === "list") && process.argv.includes("--json")) {
   let failed = 0, skipped = 0, skippedRequested = 0;
   for (const s of targets) {
     const script = installerScript(s.install);
-    if (script && script.startsWith("/") && !existsSync(script)) {
+    // Windows: a service with no Task Scheduler path (a launchd/systemd shell script) is reported
+    // unavailable on this platform, the way Linux reports the macOS menu-bar app, never run to fail.
+    if (IS_WINDOWS && !windowsCapable(s)) {
+      const requested = strict || (Boolean(onlyArg) && s.optIn);
+      console.log(`  ${s.label} … ⏭  skipped${requested ? " — REQUESTED, NOT INSTALLED" : ""} (no Windows scheduler support in this installer)`);
+      skipped++;
+      if (requested) skippedRequested++;
+      continue;
+    }
+    if (script && isAbsolute(script) && !existsSync(script)) {
       const requested = strict || (Boolean(onlyArg) && s.optIn);
       console.log(`  ${s.label} … ⏭  skipped${requested ? " — REQUESTED, NOT INSTALLED" : ""} (installer not present in this install: ${script.replace(HOME, "~")})`);
       skipped++;
@@ -602,7 +657,7 @@ if ((cmd === "status" || cmd === "list") && process.argv.includes("--json")) {
       continue;
     }
     process.stdout.write(`  ${s.label} … `);
-    const r = runCommand(s.install);
+    const r = runCommand(IS_WINDOWS && s.windows ? s.windows.install : s.install);
     if (r.code === 0) console.log("✅");
     else { console.log(`⚠️ (${r.out.split("\n").pop()})`); failed++; }
   }
@@ -625,7 +680,8 @@ if ((cmd === "status" || cmd === "list") && process.argv.includes("--json")) {
     // Linux set because WatchPaths services (derivedsync) materialize a path unit, and omitting it
     // left an enabled orphan firing into a deleted service (Max audit, 7.31.6).
     process.stdout.write(`  ${s.label} … `);
-    const r = s.uninstall ? runCommand(s.uninstall) : defaultUninstall(s.label);
+    const un = IS_WINDOWS && s.windows ? s.windows.uninstall : s.uninstall;
+    const r = un ? runCommand(un) : defaultUninstall(s.label);
     console.log(r.code === 0 ? "🧹" : `⚠️ (${r.out.split("\n").pop()})`);
     if (r.code !== 0 && !SAFE_LABEL.test(s.label)) process.exitCode = 1;
   }

@@ -52,6 +52,7 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "fs";
 import { join } from "path";
 import { homedir } from "node:os";
+import * as wintask from "./WinTask";
 
 declare const Bun: { spawn: (cmd: string[], opts?: any) => any };
 
@@ -331,6 +332,7 @@ function unitFiles(spec: UnitSpec): Array<[string, string]> {
  * re-install disables the prior unit first, so re-running is safe.
  */
 export async function install(spec: UnitSpec, log: (m: string) => void): Promise<boolean> {
+  if (wintask.isWindows()) return wintask.install(spec, log);
   // Diagnose an unreachable user manager before writing anything, so the
   // failure reads as an explanation instead of a raw dbus error.
   const mgr = await userManagerReachable();
@@ -381,6 +383,7 @@ export async function install(spec: UnitSpec, log: (m: string) => void): Promise
 
 /** Disable the primary unit and delete every file this spec created. */
 export async function uninstall(spec: UnitSpec, log: (m: string) => void): Promise<boolean> {
+  if (wintask.isWindows()) return wintask.uninstall(spec, log);
   const unit = primaryUnit(spec);
   await systemctl(["disable", "--now", unit]);
   for (const [name] of unitFiles(spec)) {
@@ -397,6 +400,7 @@ export async function uninstall(spec: UnitSpec, log: (m: string) => void): Promi
 
 /** Print whether the unit is installed and what it is doing. */
 export async function status(spec: UnitSpec, log: (m: string) => void): Promise<boolean> {
+  if (wintask.isWindows()) return wintask.status(spec, log);
   const unit = primaryUnit(spec);
   const file = join(UNIT_DIR, unit);
   if (!existsSync(file)) {
@@ -423,6 +427,16 @@ export async function status(spec: UnitSpec, log: (m: string) => void): Promise<
 /** True when this module is the right backend for the running platform. */
 export function isLinux(): boolean {
   return process.platform === "linux";
+}
+
+/**
+ * True when a spec-driven scheduler serves this platform: systemd --user on
+ * Linux, Task Scheduler on Windows (install/uninstall/status above delegate to
+ * lib/WinTask.ts there). Installers branch on this instead of isLinux() so one
+ * `linuxSpec()` covers both; darwin keeps its launchd path untouched.
+ */
+export function hasUserScheduler(): boolean {
+  return isLinux() || wintask.isWindows();
 }
 
 /** Read a plist template's log path so the systemd unit logs to the same file.

@@ -58,6 +58,32 @@ _Per-install private services are defined in `LIFEOS/USER/CONFIG/services.json` 
 
 The LifeOS install skill (`skills/LifeOS/`, `DeployComponents.ts`) stands up the core set during Setup. `Services.ts install --all` is the complete-coverage path: point a fresh macOS install at it and every service comes up, opt-ins included. `DeployComponents.ts` reads its service list from the `Services.ts` registry rather than keeping its own copy, and skips entries whose install is a `#` note (no runnable installer). On Linux, each `Install*.ts` script materializes a systemd --user unit instead of a launchd plist; launchd-only services (the menu-bar app, the deriver) report missing there.
 
+## Windows
+
+Windows has neither launchd nor systemd, so `TOOLS/lib/WinTask.ts` is the third backend. It takes the same `UnitSpec` as `lib/SystemdUser.ts`, and on `win32` SystemdUser's `install`/`uninstall`/`status` delegate to it. As a result, every installer that declares a spec (they branch on `systemd.hasUserScheduler()`) works on Windows unchanged. `InstallWorkSweep.ts`, `InstallModelSync.ts` and the Workflows dispatcher (`WORKFLOWS/engine/schedule-install.ts`) call it directly.
+
+- **Where tasks live:** tasks are registered for the current user in the `\LifeOS\` Task Scheduler folder, named by label, for example `\LifeOS\com.lifeos.derivedsync`. This needs no admin rights and creates no machine-wide state.
+- **What a task runs:** always `conhost.exe --headless bun TOOLS/lib/WinTaskRun.ts <spec.json>`, because Task Scheduler can only start a program. `WinTaskRun.ts` supplies the rest:
+  - It sets `HOME`, puts bun first on `PATH` and Git's `usr\bin` last, adds the spec's environment, and appends output to the spec's log.
+  - It respawns `daemon` jobs.
+  - It implements `watch` jobs with `fs.watch`, debounced 2 s and throttled to one run per 30 s to match the plists' ThrottleInterval.
+- **Spec records:** `LIFEOS/MEMORY/STATE/wintask/<label>.json`. `Services.ts status` reads cadence from these. It reads task state through `Get-ScheduledTask`, because `schtasks /Query` output is localized.
+- **Pulse:** `PULSE/manage.ps1 install` does four things:
+  - registers `\LifeOS\com.lifeos.pulse`, a logon trigger running `PulseStart.ps1`;
+  - writes the task's spec record;
+  - starts Pulse;
+  - removes the older root-level `LifeOS Pulse` task.
+
+  `Services.ts` reaches it through the row's `windows` commands.
+- **Not available on Windows:** the menu-bar app (Swift) and the deriver (a launchd-only shell script) are reported as unavailable, not failed.
+
+```bash
+bun ~/.claude/LIFEOS/TOOLS/Services.ts install --yes                              # core: Pulse, Conduit, model sync
+bun ~/.claude/LIFEOS/TOOLS/Services.ts install --only worksweep,derivedsync --yes
+bun ~/.claude/LIFEOS/WORKFLOWS/engine/schedule-install.ts install-dispatcher     # the Workflows clock
+schtasks /Query /TN "\LifeOS\com.lifeos.derivedsync" /V /FO LIST                 # one task, from the OS side
+```
+
 ## Examples
 
 ### One command, the whole fleet

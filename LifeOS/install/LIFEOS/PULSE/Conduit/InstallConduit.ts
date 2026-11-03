@@ -133,7 +133,7 @@ async function linuxMain(a: string | undefined): Promise<void> {
 }
 
 const arg = installVerb(process.argv, "InstallConduit")
-if (systemd.isLinux()) await linuxMain(arg)
+if (systemd.hasUserScheduler()) await linuxMain(arg)
 else if (arg === "--uninstall") uninstall()
 else if (arg === "--status") status()
 else install()

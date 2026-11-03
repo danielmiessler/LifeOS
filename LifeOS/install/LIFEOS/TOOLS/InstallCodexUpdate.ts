@@ -157,7 +157,7 @@ async function linuxMain(arg: string | undefined): Promise<void> {
 
 async function main(): Promise<void> {
   const arg = installVerb(process.argv, "InstallCodexUpdate");
-  if (systemd.isLinux()) return linuxMain(arg);
+  if (systemd.hasUserScheduler()) return linuxMain(arg);
   if (arg === "--uninstall") return uninstall();
   if (arg === "--status") return status();
   return install();

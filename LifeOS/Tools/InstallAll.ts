@@ -354,7 +354,7 @@ export function runInstall(o: InstallOpts, deps: Deps): InstallReport {
       if (svc.skippedInstallers.includes(label)) continue;
       const row = after.find((x) => x.label === label);
       if (row?.loaded) svc.loaded.push(label);
-      else if (o.platform === "linux" && row && !row.available) svc.unavailable.push(label);
+      else if ((o.platform === "linux" || o.platform === "win32") && row && !row.available) svc.unavailable.push(label);
       else svc.notLoaded.push(label);
     }
     if (svc.loaded.includes(PULSE_LABEL)) svc.pulseHealthy = deps.httpOk(PULSE_HEALTH_URL);

@@ -121,7 +121,7 @@ async function linuxMain(args: string[]): Promise<void> {
 async function main() {
   installVerb(process.argv, "InstallCommitmentSweep");
   const args = process.argv.slice(2);
-  if (systemd.isLinux()) return linuxMain(args);
+  if (systemd.hasUserScheduler()) return linuxMain(args);
   if (args.includes("--uninstall")) {
     uninstall();
     process.exit(0);
