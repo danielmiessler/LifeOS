@@ -97,7 +97,8 @@ const PLANE_ICON: Record<string, LucideIcon> = {
 
 // ── Time helpers ──
 
-const ago = (iso: string): string => {
+const ago = (iso: string | null | undefined): string => {
+  if (!iso) return "never";
   const ms = Date.now() - new Date(iso).getTime();
   if (!Number.isFinite(ms)) return "?";
   const m = Math.round(ms / 60_000);
@@ -110,7 +111,7 @@ const ago = (iso: string): string => {
   const mo = Math.round(d / 30);
   return mo < 12 ? `${mo}mo ago` : `${Math.round(mo / 12)}y ago`;
 };
-const clock = (iso: string): string => fmtClock(iso);
+const clock = (iso: string | null): string => fmtClock(iso);
 const host = (u?: string): string => {
   if (!u) return "";
   try { return new URL(u).host.replace(/^www\./, ""); } catch { return u; }
@@ -119,8 +120,8 @@ const host = (u?: string): string => {
 // ── Site health (cloud uptime) — fetched ONCE at page level so a bay card can
 // show its own uptime without a click, and the roster panel reuses the same data. ──
 
-interface SiteRow { name: string; url: string; state: string; lastCheck: string; since: string; spark: number[] }
-interface SiteHealthData { total: number; red: number; degraded: number; updatedAt: string; apps: SiteRow[]; error?: string }
+interface SiteRow { name: string; url: string; state: string; lastCheck: string | null; since: string | null; spark: number[] }
+interface SiteHealthData { total: number; red: number; degraded: number; updatedAt: string | null; apps: SiteRow[]; error?: string }
 
 const siteDim = (s: string): Dim => (s === "green" ? "ok" : s === "degraded" ? "warn" : "err");
 
@@ -175,11 +176,11 @@ function Fact({ icon: Icon, children, dim = "neutral", title }: { icon: LucideIc
   );
 }
 
-function Spark({ spark, height = 18 }: { spark: number[]; height?: number }) {
+function Spark({ spark, height = 18, className = "" }: { spark: number[]; height?: number; className?: string }) {
   const pts = spark.slice(-96);
   if (pts.length === 0) return null;
   return (
-    <span className="flex items-end gap-[1px]" style={{ height }} title={`${pts.length} checks`}>
+    <span className={`flex items-end gap-[1px] ${className}`} style={{ height }} title={`${pts.length} checks`}>
       {pts.map((v, i) => (
         <span
           key={i}
@@ -326,7 +327,7 @@ function FleetStats({ data, site, filter, onFilter }: { data: Snapshot; site: Si
         label="Uptime"
         value={site ? `${up}/${site.total}` : "…"}
         dim={site ? (site.red > 0 ? "err" : site.degraded > 0 ? "warn" : "ok") : "neutral"}
-        sub={site ? `5-min cloud monitor · checked ${ago(site.updatedAt)}` : "cloud monitor loading"}
+        sub={site ? `5-min cloud monitor · ${site.updatedAt ? `checked ${ago(site.updatedAt)}` : "no recent check"}` : "cloud monitor loading"}
         onClick={() => toggle("down")}
         active={filter === "down"}
       />
@@ -518,7 +519,7 @@ function BayCard({ app, uptime, onOpen }: { app: App; uptime: SiteRow | null; on
             dim={uptime ? siteDim(uptime.state) : "neutral"}
             title={uptime ? `${uptime.state} since ${fmtDateTime(uptime.since)} · last check ${fmtDateTime(uptime.lastCheck)}` : "not in the cloud uptime roster"}
           >
-            {uptime ? `${uptime.state === "green" ? "up" : uptime.state} ${ago(uptime.since).replace(" ago", "")}` : "no uptime monitor"}
+            {uptime ? (uptime.since ? `${uptime.state === "green" ? "up" : uptime.state} ${ago(uptime.since).replace(" ago", "")}` : `${uptime.state} · no recent check`) : "no uptime monitor"}
           </Fact>
           {app.lastCommit && (
             <Fact icon={GitCommitHorizontal} title={`${app.lastCommit.subject} — ${fmtDateTime(app.lastCommit.at)}`}>
@@ -937,11 +938,11 @@ function SiteHealthPanel({ d, err }: { d: SiteHealthData | null; err: string | n
             const col = dimVar(sd);
             const Icon = s.state === "green" ? CheckCircle2 : s.state === "degraded" ? AlertTriangle : XCircle;
             return (
-              <div key={s.name} className="flex items-center gap-3 border-b border-line-1" style={{ padding: "6px 0", fontSize: 13 }}>
+              <div key={s.name} className="flex flex-wrap sm:flex-nowrap items-center gap-x-3 gap-y-1 border-b border-line-1" style={{ padding: "6px 0", fontSize: 13 }}>
                 <Icon style={{ width: 14, height: 14, color: col, flex: "none" }} />
-                <span className="text-ink-1" style={{ flex: "none", minWidth: 200 }}>{s.name}</span>
+                <span className="text-ink-1 truncate grow-0 shrink basis-auto sm:basis-[200px] min-w-0" title={s.name}>{s.name}</span>
                 <span style={{ color: col, flex: "none", width: 84, fontSize: 12, letterSpacing: "0.06em" }}>{s.state.toUpperCase()}</span>
-                <Spark spark={s.spark} height={14} />
+                <Spark spark={s.spark} height={14} className="justify-end overflow-hidden order-last basis-full sm:order-none sm:basis-auto grow-0 shrink min-w-0" />
                 <span className="flex-1" />
                 <span className="text-ink-3 whitespace-nowrap flex items-center gap-1.5" style={{ flex: "none", fontSize: 12 }} title={`${s.state} since ${fmtDateTime(s.since)}`}>
                   <Clock style={{ width: 12, height: 12 }} />{clock(s.lastCheck)}
@@ -950,7 +951,7 @@ function SiteHealthPanel({ d, err }: { d: SiteHealthData | null; err: string | n
             );
           })}
           <div className="text-[11px] tracking-[0.12em] text-ink-3" style={{ paddingTop: 6 }}>
-            LAST CLOUD CHECK {fmtDateTime(d.updatedAt)} · the site-health worker · 5-min cron · authenticated
+            {d.updatedAt ? `LAST CLOUD CHECK ${fmtDateTime(d.updatedAt)}` : "NO RECENT CLOUD CHECK"} · the site-health worker · 5-min cron · authenticated
           </div>
         </>
       )}
@@ -1059,7 +1060,7 @@ function CloudScanPanel() {
               <span className="mono" style={{ color: dimVar(sevDim(f.severity)), flex: "none", width: 62 }}>
                 {({ critical: "CRIT", high: "HIGH", medium: "MED", low: "LOW" } as Record<string, string>)[f.severity] ?? f.severity.toUpperCase().slice(0, 4)}
               </span>
-              <span className="text-ink-1" style={{ flex: "none", minWidth: 200 }}>{f.target}</span>
+              <span className="text-ink-1 truncate" style={{ flex: "0 1 200px", minWidth: 0 }} title={f.target}>{f.target}</span>
               <span className="text-ink-2 flex-1 min-w-0">{f.check}</span>
               <span className="text-ink-3" style={{ flex: "none" }}>{f.category}</span>
             </div>

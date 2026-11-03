@@ -261,7 +261,7 @@ function securityForApp(appName: string, report: ScanReport): AppSecurity | null
 // to be a public no-auth dashboard; it's now authenticated and read here
 // server-side so the roster and uptime history stay private and live in Pulse.
 
-interface SiteHealthApp { name: string; type: string; url: string; state: string; pass: number; fail: number; updated_at: string; since: string; history?: { state: string }[] }
+interface SiteHealthApp { name: string; type: string; url: string; state: string; pass: number; fail: number; updated_at: string | null; since: string | null; history?: { state: string }[] }
 
 let siteHealthCache: { at: number; body: unknown } | null = null;
 

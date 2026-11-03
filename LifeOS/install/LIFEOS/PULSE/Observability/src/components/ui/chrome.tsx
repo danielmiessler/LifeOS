@@ -192,7 +192,7 @@ export function PanelHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("pulse-section-header flex items-center gap-2 mb-3", className)}>
+    <div className={cn("pulse-section-header flex flex-wrap items-center gap-x-2 gap-y-1.5 mb-3", className)}>
       {Icon && <Icon className="w-4 h-4 text-ink-3 shrink-0" />}
       <span
         className="text-[12px] font-semibold uppercase tracking-[0.12em] text-ink-3"
@@ -201,7 +201,7 @@ export function PanelHeader({
         {title}
       </span>
       {meta && <span className="text-[12px] text-ink-3 mono">{meta}</span>}
-      {actions && <div className="ml-auto flex items-center gap-2">{actions}</div>}
+      {actions && <div className="ml-auto flex flex-wrap items-center gap-2 min-w-0">{actions}</div>}
     </div>
   );
 }
