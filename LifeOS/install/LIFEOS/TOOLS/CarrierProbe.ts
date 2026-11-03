@@ -111,15 +111,21 @@ function runChild(): Promise<{ envelope: Record<string, unknown> | null; raw: st
     // Nested-session guard: hooks run inside Claude Code's environment.
     delete env.CLAUDECODE;
     // BILLING: subscription via OAuth — both keys outrank the OAuth token in
-    // Anthropic's precedence chain, and bun auto-loads ~/.claude/.env. Scrub.
-    delete env.ANTHROPIC_API_KEY;
-    delete env.ANTHROPIC_AUTH_TOKEN;
+    // Anthropic's precedence chain, and bun auto-loads ~/.claude/.env. Scrub,
+    // but only against the default Anthropic API: a configured
+    // ANTHROPIC_BASE_URL is the principal's explicit carrier (local LLM proxy,
+    // gateway), and scrubbing it strands the child on api.anthropic.com 401s.
+    if (!env.ANTHROPIC_BASE_URL) {
+      delete env.ANTHROPIC_API_KEY;
+      delete env.ANTHROPIC_AUTH_TOKEN;
+    }
     // Headless subprocess: never the desktop voice channel (2026-08-14 leak).
     // Unset AND `desktop` collapse to headless (public issue #1975, @emarcelcom).
     env.LIFEOS_NOTIFICATION_CHANNEL = !env.LIFEOS_NOTIFICATION_CHANNEL || env.LIFEOS_NOTIFICATION_CHANNEL === 'desktop'
       ? 'headless'
       : env.LIFEOS_NOTIFICATION_CHANNEL;
-    delete env.ANTHROPIC_BASE_URL;
+    // ANTHROPIC_BASE_URL is kept when set: the billing scrub above only runs
+    // against the default Anthropic API, where a stray key could bill per-token.
 
     const prompt =
       'Use your agent-dispatch tool (named Agent or Task) exactly once: ' +

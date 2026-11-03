@@ -210,7 +210,11 @@ function loadDotEnv(): Record<string, string> {
 
 function jobEnv(job: Job, extra: Record<string, string> = {}): NodeJS.ProcessEnv {
   const env: Record<string, string | undefined> = { ...loadDotEnv(), ...process.env };
-  delete env.CLAUDECODE; delete env.ANTHROPIC_API_KEY; delete env.ANTHROPIC_AUTH_TOKEN; delete env.ANTHROPIC_BASE_URL;
+  delete env.CLAUDECODE;
+  // A custom ANTHROPIC_BASE_URL is the principal's explicit carrier (local LLM
+  // proxy, gateway) and is kept; the key scrub only guards Anthropic billing,
+  // which is unreachable through a custom base URL.
+  if (!env.ANTHROPIC_BASE_URL) { delete env.ANTHROPIC_API_KEY; delete env.ANTHROPIC_AUTH_TOKEN; }
   env.LIFEOS_NOTIFICATION_CHANNEL = "headless";
   env.LIFEOS_ROOT = LIFEOS_ROOT;
   env.AGENTJOB_ID = job.id;
@@ -345,7 +349,7 @@ async function runDa(job: Job, prompt: string, env: NodeJS.ProcessEnv, timeoutMs
     ...claudeToolFlags(job, LIFEOS_ROOT, stateDir),
     "--append-system-prompt", JOB_SOUL,
   ];
-  log(job.id, "spawn_env_scrubbed", { scrubbed: ["CLAUDECODE", "ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL"], channel: "headless", model: args[2] });
+  log(job.id, "spawn_env_scrubbed", { scrubbed: ["CLAUDECODE", ...(env.ANTHROPIC_BASE_URL ? [] : ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN"])], channel: "headless", model: args[2] });
   return await new Promise((resolve) => {
     const proc = spawn(resolveClaudeBin(), args, { cwd: ensureJobCwd(), env, stdio: ["pipe", "pipe", "pipe"] });
     let out = "", err = "";

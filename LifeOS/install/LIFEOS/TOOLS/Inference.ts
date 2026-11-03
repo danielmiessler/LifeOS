@@ -460,9 +460,17 @@ async function inferenceAttempt(options: InferenceOptions, modelOverride?: strin
     // puts BOTH ANTHROPIC_API_KEY and ANTHROPIC_AUTH_TOKEN above CLAUDE_CODE_OAUTH_TOKEN,
     // so either one in env will silently override OAuth. Bun auto-loads ~/.claude/.env
     // into child processes, and some MCP/plugin setups export ANTHROPIC_AUTH_TOKEN —
-    // either path leaks subscription work onto API-key billing. Scrub both.
-    delete env.ANTHROPIC_API_KEY;
-    delete env.ANTHROPIC_AUTH_TOKEN;
+    // either path leaks subscription work onto API-key billing. Scrub both, but
+    // only when the default Anthropic API is the target: a configured
+    // ANTHROPIC_BASE_URL is the principal's explicit carrier (local LLM proxy,
+    // gateway), no Anthropic billing is reachable from it, and scrubbing would
+    // strand the child on api.anthropic.com with no credentials — every nested
+    // call 401s and retries until timeout (2026-11-03 local-LLM install, memory
+    // reviewer parse-failed on api_error_status=401).
+    if (!env.ANTHROPIC_BASE_URL) {
+      delete env.ANTHROPIC_API_KEY;
+      delete env.ANTHROPIC_AUTH_TOKEN;
+    }
     // Headless subprocess: never the desktop voice channel, even when spawned
     // from a terminal session whose TERM the child would inherit. Explicit
     // channels (imessage, ...) pass through. (2026-08-14 scheduled voice leak.)
@@ -472,10 +480,8 @@ async function inferenceAttempt(options: InferenceOptions, modelOverride?: strin
     env.LIFEOS_NOTIFICATION_CHANNEL = !env.LIFEOS_NOTIFICATION_CHANNEL || env.LIFEOS_NOTIFICATION_CHANNEL === 'desktop'
       ? 'headless'
       : env.LIFEOS_NOTIFICATION_CHANNEL;
-    // Also scrub ANTHROPIC_BASE_URL: a local proxy (e.g. a LiteLLM gateway) would
-    // still be targeted after the child loses its credentials above, so every
-    // nested call fails auth (401) and retries until timeout. Force real Anthropic API.
-    delete env.ANTHROPIC_BASE_URL;
+    // ANTHROPIC_BASE_URL is kept when set: the billing scrub above only runs
+    // against the default Anthropic API, where a stray key could bill per-token.
     // The CLI finds its subscription login in the macOS Keychain by USER. A workflow step or launchd job may hand the
     // child only PATH and HOME, and then every call answers "Not logged in" (a scheduled judge call
     // can fail this way on its first run).
