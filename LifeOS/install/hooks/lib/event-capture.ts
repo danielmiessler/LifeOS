@@ -19,6 +19,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname } from 'node:path';
 import { isSecretLabel, redactLabelled, redactStructured } from './label-redact';
 import { invariant } from '../../LIFEOS/TOOLS/Invariant';
+import { hasPosixModes } from './portable-path';
 
 /** Extra text redacted past the cut point before truncating. A token that starts
  * inside the kept window and runs past it is still a shape match on this span,
@@ -130,7 +131,8 @@ export function ensurePrivateDir(dir: string): void {
   mkdirSync(dir, { recursive: true, mode: PRIVATE_DIR_MODE });
   const mode = statSync(dir).mode & 0o777;
   if (mode & 0o077) chmodSync(dir, mode & PRIVATE_DIR_MODE);
-  invariant((statSync(dir).mode & 0o077) === 0, 'private record directory is owner-only');
+  // Windows reports 0o666 for every directory; the profile ACL keeps it private there.
+  if (hasPosixModes()) invariant((statSync(dir).mode & 0o077) === 0, 'private record directory is owner-only');
 }
 
 /** appendPrivateLine into a private directory: the file is 0600 and its directory owner-only,
@@ -138,7 +140,7 @@ export function ensurePrivateDir(dir: string): void {
 export function appendPrivateRecord(filePath: string, record: unknown): void {
   ensurePrivateDir(dirname(filePath));
   appendPrivateLine(filePath, record);
-  invariant((statSync(filePath).mode & 0o777) === PRIVATE_MODE, 'private record file is 0600');
+  if (hasPosixModes()) invariant((statSync(filePath).mode & 0o777) === PRIVATE_MODE, 'private record file is 0600');
 }
 
 // ── Settings snapshot diff (ConfigChange) ─────────────────────────────────

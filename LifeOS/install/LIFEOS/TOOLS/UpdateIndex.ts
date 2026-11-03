@@ -17,6 +17,7 @@ import { join, basename, dirname } from "path";
 import { parse as parseYaml } from "yaml";
 import { getLifeosDir } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { assertSafeDestination, writeFileNoFollow } from "./lib/NoFollowWrite";
+import { rootRelativeKey } from "../../hooks/lib/portable-path";
 
 const LIFEOS_DIR = getLifeosDir();
 const UPDATES_DIR = join(LIFEOS_DIR, "MEMORY/SYSTEMUPDATES");
@@ -140,7 +141,7 @@ async function parseUpdateFile(filePath: string): Promise<UpdateRecord | null> {
       tags: frontmatter.tags || [],
       files_affected: frontmatter.files_affected || [],
       summary,
-      file_path: filePath.replace(UPDATES_DIR + "/", ""),
+      file_path: rootRelativeKey(UPDATES_DIR, filePath) ?? filePath,
     };
   } catch (error) {
     console.error(`Error parsing ${filePath}:`, error);
@@ -194,7 +195,7 @@ function parseFromMarkdown(filePath: string, content: string): UpdateRecord | nu
     tags: [],
     files_affected: [],
     summary,
-    file_path: filePath.replace(UPDATES_DIR + "/", ""),
+    file_path: rootRelativeKey(UPDATES_DIR, filePath) ?? filePath,
   };
 }
 

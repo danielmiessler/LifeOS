@@ -39,6 +39,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 
 import { invariant } from "./Invariant";
+import { hasPosixModes } from "../../hooks/lib/portable-path";
 import { getClaudeDir } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 
 const ENV_PATH = process.env.LIFEOS_SECRETS_ENV ?? join(getClaudeDir(), ".env");
@@ -320,7 +321,8 @@ async function cmdSet(key: string | undefined): Promise<void> {
   invariant([...namesBefore].every((n) => namesAfter.includes(n)), "setting one key must keep every other key");
   mkdirSync(dirname(target), { recursive: true });
   writeAtomic(target, after, 0o600);
-  invariant((statSync(target).mode & 0o777) === 0o600, ".env must be mode 0600 after set");
+  // Windows reports 0o666 whatever was set; the profile ACL keeps .env private there.
+  if (hasPosixModes()) invariant((statSync(target).mode & 0o777) === 0o600, ".env must be mode 0600 after set");
   console.log(`✓ set ${key} in ${ENV_PATH} (mode 600; value not shown)`);
 
   // Reseal whenever this machine seals; a machine that never set up sealing is told how, not failed.

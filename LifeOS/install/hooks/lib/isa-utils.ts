@@ -25,6 +25,7 @@ import { join, basename } from 'path';
 import { createHash } from 'crypto';
 import { parseIsaClaimsText, isaBody, claimText, stripBulletPrefix, BRIDGE_HEADING_RE } from '../../LIFEOS/TOOLS/lib/IsaClaims';
 import { lifeosPath } from './paths';
+import { rootRelativeKey } from './portable-path';
 import { appendWorkEvents, diffRegistry, foldToSnapshot, readLiveRegistry, workEventsPath } from './work-events';
 import { PHASE_TO_ASCENT, ascentTag, deriveAscent, isRunActive } from '../../LIFEOS/TOOLS/ascent';
 
@@ -759,7 +760,7 @@ export function writeRegistry(reg: { sessions: Record<string, any> }, src?: stri
 export function syncToWorkJson(fm: Record<string, string>, isaPath: string, content?: string, sessionId?: string): void {
   if (!fm.slug) return;
   const lifeosDir = lifeosPath();
-  const relativeIsa = isaPath.replace(lifeosDir + '/', '');
+  const relativeIsa = rootRelativeKey(lifeosDir, isaPath) ?? isaPath;
   const registry = readRegistry();
 
   // Wave 1 (2026-05-23): frontmatter field-name normalization. ISAs in the wild
