@@ -1,6 +1,6 @@
 import { mkdirSync, readdirSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { availableParallelism } from "node:os";
-import { join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { invariant } from "../TOOLS/Invariant";
 import { mtime, readText } from "./Cache";
 import { wakePaths, type State } from "./State";
@@ -21,6 +21,11 @@ export class Admission {
     state.cache.path(this.name);
     this.directory = join(state.cache.root, "inflight");
     this.lock = join(this.directory, `render-${state.session}.lock`);
+  }
+
+  /** A render lock sits directly in inflight/. Tested with dirname, not a "/" prefix: on Windows join() separates with a backslash. */
+  private scoped(path: string): boolean {
+    return dirname(path) === this.directory && basename(path).startsWith("render-");
   }
 
   enter(): string | null {
@@ -49,7 +54,7 @@ export class Admission {
   }
 
   private acquire(): boolean {
-    invariant(this.lock.startsWith(this.directory + "/render-"), "render lock must be scoped to inflight");
+    invariant(this.scoped(this.lock), "render lock must be scoped to inflight");
     try { mkdirSync(this.lock, { mode: 0o700 }); } catch { return false; }
     this.owned = true;
     try { writeFileSync(join(this.lock, "pid"), `${process.pid}\n`, { mode: 0o600, flag: "wx" }); }
@@ -58,7 +63,7 @@ export class Admission {
   }
 
   private reap(path: string): void {
-    invariant(path.startsWith(this.directory + "/render-") && path.endsWith(".lock"), "only render locks can be reaped");
+    invariant(this.scoped(path) && path.endsWith(".lock"), "only render locks can be reaped");
     // Rename to an unoccupied path, never move a directory into another lock directory.
     const tombstone = `${path}.tmp.${process.pid}.${crypto.randomUUID()}`;
     try { renameSync(path, tombstone); } catch { return; }
@@ -66,7 +71,7 @@ export class Admission {
   }
 
   release(): void {
-    invariant(this.lock.startsWith(this.directory + "/render-"), "release must stay in inflight");
+    invariant(this.scoped(this.lock), "release must stay in inflight");
     if (!this.owned) return;
     this.owned = false;
     if (readText(join(this.lock, "pid"))?.trim() === String(process.pid)) this.reap(this.lock);

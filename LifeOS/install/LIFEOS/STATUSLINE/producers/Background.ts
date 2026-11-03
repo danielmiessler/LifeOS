@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, rmSync, rmdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, isAbsolute, join, sep } from "node:path";
 import { invariant, InvariantViolation } from "../../TOOLS/Invariant";
 import { mtime, readText, type Cache } from "../Cache";
 
@@ -96,7 +96,8 @@ function tryMkdir(path: string): boolean {
  */
 export function acquireLock(cache: Cache, name: string, staleAfter: number): Lock | null {
   const path = cache.path(name);
-  invariant(path.startsWith(cache.root + "/") && staleAfter > 0, "refresh locks live directly in the cache root");
+  // dirname, not a "/" prefix: on Windows cache.path() joins with "\\" (the prefix check failed every refresh there).
+  invariant(dirname(path) === cache.root && staleAfter > 0, "refresh locks live directly in the cache root");
   const ownerFile = join(path, "owner");
   if (!tryMkdir(path)) {
     if (cache.now - mtime(path) < staleAfter) return null;
@@ -111,7 +112,7 @@ export function acquireLock(cache: Cache, name: string, staleAfter: number): Loc
     path,
     release() {
       if (!held.delete(lock)) return;
-      invariant(path.startsWith(cache.root + "/"), "a lock release stays in the cache root");
+      invariant(path.startsWith(cache.root + sep), "a lock release stays in the cache root");
       if (readText(ownerFile)?.trim() !== token) return;
       rmSync(ownerFile, { force: true });
       try { rmdirSync(path); } catch { /* already gone */ }
@@ -166,13 +167,13 @@ export async function runRefreshes(jobs: readonly RefreshJob[], deadlineMs: numb
 /** A mutex whose holder writes its pid. `reapable` decides, from the recorded owner and the lock's age, whether an existing holder is dead. */
 export function acquireOwnedLock(cache: Cache, name: string, reapable: (owner: number | null, age: number) => boolean): Lock | null {
   const path = cache.path(name);
-  invariant(path.startsWith(cache.root + "/"), "refresh locks live directly in the cache root");
+  invariant(path.startsWith(cache.root + sep), "refresh locks live directly in the cache root");
   return acquireOwnedLockAt(path, cache.now, reapable);
 }
 
 /** The same mutex at an absolute path, for caches an environment variable moves out of the cache root. */
 export function acquireOwnedLockAt(path: string, now: number, reapable: (owner: number | null, age: number) => boolean): Lock | null {
-  invariant(path.startsWith("/") && path.endsWith(".lock"), "an owned lock is an absolute .lock directory");
+  invariant(isAbsolute(path) && path.endsWith(".lock"), "an owned lock is an absolute .lock directory");
   const pidFile = join(path, "pid");
   if (!tryMkdir(path)) {
     const text = readText(pidFile)?.trim() ?? "";

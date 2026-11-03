@@ -1,5 +1,5 @@
 import { chmodSync, closeSync, fstatSync, lstatSync, mkdirSync, openSync, readFileSync, readSync, readdirSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
-import { isAbsolute, join } from "node:path";
+import { isAbsolute, join, sep } from "node:path";
 import { invariant } from "../TOOLS/Invariant";
 
 export function readText(path: string): string | null {
@@ -110,7 +110,7 @@ export class Cache {
 
   remove(name: string): void {
     const path = this.path(name);
-    invariant(path.startsWith(this.root + "/"), "cache removal must stay in its root");
+    invariant(path.startsWith(this.root + sep), "cache removal must stay in its root");
     try { unlinkSync(path); } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }

@@ -2,7 +2,9 @@
 # LifeOS status line. The renderer is LIFEOS/STATUSLINE/Render.ts, one Bun process (see LIFEOS/STATUSLINE/README.md);
 # this file stays the entry point settings, the installer and the tests call. Shared data is refreshed by the
 # statusline-refresh Workflow, so a render only reads caches. The pre-port bash renderer is in git at d4b212f2f.
-case "$0" in */*) dir="${0%/*}" ;; *) dir=. ;; esac
+# A Windows statusLine.command may hold a backslash path. The pattern *\\* does not match one in Git Bash (MSYS), a quoted variable does.
+bs='\'
+case "$0" in */*) dir="${0%/*}" ;; *"$bs"*) dir="${0%"$bs"*}" ;; *) dir=. ;; esac
 bun="$(command -v bun 2>/dev/null)"
 if [ -z "$bun" ]; then
     for b in /opt/homebrew/bin/bun /usr/local/bin/bun "$HOME/.bun/bin/bun" /usr/bin/bun; do

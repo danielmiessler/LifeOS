@@ -1,5 +1,5 @@
 import { constants, accessSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import { invariant } from "../../TOOLS/Invariant";
 import { object, string, type State } from "../State";
 import { mtime, type Cache } from "../Cache";
@@ -144,7 +144,7 @@ export function herdrWaitRefresh(lifeosRoot: string): RefreshJob | null {
 }
 
 function pruneHerdr(cache: Cache, name: string): void {
-  invariant(name.startsWith("herdr-") && cache.path(name).startsWith(cache.root + "/"), "herdr pruning stays on herdr files in the cache root");
+  invariant(name.startsWith("herdr-") && cache.path(name).startsWith(cache.root + sep), "herdr pruning stays on herdr files in the cache root");
   cache.remove(name);
 }
 
