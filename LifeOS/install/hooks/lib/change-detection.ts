@@ -7,8 +7,9 @@
  */
 
 import { readFileSync, existsSync } from 'fs';
-import { join, relative, basename } from 'path';
+import { join, basename } from 'path';
 import { getLifeosDir, getClaudeDir } from './paths';
+import { isWithin, rootRelativeKey } from './portable-path';
 
 // ============================================================================
 // Types
@@ -188,12 +189,12 @@ export function parseToolUseBlocks(transcriptPath: string): FileChange[] {
  * changes (public issue #1797, @Steffen025).
  */
 function isUnderDir(p: string, root: string): boolean {
-  return p === root || p.startsWith(root + '/');
+  return isWithin(p, root);
 }
 
 function normalizeToRelativePath(absolutePath: string): string {
   if (isUnderDir(absolutePath, LIFEOS_DIR)) {
-    return relative(LIFEOS_DIR, absolutePath);
+    return rootRelativeKey(LIFEOS_DIR, absolutePath) ?? absolutePath;
   }
   return absolutePath;
 }

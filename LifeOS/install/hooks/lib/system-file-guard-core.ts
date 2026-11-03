@@ -19,11 +19,12 @@
  */
 
 import { readFileSync, existsSync, realpathSync, lstatSync, readlinkSync } from "node:fs";
-import { basename, dirname, isAbsolute, join, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, parse, resolve, sep } from "node:path";
 import { homedir } from "node:os";
 import { createHash } from "node:crypto";
 import { isContained, isPatternAllowlisted, relativeToClaudeRoot } from "./containment-zones";
 import { getClaudeDir } from "./paths";
+import { isWithin } from "./portable-path";
 
 /**
  * The guarded roots (deny side), resolved at call time. Two, deduplicated: the
@@ -46,7 +47,8 @@ export function guardRoots(): string[] {
 export function rootFor(absolutePath: string): string | null {
   let best: string | null = null;
   for (const root of guardRoots()) {
-    const inside = absolutePath === root || absolutePath.startsWith(root + "/");
+    // A path test, not a string test: on Windows `root + "/"` never prefixed a real path, so the guard found no tree.
+    const inside = isWithin(absolutePath, root);
     if (inside && (best === null || root.length > best.length)) best = root;
   }
   return best;
@@ -169,7 +171,14 @@ const MAX_LINK_HOPS = 40;
 
 /** Path components as written: empty and `.` segments dropped, `..` KEPT for the physical walk. */
 function rawComponents(p: string): string[] {
-  return p.split("/").filter((c) => c !== "" && c !== ".");
+  // Windows takes a backslash and "/" alike.
+  return p.split(sep === "\\" ? /[\\/]/ : "/").filter((c) => c !== "" && c !== ".");
+}
+
+/** The filesystem root `p` starts at (`/`, `C:\`, `\\host\share\`), in native separators. */
+function fsRoot(p: string): string {
+  const r = parse(p).root;
+  return sep === "\\" ? r.replace(/\//g, sep) : r;
 }
 
 /**
@@ -186,15 +195,16 @@ function rawComponents(p: string): string[] {
  */
 export function realpathDeepest(p: string): string | null {
   if (!p) return null;
-  const start = isAbsolute(p) ? p : `${process.cwd()}/${p}`;
-  const queue = rawComponents(start);
-  let cur = "/";
+  const start = isAbsolute(p) ? p : `${process.cwd()}${sep}${p}`;
+  // Walk from the path's own root: on Windows a walk from "/" made "C:" a component that never exists.
+  let cur = fsRoot(start);
+  const queue = rawComponents(start.slice(parse(start).root.length));
   let exists = true;
   let hops = 0;
   while (queue.length > 0) {
     const c = queue.shift()!;
     if (c === "..") { cur = dirname(cur); continue; } // `cur` is physical while `exists`: its dirname is the real parent
-    const next = cur === "/" ? `/${c}` : `${cur}/${c}`;
+    const next = cur.endsWith(sep) ? `${cur}${c}` : `${cur}${sep}${c}`;
     if (!exists) { cur = next; continue; }
     let isLink = false;
     try {
@@ -211,14 +221,14 @@ export function realpathDeepest(p: string): string | null {
     let target: string;
     try { target = readlinkSync(next); } catch { return null; }
     // The link's target replaces it; a relative target resolves from the link's own directory (`cur`).
-    if (isAbsolute(target)) cur = "/";
-    queue.unshift(...rawComponents(target));
+    if (isAbsolute(target)) cur = fsRoot(target);
+    queue.unshift(...rawComponents(isAbsolute(target) ? target.slice(parse(target).root.length) : target));
   }
   return cur;
 }
 
 function insideRoot(p: string, root: string): boolean {
-  return p === root || p.startsWith(root.endsWith("/") ? root : root + "/");
+  return isWithin(p, root);
 }
 
 /**

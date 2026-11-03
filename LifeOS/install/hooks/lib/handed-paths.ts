@@ -7,6 +7,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import type { Channel } from "./handoff-state";
+import { isWithin } from "./portable-path";
 
 export type Roots = { downloads: string; desktop: string };
 export type HandedCall = { tool_name?: string; tool_input?: Record<string, unknown>; cwd?: string };
@@ -32,7 +33,7 @@ export function rootOf(abs: string, roots: Roots): "downloads" | "desktop" | nul
   const c = canon(abs);
   for (const [name, root] of [["downloads", roots.downloads], ["desktop", roots.desktop]] as const) {
     const cr = canon(root);
-    for (const a of [abs, c]) for (const r of [root, cr]) if (a === r || a.startsWith(r + "/")) return name;
+    for (const a of [abs, c]) for (const r of [root, cr]) if (isWithin(a, r)) return name;
   }
   return null;
 }
