@@ -24,8 +24,9 @@ import {
 } from "node:fs"
 import { randomUUID } from "node:crypto"
 import { hostname } from "node:os"
-import { basename, dirname, isAbsolute, join, sep } from "node:path"
+import { basename, dirname, isAbsolute, join, type PlatformPath } from "node:path"
 import { invariant, InvariantViolation } from "../Invariant"
+import { hasPosixModes, isWithin, nativePath } from "../../../hooks/lib/portable-path"
 import {
   isVerificationCode as labelIsVerificationCode,
   redactLabelled,
@@ -34,11 +35,15 @@ import {
 
 // ── confinedPath ─────────────────────────────────────────────────────────────
 
-function within(real: string, realRoot: string): boolean {
-  if (real === realRoot) return true
-  const prefix = realRoot.endsWith(sep) ? realRoot : realRoot + sep
-  return real.startsWith(prefix)
+/** The filesystem and path flavour confinedPath walks; tests inject path.win32 and a fake tree. */
+export interface ConfinedPathHost {
+  path: PlatformPath
+  realpath(p: string): string
+  lstat(p: string): { isSymbolicLink(): boolean; isDirectory(): boolean }
+  stat(p: string): { isDirectory(): boolean }
 }
+
+const nodeHost: ConfinedPathHost = { path: nativePath, realpath: realpathSync, lstat: lstatSync, stat: statSync }
 
 function errCode(e: unknown): string | undefined {
   return (e as NodeJS.ErrnoException | undefined)?.code
@@ -46,24 +51,33 @@ function errCode(e: unknown): string | undefined {
 
 /**
  * The real path `p` names when it stays inside `root`, or null. A relative `p` is walked from the
- * real root and refused the moment it leaves it; an absolute `p` is walked from `/` and judged by
- * where it lands. Each existing component is resolved through the filesystem, so `link/../x` with
+ * real root and refused the moment it leaves it; an absolute `p` is walked from its own filesystem
+ * root (`/`, `C:\`, `\\host\share\`) and judged by where it lands. Each existing component is resolved through the filesystem, so `link/../x` with
  * `link` pointing outside goes where the kernel would go. After the first missing component the
  * rest is appended as written. Refused (null): a missing root, `..` after a missing component, a
  * dangling or looping symlink, a component under a file, and any result outside the root.
  */
-export function confinedPath(root: string, p: string): string | null {
+export function confinedPath(root: string, p: string, host: ConfinedPathHost = nodeHost): string | null {
   if (typeof root !== "string" || root === "" || typeof p !== "string") return null
+  const { sep, dirname, join } = host.path
+  // Containment is a path test: separators, trailing separators and (NTFS) case do not matter.
+  const within = (real: string, realRoot: string) => isWithin(real, realRoot, host.path)
   let realRoot: string
-  try { realRoot = realpathSync(root) } catch { return null }
+  try { realRoot = host.realpath(root) } catch { return null }
 
-  const relative = !isAbsolute(p)
-  let cur = relative ? realRoot : sep
+  // Windows accepts "/" too ("C:/Users/x" is common from Git Bash and bun). Only the separators are
+  // rewritten; ".." is never folded lexically, it is taken from the real parent below.
+  if (sep === "\\") p = p.replace(/\//g, sep)
+  const relative = !host.path.isAbsolute(p)
+  // An absolute path starts at its own filesystem root ("/" on POSIX, "C:\" or "\\host\share\" on
+  // Windows). Starting at a bare separator made "C:" a component under "\", which never exists.
+  const start = relative ? "" : host.path.parse(p).root
+  let cur = relative ? realRoot : start
   let curIsDir = true
   let missing = false
   const tail: string[] = []
 
-  for (const comp of p.split(sep)) {
+  for (const comp of p.slice(start.length).split(sep)) {
     if (comp === "" || comp === ".") continue
     if (missing) {
       if (comp === "..") return null
@@ -74,15 +88,15 @@ export function confinedPath(root: string, p: string): string | null {
     if (comp === "..") {
       cur = dirname(cur)
     } else {
-      const next = cur === sep ? sep + comp : cur + sep + comp
+      const next = cur.endsWith(sep) ? cur + comp : cur + sep + comp
       let st
-      try { st = lstatSync(next) } catch (e) {
+      try { st = host.lstat(next) } catch (e) {
         if (errCode(e) === "ENOENT") { missing = true; tail.push(comp); continue }
         return null
       }
       if (st.isSymbolicLink()) {
-        try { cur = realpathSync(next) } catch { return null }
-        try { curIsDir = statSync(cur).isDirectory() } catch { return null }
+        try { cur = host.realpath(next) } catch { return null }
+        try { curIsDir = host.stat(cur).isDirectory() } catch { return null }
       } else {
         cur = next
         curIsDir = st.isDirectory()
@@ -159,7 +173,11 @@ export function atomicWrite(path: string, data: string | Uint8Array, opts: Atomi
       let off = 0
       while (off < bytes.length) off += writeSync(fd, bytes, off, bytes.length - off)
       fsyncSync(fd)
-      invariant((fstatSync(fd).mode & 0o777) === mode, `atomicWrite: temp file mode is not 0o${mode.toString(8)}`)
+      // Windows has no POSIX permission bits (stat reports 0o666 whatever was asked); access there is
+      // governed by the ACL the user profile already carries, so the mode check only means something elsewhere.
+      if (hasPosixModes()) {
+        invariant((fstatSync(fd).mode & 0o777) === mode, `atomicWrite: temp file mode is not 0o${mode.toString(8)}`)
+      }
     } finally {
       closeSync(fd)
     }

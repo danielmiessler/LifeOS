@@ -59,7 +59,8 @@ import {
 import { InvariantViolation, invariant } from "./Invariant";
 import { getClaudeDir } from "./Paths"; // public issue #1665 @rogdex24, #1584 @ramazanpolat — aliased resolve sites missed by the 09-03 sweep
 import { spawnSync } from "node:child_process";
-import { dirname, relative, resolve as pathResolve } from "node:path";
+import { dirname, resolve as pathResolve, type PlatformPath } from "node:path";
+import { hasPosixModes, nativePath, rootRelativeKey } from "../../hooks/lib/portable-path";
 import { appendEvent, archiveContent, entriesHash, foldState, readRows, sha256, type AppendResult } from "./lib/CortexLedgerCore";
 import { isInstructionShaped } from "./InjectionShapes";
 import { assertInsideUserData } from "./lib/ForeignDataCheck";
@@ -586,16 +587,33 @@ function tightenMode(p: string, want: number): void {
   if ((st.mode & 0o777 & ~want) !== 0) chmodSync(p, st.mode & 0o777 & want);
 }
 
+/**
+ * Where the snapshot of `absPath` goes: `<snapshotDir>/<base>__<stamp>.md`, with `base` its file name
+ * without `.md`. Taking the name with split("/") returned the whole path on Windows, which escaped the
+ * snapshot directory. Exported so a test can pass `path.win32` on any platform.
+ */
+export function snapshotTarget(snapshotDir: string, absPath: string, stamp: string, p: PlatformPath = nativePath): { base: string; target: string } {
+  const base = p.basename(absPath).replace(/\.md$/, "");
+  return { base, target: p.resolve(snapshotDir, `${base}__${stamp}.md`) };
+}
+
+/** The ledger's key for a memory file: root-relative with "/" on every platform (the absolute path when outside the root). */
+export function ledgerKey(abs: string, root: string = CLAUDE_ROOT, p: PlatformPath = nativePath): string {
+  return rootRelativeKey(root, abs, p) ?? abs;
+}
+
 function snapshotBeforeWrite(absPath: string, priorContent: string): void {
   try {
-    const base = absPath.split("/").pop()!.replace(/\.md$/, "");
     const stamp = new Date().toISOString().replace(/[:.]/g, "-");
-    const target = pathResolve(SNAPSHOT_DIR, `${base}__${stamp}.md`);
+    const { base, target } = snapshotTarget(SNAPSHOT_DIR, absPath, stamp);
     invariant(dirname(target) === SNAPSHOT_DIR && base.length > 0, `snapshot target ${target} must sit directly in ${SNAPSHOT_DIR}`);
     // A ring created by an older build (0755 / 0644) is tightened before the new copy lands in it.
     if (existsSync(SNAPSHOT_DIR)) tightenMode(SNAPSHOT_DIR, SNAPSHOT_DIR_MODE);
     boundaryAtomicWrite(target, priorContent, { mode: SNAPSHOT_FILE_MODE, dirMode: SNAPSHOT_DIR_MODE });
-    invariant((statSync(SNAPSHOT_DIR).mode & 0o777 & ~SNAPSHOT_DIR_MODE) === 0, `snapshot dir ${SNAPSHOT_DIR} is wider than 0700`);
+    // No POSIX permission bits on Windows (stat reports 0o666 for files and directories); the profile ACL applies instead.
+    if (hasPosixModes()) {
+      invariant((statSync(SNAPSHOT_DIR).mode & 0o777 & ~SNAPSHOT_DIR_MODE) === 0, `snapshot dir ${SNAPSHOT_DIR} is wider than 0700`);
+    }
     // Trim the ring: keep the newest SNAPSHOT_RING per base file; tighten the survivors.
     const mine = readdirSync(SNAPSHOT_DIR)
       .filter((f: string) => f.startsWith(`${base}__`))
@@ -685,7 +703,7 @@ function logRejectedWrite(
     appendEvent({
       kind: "memory/rejected",
       ts: new Date().toISOString(),
-      file: filePath.replace(CLAUDE_ROOT + "/", ""),
+      file: ledgerKey(filePath),
       updated_by: options.updatedBy ?? "unknown",
       ...(options.sessionId ? { session_id: options.sessionId } : {}),
       ...(options.runId ? { run_id: options.runId } : {}),
@@ -734,7 +752,9 @@ function gitHeadContent(abs: string): { sha: string; content: string; committedA
     const top = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: dirname(real), encoding: "utf8", env });
     if (top.status !== 0) return null;
     const repo = realpathSync(top.stdout.trim());
-    const path = relative(repo, real);
+    // A `HEAD:<path>` spec takes "/" on every platform; a backslash path never resolves on Windows.
+    const path = rootRelativeKey(repo, real);
+    if (path === null) return null;
     const head = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf8", env });
     const show = spawnSync("git", ["show", `HEAD:${path}`], { cwd: repo, encoding: "utf8", env, maxBuffer: 16 * 1024 * 1024 });
     const when = spawnSync("git", ["log", "-1", "--format=%cI", "--", path], { cwd: repo, encoding: "utf8", env });
@@ -863,7 +883,7 @@ export function adoptLive(filePath: string, opts: { updatedBy: string; sessionId
   if (!existsSync(abs)) return { ok: false, code: "EINVAL_PATH", message: `Memory file does not exist: ${abs}` };
   const result = withLock(abs, (): AdoptResult => {
     const content = readFileSync(abs, "utf8");
-    const rel = abs.replace(CLAUDE_ROOT + "/", "");
+    const rel = ledgerKey(abs);
     const drift = inspectDrift(rel, content, parseMemoryContent(content).entries);
     if (drift === null) return { ok: true, adopted: false, file: rel };
     if (drift.invalid.length > 0) {
@@ -962,7 +982,7 @@ export function setEntries(
     const parsed = parseMemoryContent(content);
     const priorEntries = parsed.entries;
     const newEntries = validated.accepted;
-    const rel = abs.replace(CLAUDE_ROOT + "/", "");
+    const rel = ledgerKey(abs);
 
     // Drift check (curated ⟺ folded): when an out-of-band writer changed the
     // entries region, adopt that edit as a ledger event first, so the guards
@@ -1182,7 +1202,7 @@ export function restoreContent(
   const abs = pathCheck.abs;
 
   const result = withLock(abs, () => {
-    const rel = abs.replace(CLAUDE_ROOT + "/", "");
+    const rel = ledgerKey(abs);
     // A restore is recovery, not curation, but recovery content predating a redaction must not resurrect it.
     const tombstoned = tombstonedIn(parseMemoryContent(content).entries);
     if (tombstoned.length > 0) return redactedRefusal(tombstoned, "restore content");

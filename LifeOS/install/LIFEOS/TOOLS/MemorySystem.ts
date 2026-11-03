@@ -57,6 +57,7 @@ import {
 } from "node:fs";
 import { getClaudeDir } from "./Paths"; // public issue #1665 @rogdex24, #1584 @ramazanpolat — aliased resolve sites missed by the 09-03 sweep
 import { basename, dirname, resolve as pathResolve, join as pathJoin, sep as pathSep } from "node:path";
+import { rootRelativeKey } from "../../hooks/lib/portable-path";
 import { homedir, hostname, tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 
@@ -135,7 +136,7 @@ function logTierBWrite(filePath: string, bytes: number, type: MemoryTypeName): v
       TIER_B_AUDIT_PATH,
       JSON.stringify({
         ts: new Date().toISOString(),
-        file: filePath.replace(CLAUDE_ROOT + "/", ""),
+        file: rootRelativeKey(CLAUDE_ROOT, filePath) ?? filePath,
         bytes_written: bytes,
         type,
       }) + "\n",
@@ -189,7 +190,7 @@ function logLockEvent(event: "stale_lock_recovered" | "lock_contended", lockPath
         pid: process.pid,
         event,
         reason,
-        lock: lockPath.replace(CLAUDE_ROOT + "/", ""),
+        lock: rootRelativeKey(CLAUDE_ROOT, lockPath) ?? lockPath,
         detail,
       }) + "\n",
       "utf8",

@@ -250,6 +250,15 @@ Every Tier-A write calls `snapshotBeforeWrite` — the prior file content is cop
 
 `MemoryHealthCheck.ts` (run on Stop by `MemoryHealthGate.hook.ts`) detects both legacy memory pressure and the evidence-driven Cortex failure classes. Cap pressure at `≥44/48` warns and any `EAT_CAP` dispatch drop is CRITICAL. Independently, the latest reviewer run overrides prior successes: failed, parse-failed, timed-out, malformed, or schema-invalid evidence is CRITICAL; stale or absent evidence warns. Retrieval staleness, proposal backlog, observability retention, and optional-index freshness warn at the thresholds in [`CortexContract.md`](./CortexContract.md), while an invalid or mismatched existing index is CRITICAL. Verified `no-index-v1` remains healthy.
 
+**Windows: every write refused at the boundary.** Before `hooks/lib/portable-path.ts`, every reviewer run failed on Windows. `reviewer-failed-items.jsonl` filled with `EWRITE_FAILED: memory write refused at the system/user boundary: target C:\...\PRINCIPAL_MEMORY.md does not resolve inside the USER_DATA repo`, and knowledge and idea notes failed the same way. Four POSIX assumptions caused it:
+
+- `Boundary.confinedPath` walked `C:\` paths from `\`.
+- The snapshot name came from `split("/")`.
+- Two invariants asserted `0600`/`0700` modes, which NTFS never reports.
+- Ledger rows were keyed with `replace(ROOT + "/")`, so `CortexLedger verify` could not match them.
+
+To diagnose, run `bun LIFEOS/TOOLS/MemoryHealthCheck.ts`, read the tail of `MEMORY/OBSERVABILITY/reviewer-failed-items.jsonl`, then run `bun LIFEOS/TOOLS/CortexLedger.ts verify`. Items parked by such a failure are `EWRITE` rows, and `ParkedReplay.ts` replays only `EDRIFT` rows, so review them one at a time instead of replaying in bulk. In new code, use `isWithin`, `rootRelativeKey` and `hasPosixModes` from `portable-path.ts` in place of `startsWith(root + "/")`, `replace(ROOT + "/", "")`, `split("/").pop()` and mode-bit asserts.
+
 ### Superseded
 
 The 2026-05-28 `<autonomic-memory>` frozen banner (emitted by `MemoryReviewTrigger`, retired/merged 2026-07-11) and the every-turn `OutputFormatGate` (retired/merged 2026-07-11) heartbeat *enforcement* are gone. The banner was model-noise; the enforcement made an every-turn line mandatory and failed compliance repeatedly. Both replaced by the change-only hook-fed surfaces above plus the deterministic `🧠 MEM` statusline.
