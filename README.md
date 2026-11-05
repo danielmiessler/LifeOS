@@ -49,6 +49,12 @@ Stars help more people find the project and keep it moving. It takes one click.
 
 </div>
 
+## ⚠️ Your Security Is Your Responsibility
+
+LifeOS is fundamentally one person's personal AI harness, published as-is, and it is constantly in flux: security features are added, enhanced, removed, modified and adjusted from release to release. **The security of any LifeOS component, and of the system as a whole, is not guaranteed. Responsibility for the security of your system is yours, not the LifeOS authors' or contributors'.**
+
+Before anything is installed, the installer asks: *"Do you understand that you are responsible for the security of your own system and that we are not responsible?"* It goes ahead only if you answer yes. See [SECURITY.md](./SECURITY.md).
+
 ## Install
 
 **Give it to your AI.** LifeOS is installed *by* an AI, so the install is just a prompt. Paste this into your AI coding harness — Claude Code, Cursor, Codex, Hermes, or any capable agent — and it does the whole setup for you:
