@@ -65,7 +65,16 @@ function loadEnv(): Record<string, string> {
 
 const env = loadEnv()
 const API_KEY = process.env.PERPLEXITY_API_KEY || env.PERPLEXITY_API_KEY
-const API_URL = 'https://api.perplexity.ai/chat/completions'
+// Sonar Chat Completions ended; the API now answers
+// "Sonar is now the Agent API". Per docs.perplexity.ai/docs/agent-api/migrate-from-sonar/how-to:
+// POST /v1/agent; sonar ids map to an `effort` level; system → `instructions`;
+// max_tokens → `max_output_tokens`; recency lives in the web_search tool's `filters`;
+// answer is `output_text`, sources are the `search_results` output item's `results`.
+const API_URL = process.env.PERPLEXITY_API_URL || 'https://api.perplexity.ai/v1/agent'
+const SONAR_TO_EFFORT: Record<string, string> = {
+  'sonar': 'fast', 'sonar-pro': 'fast', 'sonar-reasoning': 'low',
+  'sonar-reasoning-pro': 'low', 'sonar-deep-research': 'high',
+}
 const DEFAULT_MODEL = CROSS_VENDOR.perplexity
 
 interface Parsed { content: string; citations: string[]; usage: any }
@@ -93,17 +102,23 @@ function parseArgs(argv: string[]) {
 
 async function perplexity(query: string, opts: ReturnType<typeof parseArgs>['opts']): Promise<Parsed> {
   const body: Record<string, unknown> = {
-    model: opts.model,
-    messages: [
-      { role: 'system', content: opts.system },
-      { role: 'user', content: query },
-    ],
-    max_tokens: opts.maxTokens,
-    temperature: 0.2,
-    return_citations: true,
-    return_images: false,
+    instructions: opts.system,
+    input: query,
+    max_output_tokens: opts.maxTokens,
   }
-  if (opts.recency) body.search_recency_filter = opts.recency
+  // A provider/model id (e.g. openai/gpt-6-luna) is sent as `model` with web_search
+  // switched on; a legacy sonar id or an effort word is sent as `effort`, whose
+  // levels already include web_search and inline citations.
+  const effort = SONAR_TO_EFFORT[opts.model] ?? (['fast', 'low', 'medium', 'high', 'xhigh'].includes(opts.model) ? opts.model : '')
+  const search: Record<string, unknown> = { type: 'web_search' }
+  if (opts.recency) search.filters = { search_recency_filter: opts.recency }
+  if (effort) {
+    body.effort = effort
+    if (opts.recency) body.tools = [search]
+  } else {
+    body.model = opts.model
+    body.tools = [search]
+  }
 
   const res = await fetch(API_URL, {
     method: 'POST',
@@ -121,8 +136,18 @@ async function perplexity(query: string, opts: ReturnType<typeof parseArgs>['opt
     throw new Error(typeof data.error === 'string' ? data.error : (data.error?.message || `HTTP ${res.status}`))
   }
 
-  const content = data.choices?.[0]?.message?.content ?? ''
-  const citations = Array.isArray(data.citations) ? data.citations : []
+  // Agent API shape: answer in output_text, or in message items' output_text parts;
+  // sources in the search_results item, each with an id matching the [n] markers.
+  const out: any[] = Array.isArray(data.output) ? data.output : []
+  const fromItems = out.filter(o => o.type === 'message').flatMap(o => o.content ?? [])
+    .filter((c: any) => c.type === 'output_text' || typeof c.text === 'string').map((c: any) => c.text ?? '').join('')
+  // Some Agent models leak internal citation tokens (e.g. "citeturn0search0",
+  // wrapped in private-use characters); the [n]/link citations stay.
+  const content: string = (data.output_text || fromItems || '')
+    .replace(/[\uE000-\uF8FF]*cite(?:[\uE000-\uF8FF]*turn\d+[a-z]+\d+)+[\uE000-\uF8FF]*/g, '').replace(/ +\./g, '.').replace(/ +$/gm, '')
+  const results: any[] = out.filter(o => o.type === 'search_results').flatMap(o => o.results ?? [])
+  results.sort((a, b) => Number(a.id) - Number(b.id))
+  const citations: string[] = results.map(r => r.url).filter(Boolean)
   return { content: content.trim(), citations, usage: data.usage ?? {} }
 }
 
