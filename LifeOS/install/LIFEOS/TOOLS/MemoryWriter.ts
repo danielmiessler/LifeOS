@@ -77,7 +77,7 @@ const ALLOWED_FILES = new Set<string>([
 ]);
 
 const PREFIX_PATTERN = /^(NAME|ROLE|RELATION|PREFERENCE|RULE): /;
-const MAX_CHARS_PER_ENTRY = 256;
+export const MAX_CHARS_PER_ENTRY = 256;
 export const MAX_ENTRIES = 48;
 /** Public name for the entry cap, so prompts interpolate it instead of hardcoding 48. */
 export const MEMORY_CAP = MAX_ENTRIES;
