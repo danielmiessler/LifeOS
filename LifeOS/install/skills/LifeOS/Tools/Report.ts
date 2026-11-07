@@ -32,7 +32,7 @@
  *   bun Report.ts probe --cmd "<cmd>" [--expect "<what red looks like>"]   negative control (must go red: a command that ran and failed, or --expect text found in its output)
  *   bun Report.ts verify --cmd "<cmd>"             the same check after your fix (must go green; PRs only)
  *   bun Report.ts attest [--json]                  hash system trees against the release for this version
- *   bun Report.ts build --kind issue --title "<t>" --summary <file|-> --where "<file:line>" --repro <file> [--fix <file>] [--diff <patch>]
+ *   bun Report.ts build --kind issue --title "<t>" --summary <file|-> --where "<file:line>" --repro <file> [--fix <file>] [--diff <patch>] [--clean-tree] [--searched-by-hand]
  *   bun Report.ts build --kind discussion --category ideas|q-a|show-and-tell|general --title "<t>" --body <file|->
  *   bun Report.ts file [--yes] [--repo owner/repo]  post the built issue or discussion (dry-run by default)
  *   bun Report.ts pr --diff <patch> --branch <name> [--yes] [--repo owner/repo]   fork, branch, apply, push, open PR
@@ -225,6 +225,7 @@ function loadJson<T>(name: string, dir = stateDir()): T | null {
 export const loadProbe = (dir?: string) => loadJson<ProbeRecord>("probe.json", dir);
 export const loadVerify = (dir?: string) => loadJson<ProbeRecord>("verify.json", dir);
 export const loadAttestation = (dir?: string) => loadJson<Attestation>("attest.json", dir);
+export const loadSearch = (dir?: string) => loadJson<SearchRecord>("search.json", dir);
 
 // ── rendering ───────────────────────────────────────────────────────────────
 
@@ -232,11 +233,38 @@ export type Kind = "issue" | "discussion";
 export const CATEGORIES = ["ideas", "q-a", "show-and-tell", "general"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
-export interface IssueInput { kind: "issue"; title: string; summary: string; where: string; repro: string; fix?: string; diff?: string }
+export interface IssueInput { kind: "issue"; title: string; summary: string; where: string; repro: string; fix?: string; diff?: string; cleanTree?: boolean; searchedByHand?: boolean }
 export interface DiscussionInput { kind: "discussion"; title: string; category: Category; body: string }
 export type ReportInput = IssueInput | DiscussionInput;
 
 export const FIELD_ORDER = ["Version", "What is broken", "Where (file:line)", "Repro on a clean tree", "Negative control", "Suggested fix"] as const;
+
+/**
+ * The issue template ends with a required "Before submitting" checklist, and a report filed through the API skips
+ * the form, so the body carries it. Labels are copied from the template word for word. A box is ticked only on
+ * the strongest evidence available: a saved `search` (or `--searched-by-hand` when gh is not authenticated), an
+ * `unmodified` attestation (or `--clean-tree`, the user's own statement that the probe ran against an unmodified copy,
+ * whose command the reader can see), and the redaction self-check plus the user's read of report.md before sending.
+ */
+export const CHECKLIST = {
+  searched: "I searched open and closed issues for this defect.",
+  cleanTree: "The repro runs against a clean tree of the version above, not against my modified install.",
+  personalData: "I removed personal data from the pasted output — real names, absolute home paths, tokens, my own content.",
+} as const;
+
+export interface SearchRecord { repo: string; terms: string; hits: number; searchedAt: string }
+export interface ChecklistFacts { search: SearchRecord | null; attestation: Attestation | null; cleanTree: boolean; searchedByHand?: boolean }
+
+export function renderChecklist(f: ChecklistFacts): string {
+  const box = (ok: boolean, label: string, why?: string) => `- [${ok ? "x" : " "}] ${label}${!ok && why ? ` (${why})` : ""}`;
+  const clean = f.cleanTree || f.attestation?.status === "unmodified";
+  return [
+    box(!!f.search || !!f.searchedByHand, CHECKLIST.searched),
+    box(clean, CHECKLIST.cleanTree, "not shown: attestation is not unmodified and --clean-tree was not given"),
+    box(true, CHECKLIST.personalData),
+    f.search ? `\nSearched for: ${f.search.terms.split(" | ").map((t) => `\`${t}\``).join(", ")}` : f.searchedByHand ? "\nSearched by hand (gh not authenticated)." : "",
+  ].filter(Boolean).join("\n");
+}
 
 const fence = (s: string, lang = "") => "```" + lang + "\n" + s.replace(/\s+$/, "") + "\n```";
 
@@ -259,7 +287,7 @@ function probeBlock(p: ProbeRecord, expectLabel: string): string {
   ].filter(Boolean).join("\n\n");
 }
 
-export function renderIssue(input: IssueInput, c: Collected, probe: ProbeRecord, att: Attestation | null, verify?: ProbeRecord | null): string {
+export function renderIssue(input: IssueInput, c: Collected, probe: ProbeRecord, att: Attestation | null, verify?: ProbeRecord | null, search: SearchRecord | null = null): string {
   const fix = [input.fix?.trim() || (input.diff ? "" : "None proposed."), input.diff ? fence(input.diff, "diff") : ""].filter(Boolean).join("\n\n");
   const parts = [
     REPORT_MARKER,
@@ -272,6 +300,7 @@ export function renderIssue(input: IssueInput, c: Collected, probe: ProbeRecord,
   ];
   if (verify) parts.push("### Verified after fix", probeBlock(verify, "Green looks like"));
   parts.push("### Environment", envBlock(c));
+  parts.push("### Before submitting", renderChecklist({ search, attestation: att, cleanTree: !!input.cleanTree, searchedByHand: !!input.searchedByHand }));
   return parts.join("\n\n") + "\n";
 }
 
@@ -290,7 +319,7 @@ export type BuildResult =
 
 export function buildReport(
   input: ReportInput, collected: Collected, ctx: IdentityContext,
-  state: { probe: ProbeRecord | null; verify: ProbeRecord | null; attestation: Attestation | null },
+  state: { probe: ProbeRecord | null; verify: ProbeRecord | null; attestation: Attestation | null; search?: SearchRecord | null },
 ): BuildResult {
   let raw: string;
   if (input.kind === "issue") {
@@ -299,8 +328,9 @@ export function buildReport(
     }
     const redProblem = redProbeProblem(state.probe);
     if (redProblem) return { ok: false, code: 2, message: redProblem };
+    if (!state.search && !input.searchedByHand) return { ok: false, code: 2, message: "No search on record. Run `search \"<terms>\"` first (or, without gh auth, search the repo by hand and pass `--searched-by-hand`): the template asks whether open and closed issues were searched." };
     if (input.diff && input.diff.length > DIFF_CAP) return { ok: false, code: 2, message: `Diff is ${input.diff.length} bytes; the cap is ${DIFF_CAP}. Split the change.` };
-    raw = renderIssue(input, collected, state.probe, state.attestation, state.verify);
+    raw = renderIssue(input, collected, state.probe, state.attestation, state.verify, state.search ?? null);
   } else {
     raw = renderDiscussion(input, collected);
   }
@@ -401,24 +431,28 @@ export function prefilledUrl(repo: string, kind: Kind, title: string, version: s
 
 export interface SearchHit { kind: "issue" | "pr" | "discussion"; number: number; title: string; state: string; url: string }
 
-export function search(repo: string, terms: string): SearchHit[] {
+/** `ok` is true when at least one leg (issues, PRs, discussions) reached GitHub, so a fully failed search is never recorded as done. */
+export function search(repo: string, terms: string): { hits: SearchHit[]; ok: boolean } {
   const hits: SearchHit[] = [];
+  let ok = false;
   const take = (kind: "issue" | "pr", sub: "issues" | "prs") => {
     // `gh search` accepts only --state open|closed; leaving it out returns both, which dedup needs.
     const r = gh(["search", sub, "--repo", repo, "--limit", "8", "--json", "number,title,state,url", terms]);
     if (!r.ok) { console.error(`warning: gh search ${sub} failed, so ${sub} are missing from these results: ${r.err.trim().split("\n")[0]}`); return; }
+    ok = true;
     try { for (const h of JSON.parse(r.out) as Array<Omit<SearchHit, "kind">>) hits.push({ kind, ...h }); } catch { /* no results */ }
   };
   take("issue", "issues"); take("pr", "prs");
   const q = `query($q:String!){ search(type:DISCUSSION, query:$q, first:8){ nodes{ ... on Discussion { number title url closed } } } }`;
   const r = gh(["api", "graphql", "-f", `q=repo:${repo} ${terms}`, "-f", `query=${q}`]);
   if (r.ok) {
+    ok = true;
     try {
       const nodes = (JSON.parse(r.out) as { data: { search: { nodes: Array<{ number: number; title: string; url: string; closed: boolean }> } } }).data.search.nodes;
       for (const n of nodes) hits.push({ kind: "discussion", number: n.number, title: n.title, state: n.closed ? "closed" : "open", url: n.url });
     } catch { /* no results */ }
   }
-  return hits;
+  return { hits, ok };
 }
 
 function discussionIds(repo: string, category: Category): { repositoryId: string; categoryId: string } | null {
@@ -453,7 +487,7 @@ export function archiveCurrent(dir: string, label: string): string {
   const archive = join(lifeosDir(), "MEMORY", "STATE", "reports", `${new Date().toISOString().replace(/[:.]/g, "-")}-${label}.md`);
   mkdirSync(join(archive, ".."), { recursive: true });
   renameSync(join(dir, "report.md"), archive);
-  for (const f of ["probe.json", "verify.json", "attest.json", "built.json", "pr.json", "pr.patch"]) rmSync(join(dir, f), { force: true });
+  for (const f of ["probe.json", "verify.json", "attest.json", "search.json", "built.json", "pr.json", "pr.patch"]) rmSync(join(dir, f), { force: true });
   return archive;
 }
 
@@ -520,7 +554,15 @@ async function main(): Promise<void> {
       const scrub = redact(terms, identityContext(configRoot()));
       if (scrub.text !== terms) die(`search terms carry ${Object.keys(scrub.counts).join(", ")}, and the query goes to GitHub. Strip them and search again.`, 3);
       if (!ghAuthed()) die("gh is not authenticated; search needs it (`gh auth login`).");
-      const hits = search(resolveRepo(arg(a, "--repo")), terms);
+      const searchRepo = resolveRepo(arg(a, "--repo"));
+      const { hits, ok: reached } = search(searchRepo, terms);
+      // Several searches are normal; the record keeps every term set, and the report lists them under the checklist.
+      // A search where every leg failed is not recorded, so it cannot tick "I searched".
+      if (reached) {
+        const prev = loadSearch();
+        const rec: SearchRecord = { repo: searchRepo, terms: prev ? `${prev.terms} | ${terms}` : terms, hits: (prev?.hits ?? 0) + hits.length, searchedAt: new Date().toISOString() };
+        writeFileSync(join(ensureState(), "search.json"), JSON.stringify(rec, null, 2));
+      } else console.error("No search leg reached GitHub, so this search was not recorded.");
       if (json) return out(hits);
       if (!hits.length) { console.log("No related issues, PRs, or discussions found."); return; }
       for (const h of hits) console.log(`${h.kind.padEnd(10)} #${h.number} [${h.state}] ${h.title}\n           ${h.url}`);
@@ -554,15 +596,15 @@ async function main(): Promise<void> {
       let input: ReportInput;
       if (kind === "issue") {
         const summary = readArgFile(arg(a, "--summary")), where = arg(a, "--where"), repro = readArgFile(arg(a, "--repro"));
-        if (!summary || !where || !repro) die("usage: build --kind issue --title \"<t>\" --summary <file|-> --where \"<file:line>\" --repro <file> [--fix <file>] [--diff <patch>]");
-        input = { kind, title, summary, where, repro, fix: readArgFile(arg(a, "--fix")), diff: readArgFile(arg(a, "--diff")) };
+        if (!summary || !where || !repro) die("usage: build --kind issue --title \"<t>\" --summary <file|-> --where \"<file:line>\" --repro <file> [--fix <file>] [--diff <patch>] [--clean-tree] [--searched-by-hand]");
+        input = { kind, title, summary, where, repro, fix: readArgFile(arg(a, "--fix")), diff: readArgFile(arg(a, "--diff")), cleanTree: a.includes("--clean-tree"), searchedByHand: a.includes("--searched-by-hand") };
       } else if (kind === "discussion") {
         const category = arg(a, "--category") as Category | undefined, body = readArgFile(arg(a, "--body"));
         if (!category || !CATEGORIES.includes(category) || !body) die(`usage: build --kind discussion --category ${CATEGORIES.join("|")} --title "<t>" --body <file|->`);
         input = { kind, title, category, body };
       } else die("--kind must be issue or discussion (a PR is `pr`, built on top of an issue report)");
       const ctx = identityContext(configRoot());
-      const res = buildReport(input, collect(), ctx, { probe: loadProbe(), verify: loadVerify(), attestation: loadAttestation() });
+      const res = buildReport(input, collect(), ctx, { probe: loadProbe(), verify: loadVerify(), attestation: loadAttestation(), search: loadSearch() });
       if (!res.ok) {
         console.error(res.message);
         if (res.leaks) for (const l of res.leaks) console.error(`  survived: ${l}`);
