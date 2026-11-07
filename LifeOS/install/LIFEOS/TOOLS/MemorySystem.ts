@@ -81,7 +81,7 @@ import {
   type RelatedLink,
 } from "./MemoryTypes";
 
-import { setEntries as memoryWriterSetEntries, read as memoryWriterRead } from "./MemoryWriter";
+import { setEntries as memoryWriterSetEntries, read as memoryWriterRead, validateAndDedup as memoryWriterValidate, MAX_CHARS_PER_ENTRY as MEMORY_MAX_CHARS_PER_ENTRY } from "./MemoryWriter";
 import { classifyScope } from "./ProposalScope";
 import { addUpgrade } from "./Upgrades";
 import { getTier } from "./MutationTier";
@@ -425,6 +425,18 @@ function addMemoryItem(item: TypedItem & { type: "memory" }, path: string, expec
     // legacy op:"add" / absent — merge-append a single content entry.
     if (typeof item.content !== "string" || item.content.trim().length === 0) {
       return { ok: false, code: "EINVAL_ITEM", message: `op:"add" requires non-empty 'content'` };
+    }
+    // op:"add" carries exactly one entry, so the writer's silent drop of a
+    // malformed or over-length entry would turn the whole call into a no-op that
+    // still reports ok:true. Run the writer's own validator on that one entry
+    // first and refuse loudly instead. op:"set" keeps its silent drop: there a
+    // refusal would evict every other entry in the list.
+    const probe = memoryWriterValidate([item.content.trim()]);
+    if (probe.malformed > 0 || (probe.accepted.length === 0 && probe.overlength === 0 && probe.injection === 0)) {
+      return { ok: false, code: "EINVAL_ITEM", message: `memory entry not saved: it must be one line starting with "NAME: ", "ROLE: ", "RELATION: ", "PREFERENCE: " or "RULE: " (case-sensitive, space after the colon)` };
+    }
+    if (probe.overlength > 0) {
+      return { ok: false, code: "EINVAL_ITEM", message: `memory entry not saved: text after the prefix is over the ${MEMORY_MAX_CHARS_PER_ENTRY}-character limit` };
     }
     newEntries = [...current.entries, item.content.trim()];
   }
