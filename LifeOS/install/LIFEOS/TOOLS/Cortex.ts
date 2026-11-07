@@ -212,7 +212,9 @@ const ALLOWED: Record<string, Set<string>> = {
   search: new Set(["--memory-root", "--adapter", "--type", "--source", "--session", "--from", "--to", "--page", "--page-size", "--recency", "--expand", "--max-nodes", "--max-tokens"]),
   timeline: new Set(["--memory-root", "--adapter", "--type", "--source", "--session", "--from", "--to", "--page", "--page-size", "--anchor", "--before", "--after"]),
   get: new Set(["--memory-root", "--adapter"]), export: new Set(["--memory-root", "--adapter"]),
-  remember: new Set(["--memory-root", "--adapter", "--allow-write"]), propose: new Set(["--memory-root", "--adapter", "--allow-write"]),
+  // Writes go through MemorySystem.add, which has fixed paths and never reads a
+  // memory root, so --memory-root is refused here rather than silently ignored.
+  remember: new Set(["--adapter", "--allow-write"]), propose: new Set(["--adapter", "--allow-write"]),
   rebuild: new Set(["--memory-root", "--adapter", "--from-canonical"]),
 };
 function parseArguments(args: string[]): Parsed | string {
@@ -285,6 +287,9 @@ export async function runCortex(args: string[], runtime: CortexRuntime = {}): Pr
   const parsed = parsedResult;
   if ((command === "remember" || command === "propose")) {
     const adapter = opt(parsed, "--adapter");
+    // Same rule for the in-process seam: a runtime memoryRoot cannot redirect a write
+    // (MemorySystem.add has fixed paths), so refuse it unless the caller also supplies memoryAdd.
+    if (runtime.memoryRoot !== undefined && !runtime.memoryAdd) return fail(command, EXIT.INVALID_INPUT, "invalid_input", `${command} does not support a memory root; writes use the install's fixed memory paths`);
     if (!adapter || !parsed.options.has("--allow-write")) return fail(command, EXIT.WRITE_REFUSED, "write_refused", "Write commands require explicit --adapter and --allow-write");
     if (parsed.positionals.length !== 1) return fail(command, EXIT.INVALID_INPUT, "invalid_input", "Write command requires exactly one JSON payload");
     const raw=parsed.positionals[0]; if(Buffer.byteLength(raw)>LIMITS.WRITE_BYTES)return fail(command,EXIT.INVALID_INPUT,"invalid_input",`Write payload exceeds ${LIMITS.WRITE_BYTES} bytes`);

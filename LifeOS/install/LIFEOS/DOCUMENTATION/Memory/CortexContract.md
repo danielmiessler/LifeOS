@@ -48,7 +48,7 @@ Callers must use both process exit and envelope; parseable JSON alone does not i
 
 ## Commands
 
-All commands accept `--memory-root <dir>` and an optional recognized adapter identity: `--adapter claude|hermes|codex|subagent`. Unknown, duplicate, missing-value, or command-inapplicable options are rejected rather than ignored.
+All read commands accept `--memory-root <dir>` (the write commands `remember` and `propose` refuse it; see below), and every command accepts an optional recognized adapter identity: `--adapter claude|hermes|codex|subagent`. Unknown, duplicate, missing-value, or command-inapplicable options are rejected rather than ignored.
 
 ### `status`
 
@@ -117,7 +117,7 @@ bun LIFEOS/TOOLS/Cortex.ts propose '<typed-item-json>' \
   --adapter claude|hermes|codex|subagent --allow-write
 ```
 
-These are the only mutating contract commands. Both require a recognized explicit adapter **and** `--allow-write`; naming an adapter does not grant write permission by itself. Command and item discriminator are bound: `remember` accepts only `type:"memory"`, `type:"idea"`, or `type:"knowledge"`, while `propose` accepts only `type:"proposal"`. A mismatch is refused before `MemorySystem.add()` is called. Each command accepts exactly one JSON payload and delegates an authorized item to `MemorySystem.add()`. Existing mutation tiers, target pinning, proposal approval, audit logs, snapshots, source ownership, and shrink guards remain authoritative. A governance refusal is exit 5, not a partial success. `export` is not a write verb: it only emits selected content on stdout.
+These are the only mutating contract commands. Both require a recognized explicit adapter **and** `--allow-write`; naming an adapter does not grant write permission by itself. Command and item discriminator are bound: `remember` accepts only `type:"memory"`, `type:"idea"`, or `type:"knowledge"`, while `propose` accepts only `type:"proposal"`. A mismatch is refused before `MemorySystem.add()` is called. Each command accepts exactly one JSON payload and delegates an authorized item to `MemorySystem.add()`. Existing mutation tiers, target pinning, proposal approval, audit logs, snapshots, source ownership, and shrink guards remain authoritative. A governance refusal is exit 5, not a partial success. A `type:"memory"` entry (`op:"add"`, the default) must be one line that starts with `NAME: `, `ROLE: `, `RELATION: `, `PREFERENCE: ` or `RULE: ` (case-sensitive, space after the colon), with at most 256 characters after the prefix; anything else is refused with exit 5 and nothing is written. Writes use the install's fixed memory paths, so `--memory-root` is refused on `remember` and `propose`. `export` is not a write verb: it only emits selected content on stdout.
 
 ## Progressive cards and pagination
 
