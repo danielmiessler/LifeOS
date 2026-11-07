@@ -34,7 +34,7 @@
  * Never prints a key value. Identity reaches `age` via /dev/stdin, never argv or a temp file.
  */
 import { existsSync, readFileSync, writeFileSync, chmodSync, renameSync, mkdirSync, realpathSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 
@@ -407,7 +407,29 @@ function cmdExportIdentity(yes: boolean): void {
   process.stdout.write(identity + "\n");
 }
 
-function cmdInstallHook(): void {
+/** The folder git actually reads hooks from in `tree`. A core.hooksPath at any scope (often a global one
+ *  set for git-lfs or a personal hooks folder) moves it away from <tree>/.git/hooks. */
+function effectiveHooksDir(tree: string): string {
+  // No --path-format=absolute: it needs git 2.31+. A relative answer is relative to the -C directory.
+  const r = spawnSync("git", ["-C", tree, "rev-parse", "--git-path", "hooks"], { encoding: "utf8" });
+  invariant(r.status === 0 && r.stdout.trim() !== "", `git could not report the hooks folder for ${tree}: ${(r.stderr ?? "").trim()}`);
+  return resolve(tree, r.stdout.trim());
+}
+
+function samePath(a: string, b: string): boolean {
+  const real = (p: string) => (existsSync(p) ? realpathSync(p) : p);
+  return real(a) === real(b);
+}
+
+/** Which config set core.hooksPath, for the refusal message. git prints scope, origin and value tab-separated. */
+function hooksPathOrigin(tree: string): string {
+  const r = spawnSync("git", ["-C", tree, "config", "--show-scope", "--show-origin", "--get", "core.hooksPath"], { encoding: "utf8" });
+  if (r.status !== 0) return "core.hooksPath origin not reported by git";
+  const [scope, origin, value] = r.stdout.trim().split("\t");
+  return `core.hooksPath = ${value ?? "?"}, set in ${scope ?? "?"} config ${(origin ?? "?").replace(/^file:/, "")}`;
+}
+
+function cmdInstallHook(setHooksPath: boolean): void {
   invariant(existsSync(HOOK_SRC_PRE_COMMIT), `hook source missing at ${HOOK_SRC_PRE_COMMIT}`);
   invariant(existsSync(HOOK_SRC_COMMIT_MSG), `hook source missing at ${HOOK_SRC_COMMIT_MSG}`);
   const hooksDir = join(REPO_ROOT, ".git", "hooks");
@@ -415,15 +437,10 @@ function cmdInstallHook(): void {
 
   const preCommitBody = readFileSync(HOOK_SRC_PRE_COMMIT, "utf8");
   invariant(preCommitBody.includes("lifeos-secrets-guard"), "pre-commit hook source must carry the lifeos-secrets-guard marker");
-
-  // Install commit-msg hook (SYSTEM tree only: it guards layer-one rule removals)
-  const commitMsgDst = join(hooksDir, "commit-msg");
   const commitMsgBody = readFileSync(HOOK_SRC_COMMIT_MSG, "utf8");
   invariant(commitMsgBody.includes("lifeos-judgment-lane-guard"), "commit-msg hook source must carry the lifeos-judgment-lane-guard marker");
-  writeAtomic(commitMsgDst, commitMsgBody, 0o755);
-  console.log(`✓ installed ${commitMsgDst}`);
 
-  // Install pre-commit and pre-push in every private tree: this repo and the USER data repo behind
+  // pre-commit and pre-push go in every private tree: this repo and the USER data repo behind
   // LIFEOS/USER. pre-commit's env and gitleaks checks apply to both; its SYSTEM leak scan runs only
   // where LIFEOS/TOOLS/githooks/StagedLeakScan.ts exists under the tree's top level.
   const prePushSrc = join(REPO_ROOT, "LIFEOS", "TOOLS", "githooks", "pre-push");
@@ -436,6 +453,33 @@ function cmdInstallHook(): void {
     const top = spawnSync("git", ["-C", realpathSync(userLink), "rev-parse", "--show-toplevel"], { encoding: "utf8" });
     if (top.status === 0 && top.stdout.trim()) trees.push(top.stdout.trim());
   }
+
+  // A hook written to .git/hooks never runs when core.hooksPath points git elsewhere, so the env guard,
+  // the leak scans and the private-remote push guard would be silently inert. Check every tree before
+  // writing anything: refuse and say why, or, with --set-hooks-path, pin the tree to its own .git/hooks.
+  // Every tree must have a real .git/hooks folder first (a worktree's .git is a file), so a refusal or a
+  // config change is never made for a tree the install would then fail on.
+  for (const tree of trees) invariant(existsSync(join(tree, ".git", "hooks")), `${tree}/.git/hooks missing`);
+  const redirected = trees.filter((t) => !samePath(effectiveHooksDir(t), join(t, ".git", "hooks")));
+  if (redirected.length > 0 && !setHooksPath) {
+    for (const t of redirected) {
+      console.error(`✗ ${t}: git reads hooks from ${effectiveHooksDir(t)} (${hooksPathOrigin(t)}), not ${join(t, ".git", "hooks")}; hooks installed there would never run.`);
+    }
+    die("nothing installed. Re-run with --set-hooks-path to set core.hooksPath=.git/hooks in each tree above (the USER data repo included, if listed). That repo-level setting overrides a global one and replaces a repo-level one, so hooks in the other folder (git-lfs, for example) stop running in that repo. Or call LIFEOS/TOOLS/githooks from that hooks folder yourself.", 2);
+  }
+  for (const t of redirected) {
+    const was = `${effectiveHooksDir(t)} (${hooksPathOrigin(t)}); hooks there no longer run in this repo`;
+    const r = spawnSync("git", ["-C", t, "config", "--local", "core.hooksPath", ".git/hooks"], { encoding: "utf8" });
+    invariant(r.status === 0, `could not set core.hooksPath in ${t}: ${(r.stderr ?? "").trim()}`);
+    invariant(samePath(effectiveHooksDir(t), join(t, ".git", "hooks")), `${t} still reads hooks from ${effectiveHooksDir(t)} after setting core.hooksPath`);
+    console.log(`✓ set core.hooksPath=.git/hooks in ${t} (git was reading ${was})`);
+  }
+
+  // Install commit-msg hook (SYSTEM tree only: it guards layer-one rule removals)
+  const commitMsgDst = join(hooksDir, "commit-msg");
+  writeAtomic(commitMsgDst, commitMsgBody, 0o755);
+  console.log(`✓ installed ${commitMsgDst}`);
+
   for (const tree of trees) {
     invariant(existsSync(join(tree, ".git", "hooks")), `${tree}/.git/hooks missing`);
     for (const [name, body] of [["pre-commit", preCommitBody], ["pre-push", prePushBody]] as const) {
@@ -457,7 +501,7 @@ if (import.meta.main) {
     case "unseal": cmdUnseal(force); break;
     case "status": process.exitCode = cmdStatus(); break;
     case "export-identity": cmdExportIdentity(yes); break;
-    case "install-hook": cmdInstallHook(); break;
+    case "install-hook": cmdInstallHook(rest.includes("--set-hooks-path")); break;
     case "has": process.exitCode = cmdHas(rest.filter((a) => !a.startsWith("--"))); break;
     case "keys": cmdKeys(); break;
     case "set": {
@@ -469,7 +513,7 @@ if (import.meta.main) {
       break;
     }
     default:
-      console.log("usage: Secrets.ts init [--force] | seal | unseal [--force] | status | export-identity --yes | install-hook | has KEY [KEY...] | set KEY | keys");
+      console.log("usage: Secrets.ts init [--force] | seal | unseal [--force] | status | export-identity --yes | install-hook [--set-hooks-path] | has KEY [KEY...] | set KEY | keys");
       process.exit(cmd ? 1 : 0);
   }
 }
