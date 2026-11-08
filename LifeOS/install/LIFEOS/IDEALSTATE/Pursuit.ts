@@ -39,7 +39,7 @@ export type PursuitSummary = { targets: Tally; goals: Tally };
 
 /** Done is whatever ascent.ts says is done; these are the ways an ISA stops without finishing. */
 const STOPPED_PHASES = new Set(["abandoned", "closed", "cancelled", "dropped", "archived"]);
-const isaClosed = (phase: string): boolean => phaseBracket(phase) === "cairn" || STOPPED_PHASES.has(phase);
+export const isaClosed = (phase: string): boolean => phaseBracket(phase) === "cairn" || STOPPED_PHASES.has(phase);
 /** An unscheduled or custom-cron workflow counts as moving something only if it ran this recently. */
 export const UNSCHEDULED_FRESH_DAYS = 45;
 const RUNNING_INSTALLS = new Set(["loaded", "deployed"]);
@@ -91,7 +91,7 @@ export function liveWorkflows(): WorkflowInfo[] {
   return out;
 }
 
-function isaDirs(): string[] {
+export function isaDirs(): string[] {
   if (process.env.IDEALSTATE_ISA_DIR) return [process.env.IDEALSTATE_ISA_DIR];
   return [lifeosPath("MEMORY", "WORK"), lifeosPath()];
 }
