@@ -716,6 +716,31 @@ bun ~/.claude/LIFEOS/TOOLS/ArchitectureSummaryGenerator.ts check
 
 ---
 
+## Pending.ts - Open Criteria Across All ISAs
+
+**Location:** `~/.claude/LIFEOS/TOOLS/Pending.ts`
+
+Read the ISAs Pursuit reads (`MEMORY/WORK` plus the system ISAs) and report open, closed and dropped criteria plus unchecked `## Remaining Work` items per ISA, grouped by a frontmatter label. Criteria come from `parseClaims` and closed phases from Pursuit's `isaClosed`. Flags closed-with-open-work, idle, unreadable and frontmatter-less ISAs. On demand and read-only. See `LIFEOS/DOCUMENTATION/Pending/PendingSystem.md`.
+
+**Usage:**
+```bash
+# Human-readable report
+bun ~/.claude/LIFEOS/TOOLS/Pending.ts
+
+# Stable machine-readable shape
+bun ~/.claude/LIFEOS/TOOLS/Pending.ts --json
+
+# Override roots, group field and idle threshold
+bun ~/.claude/LIFEOS/TOOLS/Pending.ts --root ~/Projects --group-field team --idle-days 30
+```
+
+**When to Use:**
+- "what is still open across my work?"
+- "which ISAs are marked complete but still have open criteria?"
+- Before a weekly review of unfinished work
+
+---
+
 ## Doctor.ts - Capability Prober & Health Manifest
 
 **Location:** `~/.claude/LIFEOS/TOOLS/Doctor.ts`
