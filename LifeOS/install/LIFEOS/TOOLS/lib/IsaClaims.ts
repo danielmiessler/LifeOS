@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
+import { ANTI_HEADING_RE, BRIDGE_HEADING_RE, CRITERIA_HEADING_RE } from "./IsaSections";
 
 export interface IsaClaim {
   id: string;
@@ -19,17 +20,11 @@ export interface IsaClaimsResult {
   revision: string;
 }
 
-// Byte-mirrors hooks/lib/isa-utils.ts CRITERIA_HEADING_RE; no hook graph dependency.
-export const CLAIMS_HEADING_RE =
-  /^(?:##\s+(?:ISC\s+)?Criteria\b[^\n]*|##\s+Claims\b[^\n]*|##\s+IDEAL\s+STATE\s+CRITERIA\b[^\n]*|###\s+Criteria\b[^\n]*|##\s+Features\b[^\n]*)$/im;
+// The criteria, bridge and anti heading names live in SECTION_ALIASES (./IsaSections), which generates these
+// regexes; isa-utils' CRITERIA_HEADING_RE is the same one. No hook graph dependency. public issue #2527
+export const CLAIMS_HEADING_RE = CRITERIA_HEADING_RE;
+export { BRIDGE_HEADING_RE, ANTI_HEADING_RE };
 
-// `## Bridge Criteria` (ISAFormat row 12): cross-ISA integration ISCs, a separate
-// H2 after the criteria section. Counted like criteria; the primary heading regex
-// above stays byte-pinned, so this is its own pattern. public issue #2186, @Bowlerjim
-export const BRIDGE_HEADING_RE = /^##\s+Bridge\s+Criteria\b[^\n]*$/im;
-
-// The anti section heading: `## Anti-criteria` (current) or `## Anti-claims` (legacy).
-export const ANTI_HEADING_RE = /^##\s+Anti-(?:criteria|claims)\b/i;
 
 export function isaBody(text: string): string {
   return text.replace(/^---\r?\n[\s\S]*?\r?\n---[^\S\r\n]*(?:\r?\n|$)/, "");

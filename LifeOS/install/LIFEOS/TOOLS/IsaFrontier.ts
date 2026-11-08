@@ -26,20 +26,18 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync, existsSync, realpathSync, renameSync } from 'fs';
 import { resolve, join } from 'path';
 import { createHash } from 'crypto';
-// IsaClaims imports only fs/crypto, already used here; it never loads the hook graph.
+// IsaClaims imports only fs/crypto and the leaf lib/IsaSections; it never loads the hook graph.
 import { parseIsaClaimsText, isaBody, claimText, stripBulletPrefix } from './lib/IsaClaims';
+import { CRITERIA_HEADING_RE } from './lib/IsaSections';
 import { getClaudeDir } from './Paths'; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 
 const STALE_TTL_MS_DEFAULT = 2 * 60 * 60 * 1000; // 2h — a session gone this long has died or moved on
 
 // ── Criterion + edge parsing ──────────────────────────────────────────────────
-// Mirrors the heading alternation in hooks/lib/isa-utils.ts CRITERIA_HEADING_RE.
-// Kept as a copy, not an import, so this standalone CLI doesn't drag in
-// isa-utils' hook graph (work-events, ascent, execSync side effects). The copy
-// is pinned byte-equal to the original by the "regex parity" test — when the
-// format grows a new heading variant, that test fails loudly (Forge F4).
-export const FRONTIER_CRITERIA_HEADING_RE =
-  /^(?:##\s+(?:ISC\s+)?Criteria\b[^\n]*|##\s+Claims\b[^\n]*|##\s+IDEAL\s+STATE\s+CRITERIA\b[^\n]*|###\s+Criteria\b[^\n]*|##\s+Features\b[^\n]*)$/im;
+// The criteria heading regex of hooks/lib/isa-utils.ts, generated once in lib/IsaSections.ts (SECTION_ALIASES).
+// Imported from that leaf module, not from isa-utils, so this standalone CLI doesn't drag in isa-utils' hook graph
+// (work-events, ascent, execSync side effects). public issue #2527
+export const FRONTIER_CRITERIA_HEADING_RE = CRITERIA_HEADING_RE;
 
 // Criterion IDs: ISC-N (incl. split IDs like ISC-2.1), domain-prefixed (H-AVAIL,
 // CRS-PAGE), short v8 forms (C1, A3, EQ-12). Dots included so split criteria work.

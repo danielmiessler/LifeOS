@@ -24,6 +24,7 @@ import { writeFileSync, readFileSync, readdirSync, statSync, existsSync, mkdirSy
 import { join, basename } from 'path';
 import { createHash } from 'crypto';
 import { parseIsaClaimsText, isaBody, claimText, stripBulletPrefix, BRIDGE_HEADING_RE } from '../../LIFEOS/TOOLS/lib/IsaClaims';
+import { CRITERIA_HEADING_RE } from '../../LIFEOS/TOOLS/lib/IsaSections';
 import { lifeosPath } from './paths';
 import { appendWorkEvents, diffRegistry, foldToSnapshot, readLiveRegistry, workEventsPath } from './work-events';
 import { PHASE_TO_ASCENT, ascentTag, deriveAscent, isRunActive } from '../../LIFEOS/TOOLS/ascent';
@@ -187,14 +188,9 @@ export function writeFrontmatterField(content: string, field: string, value: str
 // no criterion cards, no body-count progress, no criteria fallback on the board
 // (found 2026-07-22 — the "essence of hill climbing" gap was largely this).
 //
-// `## Features` is LAST in the alternation and only wins when no earlier
-// criteria heading exists. In feature-block ISAs (v2.16.0) `## Features` holds
-// the ISCs (nested under `### F<n>` sub-headings, which are H3 so the section
-// runs to the next H2); legacy ISAs keep a `## Claims`/`## Criteria` section
-// that sorts before their `## Features` pointer table, so they are unaffected —
-// and a legacy pointer table has no `- [ ]` lines to mis-parse regardless.
-export const CRITERIA_HEADING_RE =
-  /^(?:##\s+(?:ISC\s+)?Criteria\b[^\n]*|##\s+Claims\b[^\n]*|##\s+IDEAL\s+STATE\s+CRITERIA\b[^\n]*|###\s+Criteria\b[^\n]*|##\s+Features\b[^\n]*)$/im;
+// The criteria heading names, `## Features` among them, live in SECTION_ALIASES (LIFEOS/TOOLS/lib/IsaSections.ts),
+// which generates this regex. public issue #2527
+export { CRITERIA_HEADING_RE };
 
 // Canonical heading the template emits and migrations target.
 // Short, unambiguous, what most live ISAs already use.
