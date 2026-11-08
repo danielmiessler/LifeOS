@@ -7,6 +7,11 @@ import {invariant} from '../../TOOLS/Invariant';
 import {BUNDLE_ID,DEFAULTS_BIN,pressAndHoldArgs} from './key-repeat';
 import {terminalFontFile} from './terminal-font';
 import {copyOptionalFonts} from './optional-fonts';
+// Linux: build and install there too; what only Linux needs lives in linux.ts.
+import {readdirSync,writeFileSync} from 'node:fs';
+import {isLinux,linuxFontDirs,desktopEntry,linuxShortcutLabel} from './linux';
+const LINUX=isLinux(process.platform);
+const subdirs=(dir:string)=>{try{return readdirSync(dir,{withFileTypes:true}).filter(d=>d.isDirectory()).map(d=>join(dir,d.name));}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return [];throw error;}};
 
 const root=import.meta.dir;
 // The upstream macOS prebuild is distributed without its executable bit.
@@ -38,7 +43,8 @@ const bundledFonts=copyOptionalFonts(fonts,assets,{'concourse_t3_regular-webfont
 if(bundledFonts.length===0)console.warn('No brand fonts found; using system fonts.');
 // The terminal font is bundled when kitty.conf names a family whose regular file is installed; otherwise the terminal uses its fixed-width fallback stack.
 const kittyConf=join(homedir(),'.config/kitty/kitty.conf');
-const terminalFile=terminalFontFile(existsSync(kittyConf)?readFileSync(kittyConf,'utf8'):'',[join(homedir(),'Library/Fonts'),'/Library/Fonts']);
+// Linux: look for the kitty font in the Linux font folders.
+const terminalFile=LINUX?terminalFontFile(existsSync(kittyConf)?readFileSync(kittyConf,'utf8'):'',linuxFontDirs(homedir(),subdirs)):terminalFontFile(existsSync(kittyConf)?readFileSync(kittyConf,'utf8'):'',[join(homedir(),'Library/Fonts'),'/Library/Fonts']);
 rmSync(join(assets,'terminal.ttf'),{force:true});
 if(terminalFile)copyFileSync(terminalFile,join(assets,'terminal.ttf'));
 else console.warn('No kitty terminal font file found; using the fallback terminal font.');
@@ -50,8 +56,46 @@ for(const file of ['workspace.html','workspace.css','tmux.conf'])copyFileSync(jo
 // libghostty-vt: the wasm terminal core (pinned revision in ghostty/VERSION) plus its 112-byte PTY-reply trampoline and the symbols font. Plain read-only assets served through pulse-asset:.
 mkdirSync(join(dist,'ghostty'));
 for(const file of ['vendor/ghostty-vt.wasm','vendor/ghostty-write-pty.wasm','fonts/SymbolsNerdFontMono-Regular.woff2','VERSION'])copyFileSync(join(root,'ghostty',file),join(dist,'ghostty',file.split('/').pop()!));
+// Linux: the offline page runs no script, so its shortcut labels are rewritten at build time.
 copyFileSync(join(root,'offline.html'),join(dist,'offline.html'));
+if(LINUX)writeFileSync(join(dist,'offline.html'),linuxShortcutLabel(readFileSync(join(root,'offline.html'),'utf8')));
 cpSync(assets,join(dist,'assets'),{recursive:true});
+// Linux: package for linux and install to ~/.local/share/pulse-desktop with a pulse-desktop.desktop launcher entry; a previous copy is moved to ~/.local/share/LifeOS/app-backups.
+if(LINUX&&(process.argv.includes('--package')||process.argv.includes('--install'))){
+  const stage=join(root,'stage');generatedDir(stage);
+  cpSync(dist,join(stage,'dist'),{recursive:true});
+  const manifest=JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+  await Bun.write(join(stage,'package.json'),JSON.stringify({name:manifest.name,productName:manifest.productName,version:manifest.version,main:manifest.main,dependencies:{'node-pty':manifest.dependencies['node-pty']}}));
+  cpSync(join(root,'node_modules/node-pty'),join(stage,'node_modules/node-pty'),{recursive:true});
+  const paths=await packager({dir:stage,name:'Pulse Desktop',executableName:'pulse-desktop',platform:'linux',arch:process.arch as 'arm64'|'x64',electronVersion:manifest.devDependencies.electron,out:join(root,'release'),overwrite:true,prune:false,asar:{unpackDir:'node_modules/node-pty'},extraResource:[join(dist,'tmux.conf')]});
+  invariant(paths.length===1,'one app folder produced');
+  const built=paths[0];
+  invariant(existsSync(join(built,'pulse-desktop')),'packager produced a launchable app');
+  console.log(built);
+  if(process.argv.includes('--install')){
+    const share=join(homedir(),'.local/share');const dest=join(share,'pulse-desktop');
+    if(existsSync(dest)){
+      invariant(realpathSync(dest)===dest,'do not replace a symlinked app');
+      invariant(existsSync(join(dest,'pulse-desktop'))&&existsSync(join(dest,'resources/tmux.conf')),'only replace our own app');
+      const backups=join(share,'LifeOS/app-backups');mkdirSync(backups,{recursive:true});
+      invariant(realpathSync(backups)===backups,'backup directory must not be a symlink');
+      const backup=join(backups,`pulse-desktop-${Date.now()}`);
+      invariant(!existsSync(backup),'backup must not overwrite an existing app');
+      renameSync(dest,backup);
+    }
+    cpSync(built,dest,{recursive:true,verbatimSymlinks:true});
+    copyFileSync(join(assets,'icon.png'),join(dest,'pulse-desktop.png'));
+    const apps=join(share,'applications');mkdirSync(apps,{recursive:true});
+    const entry=join(apps,'pulse-desktop.desktop');
+    if(existsSync(entry)){
+      invariant(realpathSync(entry)===entry,'do not write through a symlinked launcher entry');
+      invariant(readFileSync(entry,'utf8').includes('StartupWMClass=pulse-desktop'),'only replace our own launcher entry');
+    }
+    writeFileSync(entry,desktopEntry(join(dest,'pulse-desktop'),join(dest,'pulse-desktop.png')));
+    console.log(`Installed ${dest}`);
+  }
+  process.exit(0);
+}
 if(process.argv.includes('--package') || process.argv.includes('--install')) {
   invariant(process.platform==='darwin','this installer targets macOS');
   const packagedIcon=join(assets,'Pulse.icns');
