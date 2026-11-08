@@ -121,6 +121,40 @@ export function logBlocks(text: string): LogBlock[] {
 
 /** A restate answer that is a plain yes: the principal confirmed the ladder and nothing else. */
 const CLEAN_YES = /^(?:y|yes|yep|yeah|yup|ok|okay|sure|correct|right|that'?s (?:it|right)|exactly|looks good|sounds good|lgtm|perfect|confirmed|go|do it|ship it|proceed|build (?:it|this)|yes,? (?:do it|build (?:it|this)|go|ship it))[\s.!]*$/i;
+
+/**
+ * This install's own approval phrases, for principals who answer in another language (public issue
+ * #2595): one phrase per line in USER/CONFIG/approval-phrases.txt, `#` starts a comment. No file, no
+ * extra phrases, so an install without one behaves exactly as CLEAN_YES alone.
+ */
+export const approvalPhrasesPath = (): string => join(getClaudeDir(), "LIFEOS", "USER", "CONFIG", "approval-phrases.txt");
+
+/** Case, accents (NFD, marks dropped), quotes and commas do not matter; spaces collapse. */
+export function foldApproval(s: string): string {
+  return s.normalize("NFD").replace(/\p{M}+/gu, "").toLowerCase().replace(/[,"“”]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+let approvalCache: Set<string> | null = null;
+export function approvalPhrases(path = approvalPhrasesPath()): Set<string> {
+  if (approvalCache && path === approvalPhrasesPath()) return approvalCache;
+  // A missing file is the default (no extra phrases); any other read error is thrown, never read as empty.
+  const set = new Set(existsSync(path)
+    ? readFileSync(path, "utf8").split("\n").map((l) => foldApproval(l.replace(/#.*$/, ""))).filter(Boolean)
+    : []);
+  if (path === approvalPhrasesPath()) approvalCache = set;
+  return set;
+}
+
+/**
+ * True when every sentence of the answer is one of the listed phrases: "sim. aceito." passes when both
+ * are listed, and "sim, mas o L2..." stays unclean because "sim mas o l2" is not a phrase. A question
+ * mark is kept, so "sim?" never matches "sim".
+ */
+export function isListedApproval(answer: string, phrases: Set<string>): boolean {
+  if (!phrases.size) return false;
+  const sentences = answer.split(/[.;!]+/).map(foldApproval).filter(Boolean);
+  return sentences.length > 0 && sentences.every((s) => phrases.has(s));
+}
 /**
  * Answer lines are labelled "Principal", "A", or the configured principal's name (full or first).
  * The name comes from identity at first use, never from a literal in source: the release sanitizer
@@ -148,11 +182,11 @@ function answerWords(line: string): string {
  * second answer in the same block, and some blocks carry unrelated follow-up lines after the yes.
  * A correction made after a yes belongs in a new `restate` block.
  */
-export function restateIsClean(body: string): boolean | null {
+export function restateIsClean(body: string, phrases: Set<string> = approvalPhrases()): boolean | null {
   if (/\bpending\b/i.test(body)) return null;
   const answers = [...body.matchAll(answerRegex())].map((m) => answerWords(m[1] ?? m[2] ?? ""));
   if (!answers.length) return null;
-  return answers.some((a) => CLEAN_YES.test(a));
+  return answers.some((a) => CLEAN_YES.test(a) || isListedApproval(a, phrases));
 }
 
 /** A discuss block that actually held a conversation: rounds or answers, and nothing left pending. */
