@@ -260,7 +260,7 @@ function ClaimRow({ c }: { c: AlgorithmCriterion }) {
 // timing, liveness. Exists because "I don't know anything about them"
 // (principal, 2026-07-15) — every card must open into whatever we do know.
 
-function SessionExpanded({ s, bare = false }: { s: AlgorithmState; bare?: boolean }) {
+export function SessionExpanded({ s, bare = false }: { s: AlgorithmState; bare?: boolean }) {
   // bare: plain always-open panel for the spotlight — see ClimbExpanded.
   const Wrapper = bare ? "div" : motion.div;
   const motionProps = bare
@@ -287,8 +287,21 @@ function SessionExpanded({ s, bare = false }: { s: AlgorithmState; bare?: boolea
           <span>
             <span className="text-ink-3">started </span>
             {fmtClock(s.algorithmStartedAt)}
-            <span className="text-ink-3"> · running </span>
-            {formatElapsed(Date.now() - (s.algorithmStartedAt || Date.now()))}
+            {s.active ? (
+              <>
+                <span className="text-ink-3"> · running </span>
+                {formatElapsed(Date.now() - (s.algorithmStartedAt || Date.now()))}
+              </>
+            ) : s.currentPhase === "COMPLETE" && s.completedAt ? (
+              // A closed session's length stops at its end, not at now.
+              <>
+                <span className="text-ink-3"> · ended after </span>
+                {formatElapsed(s.completedAt - s.algorithmStartedAt)}
+              </>
+            ) : (
+              // Inactive without a recorded end (stale): its outcome is unknown, so it is not called finished.
+              <span className="text-ink-3"> · not active, end not recorded</span>
+            )}
           </span>
           <span>
             <span className="text-ink-3">last activity </span>
