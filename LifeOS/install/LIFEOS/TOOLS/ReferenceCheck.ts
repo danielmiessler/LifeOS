@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * @version 1.7.0
+ * @version 1.8.0
  * ReferenceCheck.ts — Full-surface reference validator for the LifeOS system.
  *
  * Walks every file under ~/.claude (excluding noise dirs), extracts every
@@ -24,6 +24,7 @@
  *   bun ReferenceCheck.ts --quiet        # issues only
  *   bun ReferenceCheck.ts --changed      # git-dirty files + dependents
  *   bun ReferenceCheck.ts --stale        # include stale findings
+ *   bun ReferenceCheck.ts --content      # also check `path:line` — `snippet` citations by content (lib/CitationCheck.ts)
  *   bun ReferenceCheck.ts --orphans      # include orphan findings
  *   bun ReferenceCheck.ts --root <dir>   # scan an install root other than ~/.claude (a staged release)
  *   bun ReferenceCheck.ts --shipped-paths # also resolve quoted install paths + spawn/dynamic-import specifiers
@@ -31,7 +32,7 @@
  *
  * Exit codes:
  *   0 — no missing refs (stale/orphan do not fail)
- *   1 — missing refs found
+ *   1 — missing refs found (with --content, also rotten citations)
  *   2 — scan error (unreadable root, etc)
  */
 
@@ -39,6 +40,7 @@ import { readFileSync, statSync, lstatSync, existsSync, readdirSync, realpathSyn
 import { join, resolve, dirname, relative, extname, sep, basename } from 'path';
 import { execFileSync } from 'child_process';
 import { getClaudeDir } from './Paths';
+import { checkCitation, findCitations, isRotten, type CitationState } from './lib/CitationCheck';
 
 // ── Arg parsing (manual, zero deps) ──
 
@@ -53,6 +55,9 @@ Flags:
   --quiet      Suppress OK lines; issues only
   --changed    Only scan git-dirty files + their dependents
   --stale      Include stale findings (ref mtime > referrer mtime)
+  --content    Also check "path:line" — "snippet" citations in .md files by content:
+               ok, moved, ambiguous, changed, gone, dir, outside. Pointers with no
+               snippet are counted, not checked. Not narrowed by --changed.
   --orphans    Include orphan findings (file exists, nothing refs it)
   --root <dir> Scan <dir> as the install root instead of ~/.claude (a staged release tree)
   --shipped-paths
@@ -61,7 +66,7 @@ Flags:
                dynamic import() specifiers — in code files too. The staged G7 lane.
   --help       This message
 
-Exit codes: 0 clean, 1 missing refs, 2 scan error`);
+Exit codes: 0 clean, 1 missing refs (or rotten citations under --content), 2 scan error`);
   process.exit(0);
 }
 
@@ -69,6 +74,8 @@ const jsonOutput = args.includes('--json');
 const quiet = args.includes('--quiet');
 const changedOnly = args.includes('--changed');
 const includeStale = args.includes('--stale');
+// --content: the opt-in content check of `path:line` — `snippet` citations. public issue #2221, @drpaulobernardy
+const contentMode = args.includes('--content');
 const includeOrphans = args.includes('--orphans');
 // --shipped-paths / --root: the staged-install lane. G7 used to run only against
 // the live tree, so a shipped file naming a path that the release scrub removes
@@ -807,7 +814,9 @@ const findings: Finding[] = [];
 const referenced = new Set<string>();  // absolute paths of files that are referenced
 let scannedFiles = 0;
 let scannedRefs = 0;
-const historicalSkipped: string[] = [];   // files whose own frontmatter says `references: historical`
+const historicalSkipped: string[] = [];
+const citationResults: { file: string; line: number; cited: string; snippet: string; state: CitationState; foundAt?: number[] }[] = [];
+let citationsWithoutSnippet = 0;   // files whose own frontmatter says `references: historical`
 
 let allFiles: string[];
 try {
@@ -841,6 +850,17 @@ for (const file of allFiles) {
   if (declaresHistoricalReferences(content)) {
     historicalSkipped.push(relative(CLAUDE_DIR, file));
     continue;
+  }
+  if (contentMode && file.endsWith('.md')) {
+    const found = findCitations(content);
+    citationsWithoutSnippet += found.withoutSnippet;
+    for (const c of found.citations) {
+      try {
+        citationResults.push({ file: relative(CLAUDE_DIR, file), line: c.line, cited: `${c.path}:${c.citedLine}`, snippet: c.snippet, ...checkCitation(CLAUDE_DIR, c.path, c.citedLine, c.snippet) });
+      } catch (e) {
+        scanFailed(`cannot check citation ${c.path}:${c.citedLine}`, file, e);
+      }
+    }
   }
   const refs = extractRefs(content, file);
   if (refs.length > 0) fileRefs.set(file, refs);
@@ -998,6 +1018,15 @@ const elapsedMs = Date.now() - startedAt;
 const missing = uniqueFindings.filter(f => f.type === 'missing');
 const stale = uniqueFindings.filter(f => f.type === 'stale');
 const orphan = uniqueFindings.filter(f => f.type === 'orphan');
+const movedCitations = citationResults.filter(c => c.state === 'moved');
+const rottenCitations = citationResults.filter(c => isRotten(c.state));
+const content = contentMode ? {
+  citations: citationResults.length,
+  ok: citationResults.filter(c => c.state === 'ok').length,
+  moved: movedCitations,
+  rotten: rottenCitations,
+  withoutSnippet: citationsWithoutSnippet,
+} : null;
 
 const summary = {
   scannedFiles,
@@ -1011,6 +1040,7 @@ const summary = {
     stale: stale.length,
     orphan: orphan.length,
   },
+  ...(content ? { content } : {}),
 };
 
 if (jsonOutput) {
@@ -1039,7 +1069,18 @@ if (jsonOutput) {
       `\nReferenceCheck: ${scannedFiles} files, ${scannedRefs} refs, ${missing.length} missing, ${stale.length} stale, ${orphan.length} orphan, ${historicalSkipped.length} historical (skipped by their own frontmatter) — ${elapsedMs}ms`
     );
   }
-  if (uniqueFindings.length === 0 && !quiet) {
+  if (content && movedCitations.length > 0) {
+    console.error(`\n📍 MOVED CITATIONS (${movedCitations.length}) — the claim holds, the line number is old:`);
+    for (const c of movedCitations) console.error(`  ${c.file}:${c.line} → ${c.cited} now at line ${c.foundAt![0]}`);
+  }
+  if (content && rottenCitations.length > 0) {
+    console.error(`\n❌ ROTTEN CITATIONS (${rottenCitations.length}) — re-read the cited code:`);
+    for (const c of rottenCitations) console.error(`  ${c.file}:${c.line} → ${c.cited} (${c.state}${c.foundAt ? ` at lines ${c.foundAt.join(', ')}` : ''})`);
+  }
+  if (content && (!quiet || movedCitations.length + rottenCitations.length > 0)) {
+    console.error(`Citations: ${content.citations} checked, ${content.ok} ok, ${movedCitations.length} moved, ${rottenCitations.length} rotten; ${content.withoutSnippet} path:line without a snippet (not checked)`);
+  }
+  if (uniqueFindings.length === 0 && rottenCitations.length === 0 && !quiet) {
     console.error('✅ All references valid.');
   }
 }
@@ -1051,4 +1092,4 @@ if (scanErrors.length > 0) {
   if (scanErrors.length > 20) console.error(`  … and ${scanErrors.length - 20} more`);
   process.exit(2);
 }
-process.exit(missing.length > 0 ? 1 : 0);
+process.exit(missing.length > 0 || rottenCitations.length > 0 ? 1 : 0);
