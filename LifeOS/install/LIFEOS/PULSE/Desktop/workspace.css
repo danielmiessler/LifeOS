@@ -78,3 +78,11 @@ footer div span{margin-left:0}
 footer kbd,.persist{font-size:14px}
 .persist{margin-top:4px;gap:8px}
 .persist i{width:6px;height:6px}
+/* Linux: shortcuts are spelled out (Ctrl+Shift+T) and do not fit the space of the macOS glyphs, so the button's moves under its name, smaller, and the footer hint wraps when it does not fit beside the keys. */
+.linux-keys .create button:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
+.linux-keys .create kbd{float:none;font-size:11px;white-space:nowrap}
+.linux-keys footer #commands kbd{font-size:12px;white-space:nowrap}
+.linux-keys footer div{flex-wrap:wrap;column-gap:8px;row-gap:2px}
+.linux-keys footer .keys{min-width:0}
+.linux-keys footer kbd{font-size:12px;white-space:nowrap}
+.linux-keys footer div>span:not(.keys){white-space:nowrap}

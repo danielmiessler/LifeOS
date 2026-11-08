@@ -17,6 +17,10 @@ The app icon defaults to the LifeOS logo the dashboard ships (`../Observability/
 
 The installed app lives at `/Applications/Pulse Desktop.app`. Replacement backups stay in `~/Library/Application Support/LifeOS/App Backups.noindex`, outside application search. The separate menu-bar helper lives in `~/Library/Application Support/LifeOS/Helpers.noindex`.
 
+### Linux
+
+The same `bun install` and `bun run install-app` build the app for Linux and install it to `~/.local/share/pulse-desktop`, with a `pulse-desktop.desktop` launcher entry in `~/.local/share/applications`; a replaced copy moves to `~/.local/share/LifeOS/app-backups`. It needs tmux from the package manager and Pulse as the systemd user service `com.lifeos.pulse.service`, which the app starts when it is stopped. App shortcuts use Ctrl+Shift where macOS uses ⌘, and Ctrl+Shift+Alt for ⇧⌘; ⌃H / ⌃L stay as they are. Everything only Linux needs lives in `linux.ts`, and every other platform runs the files as written. Tested on Arch Linux with Hyprland (Wayland).
+
 ## Controls
 
 - ⌘K opens Commands & shortcuts from any dashboard or terminal. Search actions, pages, or sessions; ↑/↓ selects, Enter runs, and Escape returns to the workspace. “Show keyboard shortcuts” lists bindings with their scope. The sidebar also has a Commands & shortcuts button.

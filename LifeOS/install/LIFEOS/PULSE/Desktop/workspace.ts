@@ -11,6 +11,15 @@ import {TerminalOutput} from './terminal-output';
 import {copyTerminalSelection} from './terminal-copy';
 import {selectionAfterRefresh} from './session-selection';
 import {backgroundColor,isBackgroundImageURL,type BackgroundImage} from './background-image';
+// Linux: every shortcut shown names the Linux key (linux.ts), in the fixed HTML labels and in the command menu.
+import {isLinux,linuxShortcutLabel,linuxTerminalSwallows} from './linux';
+const LINUX=isLinux(navigator.platform);
+const keyLabel=(text:string)=>LINUX?linuxShortcutLabel(text):text;
+if(LINUX){
+  document.documentElement.classList.add('linux-keys');
+  document.querySelectorAll('kbd').forEach(k=>{k.textContent=keyLabel(k.textContent||'');});
+  document.querySelectorAll<HTMLElement>('[title]').forEach(el=>{el.title=keyLabel(el.title);});
+}
 declare global{interface Window{pulseDesktop:{call:(action:string,args?:unknown)=>Promise<any>;input:(id:string,data:string)=>void;ack:(id:string,length:number)=>void;resize:(id:string,cols:number,rows:number)=>void;on:(name:string,cb:(data:any)=>void)=>()=>void}}}
 const api=window.pulseDesktop;
 const $=<T extends HTMLElement=HTMLElement>(id:string)=>document.getElementById(id) as T;
@@ -53,6 +62,8 @@ function notice(error:unknown){$('notice').textContent=String(error).replace(/^E
 const attempt=(fn:()=>Promise<unknown>)=>void fn().catch(notice);
 function button(label:string,action:()=>void){const b=document.createElement('button');b.type='button';b.textContent=label;b.onclick=action;return b;}
 pages.forEach(p=>{const b=button('',()=>attempt(()=>select(p.id)));b.dataset.id=p.id;b.append(pageIcon(p.id),Object.assign(document.createElement('span'),{textContent:p.title}),Object.assign(document.createElement('kbd'),{textContent:p.shortcut||''}));$('pages').append(b);});
+// Linux: the page buttons' shortcut labels.
+if(LINUX)$('pages').querySelectorAll('kbd').forEach(k=>{k.textContent=keyLabel(k.textContent||'');});
 $('pages-back').onclick=()=>$('pages').scrollBy({left:-Math.max(240,$('pages').clientWidth*.7),behavior:'instant'});
 $('pages-next').onclick=()=>$('pages').scrollBy({left:Math.max(240,$('pages').clientWidth*.7),behavior:'instant'});
 function pageScrollState(){$<HTMLButtonElement>('pages-back').disabled=$('pages').scrollLeft<1;$<HTMLButtonElement>('pages-next').disabled=$('pages').scrollLeft+$('pages').clientWidth>=$('pages').scrollWidth-1;}
@@ -71,6 +82,8 @@ function terminal(id:string):Pane{
     onSelectionChange:()=>{},
     beforeKey:e=>{
       const current=panes.get(id);
+      // Linux: edit shortcuts with no effect in the terminal do not reach it as ^C, ^X, ^Z or ^A.
+      if(LINUX&&e.type==='keydown'&&linuxTerminalSwallows(e,!!current?.surface?.hasSelection()))return false;
       switch(terminalKeyDecision(e,!!current?.surface?.hasSelection())){
         case 'copy':e.preventDefault();e.stopPropagation();attempt(()=>copyTerminalSelection({writeText:text=>api.call('copy',{text})},current!.surface!.getSelection()));return false;
         case 'newline':e.preventDefault();api.input(id,'\n');return false;
@@ -96,6 +109,7 @@ async function select(id:string){
     await api.call('page',{path:id.startsWith('/')?id:'/'});return;
   }
   $('kind').textContent='TERMINAL';$('title').textContent=item.title;$('detail').textContent=`${item.command} · ${item.directory}`;$('keyhint').textContent='⌃H / ⌃L switch';
+  if(LINUX)$('keyhint').textContent=keyLabel('⌃H / ⌃L switch');
   await api.call('terminal');if(tick!==switching)return;
   for(const [key,p] of panes){p.node.hidden=key!==id;if(key!==id)p.surface?.setVisible(false);}
   try{await document.fonts.load(`${appearance.fontSize}px PulseTerminal`);}catch{/* no bundled terminal font: the fallback stack renders */}
@@ -199,7 +213,13 @@ let commandIndex=0;
 let paletteBusy=false;
 let shortcutsOnly=false;
 let priorFocus:HTMLElement|null=null;
+// The command menu shows and searches shortcuts through keyLabel; the shipped catalog is authorCatalog.
 function commandCatalog():Command[]{
+  const catalog=authorCatalog();
+  if(!LINUX)return catalog;
+  return catalog.map(c=>({...c,...(c.shortcut?{shortcut:keyLabel(c.shortcut)}:{}),...(c.detail&&c.group==='Shortcuts'?{detail:keyLabel(c.detail)}:{})}));
+}
+function authorCatalog():Command[]{
   const current=sessions.find(s=>s.id===selected);
   return [
     {id:'new',label:'New terminal',group:'Actions',shortcut:'⌘T',run:()=>create()},

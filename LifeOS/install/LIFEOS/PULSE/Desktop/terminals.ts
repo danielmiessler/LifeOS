@@ -10,9 +10,15 @@ import {invariant} from '../../TOOLS/Invariant';
 import {pulseSessionTitle} from '../../TOOLS/PulseSessionTitle';
 import {codexSessionTitle} from '../../CODEX/SessionTitle';
 import {claudeModelForTerminal} from './session-transcript';
+// Linux: tmux, the config folder, the shell and the clipboard come from linux.ts.
+import {userInfo} from 'node:os';
+import {isLinux,LINUX_TMUX,LINUX_TMUX_MISSING,linuxTmuxConfig,linuxTerminalDir,linuxShellEnvironment} from './linux';
+const LINUX=isLinux(process.platform);
 const exec=promisify(execFile);
-const tmux=['/opt/homebrew/bin/tmux','/usr/local/bin/tmux'].find(existsSync);
-const env=shellEnvironment(process.env);
+// Linux: the system tmux.
+const tmux=LINUX?LINUX_TMUX.find(existsSync):['/opt/homebrew/bin/tmux','/usr/local/bin/tmux'].find(existsSync);
+// Linux: the user's login shell, and a PATH without the Homebrew prefix.
+const env=LINUX?linuxShellEnvironment(shellEnvironment(process.env),process.env.PATH,userInfo().shell!):shellEnvironment(process.env);
 export type TerminalInfo={id:string;title:string;command:string;directory:string;decoration?:{sessionName?:string;provider?:"Claude Code"|"Codex"|"LifeOS";model?:string;codexThreadId?:string;inactiveBg:string;inactiveFg:string;activeBg:string;activeFg:string}};
 export class Terminals {
   private clients=new Map<string,pty.IPty>();
@@ -29,16 +35,21 @@ export class Terminals {
   private configPath(){
     if(this.stableConfig)return this.stableConfig;
     if(!existsSync(this.config)){this.stableConfig=this.config;return this.config;}
+    // Linux: the stable copy lives under ~/.local/share and swaps zsh and pbcopy for the login shell and wl-copy.
+    if(LINUX){const dir=linuxTerminalDir(homedir());mkdirSync(dir,{recursive:true});const stable=join(dir,'tmux.conf');const next=linuxTmuxConfig(readFileSync(this.config,'utf8'),userInfo().shell!);if(!existsSync(stable)||readFileSync(stable,'utf8')!==next)writeFileSync(stable,next);this.stableConfig=stable;return stable;}
     const dir=join(homedir(),'Library/Application Support/LifeOS/pulse-terminal');mkdirSync(dir,{recursive:true});
     const stable=join(dir,'tmux.conf');const next=readFileSync(this.config,'utf8');
     if(!existsSync(stable)||readFileSync(stable,'utf8')!==next)writeFileSync(stable,next);
     this.stableConfig=stable;return stable;
   }
   private async run(args:string[]){
+    // Linux: the missing-tmux message names the Linux installer.
+    if(!tmux&&LINUX)throw new Error(LINUX_TMUX_MISSING.replace(/\.$/,', then reconnect.'));
     if(!tmux)throw new Error('tmux is required. Install it with brew install tmux, then reconnect.');
     return (await exec(tmux,['-L','pulse-desktop','-f',this.configPath(),...args],{env,timeout:5000,maxBuffer:1024*1024})).stdout.trim();
   }
   async list():Promise<TerminalInfo[]>{
+    if(!tmux&&LINUX)throw new Error(LINUX_TMUX_MISSING);
     if(!tmux)throw new Error('tmux is required. Install it with brew install tmux.');
     let text='';
     try{text=await this.run(['list-sessions','-F','#{session_name}\t#{@pulse-title}\t#{pane_current_command}\t#{pane_current_path}\t#{@pulse-decoration}\t#{session_id}']);}
