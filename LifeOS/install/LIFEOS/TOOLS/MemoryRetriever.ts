@@ -415,12 +415,41 @@ function computePrecomputed(note: KnowledgeNote): PrecomputedData {
 // Conversational glue is not evidence of a memory match. Keep short domain
 // terms (AI, UI, Go, etc.); an acknowledgement alone needs no new retrieval.
 const QUERY_GLUE = new Set("a an the and or but if then than to of in on at for from with by as is are was were be been being it its this that these those i me my we us our you your they them their he she his her have has had do does did can could would should will just please yes yeah okay ok thanks thank fix do go ahead continue proceed".split(" "));
-export function retrievalTerms(query: string): string[] {
+/**
+ * Glue words of this install's own language, read from `LIFEOS/USER/CONFIG/glue-words.txt`: one word or phrase per
+ * line, `#` starts a comment. QUERY_GLUE is English; on an install that writes in another language, that language's
+ * articles, prepositions and pronouns otherwise outnumber the content words of every prompt and match almost every note.
+ * Each line goes through tokenize(), so the list always matches what the query side produces, whatever the tokenizer.
+ * No file means no extra words, and retrieval is exactly as before. Any other read error is thrown, never read as an
+ * empty list. The cache is keyed by the file's mtime and size, so a long-lived importer (Pulse, the retrieval worker)
+ * sees an edit on its next query. The index is untouched: the list filters the query only, so INDEX_VERSION does not change.
+ * public issue #2207
+ */
+export const glueWordsPath = (): string => lifeosPath("USER", "CONFIG", "glue-words.txt");
+let installGlueCache: { key: string; words: Set<string> } | null = null;
+export function installGlueWords(file: string = glueWordsPath()): Set<string> {
+  let key = `${file}|absent`;
+  let text = "";
+  try {
+    const st = fs.statSync(file);
+    key = `${file}|${st.mtimeMs}|${st.size}`;
+    if (installGlueCache?.key === key) return installGlueCache.words;
+    text = fs.readFileSync(file, "utf-8");
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException)?.code !== "ENOENT") throw err;
+  }
+  if (installGlueCache?.key === key) return installGlueCache.words;
+  const words = new Set(text.split("\n").map((l) => l.replace(/#.*/, "").trim()).filter(Boolean).flatMap(tokenize));
+  installGlueCache = { key, words };
+  return words;
+}
+
+export function retrievalTerms(query: string, installGlue: Set<string> = installGlueWords()): string[] {
   // Approval-only follow-ups refer to the current conversation, not the archive.
   // Match the whole utterance so an added topic still reaches retrieval.
   const approval = query.replace(/[’']/g, "").replace(/[,.!?]/g, " ").replace(/\s+/g, " ").trim();
   if (/^(?:(?:well|okay|ok|yeah|yes|please) )*(?:do (?:it|that|whatever you can(?: now)?(?: to fix (?:it|that))?)|go ahead|fix (?:it|that)|continue|proceed)(?: now)?(?: and (?:then )?lets (?:just )?(?:keep observing|wait(?: (?:a little|a bit))?))?$/i.test(approval)) return [];
-  return [...new Set(tokenize(query))].filter(term => term === "go" || !QUERY_GLUE.has(term));
+  return [...new Set(tokenize(query))].filter(term => !installGlue.has(term) && (term === "go" || !QUERY_GLUE.has(term)));
 }
 
 // One compiled matcher per term: scoring runs containsTerm for every term against every
