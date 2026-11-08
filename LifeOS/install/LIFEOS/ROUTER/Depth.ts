@@ -42,6 +42,13 @@ export const DEPTH_PHRASES = [
   "denk gründlich", "denke gründlich", "gründlich nachdenken", "gründliche analyse",
   "gründlich analysieren", "geh in die tiefe", "sei gründlich", "tiefenanalyse",
   "volles programm",
+  // Portuguese, production-tested on a Portuguese-speaking install (public issue #2530, @drpaulobernardy).
+  "pense bem", "pensa bem", "pense a fundo", "a fundo", "aprofunde", "aprofundado",
+  "aprofundada", "análise profunda", "análise minuciosa", "análise completa",
+  "seja minucioso", "minucioso", "minuciosa", "esmiúce", "esmiuce", "detalhado",
+  "detalhada", "de forma detalhada", "exaustivo", "exaustiva", "relatório completo",
+  "levantamento completo", "tudo o que você sabe", "tudo que você sabe",
+  "não economize", "se estenda", "pode se estender",
 ];
 
 /** Separated verb→adverb forms ("think through it deeply"), bounded to one sentence. */
