@@ -186,6 +186,8 @@ A benchmark run produces a versioned report under `MEMORY/BENCHMARKS/` that both
 
 `vector_config` is currently `null`: there is no vector benchmark candidate and no vector index. A vector or hybrid index may be adopted only after a labeled report demonstrates retrieval-quality improvement over progressive BM25, and only if it is canonical-rebuildable and stays within separately documented disk and process bounds. Lower token use alone is not evidence for a vector index.
 
+**Opt-in per-turn embedding leg.** Per-turn retrieval (`MemoryTurnStart` → `MemoryRetriever.getRelevantContextAsync`) ranks by embedding only when the operator sets `LIFEOS_MEMORY_EMBEDDING=1` (`MemoryEmbedding.ts`); off, which is the default, its output is identical to BM25. It is not a Cortex index: the Cortex commands, `CORTEX_INDEX_POLICY.json` and `vector_config` are unchanged. It meets this gate as follows. *Labeled evidence:* a held-out report against the shipped BM25 at the hook's exact call (public issue #2207). *Canonical-rebuildable:* vectors are a disposable cache derived from the canonical Markdown under `MEMORY/STATE/cache/memory-embeddings/`, keyed by path, mtime and model; deleting it only re-embeds. *Bounds:* about 4 KB per note on disk (1024-dimension float32, e.g. 2.0 MB for 486 notes); no LifeOS process, because embeddings come from the operator's own Ollama server and only a loopback URL is accepted; one query embed per prompt inside the 300 ms prompt budget, falling back to BM25 past it; note embeds only in the async Stop hook (`MemoryIndexRefresh`), at most 40 s per turn.
+
 ## Truthful operational health
 
 `Cortex.ts status` reports contract availability and corpus shape. Operational health comes from:

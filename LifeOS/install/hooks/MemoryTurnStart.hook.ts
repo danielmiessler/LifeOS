@@ -249,10 +249,14 @@ export function acknowledgeEmission(sessionId: string, emissionId: string): void
   writeQueue(sessionId, updated);
 }
 
-export type AsyncRetrieve = (prompt: string, waitMs: number) => Promise<{ markdownBlock: string } | null>;
+/** `transcriptPath`: read by the worker only when the opt-in embedding leg is on (#2207). */
+export type AsyncRetrieve = (prompt: string, waitMs: number, transcriptPath?: string) => Promise<{ markdownBlock: string } | null>;
 
 /** The retriever in a worker; resolves null and terminates the worker once `waitMs` passes. */
-export const retrieveInWorker: AsyncRetrieve = (prompt, waitMs) => new Promise((resolve) => {
+export const retrieveInWorker: AsyncRetrieve = (prompt, waitMs, transcriptPath) => new Promise((resolve) => {
+  // An absolute deadline, set before the worker boots: the embedding leg (opt-in, #2207) gives its query
+  // embed only what is left, keeping room to post the reply back.
+  const deadline = Date.now() + waitMs - 25;
   let w: Worker;
   try { w = new Worker(new URL("./lib/retrieval-worker.ts", import.meta.url).href); }
   catch (e) { process.stderr.write(`MemoryTurnStart ground error: worker did not start (${(e as Error)?.message ?? e})\n`); resolve({ markdownBlock: "" }); return; }
@@ -268,7 +272,7 @@ export const retrieveInWorker: AsyncRetrieve = (prompt, waitMs) => new Promise((
   const failed = (why: string) => { process.stderr.write(`MemoryTurnStart ground error: ${why}\n`); done({ markdownBlock: "" }); };
   w.onmessage = (e: MessageEvent) => typeof e.data?.markdownBlock === "string" ? done({ markdownBlock: e.data.markdownBlock }) : failed(String(e.data?.error ?? "no block"));
   w.onerror = (e: ErrorEvent) => failed(e?.message || "worker error");
-  w.postMessage(prompt);
+  w.postMessage({ query: prompt, deadline, transcriptPath });
 });
 
 /** One turn's stdout under the ceiling. Exported for tests. */
@@ -283,7 +287,8 @@ export async function compose(input: Record<string, unknown> | null, opts: { ela
       const waitMs = Math.max(RETRIEVAL_MIN_WAIT_MS, SOFT_BUDGET_MS - elapsed());
       const late = new Promise<null>((r) => setTimeout(() => r(null), waitMs));
       let g: { markdownBlock: string } | null = null;
-      try { g = await Promise.race([(opts.retrieve ?? retrieveInWorker)(m.groundQuery, waitMs), late]); }
+      const transcriptPath = typeof input?.transcript_path === "string" ? input.transcript_path : undefined;
+      try { g = await Promise.race([(opts.retrieve ?? retrieveInWorker)(m.groundQuery, waitMs, transcriptPath), late]); }
       catch (e) { process.stderr.write(`MemoryTurnStart ground error: ${(e as Error)?.message ?? e}\n`); g = { markdownBlock: "" }; }
       if (g === null) m.ground = SKIP_NOTICE;
       else if (g.markdownBlock) m.ground = `<lifeos-ground>\n${g.markdownBlock}\n</lifeos-ground>\n`;

@@ -15,7 +15,7 @@
  * it already would have; it is reported on stderr, never raised.
  */
 
-import { refreshIndex } from "../LIFEOS/TOOLS/MemoryRetriever";
+import { refreshIndex, refreshEmbeddingIndex } from "../LIFEOS/TOOLS/MemoryRetriever";
 import { InvariantViolation } from "../LIFEOS/TOOLS/Invariant";
 
 try {
@@ -27,6 +27,16 @@ try {
   // Stop chain still must not fail on it.
   const label = err instanceof InvariantViolation ? "memory index invariant violated" : "memory index refresh failed";
   console.error(`${label}: ${err instanceof Error ? err.message : String(err)}`);
+}
+
+// Opt-in embedding leg (public issue #2207): embed new and changed notes after the keyword index is
+// fresh. Off by default (null, no work). Bounded under the hook's 60s timeout; a large first index
+// finishes over a few turns.
+try {
+  const emb = await refreshEmbeddingIndex({ budgetMs: 40_000 });
+  if (emb && (emb.embedded || emb.pruned)) console.error(`memory embeddings: ${emb.embedded} embedded, ${emb.pending} pending, ${emb.pruned} pruned`);
+} catch (err) {
+  console.error(`memory embedding refresh failed: ${err instanceof Error ? err.message : String(err)}`);
 }
 
 process.exit(0);

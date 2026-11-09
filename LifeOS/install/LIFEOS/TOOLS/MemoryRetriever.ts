@@ -28,7 +28,8 @@ for (const __k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
  *
  * SEARCH:
  *   BM25-style keyword matching + tag co-occurrence scoring.
- *   No embeddings, no vector DB — pure markdown + YAML frontmatter.
+ *   No vector DB — pure markdown + YAML frontmatter. Per-turn retrieval has an opt-in embedding
+ *   leg (LIFEOS_MEMORY_EMBEDDING=1, local Ollama only; MemoryEmbedding.ts), off by default.
  *
  * COMPRESSION:
  *   Uses Inference.ts low level for optional LLM compression of matched content.
@@ -63,6 +64,7 @@ import { homedir } from "node:os";
 import { invariant, InvariantViolation } from "./Invariant";
 import { getClaudeDir, getLifeosDir, lifeosPath } from "./Paths"; // public issue #1974 @sabo961, PR #1918 @PigLardLord
 import { ALL_DIRS } from "./KnowledgeSchema.ts"; // public PR #2149, @Bowlerjim; PR #2143, @joecoxtech
+import { embeddingConfig, rankByEmbedding, refreshEmbeddings, type EmbeddingConfig } from "./MemoryEmbedding"; // opt-in leg, public issue #2207
 
 // Normalize env path vars that Claude Code injects without shell expansion (LifeOS#1404)
 for (const k of ["LIFEOS_DIR", "LIFEOS_CONFIG_DIR", "PROJECTS_DIR"]) {
@@ -1563,6 +1565,91 @@ export function getRelevantContext(
   const result = computeRelevantContext(query, options);
   logRetrieval(query, result.results.length, Date.now() - startedAt);
   return result;
+}
+
+/**
+ * The per-turn entry for the retrieval worker (hooks/lib/retrieval-worker.ts). With the embedding
+ * leg off (the default) it is getRelevantContext, unchanged. With LIFEOS_MEMORY_EMBEDDING=1 it
+ * ranks the same corpus by embedding (MemoryEmbedding.ts) (public issue #2207). The keyword result is
+ * computed first and kept, and the query embed gets only the time left before `deadline` (epoch ms,
+ * from the hook): a failure or a slow embed returns that keyword result in time, so a stopped or
+ * cold server costs one keyword turn and never the turn. Without `deadline`, `timeoutMs` (default
+ * 250) bounds the embed. `context` (the previous user messages) is embedded after the query; it
+ * never decides whether to search: a prompt with no content words still retrieves nothing.
+ */
+export async function getRelevantContextAsync(
+  query: string,
+  options: RelevantContextOptions & { deadline?: number; timeoutMs?: number; context?: string } = {},
+): Promise<GetRelevantContextResult> {
+  const cfg = embeddingConfig();
+  if (!cfg.enabled) return getRelevantContext(query, options);
+  const startedAt = Date.now();
+  const keyword = computeRelevantContext(query, options);
+  let result = keyword;
+  try {
+    const timeoutMs = options.deadline !== undefined ? options.deadline - Date.now() - EMBED_RESULT_RESERVE_MS : options.timeoutMs ?? 250;
+    result = await computeEmbeddingContext(query, { ...options, timeoutMs }, cfg);
+  } catch (err) {
+    if (err instanceof InvariantViolation) throw err;
+    result = keyword; // fail open to the keyword result already in hand
+  }
+  logRetrieval(query, result.results.length, Date.now() - startedAt);
+  return result;
+}
+
+/** Time kept after the query embed to build the hits and post them back before the hook's deadline. */
+const EMBED_RESULT_RESERVE_MS = 15;
+
+async function computeEmbeddingContext(
+  query: string,
+  options: RelevantContextOptions & { timeoutMs: number; context?: string },
+  cfg: EmbeddingConfig,
+): Promise<GetRelevantContextResult> {
+  const topK = options.topK ?? RELEVANT_DEFAULT_TOP_K;
+  const excerptChars = options.excerptChars ?? RELEVANT_EXCERPT_CHARS;
+  const empty: GetRelevantContextResult = { results: [], markdownBlock: "", totalSearched: 0, cached: false };
+  // Same gate as the keyword path: a prompt with no content words ("ok", "go ahead") retrieves nothing.
+  const queryTerms = retrievalTerms(query);
+  if (queryTerms.length === 0) return empty;
+  const allNotes = corpusForQuery(queryTerms, options.allowStaleIndex === true);
+  if (allNotes.length === 0) return empty;
+  const embedded = options.context?.trim() ? `${query.trim()}\n${options.context.trim()}` : query;
+  const ranking = await rankByEmbedding(embedded, allNotes, cfg, { timeoutMs: options.timeoutMs });
+  const results: RelevantResultItem[] = [];
+  for (let j = 0; j < ranking.order.length && results.length < topK; j++) {
+    const note = allNotes[ranking.order[j]];
+    if (options.typeFilter && (note.frontmatter.type ?? "unknown") !== options.typeFilter) continue;
+    const body = note.noteClass === "memory" ? note.body : readBody(note.filePath);
+    if (body === null) continue; // a stale index entry whose file is gone gives way to the next one
+    const rawType = (note.frontmatter.type ?? "unknown") as string;
+    const knownType: RelevantResultItem["type"] =
+      rawType === "memory" || rawType === "idea" || rawType === "knowledge" ? rawType : "unknown";
+    results.push({
+      type: knownType,
+      noteClass: note.noteClass,
+      path: note.filePath,
+      title: (note.frontmatter.title as string) || path.basename(note.filePath, ".md"),
+      score: ranking.cosines[j],
+      excerpt: extractExcerpt({ ...note, body }, queryTerms).slice(0, excerptChars),
+    });
+  }
+  return { results, markdownBlock: formatRelevantBlock(results), totalSearched: allNotes.length, cached: false };
+}
+
+/**
+ * Embed new and changed notes for the embedding leg; called by the async Stop hook after the
+ * keyword index refresh. Null when the leg is off.
+ */
+export async function refreshEmbeddingIndex(opts: { budgetMs?: number } = {}): Promise<{ embedded: number; pending: number; pruned: number; warmed: boolean } | null> {
+  const cfg = embeddingConfig();
+  if (!cfg.enabled) return null;
+  const notes = [...indexedNotes(), ...loadMemoryFiles()].map((n) => ({
+    filePath: n.filePath,
+    title: (n.frontmatter.title as string) || path.basename(n.filePath, ".md"),
+    noteClass: n.noteClass,
+    body: n.body,
+  }));
+  return refreshEmbeddings(notes, cfg, opts);
 }
 
 /**
