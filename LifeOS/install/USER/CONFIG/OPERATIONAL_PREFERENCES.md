@@ -107,6 +107,13 @@ The system prompt's Security Boundaries rule 7 and the Permission Boundaries wor
 
 - _(rules for server, firewall, or SSH work)_
 
+## Vocabulary
+
+Bare shortcuts the principal types as a whole prompt. `LIFEOS/ROUTER/Shape.ts` recognizes them and cites this section for what each one means.
+
+- `e`: explain my last answer again, more simply. Write the explanation to the sentence rules of ASD-STE100 (Simplified Technical English), without its controlled dictionary. Use instructions of 20 words or fewer and descriptions of 25 or fewer, the active voice, one idea per sentence, no more than three nouns in a row, and the same plain word for the same thing every time. Keep technical terms and code exactly as they are. Keep the answer about as long as before, and keep every caveat and decision. Short sentences drop minor caveats first.
+- _(the other bare shortcuts: what `s`, `c`, `y`, `v`, `u`, `uc` and `f` mean for you)_
+
 ## Gotchas
 
 Facts about tools and your install that prevent known mistakes. They are not preferences: each belongs in the tool that causes it, and moves there once that tool makes the mistake impossible.
