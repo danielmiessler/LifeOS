@@ -69,7 +69,8 @@ export function h2Headings(text: string): string[] {
 }
 
 /** GenerateTelosSummary's section key: dash suffix and trailing parentheticals dropped, lowercased, plural-tolerant. */
-const headingKey = (h: string): string => h.replace(/\s*[—–-].*$/, "").replace(/\s*\(.*\)\s*$/, "").trim().toLowerCase().replace(/s$/, "");
+const headingKey = (h: string): string =>
+  h.replace(/\s*\(.*\)\s*$/, "").replace(/\s*[—–-].*$/, "").replace(/\s*\(.*\)\s*$/, "").trim().toLowerCase().replace(/s$/, "");
 
 /**
  * Template sections a USER file lacks: for every `*.md` in the template tree (recursively, symlinks skipped) whose USER
