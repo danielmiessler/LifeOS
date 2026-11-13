@@ -38,11 +38,13 @@ Generated headshots are written to `LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Headshot/g
 
 - A Google AI Studio account. Create an API key at https://aistudio.google.com/apikey and make sure the project can use the Gemini image model (billing may be required).
 - Env key `GOOGLE_API_KEY` in `~/.claude/.env`, set to that key.
+- Tool dependencies: run `bun install` in `~/.claude/skills/Headshot/Tools` (installs `@google/genai`).
 - Optional: ImageMagick (`magick`) for the pick-sheet montage.
 
 ## Prove it works
 
 ```bash
+cd ~/.claude/skills/Headshot/Tools && bun install
 bun ~/.claude/skills/Headshot/Tools/Headshot.ts check
 bun ~/.claude/skills/Headshot/Tools/Headshot.ts references --sentiment neutral
 ```
