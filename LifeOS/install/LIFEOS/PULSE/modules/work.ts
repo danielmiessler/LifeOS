@@ -123,7 +123,7 @@ function issueSource(labels: string[]): "lifeos-sync" | "auto-native" | "auto-sw
   return "manual";
 }
 
-function deriveColumn(issue: { labels: string[]; state: string }, columns: string[]): string {
+export function deriveColumn(issue: { labels: string[]; state: string }, columns: string[]): string {
   if (issue.state === "CLOSED") {
     return columns.includes("Complete")
       ? "Complete"
@@ -140,8 +140,7 @@ function deriveColumn(issue: { labels: string[]; state: string }, columns: strin
     if (label.startsWith("Status:")) {
       const raw = label.slice("Status:".length).trim().toLowerCase();
       const aliased = LEGACY_STATUS_ALIASES[raw];
-      const target = aliased ?? raw;
-      const hit = columns.find((c) => c.toLowerCase() === target.toLowerCase());
+      const hit = columns.find((c) => c.toLowerCase() === raw) ?? (aliased ? columns.find((c) => c.toLowerCase() === aliased.toLowerCase()) : undefined);
       if (hit) return hit;
     }
   }
