@@ -24,7 +24,7 @@ import {
 } from "node:fs"
 import { randomUUID } from "node:crypto"
 import { hostname } from "node:os"
-import { basename, dirname, isAbsolute, join, sep } from "node:path"
+import { basename, dirname, isAbsolute, join, parse, sep } from "node:path"
 import { invariant, InvariantViolation } from "../Invariant"
 import {
   isVerificationCode as labelIsVerificationCode,
@@ -58,12 +58,14 @@ export function confinedPath(root: string, p: string): string | null {
   try { realRoot = realpathSync(root) } catch { return null }
 
   const relative = !isAbsolute(p)
-  let cur = relative ? realRoot : sep
+  const rootPrefix = isAbsolute(p) ? parse(p).root : ""
+  let cur = relative ? realRoot : rootPrefix
   let curIsDir = true
   let missing = false
   const tail: string[] = []
 
-  for (const comp of p.split(sep)) {
+  const parts = isAbsolute(p) ? p.slice(rootPrefix.length).split(/[\\/]+/) : p.split(/[\\/]+/)
+  for (const comp of parts) {
     if (comp === "" || comp === ".") continue
     if (missing) {
       if (comp === "..") return null
@@ -74,7 +76,7 @@ export function confinedPath(root: string, p: string): string | null {
     if (comp === "..") {
       cur = dirname(cur)
     } else {
-      const next = cur === sep ? sep + comp : cur + sep + comp
+      const next = cur.endsWith(sep) ? cur + comp : cur + sep + comp
       let st
       try { st = lstatSync(next) } catch (e) {
         if (errCode(e) === "ENOENT") { missing = true; tail.push(comp); continue }
@@ -129,7 +131,7 @@ function ensureDir(dir: string, dirMode: number): void {
       if (errCode(e) === "EEXIST") continue // a peer made it; it keeps its own mode
       throw e
     }
-    chmodSync(m, dirMode)
+    if (process.platform !== "win32") chmodSync(m, dirMode)
   }
 }
 
@@ -159,7 +161,7 @@ export function atomicWrite(path: string, data: string | Uint8Array, opts: Atomi
       let off = 0
       while (off < bytes.length) off += writeSync(fd, bytes, off, bytes.length - off)
       fsyncSync(fd)
-      invariant((fstatSync(fd).mode & 0o777) === mode, `atomicWrite: temp file mode is not 0o${mode.toString(8)}`)
+      if (process.platform !== "win32") { invariant((fstatSync(fd).mode & 0o777) === mode, `atomicWrite: temp file mode is not 0o${mode.toString(8)}`) }
     } finally {
       closeSync(fd)
     }
