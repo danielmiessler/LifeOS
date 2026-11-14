@@ -98,6 +98,8 @@ async function runTurn(text: string): Promise<string> {
     tools: { type: "preset", preset: "claude_code" },
     ...(Object.keys(remoteMcp).length > 0 ? { mcpServers: remoteMcp } : {}),
     settingSources: ["user", "project"], // no "local" — skip CLAUDE.md mode/format machinery
+    permissionMode: "default",
+    ...(resumeFromSdk ? { resume: resumeFromSdk } : {}),
     // Channel marker — hooks skip the desktop /notify voice when not "desktop".
     // The principal hears the reply through Siri's TTS on the phone, not the Mac speaker.
     env: { ...process.env, LIFEOS_NOTIFICATION_CHANNEL: "siri" },
@@ -132,20 +134,14 @@ Rules, absolute:
     },
   }
 
-  const queryOpts: { prompt: string; resume?: string; options?: unknown } = {
-    prompt: text,
-    options: sdkOptions,
-  }
-  if (resumeFromSdk) queryOpts.resume = resumeFromSdk
-
-  // The controller must reach query() via `options.abortController`; a flag
+  // The controller must reach query() via options.abortController; a flag
   // checked between messages cannot cancel a turn stalled mid-tool.
   // (public issue #2027, @bowlax)
   const timeoutController = new AbortController()
   const timeout = setTimeout(() => timeoutController.abort(), SDK_TIMEOUT_MS)
   sdkOptions.abortController = timeoutController
 
-  const conversation = query(queryOpts as never)
+  const conversation = query({ prompt: text, options: sdkOptions as never })
 
   let fullText = ""
   try {
