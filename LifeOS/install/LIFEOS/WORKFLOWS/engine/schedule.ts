@@ -243,9 +243,8 @@ export function nextFire(trigger: TriggerV2, name: string, now: Date, lastStart:
       return nextScheduledAt(v1ScheduleProbe(trigger.cron, zoneOf(trigger)), now);
     case "interval": {
       const period = trigger.minutes * 60_000;
-      let due = Number.isFinite(lastStart) ? lastStart + period : now.getTime() + period;
-      while (due <= now.getTime()) due += period;
-      return new Date(due);
+      const found = occurrencesBetween(trigger, now, new Date(now.getTime() + period));
+      return found[0]?.at ?? null;
     }
     case "once":
       return Date.parse(trigger.at) > now.getTime() && !isOnceConsumed(dir, name, trigger.at) ? new Date(trigger.at) : null;
