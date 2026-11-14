@@ -23,6 +23,7 @@ import { main as evalMain } from "./Eval";
 import { act, dailyV4 } from "./Act";
 import { formatLanded, landedImpacts } from "./Landed";
 import { errataReport, summarize } from "./Report";
+import { isV4Outage } from "./V4Outage";
 import { complaintRows, falsePasses, fileAssayMissUpgrades, formatImpact, formatMisses, impact, loadSources, retireCandidates, skillRows, skillRowsMarkdown } from "./OutputJoin";
 
 type DailyDependencies = {
@@ -30,7 +31,7 @@ type DailyDependencies = {
   enrich?: (store: ErrataStore) => Promise<EnrichResult>;
   label?: (store: ErrataStore, opts: LabelOptions) => ReturnType<typeof label>;
   triage?: typeof triage;
-  /** Errata v4 detection over new exchanges (ISC-51); shadow, so it never changes the exit code. */
+  /** Errata v4 detection over new exchanges (ISC-51); shadow, so single errors are non-fatal, but engine outages (>50% errors) or thrown exceptions fail the stage (#2789). */
   v4?: () => Promise<unknown>;
   /** Errata's daily state: roll-up event, landed-fix check, state file (Report.ts). */
   report?: (store: ErrataStore) => unknown;
@@ -123,11 +124,19 @@ export async function daily(
     failures++; failed.push(`report threw: ${String((error as Error)?.message ?? error).slice(0, 160)}`);
     say("report", stageError("daily report", error));
   }
-  // v4 runs last and in shadow: it reads the ledger, never writes it, and its failure never
-  // changes the exit code or delays the v3 stages above (ISC-49, ISC-51).
+  // v4 runs last and in shadow: single errors are non-fatal, but a thrown error or an engine outage
+  // (>= 50% errors on detect or diagnose candidates) fails the stage so Vigil raises an alert (public issue #2789).
   try {
-    say("v4", await (deps.v4 ?? (() => dailyV4()))());
+    const result = await (deps.v4 ?? (() => dailyV4()))();
+    say("v4", result);
+    const outage = isV4Outage(result);
+    if (outage.failed) {
+      failures++;
+      failed.push(`v4: ${outage.reason}`);
+    }
   } catch (error) {
+    failures++;
+    failed.push(`v4 threw: ${String((error as Error)?.message ?? error).slice(0, 160)}`);
     say("v4", stageError("daily v4", error));
   }
   if (failed.length) console.error(`[errata daily] failed stages: ${failed.join("; ")}`);
@@ -156,8 +165,16 @@ export async function weekly(store: ErrataStore, deps: WeeklyDependencies = {}, 
   }
   // Same isolation as daily: v4 is shadow and never files to Upgrades from the schedule.
   try {
-    say("v4", await (deps.v4 ?? (() => act({ file: false })))());
+    const result = await (deps.v4 ?? (() => act({ file: false })))();
+    say("v4", result);
+    const outage = isV4Outage(result);
+    if (outage.failed) {
+      failures++;
+      failed.push(`v4: ${outage.reason}`);
+    }
   } catch (error) {
+    failures++;
+    failed.push(`v4 threw: ${String((error as Error)?.message ?? error).slice(0, 160)}`);
     say("v4", stageError("weekly v4", error));
   }
   if (failed.length) console.error(`[errata weekly] failed stages: ${failed.join("; ")}`);
