@@ -31,9 +31,14 @@ fi
 
 OS=$(uname -s)
 
-# Linux/systemd analog is intentionally not implemented — the deriver is a
-# nice-to-have on Linux and can be wired by hand via systemd timers if
-# needed. Pulse menu bar is already macOS-only; same scope.
+# Linux: the same nightly job runs as a systemd --user timer via
+# LIFEOS/TOOLS/InstallDeriverSystemd.ts (daily 03:00). macOS keeps launchd below.
+if [ "$OS" != "Darwin" ]; then
+  case "${1:-}" in
+    install|uninstall|status)
+      exec "$BUN_PATH" "$HOME/.claude/LIFEOS/TOOLS/InstallDeriverSystemd.ts" "$1" ;;
+  esac
+fi
 
 case "${1:-}" in
   install)
