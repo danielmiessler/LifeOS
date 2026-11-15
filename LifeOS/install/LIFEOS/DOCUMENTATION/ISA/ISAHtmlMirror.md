@@ -179,4 +179,4 @@ Before the `complete` transition the mirror never fires; after it, the sibling s
 
 - `LIFEOS/DOCUMENTATION/ISA/ISASystem.md` — twenty-one-section body, five identities, three-guardrail taxonomy
 - `LIFEOS/DOCUMENTATION/ISA/ISAFormat.md` — file-shape contract (frontmatter spec, locked section order)
-- `LIFEOS/ALGORITHM/v8.45.0.md` — the algorithm that produces ISAs, phase progression source
+- `LIFEOS/ALGORITHM/v8.46.0.md` — the algorithm that produces ISAs, phase progression source

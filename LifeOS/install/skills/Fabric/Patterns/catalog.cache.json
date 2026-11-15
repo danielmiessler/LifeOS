@@ -1,0 +1,101 @@
+{
+  "0b8fbff51b93741333fb1277c78bf8f20801c12385b56feacfdae6ea16c906c1": {
+    "name": "arbiter-evaluate-quality",
+    "purpose": "Scores two candidate outputs against an ideal reference on multiple axes and selects the one closest to ideal.",
+    "triggers": [
+      "compare two prompt outputs",
+      "score outputs against ideal",
+      "pick best candidate output",
+      "evaluate prompt results",
+      "rank outputs by quality"
+    ]
+  },
+  "0d4745565024e184b49dd77219593eb88d358f6ea9a446f64629cb32757bc832": {
+    "name": "arbiter-create-ideal",
+    "purpose": "Uses a General Evaluator to draft an ideal prompt from two candidate prompts and sample input, outputting only the new ideal prompt's markdown.",
+    "triggers": [
+      "create ideal prompt",
+      "draft ideal prompt from candidates",
+      "compare two prompts ideal",
+      "arbiter create ideal",
+      "generate ideal prompt using GE"
+    ]
+  },
+  "529f1255e2408f205e274bfe871981e37162fb5ca4594263caa6e070d20ff605": {
+    "name": "create_podcast_image",
+    "purpose": "Turns a podcast episode's content into a detailed, abstract AI image prompt for a sophisticated banner with one prominent object.",
+    "triggers": [
+      "podcast episode banner",
+      "podcast cover art prompt",
+      "image prompt for podcast",
+      "episode artwork generator",
+      "podcast thumbnail image"
+    ]
+  },
+  "556ff851e9086487e1d8953da7ea28cfc9beb6c0bc499bef64c1481b883e9837": {
+    "name": "arbiter-general-evaluator",
+    "purpose": "Scores candidate outputs against a multi-dimensional rubric inferred from the task, then declares the best prompt by distance from an ideal.",
+    "triggers": [
+      "evaluate output quality",
+      "score candidate prompts",
+      "judge which prompt wins",
+      "rubric for subjective tasks",
+      "compare prompt outputs"
+    ]
+  },
+  "71969052a11b56d74bb295fa6e77c28b67e0a88290995a903cdf1fa1f952e792": {
+    "name": "solve_with_cot",
+    "purpose": "Structures responses as step-by-step chain-of-thought reasoning inside thinking and reflection tags, with a final answer in output tags.",
+    "triggers": [
+      "step-by-step reasoning",
+      "show your reasoning",
+      "chain of thought prompt",
+      "reason through this carefully",
+      "thinking and reflection tags"
+    ]
+  },
+  "9e0b0d66c3a975564d0f2ee80d348dabfa5bdd61df341a9cade5f8988ec9de02": {
+    "name": "show_fabric_options_markmap",
+    "purpose": "Turns Fabric CLI options and project functionality into a visual markmap diagram for quick understanding.",
+    "triggers": [
+      "fabric options mindmap",
+      "visualize fabric commands",
+      "markmap fabric cli",
+      "fabric help diagram",
+      "show fabric features visually"
+    ]
+  },
+  "aa67a60aaa7e8c116760b711bac25c88927be5bdf1e477032c24da42eabb56ec": {
+    "name": "arbiter-run-prompt",
+    "purpose": "Runs a given prompt file as a system pattern against an input file, then saves the raw model JSON response to an output path.",
+    "triggers": [
+      "run prompt against input",
+      "test prompt on input file",
+      "evaluate candidate prompt",
+      "run arbiter prompt",
+      "execute prompt pattern"
+    ]
+  },
+  "d5be0c0ae80210e15b33fd817818fa4d2762dcc1ab07d643c5294895eb3c72bc": {
+    "name": "create_threat_model",
+    "purpose": "Creates simple, narrative-based threat models for any scenario, from physical security to application security, weighing likelihood, value, and control costs.",
+    "triggers": [
+      "threat model this scenario",
+      "analyze security risks",
+      "assess physical security threats",
+      "evaluate home security risks",
+      "narrative threat model"
+    ]
+  },
+  "e77085244155699e7596d4858a23dd10f94e812f86087160ce9f877cdfea0de5": {
+    "name": "get_youtube_rss",
+    "purpose": "Converts a YouTube channel ID or channel URL into its RSS feed URL.",
+    "triggers": [
+      "youtube channel rss feed",
+      "get youtube rss url",
+      "youtube channel id to rss",
+      "youtube feed url",
+      "rss link for channel"
+    ]
+  }
+}

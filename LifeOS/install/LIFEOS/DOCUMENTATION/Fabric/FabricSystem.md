@@ -49,6 +49,12 @@ User: "Use fabric to extract wisdom from this article"
 -> Returns IDEAS, INSIGHTS, QUOTES, etc.
 ```
 
+### Finding a pattern: the catalog and the suggester (2026-11-14)
+
+The pattern files carry no metadata and are overwritten on every sync, so the metadata lives beside them in a generated sidecar, `skills/Fabric/Patterns/catalog.yaml`: one entry per pattern (purpose, category, triggers, input, output, the ported intent that runs instead, and the sha256 of its `system.md`). `Tools/PatternCatalog.ts build` derives it from `pattern_explanations.md` and each pattern's IDENTITY and OUTPUT sections, with one cached model pass only for a pattern no explanation line covers; `check` fails when a pattern has no entry or its hash moved, and `CheckPatterns.ts` runs that check. The install's own local patterns get their own catalog under `USER/CUSTOMIZATIONS/SKILLS/Fabric/`, merged at read time and never written into the shipped file.
+
+A request that names no pattern goes through `Tools/SuggestPattern.ts "<request>"`: trigger and keyword match first, then one shadow Assay question over the shortlist when the engine is reachable (caller `pattern-suggest`, fail-open), and the top three come back with a reason each. ExecutePattern shows the pick as `Pattern: <name> (<reason>)` before the pattern runs; a request that names a pattern or a ported intent skips the suggester and makes no model call. The sixteen-row keyword table this replaced is gone; the catalog is the one source, and `PatternCatalog.ts triggers` can regenerate the skill's USE WHEN list from it.
+
 ### When to Use Fabric CLI Directly
 
 Only use `fabric` command for:

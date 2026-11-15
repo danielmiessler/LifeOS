@@ -305,7 +305,7 @@ The ISA `## Test Strategy` table's `tool` column gets a new canonical form:
 | ISC-7 | bun-test | ANTHROPIC_API_KEY scrubbed from spawned env | env-snapshot diff | bun test ./test/tools/Inference.test.ts -t "Anti: API key" |
 ```
 
-When an ISC's `tool` value starts with `bun test`, the named test file MUST exist before `[ ]` → `[x]`. The Algorithm's modality rule (`LIFEOS/ALGORITHM/v8.45.0.md` § A run is complete when, item 8) takes the same row:
+When an ISC's `tool` value starts with `bun test`, the named test file MUST exist before `[ ]` → `[x]`. The Algorithm's modality rule (`LIFEOS/ALGORITHM/v8.46.0.md` § A run is complete when, item 8) takes the same row:
 
 | ISC type | Minimum verification tool call |
 |----------|-------------------------------|
@@ -450,7 +450,7 @@ The checkbox is downstream of a real exit code, never upstream of it. A failing 
 
 Progressive verification follows ISAFormat's lanes and stages and `skills/Assay/References/Progressive.md`. Frequent checks stay deterministic and token-free; `bunker test --deep --asserts` includes slower deterministic checks. Integrity judges use existing cadence; build judgments and tournaments run explicitly. Failed prerequisites prevent downstream spend. A partial pass proves only selected scope. Judge depth follows measured calibration, never a fixed cascade through agents.
 
-- Algorithm doctrine on ISA-as-test-harness: `~/.claude/LIFEOS/ALGORITHM/v8.45.0.md` § The Loop (the ISA as hill and instrument, each criterion carrying an executable assert) and § A run is complete when
+- Algorithm doctrine on ISA-as-test-harness: `~/.claude/LIFEOS/ALGORITHM/v8.46.0.md` § The Loop (the ISA as hill and instrument, each criterion carrying an executable assert) and § A run is complete when
 - ISA format spec: `~/.claude/LIFEOS/DOCUMENTATION/ISA/ISAFormat.md`
 - Bun test docs: <https://bun.sh/docs/cli/test>, <https://bun.sh/docs/test/writing>, <https://bun.sh/docs/test/lifecycle>, <https://bun.sh/docs/test/snapshots>, <https://bun.sh/docs/test/coverage>, <https://bun.sh/docs/test/mocks>
 - Bun's own test doctrine: <https://github.com/oven-sh/bun/blob/main/test/CLAUDE.md>

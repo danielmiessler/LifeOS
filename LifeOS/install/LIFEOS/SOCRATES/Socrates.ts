@@ -47,8 +47,9 @@ import { telosRisks } from "./adapters/telos-risks";
 import { usage } from "./adapters/usage";
 import { router } from "./adapters/router";
 import { evals } from "./adapters/evals";
+import { thinking } from "./adapters/thinking";
 
-const ADAPTERS: Adapter[] = [workflowsScanner, atlas, achilles, services, launchdPath, backups, ownership, finance, bunker, secrets, state, ulwork, threatmodel, telosRisks, usage, evals, router, vigil];
+const ADAPTERS: Adapter[] = [workflowsScanner, atlas, achilles, services, launchdPath, backups, ownership, finance, bunker, secrets, state, ulwork, threatmodel, telosRisks, usage, evals, router, vigil, thinking];
 
 const CADENCE_MS: Record<Question["cadence"], number> = {
   hourly: 3600_000,

@@ -5,7 +5,8 @@
  *   bun skills/Fabric/Tools/CheckPatterns.ts [--upstream <fabric>/data/patterns]
  *       [--scan-before <before.json> --scan-after <after.json>] [--json]
  *
- * Always: each key pattern has a system.md.
+ * Always: each key pattern has a system.md, and Patterns/catalog.yaml is current (PatternCatalog.ts check:
+ *   every pattern directory has an entry whose system_md_hash matches its system.md).
  * --upstream: every upstream pattern exists locally (fails when one is missing);
  *   names present locally but absent upstream are reported, never failed or deleted.
  * --scan-before/--scan-after: two `scan.ts <dir> --json` outputs taken before and after
@@ -17,6 +18,7 @@
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { checkCatalog } from "./PatternCatalog";
 
 export const KEY_PATTERNS = ["extract_wisdom", "summarize", "create_threat_model", "analyze_claims"];
 const PATTERNS_DIR = resolve(import.meta.dir, "..", "Patterns");
@@ -61,12 +63,19 @@ if (import.meta.main) {
     newFindings = [...findingKeys(after)].filter(([k]) => !b.has(k)).map(([, f]) => f);
   }
 
-  const ok = missingKey.length === 0 && missingUpstream.length === 0 && newFindings.length === 0;
+  const catalog = checkCatalog(PATTERNS_DIR, join(PATTERNS_DIR, "catalog.yaml"));
+
+  const ok = missingKey.length === 0 && missingUpstream.length === 0 && newFindings.length === 0 && catalog.ok;
   if (args.includes("--json")) {
-    console.log(JSON.stringify({ ok, count: local.length, missingKey, missingUpstream, localOnly, newFindings }, null, 2));
+    console.log(JSON.stringify({ ok, count: local.length, missingKey, missingUpstream, localOnly, newFindings, catalogProblems: catalog.problems }, null, 2));
   } else {
     console.log(`Patterns: ${local.length}`);
     for (const p of KEY_PATTERNS) console.log(missingKey.includes(p) ? `✗ ${p} MISSING` : `✓ ${p}`);
+    if (catalog.ok) console.log(`✓ catalog.yaml current (${catalog.count} entries)`);
+    else {
+      console.log(`✗ catalog.yaml stale: ${catalog.problems.length} problem(s); rebuild with bun skills/Fabric/Tools/PatternCatalog.ts build`);
+      for (const p of catalog.problems.slice(0, 20)) console.log(`  ${p}`);
+    }
     if (upstream) {
       console.log(`Upstream patterns missing locally: ${missingUpstream.length ? missingUpstream.join(", ") : "none"}`);
       console.log(`Local-only patterns (kept; removal is the principal's call): ${localOnly.length ? localOnly.join(", ") : "none"}`);

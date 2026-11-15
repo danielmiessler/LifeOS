@@ -202,6 +202,9 @@ export interface PluginState {
   /** Router ISA F16: the route line and route check last drawn per ISA path, so an unchanged route is never redrawn. */
   routeDrawn: Map<string, string>;
   routeChecked: Map<string, string>;
+  /** The thinking line and thinking check last drawn per ISA path (ISAFormat `Thinking:` line, 2026-11-14). */
+  thinkingDrawn: Map<string, string>;
+  thinkingChecked: Map<string, string>;
   ascent: AscentMark | null;
   finalAnswers: Set<string>;
   agents: Map<string, AgentSeen>;
@@ -273,6 +276,8 @@ export function makeState(): PluginState {
     isaFirstClosed: new Map(),
     routeDrawn: new Map(),
     routeChecked: new Map(),
+    thinkingDrawn: new Map(),
+    thinkingChecked: new Map(),
     ascent: null,
     finalAnswers: new Set(),
     agents: new Map(),
@@ -1577,20 +1582,42 @@ export function scheduleRoute($: EngineInterface, st: PluginState, path: string)
     try {
       const d = await bridge($, st, "route", [path, st.sessionId], undefined, 5_000);
       const route = typeof d?.route === "string" ? d.route : "";
-      if (!route) return;
-      if (st.routeDrawn.get(path) !== route) {
-        st.routeDrawn.set(path, route);
-        try { $.ui.log(route); } catch { /* headless */ }
-        const f = await bridge($, st, "route-fit", [path, st.sessionId], undefined, 8_000);
+      // An ISA with no Lane: line has no route to draw; the thinking line below still runs (checker finding, 2026-11-14).
+      if (route) {
+        if (st.routeDrawn.get(path) !== route) {
+          st.routeDrawn.set(path, route);
+          try { $.ui.log(route); } catch { /* headless */ }
+          const f = await bridge($, st, "route-fit", [path, st.sessionId], undefined, 8_000);
+          for (const l of stringsOf(f?.lines)) { try { $.ui.log(l); } catch { /* headless */ } }
+        }
+        const check = stringsOf(d?.check);
+        const key = check.join("\n");
+        if (d?.ran === true && key && st.routeChecked.get(path) !== key) {
+          st.routeChecked.set(path, key);
+          for (const l of check) { try { $.ui.log(l); } catch { /* headless */ } }
+        }
+      }
+    } catch (err) { log($, `route line error: ${msg(err)}`); }
+    // The thinking line (ISAFormat § Feature blocks, `Thinking:`, 2026-11-14): drawn when it changes, then the fit
+    // flags (one shadow Assay question per skipped skill, or one note when the engine is unavailable), and the check
+    // against this session's Skill calls once something has run. Same shape as the route line above.
+    try {
+      const d = await bridge($, st, "thinking", [path, st.sessionId], undefined, 5_000);
+      const line = typeof d?.thinking === "string" ? d.thinking : "";
+      if (!line) return;
+      if (st.thinkingDrawn.get(path) !== line) {
+        st.thinkingDrawn.set(path, line);
+        try { $.ui.log(line); } catch { /* headless */ }
+        const f = await bridge($, st, "thinking-fit", [path, st.sessionId], undefined, 8_000);
         for (const l of stringsOf(f?.lines)) { try { $.ui.log(l); } catch { /* headless */ } }
       }
       const check = stringsOf(d?.check);
       const key = check.join("\n");
-      if (d?.ran === true && key && st.routeChecked.get(path) !== key) {
-        st.routeChecked.set(path, key);
+      if (d?.ran === true && key && st.thinkingChecked.get(path) !== key) {
+        st.thinkingChecked.set(path, key);
         for (const l of check) { try { $.ui.log(l); } catch { /* headless */ } }
       }
-    } catch (err) { log($, `route line error: ${msg(err)}`); }
+    } catch (err) { log($, `thinking line error: ${msg(err)}`); }
   }));
 }
 

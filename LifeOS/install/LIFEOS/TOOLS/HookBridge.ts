@@ -544,6 +544,24 @@ try {
       const results = route.length && rest[1] ? checkRoute(route, sessionRows(safeId(rest[1]))) : [];
       out({ route: routeLine(route), check: checkLines(results), ran: results.some((r) => r.ran.length > 0) });
     }
+    case "thinking": {
+      // The run's written thinking plan (ISAFormat § Feature blocks, the Thinking: line) and its check against this session's Skill calls. No model call.
+      const { parseThinking, thinkingLine, checkThinking, checkLines, skillCalls, sessionTranscripts } = await import("../ROUTER/ThinkingCheck.ts");
+      const isaPath = rest[0] ?? "";
+      const plans = existsSync(isaPath) ? parseThinking(readFileSync(isaPath, "utf8")) : [];
+      const files = plans.length && rest[1] ? sessionTranscripts(safeId(rest[1])) : [];
+      const results = files.length ? checkThinking(plans, files.flatMap((f) => skillCalls(readFileSync(f, "utf8")))) : [];
+      out({ thinking: thinkingLine(plans), check: checkLines(results), ran: results.some((r) => r.ran.length > 0) });
+    }
+    case "thinking-fit": {
+      // One shadow Assay question per skipped thinking skill; any engine failure is no flag.
+      const { parseThinking, fitFlags, fitLines } = await import("../ROUTER/ThinkingCheck.ts");
+      const { ask } = await import("../ASSAY/Assay.ts");
+      const isaPath = rest[0] ?? "";
+      const plans = existsSync(isaPath) ? parseThinking(readFileSync(isaPath, "utf8")) : [];
+      const { flags, skipped } = await fitFlags(plans, ask as never, rest[1] ? safeId(rest[1]) : undefined, process.env, isaPath);
+      out({ lines: fitLines(flags, skipped) });
+    }
     case "route-fit": {
       // Router ISA F16 (R167): the background fit question; any engine failure is no flag.
       const { parseRoute, fitFlags, fitLines } = await import("../ROUTER/RouteCheck.ts");
@@ -558,7 +576,7 @@ try {
       out({ version: v.split(/\s+/)[0] ?? v, raw: v });
     }
     default:
-      out({ error: `unknown verb: ${verb ?? "(none)"}`, verbs: ["stamp", "memory-line", "isa-state", "security-protocol", "subagent-event", "events", "prompt-context", "band-state", "pane-notes", "turn-complete", "model-result", "x-read", "yt-transcript", "version", "codex-lanes", "memory-ack", "prompt-origin", "session-tree", "status-snapshot", "rm-preview", "workflow-card", "subagent-sandbox", "isa-governing", "route", "route-fit"] }, 1);
+      out({ error: `unknown verb: ${verb ?? "(none)"}`, verbs: ["stamp", "memory-line", "isa-state", "security-protocol", "subagent-event", "events", "prompt-context", "band-state", "pane-notes", "turn-complete", "model-result", "x-read", "yt-transcript", "version", "codex-lanes", "memory-ack", "prompt-origin", "session-tree", "status-snapshot", "rm-preview", "workflow-card", "subagent-sandbox", "isa-governing", "route", "route-fit", "thinking", "thinking-fit"] }, 1);
   }
 } catch (err) {
   out({ error: err instanceof Error ? err.message : String(err), claudeDir: getClaudeDir() }, 1);

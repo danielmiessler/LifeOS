@@ -146,4 +146,4 @@ The per-mode tabs died with the mode system. Two surfaces remain:
 - Pulse System overview: `LIFEOS/DOCUMENTATION/Pulse/PulseSystem.md`
 - DA subsystem (design): `LIFEOS/DOCUMENTATION/Pulse/DaSubsystem.md`
 - Terminal tabs (kitty integration): `LIFEOS/DOCUMENTATION/Pulse/TerminalTabs.md`
-- Current Algorithm doctrine: `LIFEOS/ALGORITHM/v8.45.0.md`
+- Current Algorithm doctrine: `LIFEOS/ALGORITHM/v8.46.0.md`

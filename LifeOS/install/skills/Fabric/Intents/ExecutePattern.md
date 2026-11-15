@@ -6,7 +6,7 @@ Runs a Fabric pattern natively from local storage: the model reads the pattern's
 
 ## Ideal State
 
-- The pattern applied is the one the request named explicitly, or otherwise the one the selection table and its keyword rule map the request's wording to.
+- The pattern applied is the one the request named explicitly, or otherwise the top pick `Tools/SuggestPattern.ts` returns for the request's wording from the pattern catalog, shown to the user before it runs.
 - When that pattern is in § Ported patterns, its intent runs instead and the upstream system.md is never used as the prompt; this intent applies only to patterns with no port.
 - Except for YouTube (`fabric -y`) and blocked-URL (`fabric -u`) runs, the output is the local `Patterns/<name>/system.md` applied by the model directly to the provided content, following its STEPS and OUTPUT INSTRUCTIONS; the fabric CLI ran only in those two cases: a YouTube URL, or a URL whose native fetch failed.
 - The returned output preserves the format the pattern's OUTPUT INSTRUCTIONS specify.
@@ -22,30 +22,11 @@ Runs a Fabric pattern natively from local storage: the model reads the pattern's
 
 ## Inputs
 
-Pattern selection from the request's wording:
+Pattern selection reads the generated catalog `Patterns/catalog.yaml` (one entry per pattern: purpose, triggers, input, output, ported intent; built by `Tools/PatternCatalog.ts`), merged at read time with the install's local catalog at `<configRoot>/LIFEOS/USER/CUSTOMIZATIONS/SKILLS/Fabric/catalog.yaml`.
 
-| User Intent Contains | Pattern |
-|---------------------|---------|
-| "extract wisdom", "wisdom" | `extract_wisdom` |
-| "summarize", "summary" | the Summarize intent (port of `summarize`) |
-| "5 sentence", "short summary" | the WordSummary intent (our port of `create_5_sentence_summary`; the upstream prompt never runs) |
-| "micro summary", "tldr" | `create_micro_summary` |
-| "threat model" | `create_threat_model` |
-| "stride", "stride model" | `create_stride_threat_model` |
-| "analyze claims", "fact check" | the AnalyzeClaims intent (port of `analyze_claims`) |
-| "analyze code", "code review" | `review_code` |
-| "main idea", "core message" | `extract_main_idea` |
-| "improve writing", "enhance" | `improve_writing` |
-| "improve prompt" | `improve_prompt` |
-| "extract insights" | the ExtractInsights intent (port of `extract_insights`) |
-| "analyze malware" | the AnalyzeMalware intent (port of `analyze_malware`) |
-| "create prd" | `create_prd` |
-| "mermaid", "diagram" | `create_mermaid_visualization` |
-| "rate", "evaluate" | `rate_content` or `judge_output` |
+**If pattern is explicitly named:** Use that pattern directly (e.g., "use extract_article_wisdom" -> `extract_article_wisdom`), unless § Ported patterns lists it. A named pattern or ported intent never goes through the suggester and costs no model call.
 
-**If pattern is explicitly named:** Use that pattern directly (e.g., "use extract_article_wisdom" -> `extract_article_wisdom`), unless § Ported patterns lists it.
-
-Requests the table does not list map by keyword: `analyze <x>` → `analyze_<x>` (for example "paper" → `analyze_paper`), `create <x>` → `create_<x>`, and a bare "improve" → `improve_writing`, when that pattern exists under `Patterns/`. Any summarize-family pattern also fires the auto-harvest side-effect (Tool contract, Trigger).
+**Otherwise:** run `Tools/SuggestPattern.ts` on the request (§ Tool contract) and take its first pick; its second and third are the alternatives offered with the pick. Any summarize-family pattern also fires the auto-harvest side-effect (Tool contract, Trigger).
 
 ### Ported patterns
 
@@ -122,6 +103,25 @@ Harvest and summary fail independently (Anti-criteria): a non-zero harvest exit 
 
 ## Tool contract
 
+When the request names no pattern, pick one first:
+
+```bash
+bun ~/.claude/skills/Fabric/Tools/SuggestPattern.ts "<the request, verbatim>"
+```
+
+Pass the request's wording only, never the content it is applied to: the wording goes to the Assay judgment layer, and the tool sends at most its first 500 characters.
+
+It prints three lines, `N. <name> [runs <Intent>] (<reason>)`, and always exits 0. A pick marked `[runs <Intent>]` runs that intent (§ Ported patterns), never the upstream system.md.
+
+### Intent-to-Flag Mapping
+
+| Situation | Flag |
+|-----------|------|
+| default: shipped catalog plus the install's local catalog | (none) |
+| the full result as JSON (picks, purposes, scores, engine status) | `--json` |
+| leave the install's local patterns out | `--no-user` |
+| the judgment layer must not be asked | `LIFEOS_GLANCE_DISABLED=1` in the environment |
+
 Read the pattern's system.md file:
 
 ```bash
@@ -187,6 +187,12 @@ Use when native URL fetching returns no usable page content. A site that blocks 
 
 ## Output format
 
+When the request named no pattern, the pick is shown on one line before the pattern runs, with the suggester's reason:
+
+```
+Pattern: <name> (<reason>)
+```
+
 The pattern output follows that pattern's own OUTPUT INSTRUCTIONS (for example extract_wisdom's SUMMARY, IDEAS, INSIGHTS, QUOTES, HABITS, FACTS, REFERENCES and RECOMMENDATIONS sections); this file does not restate them.
 
 **Output reporting** — alongside the summary, surface the harvest result block:
@@ -223,7 +229,7 @@ Please provide:
 
 ## References
 
-- `Patterns/pattern_explanations.md`: one line per pattern, by name, for finding a pattern the selection table does not list.
+- `Patterns/catalog.yaml`: the generated catalog SuggestPattern ranks from; `Patterns/pattern_explanations.md`: the upstream one-line list its purposes come from.
 
 Pattern categories (the full set is `Patterns/pattern_explanations.md`):
 

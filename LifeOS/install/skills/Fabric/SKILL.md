@@ -6,8 +6,10 @@ evals:
   suites: [fabric-analyzebill, fabric-analyzeclaims, fabric-analyzecomments, fabric-analyzeincident, fabric-analyzelogs, fabric-analyzemalware, fabric-analyzepaper, fabric-analyzeprose, fabric-analyzerisk, fabric-analyzethreatreport, fabric-auditconsent, fabric-audittransparency, fabric-businessideas, fabric-checkagreement, fabric-checkfalsifiability, fabric-coderules, fabric-codingproject, fabric-compareandcontrast, fabric-createcommand, fabric-cybersummary, fabric-designdocument, fabric-emailheaders, fabric-ethicalframework, fabric-explaincode, fabric-explaindocs, fabric-explainterms, fabric-extractideas, fabric-extractinsights, fabric-extractinstructions, fabric-extractpatterns, fabric-extractpoc, fabric-extractpredictions, fabric-extractrecommendations, fabric-extractreferences, fabric-gitdiffsummary, fabric-goldenrules, fabric-logicalfallacies, fabric-mindvirus, fabric-networkthreatlandscape, fabric-nucleitemplate, fabric-pullrequest, fabric-reportfinding, fabric-reviewdesign, fabric-rhetoricallens, fabric-securebydesignquestions, fabric-secureprompt, fabric-semgreprule, fabric-showintro, fabric-sigmarules, fabric-silentvictims, fabric-stoiclens, fabric-summarize, fabric-summarizedebate, fabric-summarizemeeting, fabric-terraformplan, fabric-threatscenarios, fabric-ultags, fabric-wordsummary]
   deterministic:
     - command: "bun skills/Fabric/Tools/CheckPatterns.ts"
-      falsifier: "a key pattern (extract_wisdom, summarize, create_threat_model, analyze_claims) has no system.md under Patterns/"
-version: 1.3.0
+      falsifier: "a key pattern (extract_wisdom, summarize, create_threat_model, analyze_claims) has no system.md under Patterns/, or Patterns/catalog.yaml is stale"
+    - command: "bun skills/Fabric/Tools/PatternCatalog.ts check --complete"
+      falsifier: "a pattern directory under Patterns/ has no catalog.yaml entry, an entry's system_md_hash differs from its system.md, or an entry has an empty field"
+version: 1.4.0
 description: Our ideal-state ports of the most-used Fabric patterns, each an intent with its own Assay suite and code checker that beat the upstream prompt head to head (security, reasoning, reading, engineering, writing), plus every other Fabric pattern run natively from Patterns/. USE WHEN word summary, ws, N levels, fabric, fabric pattern, run fabric, update patterns, any Fabric pattern name, threat report, threat scenarios, security finding, analyze logs, malware, incident, semgrep rule, sigma rules, nuclei template, email headers, terraform plan, analyze claims, logical fallacies, falsifiable, compare and contrast, analyze paper, summarize, meeting summary, extract insights, extract ideas, extract references, design document, explain code, review design, pull request description, commit message, code rules, analyze prose, threat model, mermaid, STRIDE. NOT FOR multi-agent investigation (Research) or content-adaptive extraction (ExtractWisdom).
 ---
 
@@ -132,7 +134,10 @@ A bare "extract wisdom" with no mention of Fabric or the pattern goes to the Ext
 | File | Read when |
 |------|-----------|
 | `Patterns/` | running a pattern: one `<name>/system.md` per pattern: upstream data synced by UpdatePatterns, plus the release-scrub edits and a few older patterns upstream has since dropped (Gotchas); `pattern_explanations.md` lists them all |
-| `Tools/CheckPatterns.ts` | checking the library: key patterns present, upstream coverage (`--upstream`), and new release-scan findings after a sync (`--scan-before`/`--scan-after`) |
+| `Patterns/catalog.yaml` | finding a pattern for a request: one generated entry per pattern (purpose, category, triggers, input, output, ported intent, system.md hash); never hand-edited, rebuilt by `Tools/PatternCatalog.ts` |
+| `Tools/SuggestPattern.ts` | a request names no pattern: the top three patterns with a reason each, from the catalog plus the install's local catalog (`Tools/SuggestPattern.help.md`) |
+| `Tools/PatternCatalog.ts` | building or checking the catalog after a sync or a pattern change, or regenerating the USE WHEN list from it (`Tools/PatternCatalog.help.md`) |
+| `Tools/CheckPatterns.ts` | checking the library: key patterns present, the catalog current, upstream coverage (`--upstream`), and new release-scan findings after a sync (`--scan-before`/`--scan-after`) |
 | `Tools/<Intent>Check.ts` | checking a port's output before delivery; each intent's Tool contract gives the exact command, and each has a `.help.md` and a `.test.ts` beside it |
 | `Tools/PortDuel.ts` | judging a port against its upstream pattern on its held-out cases (`--help`) |
 | `Evals/HeldOut/` | the held-out cases each port is duelled on, written before the port; builders never read them |
@@ -154,6 +159,7 @@ First-time setup: [Setup.md](Setup.md).
 - **Pattern names are exact.** `extract_wisdom` not `extractwisdom`. Check `ls Patterns/` (or `Patterns/pattern_explanations.md`) if unsure, since patterns run from that directory, not from the CLI.
 - **Patterns/ is not a byte mirror of upstream, and syncing from `~/.config/fabric/patterns/` leaks local patterns.** Some pattern files carry local edits that clear release content findings (author-name headings in the threat-model essays, author URLs), and a plain upstream copy reverts the upstream-present ones. The fabric config directory also holds local-only patterns that are not upstream, and Patterns/ keeps older patterns upstream has since dropped, the key pattern `create_threat_model` among them, so an `rsync --delete` from upstream would remove it. UpdatePatterns therefore syncs from upstream `data/patterns/` only and fails on any new release-scan finding.
 - **The pattern-category catalog at the end of `Intents/ExecutePattern.md` is load-bearing, not duplication.** A release test requires more than 20 named, shipped patterns there, so a simplification pass that trims it fails the release.
+- **Pattern metadata lives in the generated `Patterns/catalog.yaml`, never in a `system.md`.** UpdatePatterns copies upstream over `Patterns/`, so frontmatter in a `system.md` would be lost on the next sync, and the model applies `system.md` verbatim as the prompt, so it would change every pattern's behavior (decided 2026-11-14). A changed or new pattern makes `CheckPatterns.ts` fail until `PatternCatalog.ts build` runs.
 - **Long content may exceed pattern context limits.** For very long inputs, chunk the content or use a summarize pattern first.
 
 ## Examples

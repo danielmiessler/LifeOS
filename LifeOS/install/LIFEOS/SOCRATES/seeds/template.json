@@ -102,6 +102,29 @@
       "severity": "medium",
       "provenance": "seed",
       "ruled_out": []
+    },
+    {
+      "id": "SOC-0007",
+      "entity": "principal",
+      "domain": "operations",
+      "text": "When a run skipped a thinking skill, was the skip right?",
+      "ideal": "At most one in five skipped thinking skills is judged would-have-changed over the week, across at least ten judged runs.",
+      "status": "active",
+      "verifier": "judged",
+      "closer_mode": "read",
+      "answerer": {
+        "adapter": "thinking",
+        "ref": "thinking-skips:7"
+      },
+      "cadence": "weekly",
+      "severity": "low",
+      "expect": {
+        "lte": 20,
+        "unit": "percent"
+      },
+      "provenance": "seed",
+      "node_type": "protect",
+      "route": "none"
     }
   ]
 }
