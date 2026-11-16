@@ -66,6 +66,25 @@ describe("findCitations", () => {
     expect(withoutSnippet).toBe(1);
     expect(checkCitation(root, "hooks/Foo.ts", 5, citations[1].snippet).state).toBe("ok");
   });
+  test("tilde fences and a 4-backtick fence holding a 3-backtick example are skipped; text after the close is read", () => {
+    const text = [
+      "~~~markdown",
+      "`hooks/Foo.ts:9` — `inside tildes`",
+      "~~~",
+      "````markdown",
+      "```",
+      "inner example",
+      "```",
+      "`hooks/Foo.ts:9` — `between the fences`",
+      "````",
+      "```ts",
+      "~~~ does not close a backtick fence",
+      "`hooks/Foo.ts:9` — `after the tildes`",
+      "```",
+      "After: `hooks/Foo.ts:2` — `if (!session)`.",
+    ].join("\n");
+    expect(findCitations(text).citations).toEqual([{ line: 14, path: "hooks/Foo.ts", citedLine: 2, snippet: "if (!session)" }]);
+  });
 });
 
 describe("ReferenceCheck --content", () => {

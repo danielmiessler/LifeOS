@@ -56,13 +56,17 @@ export function checkCitation(root: string, path: string, line: number, snippet:
 export interface Citation { line: number; path: string; citedLine: number; snippet: string }
 
 /** The citations in a markdown text, and how many `path:line` pointers in it have no snippet. Fenced blocks are examples
- * and are skipped, as the rest of ReferenceCheck skips them. */
+ * and are skipped. A fence is three or more backticks or tildes, as in CommonMark: it closes only on the same
+ * character, at least as long and with nothing after it, so a 4-backtick fence can hold a 3-backtick example. */
 export function findCitations(text: string): { citations: Citation[]; withoutSnippet: number } {
   const citations: Citation[] = [];
-  let withoutSnippet = 0, fenced = false;
+  let withoutSnippet = 0;
+  let fence: { char: string; size: number } | null = null;
   text.split('\n').forEach((lineText, i) => {
-    if (lineText.trimStart().startsWith('```')) { fenced = !fenced; return; }
-    if (fenced) return;
+    const f = /^\s*(`{3,}|~{3,})(.*)$/.exec(lineText);
+    if (!fence && f && !(f[1][0] === '`' && f[2].includes('`'))) { fence = { char: f[1][0], size: f[1].length }; return; }
+    if (fence && f && f[1][0] === fence.char && f[1].length >= fence.size && !f[2].trim()) { fence = null; return; }
+    if (fence) return;
     for (const m of lineText.matchAll(CITATION_RE)) {
       citations.push({ line: i + 1, path: m[1], citedLine: Number(m[2]), snippet: (m[3] ?? m[4]) });
     }
