@@ -52,6 +52,7 @@ interface TreeNode {
 interface WikiSidebarProps {
   tree: TreeNode[];
   onSearchClick: () => void;
+  className?: string;
 }
 
 const CATEGORY_ICONS: Record<string, typeof BookOpen> = {
@@ -186,9 +187,9 @@ function TreeItem({ node, depth = 0 }: { node: TreeNode; depth?: number }) {
   );
 }
 
-export default function WikiSidebar({ tree, onSearchClick }: WikiSidebarProps) {
+export default function WikiSidebar({ tree, onSearchClick, className }: WikiSidebarProps) {
   return (
-    <aside className="w-64 shrink-0 border-r border-line-1 bg-surface-1 overflow-y-auto h-[calc(100vh-3.5rem)]">
+    <aside className={cn("w-64 shrink-0 border-r border-line-1 bg-surface-1 overflow-y-auto h-[calc(100vh-3.5rem)]", className)}>
       {/* Search trigger */}
       <div className="p-3 border-b border-line-1">
         <button
