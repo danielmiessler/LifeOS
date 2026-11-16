@@ -700,7 +700,7 @@ The running log of the load-bearing choices that shape LifeOS — what we decide
 ### AD-3: Fast non-standard CLIs — fd, rg, bat, eza
 
 - **Decided:** longstanding; codified 2026-06-14
-- **Decision:** In shell work prefer `rg` over `grep`, `fd` over `find`, `bat` over `cat`, `eza` over `ls`. In-tool work uses the built-in Grep/Glob/Read (Grep already wraps ripgrep). Portable skill code prefers Bun fs APIs; when shelling out, prefer `find` for guaranteed availability.
+- **Decision:** In shell work prefer `rg` over `grep`, `fd` over `find`, `bat` over `cat`, `eza` over `ls`. In-tool work uses the built-in Read; search runs through Bash, since native Claude Code builds no longer ship the Grep and Glob tools. Portable skill code prefers Bun fs APIs; when shelling out, prefer `find` for guaranteed availability.
 - **Why:** The modern tools are faster, respect `.gitignore` by default, and have better defaults and output. Describing LifeOS as "built on fast, modern tooling" is a real architectural stance, not cosmetic.
 - **Replaced:** Default `grep`/`find`/`cat`/`ls`.
 - **Source:** manual (backfill 2026-06-14)

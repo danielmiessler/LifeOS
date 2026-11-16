@@ -48,7 +48,7 @@ Loaded at every session startup via CLAUDE.md `@` import. Gives the DA a concise
 ## Preferences
 
 - **Units:** Metric (Celsius, meters, kilograms)
-- **Tools:** Built-in Claude tools (Grep, Glob, Read) for in-tool work — Grep already wraps ripgrep. In Bash: `rg` over `grep`, `fd` over `find`, `bat` over `cat`. In portable skill code: prefer language-native fs APIs; if shelling out, prefer `find` for guaranteed availability.
+- **Tools:** `Read` for file contents; search through Bash, since native Claude Code builds no longer ship the Grep and Glob tools: `rg` over `grep`, `fd` over `find`, `bat` over `cat`. In portable skill code: prefer language-native fs APIs; if shelling out, prefer `find` for guaranteed availability.
 - **Decision style:** (interview — build vs ask, simple vs clever)
 
 ---
