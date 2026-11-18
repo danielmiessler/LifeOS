@@ -36,7 +36,9 @@ OS=$(uname -s)
 if [ "$OS" != "Darwin" ]; then
   case "${1:-}" in
     install|uninstall|status)
-      exec "$BUN_PATH" "$HOME/.claude/LIFEOS/TOOLS/InstallDeriverSystemd.ts" "$1" ;;
+      # Resolve the installer relative to this script, so it follows whatever root the install lives in
+      # (CLAUDE_CONFIG_DIR, LIFEOS_SKILLS_DIR, a symlinked workspace) instead of hardcoding ~/.claude.
+      exec "$BUN_PATH" "$(cd "$(dirname "$0")/.." && pwd)/TOOLS/InstallDeriverSystemd.ts" "$1" ;;
   esac
 fi
 
