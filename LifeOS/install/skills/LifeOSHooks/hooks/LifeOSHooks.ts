@@ -1,6 +1,11 @@
 /**
- * @version 1.3.0
+ * @version 1.3.1
  * LifeOSHooks — the in-process half of the LifeOS hook system.
+ *
+ * 1.3.1: a secret tag carries its origin. A value a tool read (a page, a reply, a file) is restored into Bash
+ * only when it is shell-inert, so text an outside author chose never runs as shell through the model's quoting;
+ * a pasted value is restored as before. A brief that carries a tag is refused on the PUBLIC lane like a bare
+ * value, and no tag restores inside a PUBLIC-lane agent.
  *
  * One hooks module, loaded once per session by Claude Code's mod runtime (on by
  * default since 2.1.287; the old CLAUDE_CODE_ENABLE_FUNCTION_HOOKS switch is ignored).
@@ -229,6 +234,9 @@ export interface PluginState {
   /** ISC-45: pasted secrets, tag → value, module memory only (never the store, never a file). */
   secrets: Map<string, string>;
   secretsByValue: Map<string, string>;
+  /** 1.3.1: where each tag was minted. A value the principal pasted is theirs; a value a tool READ (a page, a
+   *  reply, a file) was chosen by whoever wrote it, so it only ever goes back into a shell when it is inert. */
+  secretOrigin: Map<string, SecretOrigin>;
   /** Test seam: named faults thrown inside the fail-closed paths. */
   faults: Set<string>;
   /** Slice 4 status display: why this turn's prompt-context failed (F3 reason), null when it worked. */
@@ -289,6 +297,7 @@ export function makeState(): PluginState {
     timers: [],
     secrets: new Map(),
     secretsByValue: new Map(),
+    secretOrigin: new Map(),
     faults: new Set(),
     contextMiss: null,
     measured: null,
@@ -374,6 +383,12 @@ const X_STATUS_RE = /^https?:\/\/(?:www\.|mobile\.)?(?:twitter\.com|x\.com)\/\w+
 const YOUTUBE_RE = /^https?:\/\/(?:www\.|m\.)?(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/i;
 const TAG_RE = /\[REDACTED-SECRET-[0-9a-f]{8}\]/g;
 const TAG_HAS = /\[REDACTED-SECRET-[0-9a-f]{8}\]/; // non-global: a /g regex .test() is stateful across calls
+/** Who chose the bytes behind a tag: the principal (a paste) or whoever wrote what a tool read. */
+export type SecretOrigin = "prompt" | "result";
+// A value that cannot change what a shell does wherever it lands: no whitespace, quotes, `$`, backticks,
+// operators, globs or braces. Tokens, keys and passwords in the shape list fit; a PEM block and a crafted URL
+// password (`x'$(cmd)'`) do not. A result-minted value outside this set never goes into Bash (1.3.1).
+const SHELL_INERT = /^[A-Za-z0-9._~+=\/%:-]+$/;
 const SECRET_GLOBAL: readonly RegExp[] = SECRET_VALUE_SHAPES.map((re) => new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g"));
 
 function tagFor(value: string): string {
@@ -388,13 +403,15 @@ function tagFor(value: string): string {
 // as egress-shapes.ts PEM_BLOCK, which is a release-gate file and not exported.
 const PEM_BLOCK_GLOBAL = /-----BEGIN [A-Z ]*PRIVATE KEY-----(?:[\s\S]*?-----END [A-Z ]*PRIVATE KEY-----|[\s\S]*$)/g;
 
-/** ISC-45: replace every secret shape in `text` with a tag; the value stays in module memory. */
-export function redactSecrets(s: PluginState, text: string, seen?: Set<string>): { text: string; count: number } {
+/** ISC-45: replace every secret shape in `text` with a tag; the value stays in module memory. `origin` says who
+ *  chose the value (1.3.1); a value the principal pastes after a tool read it becomes theirs. */
+export function redactSecrets(s: PluginState, text: string, seen?: Set<string>, origin: SecretOrigin = "result"): { text: string; count: number } {
   let out = text; let count = 0;
   for (const re of [PEM_BLOCK_GLOBAL, ...SECRET_GLOBAL]) {
     out = out.replace(re, (value) => {
       let tag = s.secretsByValue.get(value);
       if (!tag) { tag = tagFor(value); s.secrets.set(tag, value); s.secretsByValue.set(value, tag); }
+      if (origin === "prompt" || !s.secretOrigin.has(tag)) s.secretOrigin.set(tag, origin);
       count++; seen?.add(tag);
       return tag;
     });
@@ -406,6 +423,21 @@ export function redactSecrets(s: PluginState, text: string, seen?: Set<string>):
 export function restoreSecrets(s: PluginState, text: string): string {
   if (s.secrets.size === 0) return text;
   return text.replace(TAG_RE, (tag) => s.secrets.get(tag) ?? tag);
+}
+
+/** 1.3.1: the values back for a shell. A pasted value is restored as before. A value a tool read is restored
+ *  only when it is shell-inert; otherwise nothing is restored and `refused` names the tag, because a page or a
+ *  reply that carried `https://u:x'$(cmd)'@host` would have run `cmd` through the model's own quoting. */
+export function restoreIntoShell(s: PluginState, text: string): { text: string; refused: string | null } {
+  if (s.secrets.size === 0) return { text, refused: null };
+  let refused: string | null = null;
+  const out = text.replace(TAG_RE, (tag) => {
+    const value = s.secrets.get(tag);
+    if (value === undefined) return tag;
+    if (s.secretOrigin.get(tag) !== "prompt" && !SHELL_INERT.test(value)) { refused ??= tag; return tag; }
+    return value;
+  });
+  return refused ? { text, refused } : { text: out, refused: null };
 }
 
 /** A command as a log line shows it: every value restored into it goes back to its tag, so a refusal or
@@ -1065,7 +1097,7 @@ export const promptSubmit: Hook<"prompt.submit"> = async ($, e, next) => {
   // ISC-45 (fail-open): a pasted secret never reaches the model or the model-facing transcript rows.
   let input: PromptSubmitInput = e;
   try {
-    const red = redactSecrets(s, e.text);
+    const red = redactSecrets(s, e.text, undefined, "prompt");
     if (red.count > 0) {
       input = { ...e, text: red.text };
       try { $.ui.toast(plainGlyphify(`🔒 ${red.count} secret${red.count === 1 ? "" : "s"} redacted from the prompt; tools get the value back`)); } catch { /* headless */ }
@@ -1368,8 +1400,21 @@ export const toolCall: Hook<"tool.call"> = async ($, e, next) => {
   // 0b. Secrets back for the tool (ISC-45): the model typed the tag; the tool gets the value.
   if (s.secrets.size > 0) {
     try {
-      if (e.tool === "Bash" && TAG_HAS.test(e.command)) e = { ...e, command: restoreSecrets(s, e.command) };
-      else if (e.tool === "WebFetch") {
+      if (e.tool === "Bash" && TAG_HAS.test(e.command)) {
+        // 1.3.1: never inside a PUBLIC-lane agent (the restored value would go to that vendor), and a value a
+        // tool read goes back only when it cannot change what the shell does (restoreIntoShell). Fail-closed.
+        const agentId = (e as { agentId?: string }).agentId;
+        if (agentId && PUBLIC_LANE.has(await agentTypeOf($, s, agentId))) {
+          log($, "Bash refused: a secret tag inside a PUBLIC-lane agent");
+          return { deny: "LifeOS: refused: this command carries a secret tag inside a PUBLIC-data-lane agent. Secrets never restore on this lane; run the command from the main session or a RESTRICTED-capable agent." };
+        }
+        const back = restoreIntoShell(s, e.command);
+        if (back.refused) {
+          log($, `Bash refused: ${back.refused} was read from a tool result and is not shell-inert`);
+          return { deny: `LifeOS: refused: ${back.refused} was read from a tool result (a page, a reply or a file), not pasted by you, and its value holds characters a shell would act on. It is not restored into Bash. Paste the value yourself if it is right, or write it to a file with Write and read the file.` };
+        }
+        e = { ...e, command: back.text };
+      } else if (e.tool === "WebFetch") {
         // Never restored: WebFetch has no headers, so a value restored here can only leave in a URL or a
         // prompt sent to someone else's server. Refused, so an injected "fetch https://x/?k=<tag>" leaks nothing.
         const w = e as ToolCallInput & { url?: string; prompt?: string };
@@ -1639,9 +1684,12 @@ export const agentSpawn: Hook<"agent.spawn"> = async ($, e, next) => {
         log($, `AgentSpawn refused ${type}: a fork on the PUBLIC lane`);
         return { deny: `LifeOS: refused: a fork of ${type} (PUBLIC-data lane) would inherit this session's private context. Dispatch it fresh with a public-only brief, or use a RESTRICTED-capable agent (Astra, Opus, general-purpose).` };
       }
-      const secret = firstSecretShape(e.prompt);
+      // 1.3.1: a redaction tag is a secret by reference. The shape list does not match it, and inside the agent a
+      // Bash call carrying it would have asked for the value back, so the brief is refused like a bare value.
+      const tag = TAG_HAS.test(e.prompt) ? { kind: "a secret tag", source: "ISC-45 redaction tag" } : null;
+      const secret = tag ? null : firstSecretShape(e.prompt);
       const path = worstPathClass(e.prompt);
-      const hit = secret ? { kind: "a secret-value shape", source: secret } : path && path.cls !== "PUBLIC" ? { kind: `a ${path.cls} path reference`, source: path.source } : null;
+      const hit = tag ?? (secret ? { kind: "a secret-value shape", source: secret } : path && path.cls !== "PUBLIC" ? { kind: `a ${path.cls} path reference`, source: path.source } : null);
       if (hit) {
         log($, `AgentSpawn refused ${type}: ${hit.kind}`);
         return { deny: `LifeOS: refused: the brief for ${type} (PUBLIC-data lane) carries ${hit.kind} (${hit.source}). Strip it, or dispatch a RESTRICTED-capable agent (Astra, Opus, general-purpose).` };
