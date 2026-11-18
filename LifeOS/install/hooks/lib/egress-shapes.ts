@@ -1,5 +1,5 @@
 /**
- * @version 1.3.0
+ * @version 1.3.1
  * egress-shapes.ts — the secret-VALUE shapes and sensitive-path rules, alone.
  *
  * PURE: no imports, no I/O. Extracted from egress-class-core.ts on 2026-09-05 so
@@ -44,7 +44,9 @@ export const SECRET_VALUE_SHAPES: readonly RegExp[] = [
   /\bxoxe(?:\.xox[bp])?-[A-Za-z0-9-]{10,}/,                         // Slack config / rotation token (xoxe-, xoxe.xoxp-)
   // AWS secret access key: 40 base64 chars, matched ONLY directly after an aws secret label (a bare 40-char run is far too
   // common to be a shape). The lookbehind keeps the label out of the match, so redaction leaves the label and replaces the value.
-  /(?<=(?:aws[_ -]?secret[_ -]?(?:access[_ -]?)?key|secret[_ -]?access[_ -]?key)["']?\s*[:=]\s*["']?)[A-Za-z0-9\/+=]{40}(?![A-Za-z0-9\/+=])/i,
+  // 1.3.1: the whitespace runs inside the lookbehind are bounded. Unbounded, every position of a long run of
+  // spaces or newlines re-scanned the whole run backwards (about a second per 32k characters, x4 per doubling).
+  /(?<=(?:aws[_ -]?secret[_ -]?(?:access[_ -]?)?key|secret[_ -]?access[_ -]?key)["']?\s{0,16}[:=]\s{0,16}["']?)[A-Za-z0-9\/+=]{40}(?![A-Za-z0-9\/+=])/i,
 ];
 
 /** Sensitive path references — path list mirrored in
@@ -73,10 +75,13 @@ export const PATH_CLASS_RULES: ReadonlyArray<{ re: RegExp; cls: EgressDataClass 
   // `USER/FINANCES/x.md` or `../USER/HEALTH/…` with no install prefix. A `USER/` segment, or a leading `./` or
   // `../`, anchors the relative form; a bare `FINANCES/x` relative to an unknown directory is classified through
   // pathClassAt with the command's working directory.
-  { re: /(?:^|[\s'"`=(])(?:\.{1,2}\/)*(?:USER\/CONFIG\/CREDENTIALS\/|(?:\.{1,2}\/)+CONFIG\/CREDENTIALS\/)/i, cls: "RESTRICTED" },
-  { re: /(?:^|[\s'"`=(])(?:\.{1,2}\/)*(?:USER\/|(?=\.{1,2}\/))(?:\.{1,2}\/)*(?:TELOS\/)?(?:FINANCES|HEALTH)\//i, cls: "RESTRICTED" },
-  { re: /(?:^|[\s'"`=(])(?:\.{1,2}\/)*(?:USER\/|(?=\.{1,2}\/))(?:\.{1,2}\/)*CONTACTS\.md/i, cls: "RESTRICTED" },
-  { re: /(?:^|[\s'"`=(])(?:\.{1,2}\/)*(?:USER\/|(?=\.{1,2}\/))(?:\.{1,2}\/)*WORK\/(?:CUSTOMERS|YOUR_COMPANIES|SAMPLE_CUSTOMER|SAMPLE_CONSULTING)\//i, cls: "RESTRICTED" },
+  // 1.3.1: one `./`-`../` run per alternative. The former `(?:\.{1,2}\/)*(?:USER\/|(?=\.{1,2}\/))(?:\.{1,2}\/)*`
+  // put two unbounded runs side by side, so a long `../../…` run was split at every point (0.5 to 1 s per
+  // rule on 24 KB). Same matches: dots, then USER/, then dots; or at least one dot segment and no USER/.
+  { re: /(?:^|[\s'"`=(])(?:(?:\.{1,2}\/)*USER\/CONFIG\/CREDENTIALS\/|(?:\.{1,2}\/)+CONFIG\/CREDENTIALS\/)/i, cls: "RESTRICTED" },
+  { re: /(?:^|[\s'"`=(])(?:(?:\.{1,2}\/)*USER\/(?:\.{1,2}\/)*|(?:\.{1,2}\/)+)(?:TELOS\/)?(?:FINANCES|HEALTH)\//i, cls: "RESTRICTED" },
+  { re: /(?:^|[\s'"`=(])(?:(?:\.{1,2}\/)*USER\/(?:\.{1,2}\/)*|(?:\.{1,2}\/)+)CONTACTS\.md/i, cls: "RESTRICTED" },
+  { re: /(?:^|[\s'"`=(])(?:(?:\.{1,2}\/)*USER\/(?:\.{1,2}\/)*|(?:\.{1,2}\/)+)WORK\/(?:CUSTOMERS|YOUR_COMPANIES|SAMPLE_CUSTOMER|SAMPLE_CONSULTING)\//i, cls: "RESTRICTED" },
 ];
 
 /** Redaction-only shapes: none. Until 2026-10-13 this held credential families that were scrubbed
@@ -123,8 +128,11 @@ export function redactSecretValues(text: string): string {
  * must be opaque: 16+ characters mixing letters and digits, not a path, a variable reference, or a reviewed
  * placeholder (`your_api_key_here`, `xxxx…`, `example…`, `changeme`, `<…>`, `[REDACTED]`).
  */
+// 1.3.1: the label starts only where its character run starts. `\b` also matched at every `-` inside a run,
+// and each of those starts scanned to the end of the run (4 s on 32 KB of `a-`). The label test is a
+// suffix test, so a label read from the start of its run still passes when its tail names a credential.
 const LABELED_CREDENTIAL =
-  /\b([A-Za-z0-9_-]*)(\\?["'])?\s*[=:]\s*(?:\\?["'])?([A-Za-z0-9._/+~=-]{16,})/g;
+  /(?<![A-Za-z0-9_-])([A-Za-z0-9_-]*)(\\?["'])?\s*[=:]\s*(?:\\?["'])?([A-Za-z0-9._/+~=-]{16,})/g;
 const CREDENTIAL_LABEL = /(?:^|[_-])(?:api_?)?(?:key|token|secret|password|passwd|credentials?)$|^(?:key|token|secret|password|passwd|credentials?)(?:[_-]|$)/i;
 const PLACEHOLDER_VALUE = /^(?:x+|\*+|0+|\.+|-+)$|example|placeholder|your[_-]|changeme|redacted|dummy|sample|fake|insert|replace|todo/i;
 export const LABELED_CREDENTIAL_SOURCE = "labeled-credential";

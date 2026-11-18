@@ -1,5 +1,5 @@
 /**
- * @version 1.8.0
+ * @version 1.8.1
  * outbound-shapes.ts — the fixed list of Bash shapes that send, publish, deploy,
  * push, or touch secrets. TaintGuard asks about these while a mark stands,
  * except secret operations and unattended or UNKNOWN-state calls, which deny.
@@ -37,7 +37,16 @@
  * value or argument (`script > .env` is still an .env write), the redirection riding after the command.
  * Closing pass: an `.env` write is judged at every match, not the first; a wrapper's value slot is also
  * read as the command, as HEAD read it; and the stdin-program test is HEAD's again.
+ * 1.8.1: the lexer's work is bounded. A wrapper's value slot read as the command re-lexed the rest of the
+ * line under the same wrapper, so a chain of m `sudo -u sudo` pairs produced 2^m segments (65536 at m=16,
+ * half a second; seconds at m=20) before the depth cap stopped it at m=33. Identical nested texts are now
+ * lexed once per command, and a command that still needs more than NESTED_LIMIT nested lexes throws, which
+ * every caller already treats as a refusal. The gmail/gcal rows read each option word one way.
  */
+
+/** Nested lexes one command may need before classification gives up (fail-closed in every caller). A real
+ * command line nests a handful: `sh -c`, `xargs`, one inline program. The 2^m chain above hits this at m=8. */
+const NESTED_LIMIT = 256;
 
 /** Outbound / irreversible Bash shapes. Order is irrelevant; first match names the class. */
 /** Desktop browsers an `open -a` may name; a quoted multi-word name stays one word. */
@@ -67,8 +76,11 @@ export const OUTBOUND_SHAPES: ReadonlyArray<[RegExp, string]> = [
   [/skills\/[A-Za-z0-9_]+\/Tools\/(?:(?:(?:[A-Za-z0-9]*[-_])*(?:post|publish|send|broadcast|reply|upload)|[A-Za-z0-9_-]*(?:Post|Publish|Send|Broadcast|Reply|Upload))(?=[A-Z0-9_.-])[A-Za-z0-9_-]*|(?:thread|article|media|message|email|text|discord|substack)s?)\.ts\b/, "send/publish tool"],
   // The direct-API mail and calendar tools (LIFEOS/TOOLS/gmail.ts, the calendar skill's gcal.ts)
   // replaced gws; the ingest side (untrusted-bash-sources.ts) knew, this side did not.
-  [/\bgmail\.ts\s+(?:--\S+(?:\s+\S+)?\s+)*send\b/, "gmail send"],
-  [/\bgcal\.ts\s+(?:--\S+(?:\s+\S+)?\s+)*(?:create|update|delete)\b/, "calendar write"],
+  // 1.8.1: an option's value never starts with `--`, so each word has one reading (`--n -5` is still an option
+  // with its value). The old group let every `--x` word be read as an option or as the previous option's
+  // value, and a non-matching command of about 40 such words took seconds (about 1.6x per added word).
+  [/\bgmail\.ts\s+(?:--\S+(?:\s+(?!--)\S+)?\s+)*send\b/, "gmail send"],
+  [/\bgcal\.ts\s+(?:--\S+(?:\s+(?!--)\S+)?\s+)*(?:create|update|delete)\b/, "calendar write"],
   // 1.5.0: a Sonar lookup (LIFEOS/SONAR/<entry>.ts, run directly) sends a query to an outside vendor, so a
   // marked session asks before each one and an injected instruction cannot drive queries (Sonar ISA A8, ISC-20).
   // Only a file directly under SONAR/ matches, so `bun test ./LIFEOS/SONAR/tests/…` is not a lookup.
@@ -200,7 +212,10 @@ function shellQuote(word: string): string {
  * bodies are programs only for an executing interpreter; substitutions execute
  * even inside double quotes or unquoted heredocs. No shell code is evaluated.
  */
-function executionWords(command: string, depth = 0): string[][] {
+/** Work shared by every nested lex of one command: the texts already lexed and how many lexes ran. */
+interface LexBudget { seen: Set<string>; nested: number }
+
+function executionWords(command: string, depth = 0, budget: LexBudget = { seen: new Set(), nested: 0 }): string[][] {
   if (depth > 32) throw new Error("shell nesting exceeds classification limit");
   const result: string[][] = [];
   let words: string[] = [], word = "", quote = "", active = false;
@@ -214,7 +229,14 @@ function executionWords(command: string, depth = 0): string[][] {
     else words.push(/^[<>]+$/.test(word) ? "__shell_argument__" : word);
     word = ""; active = false;
   };
-  const nested = (text: string) => result.push(...executionWords(text, depth + 1));
+  // 1.8.1: a text already lexed for this command contributes nothing new (the wrapper value-slot reading
+  // reaches the same suffix from several paths), and the count of nested lexes is capped.
+  const nested = (text: string) => {
+    if (budget.seen.has(text)) return;
+    budget.seen.add(text);
+    if (++budget.nested > NESTED_LIMIT) throw new Error("shell nesting exceeds classification budget");
+    result.push(...executionWords(text, depth + 1, budget));
+  };
   const finish = () => {
     flush();
     if (!words.length) return;
