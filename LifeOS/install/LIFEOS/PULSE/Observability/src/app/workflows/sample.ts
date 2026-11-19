@@ -166,7 +166,7 @@ const slotShare = scheduledOnly.reduce((n, r) => n + (6 - r.card.undeclared.leng
 const mix: Record<Executor, number> = { code: 0, judgment: 0, model: 0, human: 0, unknown: 0 };
 // As in Inventory.ts: the skill placeholder step (executor unknown) is not counted.
 for (const r of records) for (const s of r.card.steps) if (!(r.runtime === "skill" && s.executor === "unknown")) mix[s.executor]++;
-const byRuntime: Record<Runtime, number> = { launchd: 0, "agent-job": 0, "pulse-cron": 0, cloud: 0, "project-cron": 0, skill: 0, workflow: 0 };
+const byRuntime: Record<Runtime, number> = { launchd: 0, systemd: 0, "agent-job": 0, "pulse-cron": 0, cloud: 0, "project-cron": 0, skill: 0, workflow: 0 };
 for (const r of records) byRuntime[r.runtime]++;
 // Same semantics as LIFEOS/WORKFLOWS/Inventory.ts: healthy = scheduled with no open medium or high finding;
 // attention = count of unacknowledged findings.

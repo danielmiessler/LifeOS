@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { allServices, type Svc } from "../TOOLS/Services.ts";
 import { collectLaunchd } from "./sources/launchd.ts";
+import { collectSystemd } from "./sources/systemd.ts";
 import { collectAgents, launchdHomeOf } from "./sources/agents.ts";
 import { collectPulse } from "./sources/pulse.ts";
 import { collectCloud } from "./sources/cloud.ts";
@@ -27,6 +28,7 @@ export interface Sources {
   skills: string; sops: string[]; overlay: string; baseline: string; now: Date;
   /** Workflows definitions home (`<name>.workflow.yaml`) and the run ledger its evidence comes from. */
   workflowDefs: string; workflowLedger: string;
+  systemdUser?: string; systemdTimers?: { name: string; text: string }[]; systemdShow?: string;
 }
 /**
  * Every skill customization's SOP directory (`<customizations>/<skill>/SOPs`), sorted. Discovered, never named:
@@ -45,13 +47,35 @@ export function defaultSources(platform: NodeJS.Platform = process.platform): So
       if (result.exitCode === 0) launchctlList = result.stdout.toString();
     } catch { /* A failed live-state probe leaves an empty listing. */ }
   }
+  // systemd user timers (Linux), read the way launchd plists are read on macOS.
+  let systemdUser: string | undefined;
+  let systemdTimers: { name: string; text: string }[] | undefined;
+  let systemdShow: string | undefined;
+  if (platform === "linux") {
+    systemdUser = join(home, ".config/systemd/user");
+    systemdTimers = [];
+    try {
+      const names = readdirSync(systemdUser, { withFileTypes: true }).filter(d => d.isFile() && d.name.endsWith(".timer")).map(d => d.name).sort();
+      for (const name of names) {
+        try { systemdTimers.push({ name, text: readFileSync(join(systemdUser, name), "utf8") }); } catch { /* An unreadable timer file is skipped. */ }
+      }
+    } catch { /* No user timer directory means no timers. */ }
+    systemdShow = "";
+    if (systemdTimers.length) {
+      try {
+        const units = [...systemdTimers.map(t => t.name), ...systemdTimers.map(t => t.name.replace(/\.timer$/, ".service"))];
+        const result = Bun.spawnSync(["systemctl", "--user", "show", ...units, "-p", "Id,Description,UnitFileState,ActiveState,LastTriggerUSec,Result"], { stdout: "pipe", stderr: "pipe" });
+        if (result.exitCode === 0) systemdShow = result.stdout.toString();
+      } catch { /* A failed live-state probe leaves an empty listing. */ }
+    }
+  }
   return { home, platform, launchAgents: join(home, "Library/LaunchAgents"), launchctlList, registry: allServices(), servicesConfig: join(root, "LIFEOS/USER/CONFIG/services.json"),
     agentJobs: join(root, "LIFEOS/USER/CONFIG/agent-jobs.json"), agentRuns: join(root, "LIFEOS/USER/MEMORY/STATE/agent-jobs/runs.json"),
     pulseSystem: join(root, "LIFEOS/PULSE/PULSE.toml"), pulseUser: join(root, "LIFEOS/USER/CONFIG/PULSE.user.toml"), pulseState: join(root, "LIFEOS/PULSE/state/state.json"),
     cloudFleet: join(root, "LIFEOS/USER/CUSTOMIZATIONS/WORKFLOWS"), projectRoots: [join(home, "Projects"), join(home, "LocalProjects"), ...lifeosSubsystems(root)],
     skills: join(root, "skills"), sops: sopDirs(),
     overlay: join(root, "LIFEOS/USER/CONFIG/workflows.json"), baseline: join(root, "LIFEOS/USER/CONFIG/workflows-baseline.json"), now: new Date(),
-    workflowDefs: definitionsDir(), workflowLedger: ledgerPath() };
+    workflowDefs: definitionsDir(), workflowLedger: ledgerPath(), systemdUser, systemdTimers, systemdShow };
 }
 /**
  * Every LifeOS subsystem directory (`LIFEOS/<NAME>`), scanned as a project root so a Worker it keeps in its own `worker/`
@@ -61,9 +85,9 @@ export function lifeosSubsystems(root: string): string[] {
   const base = join(root, "LIFEOS");
   try { return readdirSync(base, { withFileTypes: true }).filter((d) => d.isDirectory() && d.name !== "USER").map((d) => join(base, d.name)); } catch { return []; }
 }
-const RUNTIME_LABEL: Record<Runtime, string> = { launchd: "launchd", "agent-job": "agent job", "pulse-cron": "Pulse cron", cloud: "Cloudflare", "project-cron": "project cron", skill: "skill", workflow: "workflow" };
-const RUNTIME_NOUN: Record<Runtime, string> = { launchd: "launchd services", "agent-job": "agent jobs", "pulse-cron": "Pulse jobs", cloud: "Cloudflare Workers", "project-cron": "project-repo crons", skill: "skill intents", workflow: "typed workflows" };
-const RUNTIMES: Runtime[] = ["launchd", "agent-job", "pulse-cron", "cloud", "project-cron", "skill", "workflow"];
+const RUNTIME_LABEL: Record<Runtime, string> = { launchd: "launchd", systemd: "systemd", "agent-job": "agent job", "pulse-cron": "Pulse cron", cloud: "Cloudflare", "project-cron": "project cron", skill: "skill", workflow: "workflow" };
+const RUNTIME_NOUN: Record<Runtime, string> = { launchd: "launchd services", systemd: "systemd timers", "agent-job": "agent jobs", "pulse-cron": "Pulse jobs", cloud: "Cloudflare Workers", "project-cron": "project-repo crons", skill: "skill intents", workflow: "typed workflows" };
+const RUNTIMES: Runtime[] = ["launchd", "systemd", "agent-job", "pulse-cron", "cloud", "project-cron", "skill", "workflow"];
 // "wf", "a", "f", "p" are the fleet's Worker-name prefix (`wf-f-…`), a live identifier until each flow migrates.
 const stop = new Set(["com", "lifeos", "job", "jobs", "da", "assistant", "life", "cron", "worker", "wf", "a", "f", "p"]);
 // Pure digits are record indexes (`Vector:1`), not words.
@@ -90,11 +114,11 @@ export function buildInventory(opts: Partial<Sources> = {}): Inventory {
   const shown = (path: string): string => path.replace(s.home, "~");
   const errors: Inventory["errors"] = [];
   const error = (source: string, message: string): void => { errors.push({ source: shown(source), message: message.slice(0, 200) }); };
-  if (s.platform !== "darwin") error("launchd", "Live launchd state is macOS-only.");
+  if (s.platform !== "darwin" && s.platform !== "linux") error("launchd", "Live launchd state is macOS-only.");
   const config = readJson(s.servicesConfig, error);
   const declaredDeclines = (Array.isArray(config) ? config.find(row => Array.isArray(row?._declined))?._declined : undefined) ?? [];
   const declined = new Set<string>(declaredDeclines.filter((label: unknown): label is string => typeof label === "string"));
-  const launch = collectLaunchd(s.launchAgents, s.platform === "darwin" ? s.launchctlList : "", shown, error, s.registry, declined);
+  const launch = collectLaunchd(s.platform === "linux" ? join(s.home, ".no-launchagents") : s.launchAgents, s.platform === "darwin" ? s.launchctlList : "", shown, error, s.registry, declined);
   const byLaunch = new Map(launch.records.map(r => [r.id, r]));
   const agents = collectAgents(s.agentJobs, s.agentRuns, byLaunch, shown, error);
   const connections = { checked: 0, runtime: 0, mismatch: 0 };
@@ -111,6 +135,7 @@ export function buildInventory(opts: Partial<Sources> = {}): Inventory {
   const absorbed = new Set([...agents.map(a => launchdHomeOf(a.name)), ...typed.map(w => wfPlist(w.name)), ...executors]);
   const records: WorkflowRecord[] = [
     ...launch.records.filter(r => !absorbed.has(r.id)), ...agents,
+    ...collectSystemd(s.systemdUser ?? "", s.systemdTimers ?? [], s.systemdShow ?? "", shown),
     ...collectPulse([s.pulseSystem, s.pulseUser], s.pulseState, shown, error),
     ...collectCloud(s.cloudFleet, shown, error), ...collectProjects(s.projectRoots, shown, error),
     ...collectSkills(s.skills, shown, error), ...typed,

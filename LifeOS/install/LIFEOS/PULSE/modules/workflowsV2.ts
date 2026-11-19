@@ -29,6 +29,7 @@ export type RunEligibility =
 
 const REFUSED_BY_RUNTIME: Record<Exclude<WorkflowRecord["runtime"], "launchd" | "agent-job">, string> = {
   skill: "Skill intents run inside a session, not from this page.",
+  systemd: "This is a systemd user timer; start it with systemctl --user start <name>.service.",
   "pulse-cron": "This runs inside the Pulse daemon's own scheduler, so there is no launchd label to start.",
   cloud: "This runs on Cloudflare. There is no safe local trigger for it.",
   "project-cron": "This is a cron in a project's Cloudflare deploy. There is no safe local trigger for it.",
@@ -272,6 +273,7 @@ const EVIDENCE_NOTE: Record<WorkflowRecord["evidence"]["kind"], string> = {
   "state-file": "Last run from Pulse's job state, which keeps only the latest run.",
   "log-mtime": "Last run inferred from when its log last changed.",
   "launchd-exit": "Last exit code from launchd, which keeps only the latest run.",
+  "systemd-result": "Last trigger time and result from systemctl --user show, which keeps only the latest run.",
   none: "",
 };
 

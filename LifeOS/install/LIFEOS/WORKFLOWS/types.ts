@@ -7,6 +7,7 @@
 /** Where a workflow's definition lives and what schedules it. */
 export type Runtime =
   | "launchd"       // a com.lifeos.* service in the Services.ts registry / services.json, or an installed plist
+  | "systemd"       // a systemd user timer in ~/.config/systemd/user (Linux)
   | "agent-job"     // a job in USER/CONFIG/agent-jobs.json (scheduled by its own com.lifeos.job.<id> plist)
   | "pulse-cron"    // a [[job]] in PULSE.toml or USER/CONFIG/PULSE.user.toml
   | "cloud"         // a Cloudflare Worker in the LifeOS fleet (USER/CUSTOMIZATIONS/WORKFLOWS): action, pipeline, flow or app, whatever starts it
@@ -49,7 +50,7 @@ export type Installed =
   | "deployed"     // a cloud Worker or cron in a config file (deployment itself not verified)
   | "n/a";         // on-demand work: nothing to install
 
-export type EvidenceKind = "run-log" | "state-file" | "log-mtime" | "launchd-exit" | "none";
+export type EvidenceKind = "run-log" | "state-file" | "log-mtime" | "launchd-exit" | "systemd-result" | "none";
 
 export interface Evidence {
   kind: EvidenceKind;

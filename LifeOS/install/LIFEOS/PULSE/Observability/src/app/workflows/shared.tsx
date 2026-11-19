@@ -27,13 +27,14 @@ export type { Card, Executor, Finding, Inventory, Runtime, Severity, WorkflowRec
 
 /* ── Runtimes: one colour each, used for grouping everywhere on the page ── */
 
-export const SCHEDULED_RUNTIMES = ["launchd", "agent-job", "pulse-cron", "cloud", "project-cron", "workflow"] as const satisfies readonly Runtime[];
+export const SCHEDULED_RUNTIMES = ["launchd", "systemd", "agent-job", "pulse-cron", "cloud", "project-cron", "workflow"] as const satisfies readonly Runtime[];
 export const ALL_RUNTIMES: readonly Runtime[] = [...SCHEDULED_RUNTIMES, "skill"];
 
 /* Cool and neutral hues only, so a runtime never reads as a health colour
    (green / amber / red belong to status). */
 export const RUNTIME_META: Record<Runtime, { label: string; color: string; blurb: string }> = {
   launchd: { label: "launchd", color: "#7DD3FC", blurb: "macOS services" },
+  systemd: { label: "systemd", color: "#F59E0B", blurb: "Linux user timers" },
   "agent-job": { label: "agent jobs", color: "#B794F4", blurb: "scheduled agent runs" },
   "pulse-cron": { label: "Pulse cron", color: "#2DD4BF", blurb: "jobs inside the Pulse daemon" },
   cloud: { label: "Cloud (Cloudflare)", color: "#F472B6", blurb: "Cloudflare Workers: actions, pipelines, flows and apps" },
@@ -117,6 +118,7 @@ export function healthOf(r: WorkflowRecord, findings: Finding[] | undefined): He
 
 export const EVIDENCE_PHRASE: Record<WorkflowRecord["evidence"]["kind"], string> = {
   "launchd-exit": "launchd's last exit code",
+  "systemd-result": "systemd's last trigger time and result",
   "run-log": "the job's run log",
   "state-file": "Pulse's job state",
   "log-mtime": "the time its log last changed",
