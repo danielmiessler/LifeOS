@@ -29,6 +29,7 @@ Sources: [Demystifying evals for AI agents](https://www.anthropic.com/engineerin
 - A produced artifact is checked by Proof against what was asked before the principal sees it, and the receipt is bound to its bytes.
 - Transport failures, malformed verdicts and missing observations are reported as unavailable evidence, never as a pass, a quality failure or an adversarial catch.
 - A fuzzy decision handed to CreateQuestions leaves as a validated question system whose accuracy was measured on held-out cases the designer never saw, with its margin over one holistic baseline question, or as a stated finding that the judgment layer does not fit and what does; a design ends at a saved shadow registry row and never moves a caller toward enforce.
+- When an ISA names a `golden_set`, `Tools/GoldenPin.ts check <ISA.md>` reports whether those expected cases still match their content at the parent of the first build commit, read from git history. No runner reads `golden_set` and nothing calls the check automatically; the owning ISA runs it before close.
 - When Assay builds the eval system for a project, the project's ISA ends current: every criterion it checks names its suite or glance question in Test Strategy, and the hand-rolled eval code, rows and stale criteria it replaced are removed in the same change.
 
 ## Intent Routing
