@@ -612,8 +612,12 @@ async function handleCreateKnowledgeIdea(
     .filter((tag) => tag.length > 0);
   const tagsCsv = tags.join(", ");
   const today = new Date().toISOString().slice(0, 10);
-  const slug = kebabCase(title);
-  const targetPath = path.join(KNOWLEDGE_DIR, "Ideas", `${slug}.md`);
+  let slug = kebabCase(title);
+  let targetPath = path.join(KNOWLEDGE_DIR, "Ideas", `${slug}.md`);
+  if (fs.existsSync(targetPath)) {
+    slug = `${slug}-${item.id}`;
+    targetPath = path.join(KNOWLEDGE_DIR, "Ideas", `${slug}.md`);
+  }
 
   if (fs.existsSync(targetPath)) {
     return {
@@ -784,6 +788,10 @@ const KNOWN_VERBS = new Set([
 ]);
 const NOTE_VERBS = new Set(["create_knowledge_source_entry", "create_knowledge_idea_entry"]);
 
+export function noteWriteFailed(results: ActionResult[]): ActionResult | undefined {
+  return results.find((r) => NOTE_VERBS.has(r.verb) && (r.status === "error" || r.status === "skipped"));
+}
+
 /**
  * A harvest always preserves its source. When the classifier invents a verb
  * (2026-10-02, item 78: `evaluate_plugin_for_PAI_workflow`,
@@ -824,6 +832,7 @@ async function executeItem(
           error: error instanceof Error ? error.message : String(error),
         });
       }
+      if (!ctx.dryRun && noteWriteFailed(actionResults)) break;
     }
   }
 
@@ -890,6 +899,7 @@ async function main(): Promise<void> {
     error: 0,
   };
   const perItemSummaries: string[] = [];
+  const failures: string[] = [];
 
   for (const item of items) {
     const body = cli.bodyFile ? fs.readFileSync(cli.bodyFile, "utf8") : undefined;
@@ -908,7 +918,10 @@ async function main(): Promise<void> {
         aggregate[actionResult.status] += 1;
       }
       perItemSummaries.push(formatItemSummary(item, result.newRecord.action_results));
-      if (!cli.dryRun) {
+      const failed = cli.dryRun ? undefined : noteWriteFailed(result.newRecord.action_results);
+      if (failed) {
+        failures.push(`item ${item.id}: note not written (${failed.status}: ${failed.error ?? failed.reason ?? "no reason given"})`);
+      } else if (!cli.dryRun) {
         sidecar.items[String(item.id)] = result.newRecord;
       }
     }
@@ -931,6 +944,11 @@ async function main(): Promise<void> {
 
   for (const line of perItemSummaries) {
     console.log(`  ${line}`);
+  }
+
+  if (failures.length > 0) {
+    for (const line of failures) console.error(`FAILED: ${line}`);
+    process.exitCode = 1;
   }
 }
 
