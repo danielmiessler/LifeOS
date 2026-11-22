@@ -37,6 +37,18 @@ export function parseHarvestApiBase(configText: string): string | undefined {
   if (!value || !/^https?:\/\/\S+$/i.test(value)) return undefined;
   return value.replace(/\/+$/, "");
 }
+export function parseOcrLangs(value: string | undefined): string | undefined {
+  const v = value?.trim();
+  return v && /^[A-Za-z_]+(\+[A-Za-z_]+)*$/.test(v) ? v : undefined;
+}
+export function ocrLanguageArgs(): string[] {
+  let fromFile: string | undefined;
+  try {
+    fromFile = fs.readFileSync(HARVEST_CONFIG_PATH, "utf8").match(/^[ \t]*ocr_langs:[ \t]*([^\s]*)/im)?.[1];
+  } catch {}
+  const langs = parseOcrLangs(process.env.HARVEST_OCR_LANGS) ?? parseOcrLangs(fromFile);
+  return langs ? ["-l", langs] : [];
+}
 function resolveHarvestApiBase(): string {
   const fromEnv = process.env.HARVEST_API_BASE;
   if (fromEnv) return fromEnv.replace(/\/+$/, "");
@@ -350,7 +362,7 @@ async function fetchImageBody(input: string): Promise<{ title: string; body: str
 }
 
 async function fetchImageFromFile(file: string): Promise<{ title: string; body: string }> {
-  const ocr = runTool("tesseract", [file, "stdout", "--psm", "3"], 120_000).replace(/\s+/g, " ").trim();
+  const ocr = runTool("tesseract", [file, "stdout", "--psm", "3", ...ocrLanguageArgs()], 120_000).replace(/\s+/g, " ").trim();
   const described = await describeImage(file);
   const parts: string[] = [];
   if (described) parts.push(`DESCRIPTION:\n${described}`);
