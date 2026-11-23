@@ -27,14 +27,16 @@
  *   --pro              Use Gemini 4 Argon (CROSS_VENDOR.argon) — the Argon agent's lane
  *   --no-search        Disable Google Search grounding (pure model answer)
  *   --system <prompt>  Prepend a system instruction
- *   --max-tokens <n>   Cap output tokens (default: 2048)
+ *   --max-tokens <n>   Cap output tokens, thinking included (default: 8192)
  *   --json             Emit raw API JSON
  *   -h, --help         Usage — costs nothing, sends no request
  *
  * Environment:
  *   GOOGLE_API_KEY     Gemini API key from ~/.claude/.env (required)
  *
- * Exit codes: 0 ok, 1 error (missing key, API failure, empty response)
+ * Exit codes: 0 ok, 1 error (missing key, API failure, empty response).
+ *   An incomplete answer (finishReason not STOP, or missing) still exits 0 when text
+ *   was returned (1 when empty) and is flagged on stderr with "Warning: incomplete answer".
  *
  * @author LifeOS System
  * @version 1.1.3
@@ -60,7 +62,7 @@ Options:
   --pro              Use the Argon agent pin (${CROSS_VENDOR.argon})
   --no-search        Disable Google Search grounding
   --system <prompt>  Prepend a system instruction
-  --max-tokens <n>   Cap output tokens (default: 2048)
+  --max-tokens <n>   Cap output tokens, thinking included (default: 8192)
   --json             Emit raw API JSON
   -h, --help         this message — costs nothing, sends no request`
 
@@ -91,7 +93,7 @@ interface Opts {
 }
 
 function parseArgs(argv: string[]): { opts: Opts; query: string } {
-  const opts: Opts = { model: CROSS_VENDOR.geminiResearcher, search: true, maxTokens: 2048, json: false }
+  const opts: Opts = { model: CROSS_VENDOR.geminiResearcher, search: true, maxTokens: 8192, json: false }
   const rest: string[] = []
   for (let i = 0; i < argv.length; i++) {
     switch (argv[i]) {
@@ -107,7 +109,7 @@ function parseArgs(argv: string[]): { opts: Opts; query: string } {
   return { opts, query: rest.join(' ').trim() }
 }
 
-interface Parsed { text: string; citations: string[]; raw: unknown }
+interface Parsed { text: string; citations: string[]; raw: unknown; hasCandidate: boolean; finishReason: string | null; blockReason: string | null }
 
 async function gemini(query: string, opts: Opts): Promise<Parsed> {
   const body: Record<string, unknown> = {
@@ -149,7 +151,12 @@ async function gemini(query: string, opts: Opts): Promise<Parsed> {
     .map((c: any) => c.web?.uri || c.retrievedContext?.uri)
     .filter((u: unknown): u is string => typeof u === 'string')
 
-  return { text, citations: [...new Set(citations)], raw: data }
+  // Why generation stopped. A MAX_TOKENS answer is cut mid-sentence but
+  // otherwise looks complete, and thinking tokens count against the cap.
+  const finishReason: string | null = cand?.finishReason ?? null
+  const blockReason: string | null = data.promptFeedback?.blockReason ?? null
+
+  return { text, citations: [...new Set(citations)], raw: data, hasCandidate: !!cand, finishReason, blockReason }
 }
 
 async function main() {
@@ -180,6 +187,14 @@ async function main() {
   } catch (e: any) {
     console.error(`${colors.red}Gemini API error: ${e.message}${colors.reset}`)
     process.exit(1)
+  }
+
+  // Warn on any finish other than STOP, including a missing finishReason (stderr only,
+  // so stdout and exit codes are unchanged).
+  if (result.blockReason || (result.hasCandidate && result.finishReason !== 'STOP')) {
+    const why = result.blockReason ? `prompt blocked (${result.blockReason})` : `finishReason ${result.finishReason ?? 'missing'}`
+    const hint = result.finishReason === 'MAX_TOKENS' ? ` — answer cut at --max-tokens ${opts.maxTokens}; raise it` : ''
+    console.error(`${colors.red}Warning: incomplete answer: ${why}${hint}${colors.reset}`)
   }
 
   if (opts.json) {
