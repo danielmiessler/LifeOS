@@ -61,6 +61,8 @@ QUERY
 
 **Quoting rule.** Query and instruction text comes from outside (a brief, a web page, a user), so it never goes inside double quotes, where the shell would run any `$(…)` or backtick in it. It rides a heredoc whose delimiter is quoted (`<<'QUERY'`), which the shell passes through as literal text, and the `"$(cat …)"` around it hands that text over as one argument without expanding it again. The one thing to check: no line of the text may be exactly `QUERY` (or `SYSTEM`); if one is, pick another delimiter.
 
+**An incomplete answer is flagged on stderr.** A line starting `Warning: incomplete answer:` means the answer was cut or blocked, even though the exit code is 0. On `finishReason MAX_TOKENS`, rerun that query with a higher `--max-tokens` (16000 is enough for long research answers) before using it. For any other reason (blocked, `SAFETY`, `RECITATION`, missing), use what came back only as `[LOW]` and say it was incomplete. Never report a flagged answer as complete.
+
 Grounding citations arrive as `vertexaisearch.cloud.google.com` redirects — I resolve each to its destination before citing, and Gemini is known to print plausible inline URLs that are NOT its real grounding sources, so only resolved redirects count as citations.
 
 ## Self-verification (before returning)
