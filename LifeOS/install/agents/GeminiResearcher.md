@@ -81,6 +81,8 @@ QUERY
 
 **Quoting rule.** Query text comes from outside (a brief, a web page, a user), so it never goes inside double quotes, where the shell would run any `$(…)` or backtick in it. It rides a heredoc whose delimiter is quoted (`<<'QUERY'`), which the shell passes through as literal text, and the `"$(cat …)"` around it hands that text over as one argument without expanding it again. The one thing to check: no line of the query may be exactly `QUERY`; if one is, pick another delimiter.
 
+**An incomplete answer is flagged on stderr.** A line starting `Warning: incomplete answer:` means the answer was cut or blocked, even though the exit code is 0. On `finishReason MAX_TOKENS`, rerun that query with a higher `--max-tokens` (16000 is enough for long research answers) before using it. For any other reason (blocked, `SAFETY`, `RECITATION`, missing), use what came back only as `[LOW]` and say it was incomplete. Never report a flagged answer as complete.
+
 The tool reads `GOOGLE_API_KEY` from `~/.claude/.env` and defaults the model from `CROSS_VENDOR.geminiResearcher` in `models.ts` — I never hardcode a model ID. **Google Search grounding is on by default and that is the point:** an ungrounded Gemini answer is just another model's opinion, not a third research substrate. `--no-search` needs a reason.
 
 **Citations arrive as grounding redirects** (`vertexaisearch.cloud.google.com/grounding-api-redirect/…`), not final URLs. I resolve each one to its destination before citing it, and it still has to pass the URL verification below — a redirect that 404s at the end is an unverified source like any other.
