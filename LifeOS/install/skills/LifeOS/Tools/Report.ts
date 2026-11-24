@@ -43,12 +43,12 @@
  */
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync, rmSync, renameSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { homedir, tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { detectEnv, detectDevTree } from "./InstallEngine";
 import { identityContext, redact, leaks, patchLeaks, diffDenied, diffHasBinary, diffPaths, stagedDenied, type IdentityContext } from "./Redact";
-import { attest, attestationLine, installedVersion, type Attestation } from "./Attest";
+import { attest, attestationLine, findPayloadRoot, installedVersion, type Attestation } from "./Attest";
 // The send gate lives in the installed tree. This tool also ships inside the downloaded installer, where that tree
 // does not exist yet, so it loads the gate by path and publishes nothing without it (fail closed).
 const SEND_GATE_PATH = join(import.meta.dir, "..", "..", "..", "LIFEOS", "TOOLS", "lib", "SendGate.ts");
@@ -334,6 +334,30 @@ export function prGate(patch: string, probe: ProbeRecord | null, verify: ProbeRe
   const left = patchLeaks(patch, ctx);
   if (left.length) return { ok: false, message: `Diff carries identity or secrets: ${left.join("; ")}` };
   return { ok: true, paths };
+}
+
+// ── applying to upstream ────────────────────────────────────────────────────
+
+export type UpstreamApply = { ok: true; prefix: string; denied: string[] } | { ok: false; message: string };
+
+/**
+ * An install's diff is rooted at the config root (`skills/…`, `hooks/…`), but the release repo keeps that payload
+ * under `LifeOS/install/`. Find the payload root in the clone the same way Attest does, apply the diff beneath it,
+ * and check the staged paths with that prefix stripped, so the system-tree allowlist sees the paths it knows.
+ * A staged path outside the payload keeps its full name and so fails the allowlist.
+ */
+export function applyToUpstream(repoDir: string, patchFile: string, run = git): UpstreamApply {
+  const payload = findPayloadRoot(repoDir);
+  if (!payload) return { ok: false, message: "could not find the install payload (hooks/ beside LIFEOS/TOOLS/) in the upstream clone" };
+  const prefix = relative(repoDir, payload).split(sep).join("/");
+  const r = run(repoDir, ["apply", "--index", ...(prefix ? [`--directory=${prefix}`] : []), patchFile]);
+  if (!r.ok) return { ok: false, message: `patch does not apply${prefix ? ` under ${prefix}/` : ""}: ${r.err}` };
+  // The gate read the patch text; this reads what git actually staged, so no path is saved unchecked.
+  const staged = run(repoDir, ["diff", "--cached", "--name-only", "--no-renames", "-z"]);
+  if (!staged.ok) return { ok: false, message: staged.err || "could not list the staged paths" };
+  const lead = prefix ? `${prefix}/` : "";
+  const names = staged.out.split("\0").filter(Boolean).map((p) => (lead && p.startsWith(lead) ? p.slice(lead.length) : p));
+  return { ok: true, prefix, denied: stagedDenied(names.join("\0")) };
 }
 
 // ── outward calls (argv only) ───────────────────────────────────────────────
@@ -645,7 +669,7 @@ async function main(): Promise<void> {
       const plan = [
         `1. gh repo fork ${upstream} --clone=false           (no-op if ${fork} exists)`,
         `2. git clone --depth 1 -b ${base} https://github.com/${upstream}.git <tmp>`,
-        `3. git checkout -b ${branch} && git apply --index <diff>   (${gate.paths.length} file(s): ${gate.paths.join(", ")})`,
+        `3. git checkout -b ${branch} && git apply --index --directory=<payload root, e.g. LifeOS/install> <diff>   (${gate.paths.length} file(s): ${gate.paths.join(", ")})`,
         `4. git commit && git push https://github.com/${fork}.git ${branch}   (auth: gh credential helper, per-command)`,
         `5. gh pr create -R ${upstream} --base ${base} --head ${login}:${branch} --title "${built.title}" --body-file ${reportPath}`,
       ].join("\n");
@@ -667,12 +691,9 @@ async function main(): Promise<void> {
         let r = git(work, ["clone", "--depth", "1", "-b", base, `https://github.com/${upstream}.git`, repoDir]);
         if (!r.ok) die(r.err || "clone failed");
         r = git(repoDir, ["checkout", "-b", branch]); if (!r.ok) die(r.err);
-        r = git(repoDir, ["apply", "--index", patchFile]); if (!r.ok) die(`patch does not apply to ${upstream}@${base}: ${r.err}`);
-        // The gate read the patch text; this reads what git actually staged, so no path is saved unchecked.
-        const staged = git(repoDir, ["diff", "--cached", "--name-only", "--no-renames", "-z"]);
-        if (!staged.ok) die(staged.err || "could not list the staged paths");
-        const stagedBad = stagedDenied(staged.out);
-        if (stagedBad.length) die(`Applying the diff staged paths a contribution may never carry: ${stagedBad.join(", ")}`, 2);
+        const applied = applyToUpstream(repoDir, patchFile);
+        if (!applied.ok) die(`${upstream}@${base}: ${applied.message}`);
+        if (applied.denied.length) die(`Applying the diff staged paths a contribution may never carry: ${applied.denied.join(", ")}`, 2);
         const ident = ["-c", `user.name=${login}`, "-c", `user.email=${login}@users.noreply.github.com`];
         r = git(repoDir, [...ident, "commit", "-m", `${built.title}\n\nFiled from a LifeOS install with the Report tool; the negative control and the green run are in the PR body.`]);
         if (!r.ok) die(r.err || "commit failed");
