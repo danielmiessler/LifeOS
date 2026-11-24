@@ -459,7 +459,9 @@ const PRIORITIES: Priority[] = ["now", "soon", "later"];
 const ID_RE = /^[a-z0-9-]{6,64}$/;
 
 export function stableId(category: string, title: string): string {
-  const norm = title.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  // Keep Unicode letters and digits so non-Latin titles don't all hash the empty
+  // string; for ASCII-only titles this yields the same input as before.
+  const norm = title.normalize("NFC").toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   return `${category.replace(/[^a-z0-9]/g, "")}-${createHash("sha256").update(norm).digest("hex").slice(0, 10)}`;
 }
 
