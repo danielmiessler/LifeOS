@@ -50,6 +50,6 @@ Show `report.md` to the user before `--yes`, and say what redaction cannot see. 
 ## Gotchas
 
 - `attest` is `unattested` on the maintainer's source tree and on installs whose version has no release tag yet. That is a true answer, not a failure; the report still files.
-- `pr` applies the diff to the upstream default branch, not to the user's tree. If `git apply` fails, the fix was made against a modified install; regenerate the diff against the release the attestation names.
+- `pr` applies the diff to the upstream default branch, not to the user's tree. The diff is rooted at the config root; `pr` finds the release's payload root in the clone (`LifeOS/install/`) and applies beneath it, checking staged paths relative to that root. If `git apply` still fails, the fix was made against a modified install; regenerate the diff against the release the attestation names.
 - Labels are not passed on `gh issue create`; non-collaborators cannot set them and the maintainer's triage labels on its side.
 - `search` needs `gh` auth. Without it, ask the user to search the repo by hand and continue.
