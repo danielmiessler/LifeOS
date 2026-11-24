@@ -28,10 +28,12 @@ const CREDENTIAL = "Credential-shaped string refused";
  * Why a piece of text is refused as credential-shaped, or null. The same patterns validateEvent applies; STATVS refuses
  * with it before an append. With `slugs: true` (STATVS, which stores session slugs and ISA paths) the generic long run is
  * judged the way urlRefusal judges a path: each `/`-separated part of a long run must be slug-shaped, or be under 32
- * characters. Every other pattern applies unchanged. The default keeps Vigil's behaviour exactly.
+ * characters. A content-addressed filename (`maskContentAddresses`) is masked first. Every other pattern applies
+ * unchanged. The default keeps Vigil's behaviour exactly.
  */
 export function credentialRefusal(text: string, opts: { slugs?: boolean } = {}): string | null {
   if (!opts.slugs) return SECRET_RES.some((re) => re.test(text)) ? CREDENTIAL : null;
+  text = maskContentAddresses(text);
   if (SECRET_RES.some((re) => re !== LONG_RUN && re.test(text))) return CREDENTIAL;
   for (const m of text.matchAll(new RegExp(LONG_RUN.source, "g"))) {
     for (const part of m[0].split("/")) {
@@ -39,6 +41,24 @@ export function credentialRefusal(text: string, opts: { slugs?: boolean } = {}):
     }
   }
   return null;
+}
+
+/**
+ * A content-addressed filename in a path: `/<40 or 64 lowercase hex>.<one 1–8 char ASCII extension>`, ending its
+ * segment (Calibrate saves artifacts as `artifacts/<sha256><ext>`). No double extension, no other length, no URL.
+ */
+const CONTENT_ADDRESS = /(?<=\/)(?:[a-f0-9]{64}|[a-f0-9]{40})\.[A-Za-z0-9]{1,8}(?![A-Za-z0-9._~+%?#=&-])/g;
+
+/**
+ * Masks content-addressed filenames so a path naming a file by its digest is not refused as a token. Accepts a
+ * residual risk, approved by the principal on 2026-11-23: a real 40- or 64-hex secret used as such a filename passes.
+ * A match inside a URL (`://`, or a query or fragment) is left as is and judged by every pattern.
+ */
+export function maskContentAddresses(text: string): string {
+  return text.replace(CONTENT_ADDRESS, (m: string, offset: number) => {
+    const start = Math.max(...[" ", "\t", "\n", '"', "'", "`", "(", "<", ","].map((c) => text.lastIndexOf(c, offset))) + 1;
+    return /:\/\/|[?#=&]/.test(text.slice(start, offset)) ? m : `content-address${m.slice(m.indexOf("."))}`;
+  });
 }
 
 /**
