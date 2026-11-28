@@ -549,7 +549,14 @@ async function cmdLaunch(options: { mcp?: string; resume?: boolean; resumeId?: s
 
   requireClaudeCli();
   displayBanner();
-  const args = ["claude"];
+  // LIFEOS_CLAUDE_LAUNCH overrides what actually spawns (default "claude").
+  // Set it to a command prefix — e.g. `ollama launch claude --` — to route the
+  // launch through a wrapper. Split on spaces: it is a short prefix, not a
+  // quoted path; a path form would need argv escaping first.
+  const base = process.env.LIFEOS_CLAUDE_LAUNCH?.trim()
+    ? process.env.LIFEOS_CLAUDE_LAUNCH.trim().split(/\s+/)
+    : ["claude"];
+  const args = base;
 
   // LifeOS System Prompt — constitutional rules appended to Claude Code's system prompt
   // These rules get highest instruction authority (system prompt layer > CLAUDE.md layer)
