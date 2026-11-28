@@ -33,7 +33,7 @@
  *                                  any other name hard-errors.
  *   --json                         Expect and parse JSON response
  *   --timeout <ms>                 Custom timeout (default varies by level)
- *   --vendor <openai|anthropic|anthropic-api>  Vendor override (see VENDOR below)
+ *   --vendor <openai|anthropic|anthropic-api|ollama>  Vendor override (see VENDOR below)
  *   --no-fallback                              Fail instead of falling back to another vendor (allowVendorFallback:false); use it where each answer must come from the vendor named
  *
  * DEFAULTS BY LEVEL (models resolve via models.ts EFFORT_MODEL — edit the
@@ -69,10 +69,13 @@ import { readFileSync } from "fs";
  * whatever the config's `fallback` says. Resolution order:
  * options.vendor / --vendor → LIFEOS_INFERENCE_VENDOR → LIFEOS/USER/CONFIG/inference-vendor.json
  * `default` → anthropic. That file's `fallback` names the vendor tried when the default fails.
+ * `ollama` is a local model over Ollama's /api/chat, no key and no subscription: the model is the config's
+ * `ollamaModel`, the server its `ollamaUrl` (default http://localhost:11434). Route a level to it with
+ * `byLevel` (e.g. `"byLevel": { "low": "ollama" }`); a failed call falls back to the config's `fallback`.
  */
-export type InferenceVendor = 'openai' | 'anthropic' | 'anthropic-api';
-const VENDORS: readonly InferenceVendor[] = ['openai', 'anthropic', 'anthropic-api'];
-type VendorConfig = { default: InferenceVendor; fallback?: InferenceVendor; byLevel?: Partial<Record<EffortLevel, InferenceVendor>> };
+export type InferenceVendor = 'openai' | 'anthropic' | 'anthropic-api' | 'ollama';
+const VENDORS: readonly InferenceVendor[] = ['openai', 'anthropic', 'anthropic-api', 'ollama'];
+export type VendorConfig = { default: InferenceVendor; fallback?: InferenceVendor; byLevel?: Partial<Record<EffortLevel, InferenceVendor>>; ollamaModel?: string; ollamaUrl?: string };
 let vendorConfig: VendorConfig | null = null;
 export function loadVendorConfig(): VendorConfig {
   if (vendorConfig) return vendorConfig;
@@ -80,7 +83,8 @@ export function loadVendorConfig(): VendorConfig {
     const j = JSON.parse(readFileSync(lifeosPath('USER', 'CONFIG', 'inference-vendor.json'), 'utf8'));
     const byLevel: Partial<Record<EffortLevel, InferenceVendor>> = {};
     for (const [l, v] of Object.entries(j.byLevel ?? {})) if (VENDORS.includes(v as InferenceVendor)) byLevel[l as EffortLevel] = v as InferenceVendor;
-    vendorConfig = { default: VENDORS.includes(j.default) ? j.default : 'anthropic', fallback: VENDORS.includes(j.fallback) ? j.fallback : undefined, byLevel };
+    vendorConfig = { default: VENDORS.includes(j.default) ? j.default : 'anthropic', fallback: VENDORS.includes(j.fallback) ? j.fallback : undefined, byLevel,
+      ollamaModel: typeof j.ollamaModel === 'string' && j.ollamaModel ? j.ollamaModel : undefined, ollamaUrl: typeof j.ollamaUrl === 'string' && j.ollamaUrl ? j.ollamaUrl : undefined };
   } catch { vendorConfig = { default: 'anthropic' }; }
   return vendorConfig;
 }
@@ -279,7 +283,7 @@ export interface InferenceResult {
   error?: string;
   latencyMs: number;
   level: InferenceLevel;
-  /** Which vendor produced the answer (openai | anthropic | anthropic-api). */
+  /** Which vendor produced the answer (openai | anthropic | anthropic-api | ollama). */
   vendor?: InferenceVendor;
   /** The model that ACTUALLY generated the answer, read back from the claude
    * JSON envelope's `modelUsage` map (the key with the most output tokens).
@@ -967,6 +971,51 @@ async function anthropicApiAttempt(options: InferenceOptions): Promise<Inference
   return { success: true, output, latencyMs, level, vendor: 'anthropic-api', executedModel };
 }
 
+/**
+ * ollama lane: one local /api/chat call, no tools, no key, no subscription. Thinking is off
+ * (helper work wants the answer, not the trace); expectJson asks Ollama for JSON (`format`,
+ * the jsonSchema when given). Images and explicit model overrides belong to other lanes.
+ */
+export async function ollamaAttempt(options: InferenceOptions, cfg: VendorConfig = loadVendorConfig()): Promise<InferenceResult> {
+  const level = normalizeLevel(options.level);
+  const fail = (error: string, latencyMs = 0, output = ''): InferenceResult => ({ success: false, output, error, latencyMs, level, vendor: 'ollama' });
+  const model = cfg.ollamaModel;
+  if (!model) return fail('ollama: set ollamaModel in USER/CONFIG/inference-vendor.json');
+  if (options.model) return fail('ollama serves its configured ollamaModel only; an explicit model override belongs to the anthropic lane');
+  if (options.imagePaths && options.imagePaths.length > 0) return fail('ollama lane does not take imagePaths');
+  const base = (cfg.ollamaUrl ?? 'http://localhost:11434').replace(/\/+$/, '');
+  const timeout = options.timeout || LEVEL_CONFIG[level].defaultTimeout * 2;
+  const json = !!options.expectJson;
+  const system = json ? `${options.systemPrompt}\n\nRespond with JSON only — no prose, no code fences.` : options.systemPrompt;
+  const signal = options.signal ? AbortSignal.any([options.signal, AbortSignal.timeout(timeout)]) : AbortSignal.timeout(timeout);
+  const startTime = Date.now();
+  let j: any;
+  try {
+    const res = await fetch(`${base}/api/chat`, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, signal,
+      body: JSON.stringify({ model, stream: false, think: false, messages: [{ role: 'system', content: system }, { role: 'user', content: options.userPrompt }], ...(json ? { format: options.jsonSchema ?? 'json' } : {}) }),
+    });
+    j = await res.json().catch(() => ({}));
+    if (!res.ok || j.error) return fail(`ollama: ${String(j.error ?? `HTTP ${res.status}`).slice(0, 300)}`, Date.now() - startTime);
+  } catch (e) {
+    return fail(options.signal?.aborted ? ABORTED : `ollama: ${String(e).slice(0, 300)}`, Date.now() - startTime);
+  }
+  const latencyMs = Date.now() - startTime;
+  const executedModel: string = j.model || model;
+  const usage: InferenceUsage = { input_tokens: Number(j.prompt_eval_count ?? 0), output_tokens: Number(j.eval_count ?? 0) };
+  recordModelUse(executedModel, usage.output_tokens);
+  // Some models emit their trace inline even with think:false; the answer is what follows it.
+  const output = String(j.message?.content ?? '').replace(/^\s*<think>[\s\S]*?<\/think>/, '').trim();
+  if (j.done_reason === 'length') return { ...fail('ollama: hit the context or num_predict limit before the answer finished', latencyMs, output), executedModel, usage };
+  if (!output) return { ...fail('ollama: response carried no text', latencyMs), executedModel, usage };
+  if (json) {
+    const parsed = parseLooseJson(output);
+    if (parsed === null) return { ...fail('Failed to parse JSON response', latencyMs, output), executedModel, usage };
+    return { success: true, output, parsed, latencyMs, level, vendor: 'ollama', executedModel, usage };
+  }
+  return { success: true, output, latencyMs, level, vendor: 'ollama', executedModel, usage };
+}
+
 // Liveness-lane kill switch (20260908-universal-eval-reeval ISC-42). The deploy
 // liveness runner sets this for every liveness row; a probe body that reaches
 // inference from there is a contract violation and must fail loudly rather
@@ -988,6 +1037,13 @@ export async function inference(options: InferenceOptions): Promise<InferenceRes
   if (options.signal?.aborted) return { success: false, output: "", latencyMs: 0, level, error: ABORTED, vendor };
   // Pay-per-token by design: no fallback, least of all onto the subscription.
   if (vendor === 'anthropic-api') return anthropicApiAttempt({ ...options, level });
+  if (vendor === 'ollama') {
+    const r = await ollamaAttempt({ ...options, level });
+    const fb = loadVendorConfig().fallback;
+    if (r.success || options.signal?.aborted || options.allowVendorFallback === false || !fb || fb === 'ollama') return r;
+    console.error(`[Inference] ollama lane failed (${r.error}); falling back to ${fb}`);
+    return inference({ ...options, level, vendor: fb });
+  }
   if (vendor === 'openai') {
     const r = await openAiAttempt({ ...options, level });
     const fb = loadVendorConfig().fallback;
@@ -1074,7 +1130,7 @@ async function main() {
   }
 
   if (positionalArgs.length < 2) {
-    console.error('Usage: bun Inference.ts [--level low|medium|high|max] [--vendor openai|anthropic|anthropic-api] [--no-fallback] [--json] [--timeout <ms>] [--image <path>]... <system_prompt> <user_prompt>');
+    console.error('Usage: bun Inference.ts [--level low|medium|high|max] [--vendor openai|anthropic|anthropic-api|ollama] [--no-fallback] [--json] [--timeout <ms>] [--image <path>]... <system_prompt> <user_prompt>');
     process.exit(1);
   }
 
