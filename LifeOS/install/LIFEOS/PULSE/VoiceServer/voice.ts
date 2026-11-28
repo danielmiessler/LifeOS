@@ -499,7 +499,7 @@ async function resolveTalkMicProbe(): Promise<(() => boolean) | null> {
 /** Stop the playing clip and drop everything queued or generating before now. */
 // ── Remote voice (Fish voice ISA F5) ──
 //
-// When {{PRINCIPAL_NAME}} is attached to this desktop from another machine on the tailnet (herdr --remote
+// When {{PRINCIPAL_NAME}} is attached to this desktop from another machine on the tailnet or a listed LAN peer (herdr --remote
 // comes in over SSH), clips play on that machine through its VoiceReceiver.ts instead of the
 // desktop speakers. The receiver holds no keys or config; it only plays what is POSTed to it.
 export const RECEIVER_PORT = 7790
@@ -507,21 +507,43 @@ const SINK_CACHE_MS = 10_000
 let sinkCache: { at: number; url: string | null } = { at: 0, url: null }
 let sinkProbe: (() => Promise<string | null>) | null = null
 
-/** Tailnet (100.64.0.0/10) peers with an established SSH connection into this machine. */
-export function sshTailnetPeers(lsofOut: string): string[] {
+/** IPv4 peers with an established SSH connection into this machine, parsed from lsof (macOS) or `ss -tnH` (Linux). */
+export function sshPeers(out: string): string[] {
   const peers = new Set<string>()
-  for (const m of lsofOut.matchAll(/->(100\.(\d{1,3})\.\d{1,3}\.\d{1,3}):\d+/g)) {
-    const second = Number(m[2])
-    if (second >= 64 && second <= 127) peers.add(m[1]!)
+  for (const line of out.split("\n")) {
+    const m = line.match(/->(\d{1,3}(?:\.\d{1,3}){3}):\d+/) ?? line.match(/\s\[?(?:::ffff:)?(\d{1,3}(?:\.\d{1,3}){3})\]?:\d+\s*$/)
+    if (m) peers.add(m[1]!)
   }
   return [...peers]
 }
 
+function inCidr(ip: string, cidr: string): boolean {
+  const [base, bitsText = "32"] = cidr.split("/")
+  const bits = Number(bitsText)
+  const isIpv4 = (a: string | undefined) => !!a && /^\d{1,3}(\.\d{1,3}){3}$/.test(a)
+  if (!isIpv4(ip) || !isIpv4(base) || !Number.isInteger(bits) || bits < 0 || bits > 32) return false
+  const toInt = (a: string) => a.split(".").reduce((n, octet) => n * 256 + Number(octet), 0)
+  const mask = bits === 0 ? 0 : ~0 << (32 - bits)
+  return (toInt(ip) & mask) === (toInt(base!) & mask)
+}
+
+/**
+ * True when clips may be sent to a receiver at this SSH peer: the tailnet range (100.64.0.0/10, used by Tailscale and
+ * NetBird) or a comma-separated IPv4/CIDR list in VOICE_RECEIVER_PEERS, for a plain LAN or another WireGuard overlay.
+ * An ESTABLISHED socket on :22 is not proof of login, so list single hosts (/32) rather than a whole shared subnet.
+ */
+export function trustedPeer(ip: string, extra: string = process.env.VOICE_RECEIVER_PEERS ?? ""): boolean {
+  return ["100.64.0.0/10", ...extra.split(",")].some((cidr) => inCidr(ip, cidr.trim()))
+}
+
 async function findSink(): Promise<string | null> {
   if (sinkProbe) return sinkProbe()
-  if (process.platform !== "darwin") return null
-  const p = Bun.spawnSync(["/usr/sbin/lsof", "-nP", "-iTCP:22", "-sTCP:ESTABLISHED"], { stdout: "pipe", stderr: "ignore" })
-  for (const peer of sshTailnetPeers(p.stdout.toString())) {
+  const cmd = process.platform === "darwin"
+    ? ["/usr/sbin/lsof", "-nP", "-iTCP:22", "-sTCP:ESTABLISHED"]
+    : process.platform === "linux" ? ["ss", "-tnH", "state", "established", "( sport = :22 )"] : null
+  if (!cmd) return null
+  const p = Bun.spawnSync(cmd, { stdout: "pipe", stderr: "ignore" })
+  for (const peer of sshPeers(p.stdout.toString()).filter((ip) => trustedPeer(ip))) {
     const url = `http://${peer}:${RECEIVER_PORT}`
     const ok = await fetch(`${url}/health`, { signal: AbortSignal.timeout(500) }).then((r) => r.ok).catch(() => false)
     if (ok) return url
