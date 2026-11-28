@@ -24,7 +24,7 @@ import { spawn } from "child_process"
 import { join } from "path"
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs"
 import { log } from "../lib"
-import { principalPronunciations } from "../../TOOLS/Pronounce"
+import { principalPronunciations, pronounce } from "../../TOOLS/Pronounce"
 import { homedir } from "node:os";
 import { invariant } from "../../TOOLS/Invariant"
 import { loadLifeosConfig } from "../../TOOLS/LifeosConfig"
@@ -396,6 +396,36 @@ async function generateFishSpeech(text: string, entry: VoiceEntry, emotion?: str
   })
   const { audio, mastered } = await masterVoice(raw)
   if (!mastered) log("warn", "Voice: mastering skipped (no ffmpeg or it failed), playing the raw Fish clip")
+  return audio
+}
+
+// ── Local TTS (optional) ──
+//
+// When Fish is not configured, LOCAL_TTS_URL names a TTS server on this machine or the LAN: an OpenAI-compatible
+// /v1/audio/speech endpoint (Kokoro-FastAPI, Speaches, LocalAI, ...) or a Piper-style endpoint taking {text,voice,speed}.
+// Either must answer with WAV. The message text is sent to that URL, so keep it on hardware you control.
+const LOCAL_TTS_TIMEOUT_MS = 15_000
+
+/** The JSON body for a local TTS server: OpenAI speech shape for a /v1/audio/speech URL, else Piper-style. */
+export function localTtsRequest(url: string, text: string, env: Record<string, string | undefined> = process.env): Record<string, unknown> {
+  const voice = env.LOCAL_TTS_VOICE || undefined
+  const speed = Number(env.LOCAL_TTS_SPEED) || undefined
+  if (/\/v1\/audio\/speech\/?$/.test(new URL(url).pathname)) {
+    return { model: env.LOCAL_TTS_MODEL || "tts-1", input: text, voice: voice ?? "alloy", response_format: "wav", ...(speed ? { speed } : {}) }
+  }
+  return { text, ...(voice ? { voice } : {}), ...(speed ? { speed } : {}) }
+}
+
+async function generateLocalSpeech(url: string, text: string): Promise<Uint8Array> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(localTtsRequest(url, pronounce(stripVoiceTags(text), pronunciations()))),
+    signal: AbortSignal.timeout(LOCAL_TTS_TIMEOUT_MS),
+  })
+  if (!res.ok) throw new Error(`local TTS answered ${res.status}`)
+  const audio = new Uint8Array(await res.arrayBuffer())
+  if (audio.byteLength === 0) throw new Error("local TTS returned no audio")
   return audio
 }
 
@@ -780,31 +810,33 @@ async function sendNotification(
     log("info", "Voice: muted — skipping TTS", { title: safeTitle })
   }
 
-  // Fish is the only engine (principal directive, 2026-10-24). A failed generation stays silent
-  // and reports; a voice with no Fish clone, or an install with no Fish key, is silent too: voice off, not a fault.
+  // Fish speaks when it is configured (principal directive, 2026-10-24); with no Fish key, an optional LOCAL_TTS_URL
+  // speaks instead. A failed generation stays silent and reports; neither configured is voice off, not a fault.
   const fishEntry = voiceEnabled && !muted ? fishVoiceFor(voiceId || defaultVoiceId) : undefined
   if (voiceEnabled && !muted && !fishEntry && moduleConfig.fish_api_key) {
     log("warn", "Voice: no Fish clone for this voice id, staying silent", { voiceId: voiceId || defaultVoiceId })
   }
-  if (fishEntry) {
-    let audio: Uint8Array | undefined
+  const localUrl = voiceEnabled && !muted && !moduleConfig.fish_api_key ? process.env.LOCAL_TTS_URL : undefined
+  let audio: Uint8Array | undefined
+  const engine = fishEntry ? "Fish" : localUrl ? "local TTS" : null
+  try {
+    if (fishEntry) audio = await generateFishSpeech(safeMessage, fishEntry, emotion)
+    else if (localUrl) audio = await generateLocalSpeech(localUrl, safeMessage)
+  } catch (error: unknown) {
+    voiceError = error instanceof Error ? error.message : String(error)
+    log("error", `Voice: ${engine} failed; staying silent`, { error: voiceError })
+  }
+  if (audio) {
+    const clip = audio
+    const volume = callerVolume ?? fishEntry?.volume ?? voiceConfig.voices.main?.volume ?? FALLBACK_VOLUME
     try {
-      audio = await generateFishSpeech(safeMessage, fishEntry, emotion)
+      const played = enqueuePlayback(() => playAudio(clip, volume, fishEntry ? "mp3" : "wav", { interruptible, bypassMute }), gen)
+      if (interruptible) played.catch((e) => log("error", "Voice: interruptible playback failed", { error: String(e) }))
+      else await played
+      voicePlayed = true
     } catch (error: unknown) {
       voiceError = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: Fish failed; staying silent", { error: voiceError })
-    }
-    if (audio) {
-      const fishAudio = audio
-      try {
-        const played = enqueuePlayback(() => playAudio(fishAudio, callerVolume ?? fishEntry.volume ?? FALLBACK_VOLUME, "mp3", { interruptible, bypassMute }), gen)
-        if (interruptible) played.catch((e) => log("error", "Voice: interruptible playback failed", { error: String(e) }))
-        else await played
-        voicePlayed = true
-      } catch (error: unknown) {
-        voiceError = error instanceof Error ? error.message : String(error)
-        log("error", "Voice: failed to play Fish speech", { error: voiceError })
-      }
+      log("error", `Voice: failed to play ${engine} speech`, { error: voiceError })
     }
   }
 
@@ -846,7 +878,9 @@ export function startVoice(config: VoiceConfig): void {
 
   // No voice key at all is a supported install (voice off), not a fault: said once at startup, never per line.
   if (!config.fish_api_key) {
-    log("info", "Voice module: no FISH_API_KEY — voice is off, notifications stay silent")
+    log("info", process.env.LOCAL_TTS_URL
+      ? `Voice module: no FISH_API_KEY — speaking through local TTS at ${process.env.LOCAL_TTS_URL}`
+      : "Voice module: no FISH_API_KEY — voice is off, notifications stay silent")
   }
 
   // Pronunciation rules: the principal's file unless PULSE.toml names another
@@ -868,9 +902,10 @@ export function startVoice(config: VoiceConfig): void {
   })
 }
 
-/** Which engine speaks: Fish when a key and the main clone exist, otherwise off. */
-export function voiceSystem(cfg: { fish_api_key?: string }, main: { fishReferenceId?: string } | undefined): string {
-  return cfg.fish_api_key && main?.fishReferenceId ? "Fish" : "off"
+/** Which engine speaks: Fish when a key and the main clone exist, local with no Fish key and LOCAL_TTS_URL set, else off. */
+export function voiceSystem(cfg: { fish_api_key?: string }, main: { fishReferenceId?: string } | undefined, localUrl: string | undefined = process.env.LOCAL_TTS_URL): string {
+  if (cfg.fish_api_key) return main?.fishReferenceId ? "Fish" : "off"
+  return localUrl ? "local" : "off"
 }
 
 /**

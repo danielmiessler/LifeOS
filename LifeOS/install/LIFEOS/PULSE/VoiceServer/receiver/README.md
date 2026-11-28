@@ -63,11 +63,29 @@ sudo ufw allow from <LifeOS host IP> to any port 7790 proto tcp
 ```sh
 curl -s http://<workstation IP>:7790/health        # {"ok":true,"version":"1.1.0"}
 curl -s -X POST localhost:31337/notify -H 'Content-Type: application/json' -d '{"message":"Voice test"}'
-journalctl --user -u com.lifeos.pulse.service | grep 'remote receiver'
+grep 'remote receiver' ~/.claude/LIFEOS/PULSE/logs/pulse-stdout.log
 ```
 
-Voice itself still needs a Fish Audio key (`FISH_API_KEY`) and a `fish_reference_id` under `[da.voices.main]` in
-`LIFEOS_CONFIG.toml`. Without them, nothing is sent to the receiver.
+Something has to make the speech first: either Fish or a local TTS server (next section). With neither configured,
+voice is off and nothing is sent to the receiver.
+
+## Speech engine: Fish or a local model
+
+| Engine | Set on the LifeOS host | Notes |
+|---|---|---|
+| Fish Audio (cloud) | `FISH_API_KEY` in `.env`, `fish_reference_id` under `[da.voices.main]` in `LIFEOS_CONFIG.toml` | Voice clones and emotion tags. Wins whenever a Fish key is set. |
+| Local TTS | `LOCAL_TTS_URL`, used only when no `FISH_API_KEY` is set | No account. The text stays on your network. Tags are stripped before synthesis. |
+
+`LOCAL_TTS_URL` must answer with WAV. Two request shapes are supported:
+
+- **OpenAI-compatible** (`…/v1/audio/speech`, for example Kokoro-FastAPI, Speaches or LocalAI). The request is
+  `{model, input, voice, response_format: "wav"}`. `LOCAL_TTS_MODEL` defaults to `tts-1` and `LOCAL_TTS_VOICE` to `alloy`.
+- **Piper-style** (any other path). The request is `{text, voice?, speed?}`, for example a small Piper HTTP wrapper
+  on `/say`.
+
+Optional: `LOCAL_TTS_VOICE` and `LOCAL_TTS_SPEED`. Set these in `~/.claude/.env` or in a systemd drop-in for the Pulse
+unit, then restart Pulse. `curl localhost:31337/voice/health` then reports `"voice_system":"local"`. The message text
+goes to whatever URL you set, so point it at hardware you control. Piper on CPU makes a sentence in well under a second.
 
 ## Which address to use
 
