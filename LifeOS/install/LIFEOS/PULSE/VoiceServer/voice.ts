@@ -24,7 +24,7 @@ import { spawn } from "child_process"
 import { join } from "path"
 import { existsSync, readFileSync, rmSync, writeFileSync } from "fs"
 import { log } from "../lib"
-import { principalPronunciations } from "../../TOOLS/Pronounce"
+import { principalPronunciations, pronounce } from "../../TOOLS/Pronounce"
 import { homedir } from "node:os";
 import { invariant } from "../../TOOLS/Invariant"
 import { loadLifeosConfig } from "../../TOOLS/LifeosConfig"
@@ -399,6 +399,36 @@ async function generateFishSpeech(text: string, entry: VoiceEntry, emotion?: str
   return audio
 }
 
+// ── Local TTS (optional) ──
+//
+// When Fish is not configured, LOCAL_TTS_URL names a TTS server on this machine or the LAN: an OpenAI-compatible
+// /v1/audio/speech endpoint (Kokoro-FastAPI, Speaches, LocalAI, ...) or a Piper-style endpoint taking {text,voice,speed}.
+// Either must answer with WAV. The message text is sent to that URL, so keep it on hardware you control.
+const LOCAL_TTS_TIMEOUT_MS = 15_000
+
+/** The JSON body for a local TTS server: OpenAI speech shape for a /v1/audio/speech URL, else Piper-style. */
+export function localTtsRequest(url: string, text: string, env: Record<string, string | undefined> = process.env): Record<string, unknown> {
+  const voice = env.LOCAL_TTS_VOICE || undefined
+  const speed = Number(env.LOCAL_TTS_SPEED) || undefined
+  if (/\/v1\/audio\/speech\/?$/.test(new URL(url).pathname)) {
+    return { model: env.LOCAL_TTS_MODEL || "tts-1", input: text, voice: voice ?? "alloy", response_format: "wav", ...(speed ? { speed } : {}) }
+  }
+  return { text, ...(voice ? { voice } : {}), ...(speed ? { speed } : {}) }
+}
+
+async function generateLocalSpeech(url: string, text: string): Promise<Uint8Array> {
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(localTtsRequest(url, pronounce(stripVoiceTags(text), pronunciations()))),
+    signal: AbortSignal.timeout(LOCAL_TTS_TIMEOUT_MS),
+  })
+  if (!res.ok) throw new Error(`local TTS answered ${res.status}`)
+  const audio = new Uint8Array(await res.arrayBuffer())
+  if (audio.byteLength === 0) throw new Error("local TTS returned no audio")
+  return audio
+}
+
 // ── Audio Playback ──
 
 // Platform-aware audio player resolution. macOS ships afplay; Linux has no
@@ -499,7 +529,7 @@ async function resolveTalkMicProbe(): Promise<(() => boolean) | null> {
 /** Stop the playing clip and drop everything queued or generating before now. */
 // ── Remote voice (Fish voice ISA F5) ──
 //
-// When {{PRINCIPAL_NAME}} is attached to this desktop from another machine on the tailnet (herdr --remote
+// When {{PRINCIPAL_NAME}} is attached to this desktop from another machine on the tailnet or a listed LAN peer (herdr --remote
 // comes in over SSH), clips play on that machine through its VoiceReceiver.ts instead of the
 // desktop speakers. The receiver holds no keys or config; it only plays what is POSTed to it.
 export const RECEIVER_PORT = 7790
@@ -507,21 +537,43 @@ const SINK_CACHE_MS = 10_000
 let sinkCache: { at: number; url: string | null } = { at: 0, url: null }
 let sinkProbe: (() => Promise<string | null>) | null = null
 
-/** Tailnet (100.64.0.0/10) peers with an established SSH connection into this machine. */
-export function sshTailnetPeers(lsofOut: string): string[] {
+/** IPv4 peers with an established SSH connection into this machine, parsed from lsof (macOS) or `ss -tnH` (Linux). */
+export function sshPeers(out: string): string[] {
   const peers = new Set<string>()
-  for (const m of lsofOut.matchAll(/->(100\.(\d{1,3})\.\d{1,3}\.\d{1,3}):\d+/g)) {
-    const second = Number(m[2])
-    if (second >= 64 && second <= 127) peers.add(m[1]!)
+  for (const line of out.split("\n")) {
+    const m = line.match(/->(\d{1,3}(?:\.\d{1,3}){3}):\d+/) ?? line.match(/\s\[?(?:::ffff:)?(\d{1,3}(?:\.\d{1,3}){3})\]?:\d+\s*$/)
+    if (m) peers.add(m[1]!)
   }
   return [...peers]
 }
 
+function inCidr(ip: string, cidr: string): boolean {
+  const [base, bitsText = "32"] = cidr.split("/")
+  const bits = Number(bitsText)
+  const isIpv4 = (a: string | undefined) => !!a && /^\d{1,3}(\.\d{1,3}){3}$/.test(a)
+  if (!isIpv4(ip) || !isIpv4(base) || !Number.isInteger(bits) || bits < 0 || bits > 32) return false
+  const toInt = (a: string) => a.split(".").reduce((n, octet) => n * 256 + Number(octet), 0)
+  const mask = bits === 0 ? 0 : ~0 << (32 - bits)
+  return (toInt(ip) & mask) === (toInt(base!) & mask)
+}
+
+/**
+ * True when clips may be sent to a receiver at this SSH peer: the tailnet range (100.64.0.0/10, used by Tailscale and
+ * NetBird) or a comma-separated IPv4/CIDR list in VOICE_RECEIVER_PEERS, for a plain LAN or another WireGuard overlay.
+ * An ESTABLISHED socket on :22 is not proof of login, so list single hosts (/32) rather than a whole shared subnet.
+ */
+export function trustedPeer(ip: string, extra: string = process.env.VOICE_RECEIVER_PEERS ?? ""): boolean {
+  return ["100.64.0.0/10", ...extra.split(",")].some((cidr) => inCidr(ip, cidr.trim()))
+}
+
 async function findSink(): Promise<string | null> {
   if (sinkProbe) return sinkProbe()
-  if (process.platform !== "darwin") return null
-  const p = Bun.spawnSync(["/usr/sbin/lsof", "-nP", "-iTCP:22", "-sTCP:ESTABLISHED"], { stdout: "pipe", stderr: "ignore" })
-  for (const peer of sshTailnetPeers(p.stdout.toString())) {
+  const cmd = process.platform === "darwin"
+    ? ["/usr/sbin/lsof", "-nP", "-iTCP:22", "-sTCP:ESTABLISHED"]
+    : process.platform === "linux" ? ["ss", "-tnH", "state", "established", "( sport = :22 )"] : null
+  if (!cmd) return null
+  const p = Bun.spawnSync(cmd, { stdout: "pipe", stderr: "ignore" })
+  for (const peer of sshPeers(p.stdout.toString()).filter((ip) => trustedPeer(ip))) {
     const url = `http://${peer}:${RECEIVER_PORT}`
     const ok = await fetch(`${url}/health`, { signal: AbortSignal.timeout(500) }).then((r) => r.ok).catch(() => false)
     if (ok) return url
@@ -758,31 +810,33 @@ async function sendNotification(
     log("info", "Voice: muted — skipping TTS", { title: safeTitle })
   }
 
-  // Fish is the only engine (principal directive, 2026-10-24). A failed generation stays silent
-  // and reports; a voice with no Fish clone, or an install with no Fish key, is silent too: voice off, not a fault.
+  // Fish speaks when it is configured (principal directive, 2026-10-24); with no Fish key, an optional LOCAL_TTS_URL
+  // speaks instead. A failed generation stays silent and reports; neither configured is voice off, not a fault.
   const fishEntry = voiceEnabled && !muted ? fishVoiceFor(voiceId || defaultVoiceId) : undefined
   if (voiceEnabled && !muted && !fishEntry && moduleConfig.fish_api_key) {
     log("warn", "Voice: no Fish clone for this voice id, staying silent", { voiceId: voiceId || defaultVoiceId })
   }
-  if (fishEntry) {
-    let audio: Uint8Array | undefined
+  const localUrl = voiceEnabled && !muted && !moduleConfig.fish_api_key ? process.env.LOCAL_TTS_URL : undefined
+  let audio: Uint8Array | undefined
+  const engine = fishEntry ? "Fish" : localUrl ? "local TTS" : null
+  try {
+    if (fishEntry) audio = await generateFishSpeech(safeMessage, fishEntry, emotion)
+    else if (localUrl) audio = await generateLocalSpeech(localUrl, safeMessage)
+  } catch (error: unknown) {
+    voiceError = error instanceof Error ? error.message : String(error)
+    log("error", `Voice: ${engine} failed; staying silent`, { error: voiceError })
+  }
+  if (audio) {
+    const clip = audio
+    const volume = callerVolume ?? fishEntry?.volume ?? voiceConfig.voices.main?.volume ?? FALLBACK_VOLUME
     try {
-      audio = await generateFishSpeech(safeMessage, fishEntry, emotion)
+      const played = enqueuePlayback(() => playAudio(clip, volume, fishEntry ? "mp3" : "wav", { interruptible, bypassMute }), gen)
+      if (interruptible) played.catch((e) => log("error", "Voice: interruptible playback failed", { error: String(e) }))
+      else await played
+      voicePlayed = true
     } catch (error: unknown) {
       voiceError = error instanceof Error ? error.message : String(error)
-      log("error", "Voice: Fish failed; staying silent", { error: voiceError })
-    }
-    if (audio) {
-      const fishAudio = audio
-      try {
-        const played = enqueuePlayback(() => playAudio(fishAudio, callerVolume ?? fishEntry.volume ?? FALLBACK_VOLUME, "mp3", { interruptible, bypassMute }), gen)
-        if (interruptible) played.catch((e) => log("error", "Voice: interruptible playback failed", { error: String(e) }))
-        else await played
-        voicePlayed = true
-      } catch (error: unknown) {
-        voiceError = error instanceof Error ? error.message : String(error)
-        log("error", "Voice: failed to play Fish speech", { error: voiceError })
-      }
+      log("error", `Voice: failed to play ${engine} speech`, { error: voiceError })
     }
   }
 
@@ -824,7 +878,9 @@ export function startVoice(config: VoiceConfig): void {
 
   // No voice key at all is a supported install (voice off), not a fault: said once at startup, never per line.
   if (!config.fish_api_key) {
-    log("info", "Voice module: no FISH_API_KEY — voice is off, notifications stay silent")
+    log("info", process.env.LOCAL_TTS_URL
+      ? `Voice module: no FISH_API_KEY — speaking through local TTS at ${process.env.LOCAL_TTS_URL}`
+      : "Voice module: no FISH_API_KEY — voice is off, notifications stay silent")
   }
 
   // Pronunciation rules: the principal's file unless PULSE.toml names another
@@ -846,9 +902,10 @@ export function startVoice(config: VoiceConfig): void {
   })
 }
 
-/** Which engine speaks: Fish when a key and the main clone exist, otherwise off. */
-export function voiceSystem(cfg: { fish_api_key?: string }, main: { fishReferenceId?: string } | undefined): string {
-  return cfg.fish_api_key && main?.fishReferenceId ? "Fish" : "off"
+/** Which engine speaks: Fish when a key and the main clone exist, local with no Fish key and LOCAL_TTS_URL set, else off. */
+export function voiceSystem(cfg: { fish_api_key?: string }, main: { fishReferenceId?: string } | undefined, localUrl: string | undefined = process.env.LOCAL_TTS_URL): string {
+  if (cfg.fish_api_key) return main?.fishReferenceId ? "Fish" : "off"
+  return localUrl ? "local" : "off"
 }
 
 /**
